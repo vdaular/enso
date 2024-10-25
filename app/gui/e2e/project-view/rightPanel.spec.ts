@@ -26,15 +26,16 @@ test('Doc panel focus (regression #10471)', async ({ page }) => {
   await page.keyboard.press(`${CONTROL_KEY}+D`)
   await page.keyboard.press(`${CONTROL_KEY}+\``)
   await expect(locate.rightDock(page)).toBeVisible()
-  await expect(locate.bottomDock(page)).toBeVisible()
+  const codeEditor = page.locator('.CodeEditor')
+  await expect(codeEditor).toBeVisible()
 
   // Focus code editor.
-  await locate.bottomDock(page).click()
+  await codeEditor.click()
 
   await page.evaluate(() => {
-    const codeEditor = (window as any).__codeEditorApi
-    const docStart = codeEditor.indexOf('The main method')
-    codeEditor.placeCursor(docStart + 8)
+    const codeEditorApi = (window as any).__codeEditorApi
+    const docStart = codeEditorApi.indexOf('The main method')
+    codeEditorApi.placeCursor(docStart + 8)
   })
   await page.keyboard.press('Space')
   await page.keyboard.press('T')
