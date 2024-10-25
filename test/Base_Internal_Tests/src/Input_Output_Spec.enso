@@ -13,8 +13,10 @@ import Standard.Base.Internal.Extra_Imports.File_Utils
 
 
 add_specs suite_builder =
+    pending_js_missing = if Polyglot.is_language_installed "js" then Nothing else "Can't run tests that require JavaScript, language `js` is not installed."
+
     suite_builder.group "I/O Checks" group_builder->
-        group_builder.specify "read without available" <|
+        group_builder.specify "read without available" pending=pending_js_missing <|
             stream_like = is_like [20, 5, 1, 10] False
             is = Stream_Utils.asInputStream stream_like
             is.available . should_equal 0
@@ -29,7 +31,7 @@ add_specs suite_builder =
 
             is.available . should_equal 0
 
-        group_builder.specify "read with available" <|
+        group_builder.specify "read with available" pending=pending_js_missing <|
             stream_like = is_like [20, 6, 8, 23] True
             is = Stream_Utils.asInputStream stream_like
             is.available . should_equal 4

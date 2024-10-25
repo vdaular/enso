@@ -670,13 +670,23 @@ pub async fn runner_sanity_test(
             .run_ok()
             .await;
 
+        let test_internal_base = Command::new(&enso)
+            .args([
+                "--disable-private-check",
+                "--run",
+                repo_root.test.join("Base_Internal_Tests").as_str(),
+            ])
+            .set_env(ENSO_DATA_DIRECTORY, engine_package)?
+            .run_ok()
+            .await;
+
         let test_geo = Command::new(&enso)
             .args(["--run", repo_root.test.join("Geo_Tests").as_str()])
             .set_env(ENSO_DATA_DIRECTORY, engine_package)?
             .run_ok()
             .await;
 
-        test_base.and(test_geo)
+        test_base.and(test_internal_base).and(test_geo)
     } else {
         Ok(())
     }

@@ -23,6 +23,7 @@ polyglot java import org.enso.table.parsing.IdentityParser
 polyglot java import org.enso.table.parsing.problems.MismatchedQuote
 polyglot java import org.enso.table.parsing.TypeInferringParser
 polyglot java import org.enso.table.read.DelimitedReader
+polyglot java import org.enso.table.read.DelimitedReader.HeaderBehavior
 polyglot java import org.enso.table.read.ParsingFailedException
 polyglot java import org.enso.table.read.QuoteStrippingParser
 
