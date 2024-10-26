@@ -64,6 +64,7 @@ const emit = defineEmits<{
   doubleClick: []
   createNodes: [options: NodeCreationOptions[]]
   setNodeColor: [color: string | undefined]
+  toggleDocPanel: []
   'update:edited': [cursorPosition: number]
   'update:rect': [rect: Rect]
   'update:hoverAnim': [progress: number]
@@ -226,7 +227,12 @@ const outputHovered = ref(false)
 const keyboard = injectKeyboard()
 const visualizationWidth = computed(() => props.node.vis?.width ?? null)
 const visualizationHeight = computed(() => props.node.vis?.height ?? null)
-const isVisualizationEnabled = computed(() => props.node.vis?.visible ?? false)
+const isVisualizationEnabled = computed({
+  get: () => props.node.vis?.visible ?? false,
+  set: (enabled) => {
+    emit('update:visualizationEnabled', enabled)
+  },
+})
 const isVisualizationPreviewed = computed(
   () => keyboard.mod && outputHovered.value && !isVisualizationEnabled.value,
 )
@@ -457,15 +463,12 @@ watchEffect(() => {
     </button>
     <CircularMenu
       v-if="menuVisible"
-      v-model:isRecordingOverridden="isRecordingOverridden"
+      v-model:isVisualizationEnabled="isVisualizationEnabled"
       :isRecordingEnabledGlobally="projectStore.isRecordingEnabled"
-      :isVisualizationEnabled="isVisualizationEnabled"
-      :isFullMenuVisible="menuVisible && menuFull"
       :nodeColor="getNodeColor(nodeId)"
       :matchableNodeColors="matchableNodeColors"
       :documentationUrl="documentationUrl"
       :isRemovable="props.node.type === 'component'"
-      @update:isVisualizationEnabled="emit('update:visualizationEnabled', $event)"
       @startEditing="startEditingNode"
       @startEditingComment="editingComment = true"
       @openFullMenu="openFullMenu"
@@ -473,6 +476,8 @@ watchEffect(() => {
       @pointerenter="menuHovered = true"
       @pointerleave="menuHovered = false"
       @update:nodeColor="emit('setNodeColor', $event)"
+      @createNewNode="setSelected(), emit('createNodes', [{ commit: false, content: undefined }])"
+      @toggleDocPanel="emit('toggleDocPanel')"
       @click.capture="setSelected"
     />
     <GraphVisualization

@@ -19,6 +19,7 @@ const emit = defineEmits<{
   nodeOutputPortDoubleClick: [portId: AstId]
   nodeDoubleClick: [nodeId: NodeId]
   createNodes: [source: NodeId, options: NodeCreationOptions[]]
+  toggleDocPanel: []
 }>()
 
 const projectStore = useProjectStore()
@@ -76,6 +77,7 @@ const graphNodeSelections = shallowRef<HTMLElement>()
       @outputPortDoubleClick="(_event, port) => emit('nodeOutputPortDoubleClick', port)"
       @doubleClick="emit('nodeDoubleClick', id)"
       @createNodes="emit('createNodes', id, $event)"
+      @toggleDocPanel="emit('toggleDocPanel')"
       @setNodeColor="graphStore.overrideNodeColor(id, $event)"
       @update:edited="graphStore.setEditedNode(id, $event)"
       @update:rect="graphStore.updateNodeRect(id, $event)"
