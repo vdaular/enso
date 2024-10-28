@@ -2,8 +2,13 @@ package org.enso.common;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchKey;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.util.function.Function;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Source;
@@ -53,6 +58,78 @@ final class ContextInsightSetup {
     this.insightFile = file;
   }
 
+  private static final class InsightFileWatcher implements Runnable {
+
+    private final Path insightFilePath;
+    private final Runnable onChange;
+
+    public InsightFileWatcher(Path insightFilePath, Runnable onChange) {
+      this.insightFilePath = insightFilePath;
+      this.onChange = onChange;
+    }
+
+    @Override
+    public void run() {
+      try {
+        watch();
+      } catch (IOException e) {
+        new IOException("Error watching the insight file", e).printStackTrace();
+      }
+    }
+
+    private void watch() throws IOException {
+      final Path insightDirectory = insightFilePath.getParent();
+      final Path insightFileName = insightFilePath.getFileName();
+      FileTime lastRecordedModifiedTime = FileTime.fromMillis(0);
+
+      try (final var watchService = FileSystems.getDefault().newWatchService()) {
+        insightDirectory.register(
+            watchService,
+            StandardWatchEventKinds.ENTRY_CREATE,
+            StandardWatchEventKinds.ENTRY_MODIFY);
+        while (true) {
+          WatchKey watchKey;
+          try {
+            watchKey = watchService.take();
+          } catch (InterruptedException ignored) {
+            return;
+          }
+
+          boolean isModified = false;
+          for (var watchEvent : watchKey.pollEvents()) {
+            if (watchEvent.kind() == StandardWatchEventKinds.OVERFLOW) {
+              continue;
+            }
+
+            final Path eventPath = (Path) watchEvent.context();
+            if (eventPath.endsWith(insightFileName)) {
+              final Path insightFilePath = insightDirectory.resolve(eventPath);
+              try {
+                final BasicFileAttributes attributes =
+                    Files.readAttributes(insightFilePath, BasicFileAttributes.class);
+                if (attributes.lastModifiedTime().compareTo(lastRecordedModifiedTime) > 0) {
+                  lastRecordedModifiedTime = attributes.lastModifiedTime();
+                  isModified = true;
+                }
+              } catch (IOException ignored) {
+                continue;
+              }
+            }
+          }
+
+          if (isModified) {
+            onChange.run();
+          }
+
+          final boolean isValid = watchKey.reset();
+          if (!isValid) {
+            break;
+          }
+        }
+      }
+    }
+  }
+
   /**
    * Configures the context if {@link #INSIGHT_PROP} property is specified. This support is
    * <em>development only</em>. It can be (and will be) removed in the future.
@@ -72,6 +149,7 @@ final class ContextInsightSetup {
             : "Cannot find " + insightFile + " specified via " + INSIGHT_PROP + " property";
         ACTIVE = new ContextInsightSetup(ctx, insightFile.toPath());
         ACTIVE.initialize();
+        ACTIVE.startFileWatcherThread();
       } catch (Error | Exception ex) {
         var ae =
             new AssertionError(
@@ -98,5 +176,23 @@ final class ContextInsightSetup {
     @SuppressWarnings("unchecked")
     var insight = (Function<Source, AutoCloseable>) instrument.lookup(Function.class);
     insightHandle = insight.apply(insightSrc);
+  }
+
+  private void reload() {
+    try {
+      if (insightHandle != null) {
+        insightHandle.close();
+      }
+      initialize();
+    } catch (Exception e) {
+      new Exception("Error reloading the insight script", e).printStackTrace();
+    }
+  }
+
+  private void startFileWatcherThread() {
+    final InsightFileWatcher insightFileWatcher = new InsightFileWatcher(insightFile, this::reload);
+    final Thread thread = new Thread(insightFileWatcher, "InsightFileWatcherThread");
+    thread.setDaemon(true);
+    thread.start();
   }
 }
