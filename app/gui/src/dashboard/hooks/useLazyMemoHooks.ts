@@ -3,7 +3,6 @@
  *
  * A hook that returns a memoized function that will only be called once
  */
-
 import * as React from 'react'
 
 const UNSET_VALUE = Symbol('unset')

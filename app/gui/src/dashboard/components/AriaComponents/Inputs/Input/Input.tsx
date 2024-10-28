@@ -139,7 +139,9 @@ export const Input = forwardRef(function Input<
                 { className: classes.textArea(), type, name },
                 omit(fieldProps, 'isInvalid', 'isRequired', 'isDisabled', 'invalid'),
               )}
-              ref={mergeRefs(inputRef, privateInputRef, fieldProps.ref)}
+              ref={(el) => {
+                mergeRefs(inputRef, privateInputRef, fieldProps.ref)(el)
+              }}
             />
           </div>
 

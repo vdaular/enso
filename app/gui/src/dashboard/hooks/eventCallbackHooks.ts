@@ -13,7 +13,11 @@ export function useEventCallback<Func extends (...args: never[]) => unknown>(cal
 
   // Make sure that the value of `this` provided for the call to fn is not `ref`
   // This type assertion is safe, because it's a transparent wrapper around the original callback
-  // we mute react-hooks/exhaustive-deps because we don't need to update the callback when the callbackRef changes(it never does)
-  // eslint-disable-next-line react-hooks/exhaustive-deps, no-restricted-syntax
-  return useCallback(((...args) => callbackRef.current.apply(undefined, args)) as Func, [])
+
+  return useCallback<Func>(
+    // @ts-expect-error we know that the callbackRef.current is of type Func
+    // eslint-disable-next-line no-restricted-syntax
+    (...args: Parameters<Func>) => callbackRef.current(...args) as ReturnType<Func>,
+    [callbackRef],
+  )
 }

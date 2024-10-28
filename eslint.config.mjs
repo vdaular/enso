@@ -8,16 +8,16 @@ import * as url from 'node:url'
 
 // The preferred syntax is `import * as name`, however these modules do not support it.
 // This is specialcased in other files, but these modules shouldn't be used in other files anyway.
-/* eslint-disable no-restricted-syntax */
+
 import eslintJs from '@eslint/js'
 import tsEslint from '@typescript-eslint/eslint-plugin'
 import vueTsEslintConfig from '@vue/eslint-config-typescript'
 import jsdoc from 'eslint-plugin-jsdoc'
 import react from 'eslint-plugin-react'
+import reactCompiler from 'eslint-plugin-react-compiler'
 import reactHooks from 'eslint-plugin-react-hooks'
 import pluginVue from 'eslint-plugin-vue'
 import globals from 'globals'
-/* eslint-enable no-restricted-syntax */
 
 // =================
 // === Constants ===
@@ -186,7 +186,6 @@ const RESTRICTED_SYNTAXES = [
 // === ESLint configuration ===
 // ============================
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export default [
   {
     // Playwright build cache and Vite build directory.
@@ -301,6 +300,7 @@ export default [
       '@typescript-eslint': tsEslint,
       react: react,
       'react-hooks': reactHooks,
+      'react-compiler': reactCompiler,
     },
     languageOptions: {
       parserOptions: {
@@ -383,6 +383,11 @@ export default [
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': ['error', { additionalHooks: 'useOnScroll' }],
       'react/jsx-pascal-case': ['error', { allowNamespace: true }],
+
+      // We use warnings instead of errors because we want to gradually migrate the codebase to the new compiler.
+      // see: https://github.com/reactwg/react-compiler/discussions/8
+      'react-compiler/react-compiler': 'warn',
+
       // Prefer `interface` over `type`.
       '@typescript-eslint/consistent-type-definitions': 'error',
       '@typescript-eslint/consistent-type-imports': 'error',

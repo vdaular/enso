@@ -4,7 +4,7 @@ import * as React from 'react'
 import * as reactDom from 'react-dom'
 
 import type * as types from './types'
-import * as usePortal from './usePortal'
+import { usePortal } from './usePortal'
 
 /**
  * This component renders its children outside the current DOM hierarchy.
@@ -28,7 +28,7 @@ import * as usePortal from './usePortal'
  * ```
  */
 export default function Portal(props: types.PortalProps): React.JSX.Element | null {
-  const { children, mountRoot, isDisabled } = usePortal.usePortal(props)
+  const { children, mountRoot, isDisabled } = usePortal(props)
 
   if (isDisabled) {
     return <>{children}</>

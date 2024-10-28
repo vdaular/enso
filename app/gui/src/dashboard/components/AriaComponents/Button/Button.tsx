@@ -439,8 +439,9 @@ export const Button = forwardRef(function Button(
   const button = (
     <Tag
       // @ts-expect-error ts errors are expected here because we are merging props with different types
+      ref={ref}
+      // @ts-expect-error ts errors are expected here because we are merging props with different types
       {...aria.mergeProps<aria.ButtonProps>()(goodDefaults, ariaProps, focusChildProps, {
-        ref,
         isDisabled,
         // we use onPressEnd instead of onPress because for some reason react-aria doesn't trigger
         // onPress on EXTRA_CLICK_ZONE, but onPress{start,end} are triggered

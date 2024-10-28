@@ -11,7 +11,7 @@ import { forwardRef } from '#/utilities/react'
 import type { VariantProps } from '#/utilities/tailwindVariants'
 import { tv } from '#/utilities/tailwindVariants'
 import type { CSSProperties, ForwardedRef, ReactElement } from 'react'
-import type { FieldVariantProps, FormInstance } from '../Form'
+import type { FieldVariantProps } from '../Form'
 import { Form, type FieldPath, type FieldProps, type FieldStateProps, type TSchema } from '../Form'
 import type { TestIdProps } from '../types'
 import { CheckboxGroupProvider } from './CheckboxContext'
@@ -58,8 +58,7 @@ export const CheckboxGroup = forwardRef(
       ...checkboxGroupProps
     } = props
 
-    // eslint-disable-next-line react-hooks/rules-of-hooks,no-restricted-syntax
-    const formInstance = (form ?? Form.useFormContext()) as FormInstance<Schema>
+    const formInstance = Form.useFormContext(form)
 
     const styles = variants({ fullWidth, className })
     const testId = props['data-testid'] ?? props.testId

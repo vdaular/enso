@@ -20,13 +20,7 @@ import type {
 } from 'react'
 import invariant from 'tiny-invariant'
 import { useStore } from 'zustand'
-import type {
-  FieldPath,
-  FieldStateProps,
-  FormInstance,
-  TSchema,
-  UseFormRegisterReturn,
-} from '../Form'
+import type { FieldPath, FieldStateProps, TSchema, UseFormRegisterReturn } from '../Form'
 import { Form } from '../Form'
 import { Text } from '../Text'
 import type { TestIdProps } from '../types'
@@ -138,8 +132,7 @@ export const Checkbox = forwardRef(function Checkbox<
 
   const { store, removeSelected, addSelected } = useCheckboxContext()
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks, no-restricted-syntax
-  const formInstance = (form ?? Form.useFormContext()) as unknown as FormInstance<Schema>
+  const formInstance = Form.useFormContext(form)
 
   const { isSelected, field, onChange, name } = useStore(store, (state) => {
     const { insideGroup } = state
@@ -199,7 +192,9 @@ export const Checkbox = forwardRef(function Checkbox<
 
   return (
     <AriaCheckbox
-      ref={mergeRefs(ref, field.ref)}
+      ref={(el) => {
+        mergeRefs(ref, field.ref)(el)
+      }}
       {...props}
       inputRef={useMergedRef(checkboxRef, (input) => {
         // Hack to remove the `data-testid` attribute from the input element

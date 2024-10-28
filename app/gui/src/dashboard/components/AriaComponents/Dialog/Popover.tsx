@@ -86,7 +86,7 @@ export function Popover(props: PopoverProps) {
   utlities.useInteractOutside({
     ref: dialogRef,
     id: dialogId,
-    onInteractOutside: closeRef.current,
+    onInteractOutside: () => closeRef.current?.(),
   })
 
   return (

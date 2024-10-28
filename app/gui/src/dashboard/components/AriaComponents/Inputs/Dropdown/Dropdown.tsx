@@ -169,7 +169,9 @@ export const Dropdown = forwardRef(function Dropdown<T>(
   return (
     <FocusRing placement="outset">
       <div
-        ref={mergeRefs(ref, rootRef)}
+        ref={(el) => {
+          mergeRefs(ref, rootRef)(el)
+        }}
         onMouseDown={() => {
           isSelfMouseDownRef.current = true
           // `isFocused` cannot be used as `isFocusWithin` is set to `false` immediately before

@@ -7,8 +7,7 @@ import Spinner, * as spinnerModule from '#/components/Spinner'
 
 import type * as backendService from '#/services/Backend'
 import type Backend from '#/services/Backend'
-
-import * as useFetchVersionContent from './useFetchVersionContent'
+import { useFetchVersionContent } from './useFetchVersionContent'
 
 // =====================
 // === AssetDiffView ===
@@ -27,12 +26,12 @@ export function AssetDiffView(props: AssetDiffViewProps) {
   const { versionId, project, backend, latestVersionId } = props
   const { getText } = textProvider.useText()
 
-  const versionContent = useFetchVersionContent.useFetchVersionContent({
+  const versionContent = useFetchVersionContent({
     versionId,
     project,
     backend,
   })
-  const headContent = useFetchVersionContent.useFetchVersionContent({
+  const headContent = useFetchVersionContent({
     versionId: latestVersionId,
     project,
     backend,

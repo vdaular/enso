@@ -38,7 +38,7 @@ export const RADIO_GROUP_STYLES = twv.tv({
 })
 
 /** A radio group component. */
-// eslint-disable-next-line no-restricted-syntax
+
 export const RadioGroup = forwardRef(function RadioGroup<
   Schema extends formComponent.TSchema,
   TFieldName extends formComponent.FieldPath<Schema>,
@@ -74,7 +74,9 @@ export const RadioGroup = forwardRef(function RadioGroup<
 
   return (
     <aria.RadioGroup
-      ref={mergeRefs.mergeRefs(ref, field.ref)}
+      ref={(el) => {
+        mergeRefs.mergeRefs(ref, field.ref)(el)
+      }}
       {...aria.mergeProps<aria.RadioGroupProps>()(omit(radioGroupProps, 'validate'), {
         name: field.name,
         value: field.value,

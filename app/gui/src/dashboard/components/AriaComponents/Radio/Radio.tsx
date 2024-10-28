@@ -126,7 +126,9 @@ export const Radio = forwardRef(function Radio(
   return (
     <label
       {...aria.mergeProps<React.LabelHTMLAttributes<HTMLLabelElement>>()(hoverProps, labelProps)}
-      ref={mergeRefs.mergeRefs(labelRef, ref)}
+      ref={(el) => {
+        mergeRefs.mergeRefs(labelRef, ref)(el)
+      }}
       className={base()}
     >
       <input

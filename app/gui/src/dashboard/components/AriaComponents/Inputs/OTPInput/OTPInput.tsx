@@ -139,7 +139,9 @@ export const OTPInput = forwardRef(function OTPInput<
             },
           },
         )}
-        ref={mergeRefs(fieldProps.ref, inputRef, innerOtpInputRef)}
+        ref={(el) => {
+          mergeRefs(fieldProps.ref, inputRef, innerOtpInputRef)(el)
+        }}
         render={({ slots }) => {
           const sections = (() => {
             const items = []

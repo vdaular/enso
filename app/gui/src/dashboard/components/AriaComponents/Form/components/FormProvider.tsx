@@ -39,6 +39,7 @@ export function useFormContext<Schema extends types.TSchema>(
   if (form != null && 'control' in form) {
     return form
   } else {
+    // eslint-disable-next-line react-compiler/react-compiler
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const ctx = useContext(FormContext)
 
@@ -56,6 +57,7 @@ export function useOptionalFormContext<
   Schema extends types.TSchema,
 >(form?: Form): Form extends undefined ? FormInstance<Schema> | null : FormInstance<Schema> {
   try {
+    // eslint-disable-next-line react-compiler/react-compiler
     return useFormContext<Schema>(form)
   } catch {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion

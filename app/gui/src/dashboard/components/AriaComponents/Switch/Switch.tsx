@@ -120,7 +120,9 @@ export const Switch = forwardRef(function Switch<
       style={props.style}
     >
       <AriaSwitch
-        ref={mergeRefs(switchRef, fieldRef)}
+        ref={(el) => {
+          mergeRefs(switchRef, fieldRef)(el)
+        }}
         {...mergeProps<AriaSwitchProps>()(ariaSwitchProps, fieldProps, {
           defaultSelected: field.value,
           className: switchStyles(),

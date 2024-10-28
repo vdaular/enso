@@ -6,6 +6,7 @@ import * as React from 'react'
 
 import invariant from 'tiny-invariant'
 
+import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import * as portalProvider from './PortalProvider'
 import type * as types from './types'
 
@@ -14,12 +15,12 @@ import type * as types from './types'
  * @internal
  */
 export function usePortal(props: types.PortalProps) {
-  const { children, isDisabled = false, root = null, onMount } = props
+  const { children, isDisabled = false, root = null, onMount = () => {} } = props
 
-  const onMountRef = React.useRef(onMount)
   const portalContext = portalProvider.usePortalContext()
   const [mountRoot, setMountRoot] = React.useState<Element | null>(null)
-  onMountRef.current = onMount
+
+  const onMountEventCallback = useEventCallback(onMount)
 
   React.useEffect(() => {
     if (!isDisabled) {
@@ -37,9 +38,9 @@ export function usePortal(props: types.PortalProps) {
 
   React.useEffect(() => {
     if (isDisabled || mountRoot) {
-      onMountRef.current?.()
+      onMountEventCallback()
     }
-  }, [isDisabled, mountRoot])
+  }, [isDisabled, mountRoot, onMountEventCallback])
 
   return {
     isDisabled,
