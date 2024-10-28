@@ -9,6 +9,7 @@ import Standard.Base.Runtime.Managed_Resource.Managed_Resource
 import Standard.Base.Runtime.Ref.Ref
 
 from Standard.Table import Table, Match_Columns, Excel_Format, Excel_Range, Data_Formatter, Delimited_Format, Excel_Workbook, Value_Type
+from Standard.Table.Extensions.Excel_Extensions import all
 
 from Standard.Table.Errors import Invalid_Column_Names, Duplicate_Output_Column_Names, Invalid_Location, Range_Exceeded, Existing_Data, Column_Count_Mismatch, Column_Name_Mismatch, Empty_Sheet
 
@@ -1024,6 +1025,44 @@ add_specs suite_builder =
             table.at "MixDates" . to_vector . should_equal [(Date_Time.new 1997 7 25 22 23 28 millisecond=34), (Date_Time.new 1993 5 3), (Date_Time.new 2010 8 1), (Date_Time.new 1988 7 12), (Date_Time.new 2009 10 22 12 33 7 millisecond=157)]
             table.at "InvMixDates" . to_vector . should_equal [(Date_Time.new 1997 7 25), (Date_Time.new 1993 5 3 10 58 45 millisecond=980), (Date_Time.new 2010 8 1 17 9 29 millisecond=923), (Date_Time.new 1988 7 12 12 39 20 millisecond=185), (Date_Time.new 2009 10 22)]
             table.at "Mixed" . to_vector . should_equal [(Date.new 1997 7 25), (Date_Time.new 1993 5 3 10 58 45 millisecond=980), (Date_Time.new 2010 8 1 17 9 29 millisecond=923), (Time_Of_Day.new 18 39 24 millisecond=572), 85]
+
+        group_builder.specify "should be able to read dates before 1900-01-01 (treating 1899-12-31 as -1)" <|
+            table = (enso_project.data / "OlderDates.xlsx") . read ..Sheet
+            table.row_count . should_equal 15
+            table.column_names . should_equal ["Num","Date","Date13","NumVal"]
+            table.at "Date" . to_vector . should_equal [(Date.new 1899 12 28),(Date.new 1899 12 29),(Date.new 1899 12 30),(Date.new 1899 12 31),(Date.new 1900 1 1),(Date.new 1900 1 2),(Date.new 1900 1 3),(Date.new 1900 1 4),(Date.new 1900 1 5),(Date.new 1900 2 28),Nothing,(Date.new 1900 3 1),(Date.new 1900 3 2),(Date.new 1900 3 3),(Date.new 1900 3 4)]
+            table.at "Date13" . to_vector . should_equal [(Date_Time.new 1899 12 28 hour=13),(Date_Time.new 1899 12 29 hour=13),(Date_Time.new 1899 12 30 hour=13),(Date_Time.new 1899 12 31 hour=13),(Date_Time.new 1900 1 1 hour=13),(Date_Time.new 1900 1 2 hour=13),(Date_Time.new 1900 1 3 hour=13),(Date_Time.new 1900 1 4 hour=13),(Date_Time.new 1900 1 5 hour=13),(Date_Time.new 1900 2 28 hour=13),Nothing,(Date_Time.new 1900 3 1 hour=13),(Date_Time.new 1900 3 2 hour=13),(Date_Time.new 1900 3 3 hour=13),(Date_Time.new 1900 3 4 hour=13)]
+
+        group_builder.specify "should be able to write and then read dates before 1900-01-01 (treating 1899-12-31 as -1)" <|
+            numbers = [-100,-1,1,2,50,61,100]
+            dates = numbers.map n-> (Date.new 1899 12 31).date_add n ..Day
+            date_times = dates.map d-> d.to_date_time (Time_Of_Day.new 12 34 56)
+            table = Table.new [["Num", numbers], ["Date", dates], ["DateTimes", date_times]]
+            file = enso_project.data / "transient" / "TestOlderDates.xlsx"
+            file.delete_if_exists . should_succeed
+            table.write file . should_succeed
+            read_table = file.read ..Sheet
+            read_table.should_equal table
+
+        group_builder.specify "should be able to convert Excel dates from Integer to Date" <|
+            numbers = [-100,-1,1,2,50,61,100]
+            dates = [Date.new 1899 09 23, Date.new 1899 12 31, Date.new 1900 01 01, Date.new 1900 01 02, Date.new 1900 02 19, Date.new 1900 03 01, Date.new 1900 04 09]
+            parsed = numbers.map n-> Date.from_excel n
+            parsed . should_equal dates
+
+            Date.from_excel 0 . should_fail_with Illegal_Argument
+            Date.from_excel 60 . should_fail_with Illegal_Argument
+
+        group_builder.specify "should be able to convert Excel dates from Integer to Date" <|
+            numbers = [-100,-1,1,2,50,61,100]
+            dates = [Date.new 1899 09 23, Date.new 1899 12 31, Date.new 1900 01 01, Date.new 1900 01 02, Date.new 1900 02 19, Date.new 1900 03 01, Date.new 1900 04 09]
+            numbers_2 = numbers.map_with_index i->n-> n+(1+i*2)/24
+            date_times = dates.map_with_index i->d-> (d.to_date_time (Time_Of_Day.new hour=1+i*2))
+            parsed = numbers_2.map n-> Date_Time.from_excel n
+            parsed . should_equal date_times
+
+            Date_Time.from_excel 0.25 . should_fail_with Illegal_Argument
+            Date_Time.from_excel 60.45 . should_fail_with Illegal_Argument
 
         ci_pending = if Environment.get "CI" != Nothing then "This test takes a lot of time so it is disabled on CI."
         group_builder.specify "should be able to write and read a big XLSX file (>110MB)" pending=ci_pending <|

@@ -10,7 +10,7 @@ import Standard.Base.Network.HTTP.Request_Body.Request_Body
 import Standard.Base.Network.HTTP.Request_Error
 import Standard.Base.Network.Proxy.Proxy
 import Standard.Base.Runtime.Context
-from Standard.Base.Network.HTTP import resolve_headers
+from Standard.Base.Network.HTTP import _resolve_headers, get_follow_redirects, get_proxy, get_timeout, get_version
 
 from Standard.Test import all
 from Standard.Test.Execution_Context_Helpers import run_with_and_without_output
@@ -65,11 +65,11 @@ add_specs suite_builder =
     suite_builder.group "HTTP client" pending=pending_has_url group_builder->
         group_builder.specify "should create HTTP client with timeout setting" <|
             http = HTTP.new (timeout = (Duration.new seconds=30))
-            http.timeout.should_equal (Duration.new seconds=30)
+            (get_timeout http).should_equal (Duration.new seconds=30)
 
         group_builder.specify "should create HTTP client with follow_redirects setting" <|
             http = HTTP.new (follow_redirects = False)
-            http.follow_redirects.should_equal False
+            (get_follow_redirects http).should_equal False
 
             Test.with_retries <|
                 r = http.request (Request.new HTTP_Method.Get base_url_with_slash+"test_redirect")
@@ -80,12 +80,12 @@ add_specs suite_builder =
         group_builder.specify "should create HTTP client with proxy setting" <|
             proxy_setting = Proxy.Address "example.com" 80
             http = HTTP.new (proxy = proxy_setting)
-            http.proxy.should_equal proxy_setting
+            (get_proxy http).should_equal proxy_setting
 
         group_builder.specify "should create HTTP client with version setting" <|
             version_setting = HTTP_Version.HTTP_2
             http = HTTP.new (version = version_setting)
-            http.version.should_equal version_setting
+            (get_version http).should_equal version_setting
 
     url_get = base_url_with_slash.if_not_nothing <| base_url_with_slash + "get"
     suite_builder.group "fetch" pending=pending_has_url group_builder->
@@ -559,30 +559,30 @@ add_specs suite_builder =
     suite_builder.group "Header resolution" group_builder->
         group_builder.specify "Default content type and encoding" <|
             expected = [Header.content_type "text/plain; charset=UTF-8"]
-            resolve_headers (Request.new HTTP_Method.Get "" [] (Request_Body.Text "")) . should_equal_ignoring_order expected
+            _resolve_headers (Request.new HTTP_Method.Get "" [] (Request_Body.Text "")) . should_equal_ignoring_order expected
 
         group_builder.specify "Content type specified in body" <|
             expected = [Header.content_type "application/json; charset=UTF-8"]
-            resolve_headers (Request.new HTTP_Method.Get "" [] (Request_Body.Text "" content_type="application/json")) . should_equal_ignoring_order expected
+            _resolve_headers (Request.new HTTP_Method.Get "" [] (Request_Body.Text "" content_type="application/json")) . should_equal_ignoring_order expected
 
         group_builder.specify "Content type specified in header list" <|
             expected = [Header.content_type "application/json"]
-            resolve_headers (Request.new HTTP_Method.Get "" [Header.content_type "application/json"] (Request_Body.Text "")) . should_equal_ignoring_order expected
+            _resolve_headers (Request.new HTTP_Method.Get "" [Header.content_type "application/json"] (Request_Body.Text "")) . should_equal_ignoring_order expected
 
         group_builder.specify "Text encoding specified in body" <|
             expected = [Header.content_type "text/plain; charset=UTF-16LE"]
-            resolve_headers (Request.new HTTP_Method.Get "" [] (Request_Body.Text "" encoding=Encoding.utf_16_le)) . should_equal_ignoring_order expected
+            _resolve_headers (Request.new HTTP_Method.Get "" [] (Request_Body.Text "" encoding=Encoding.utf_16_le)) . should_equal_ignoring_order expected
 
         group_builder.specify "Can't specify content type in both places" <|
-            resolve_headers (Request.new HTTP_Method.Get "" [Header.content_type "application/json"] (Request_Body.Text "" content_type="text/plain")) . should_fail_with Illegal_Argument
+            _resolve_headers (Request.new HTTP_Method.Get "" [Header.content_type "application/json"] (Request_Body.Text "" content_type="text/plain")) . should_fail_with Illegal_Argument
 
         group_builder.specify "Custom header" <|
             expected = [Header.new "some" "header", Header.content_type "application/json; charset=UTF-8"]
-            resolve_headers (Request.new HTTP_Method.Get "" [Header.new "some" "header"] (Request_Body.Text "" content_type="application/json")) . should_equal_ignoring_order expected
+            _resolve_headers (Request.new HTTP_Method.Get "" [Header.new "some" "header"] (Request_Body.Text "" content_type="application/json")) . should_equal_ignoring_order expected
 
         group_builder.specify "Multiple content types in header list are ok" <|
             expected = [Header.content_type "application/json", Header.content_type "text/plain"]
-            resolve_headers (Request.new HTTP_Method.Get "" [Header.content_type "application/json", Header.content_type "text/plain"] (Request_Body.Text "")) . should_equal_ignoring_order expected
+            _resolve_headers (Request.new HTTP_Method.Get "" [Header.content_type "application/json", Header.content_type "text/plain"] (Request_Body.Text "")) . should_equal_ignoring_order expected
 
     suite_builder.group "Http Error handling" group_builder->
         group_builder.specify "should be able to handle request errors" <|

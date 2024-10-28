@@ -1,8 +1,8 @@
 package org.enso.table.write;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.function.Function;
 import org.apache.poi.ss.usermodel.Cell;
@@ -14,7 +14,6 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.enso.table.data.column.storage.BoolStorage;
 import org.enso.table.data.column.storage.Storage;
-import org.enso.table.data.column.storage.datetime.DateTimeStorage;
 import org.enso.table.data.column.storage.numeric.AbstractLongStorage;
 import org.enso.table.data.column.storage.numeric.DoubleStorage;
 import org.enso.table.data.table.Column;
@@ -24,16 +23,11 @@ import org.enso.table.error.ColumnNameMismatchException;
 import org.enso.table.error.ExistingDataException;
 import org.enso.table.error.InvalidLocationException;
 import org.enso.table.error.RangeExceededException;
-import org.enso.table.excel.ExcelHeaders;
-import org.enso.table.excel.ExcelRange;
-import org.enso.table.excel.ExcelRow;
-import org.enso.table.excel.ExcelSheet;
+import org.enso.table.excel.*;
 import org.enso.table.util.ColumnMapper;
 import org.enso.table.util.NameDeduplicator;
 
 public class ExcelWriter {
-  private static final double SECONDS_IN_A_DAY = 86400.0;
-
   private static Function<Object, String> ensoToTextCallback;
 
   public static Function<Object, String> getEnsoToTextCallback() {
@@ -499,9 +493,6 @@ public class ExcelWriter {
       cell.setCellValue(longStorage.getItem(j));
     } else if (storage instanceof BoolStorage boolStorage) {
       cell.setCellValue(boolStorage.getItem(j));
-    } else if (storage instanceof DateTimeStorage dateTimeStorage) {
-      cell.setCellValue(dateTimeStorage.getItem(j).toLocalDateTime());
-      cell.setCellStyle(getDateTimeStyle(workbook, "yyyy-MM-dd HH:mm:ss"));
     } else {
       Object value = storage.getItemBoxed(j);
       switch (value) {
@@ -509,16 +500,16 @@ public class ExcelWriter {
         case Boolean b -> cell.setCellValue(b);
         case Double d -> cell.setCellValue(d);
         case Long l -> cell.setCellValue(l);
-        case LocalDateTime ldt -> {
-          cell.setCellValue(ldt);
+        case ZonedDateTime zdt -> {
+          cell.setCellValue(ExcelUtils.toExcelDateTime(zdt));
           cell.setCellStyle(getDateTimeStyle(workbook, "yyyy-MM-dd HH:mm:ss"));
         }
         case LocalDate ld -> {
-          cell.setCellValue(ld);
+          cell.setCellValue(ExcelUtils.toExcelDateTime(ld));
           cell.setCellStyle(getDateTimeStyle(workbook, "yyyy-MM-dd"));
         }
         case LocalTime lt -> {
-          cell.setCellValue(lt.toSecondOfDay() / SECONDS_IN_A_DAY);
+          cell.setCellValue(ExcelUtils.toExcelDateTime(lt));
           cell.setCellStyle(getDateTimeStyle(workbook, "HH:mm:ss"));
         }
         default -> {

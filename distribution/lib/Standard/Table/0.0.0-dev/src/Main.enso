@@ -25,6 +25,7 @@ export project.Excel.Excel_Workbook.Excel_Workbook
 export project.Expression.expr
 
 export project.Extensions.Column_Vector_Extensions.to_column
+export project.Extensions.Excel_Extensions.from_excel
 export project.Extensions.Table_Conversions.from_objects
 export project.Extensions.Table_Conversions.parse_to_table
 export project.Extensions.Table_Conversions.to_table
