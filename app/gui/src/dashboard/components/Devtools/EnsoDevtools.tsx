@@ -24,6 +24,7 @@ import {
   useEnableVersionChecker,
   usePaywallDevtools,
   useSetEnableVersionChecker,
+  useShowDevtools,
 } from './EnsoDevtoolsProvider'
 
 import * as ariaComponents from '#/components/AriaComponents'
@@ -54,6 +55,9 @@ export function EnsoDevtools() {
   const { authQueryKey, session } = authProvider.useAuth()
   const queryClient = reactQuery.useQueryClient()
   const { getFeature } = billing.usePaywallFeatures()
+
+  const showDevtools = useShowDevtools()
+
   const { features, setFeature } = usePaywallDevtools()
   const enableVersionChecker = useEnableVersionChecker()
   const setEnableVersionChecker = useSetEnableVersionChecker()
@@ -65,6 +69,10 @@ export function EnsoDevtools() {
 
   const featureFlags = useFeatureFlags()
   const setFeatureFlags = useSetFeatureFlags()
+
+  if (!showDevtools) {
+    return null
+  }
 
   return (
     <Portal>

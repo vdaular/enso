@@ -21,7 +21,7 @@ import LoggerProvider, { type Logger } from '#/providers/LoggerProvider'
 
 import LoadingScreen from '#/pages/authentication/LoadingScreen'
 
-import { ReactQueryDevtools } from '#/components/Devtools'
+import { DevtoolsProvider, ReactQueryDevtools } from '#/components/Devtools'
 import { ErrorBoundary } from '#/components/ErrorBoundary'
 import { OfflineNotificationManager } from '#/components/OfflineNotificationManager'
 import { Suspense } from '#/components/Suspense'
@@ -113,21 +113,23 @@ export function run(props: DashboardProps) {
     reactDOM.createRoot(root).render(
       <React.StrictMode>
         <QueryClientProvider client={queryClient}>
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingScreen />}>
-              <OfflineNotificationManager>
-                <LoggerProvider logger={logger}>
-                  <HttpClientProvider httpClient={httpClient}>
-                    <UIProviders locale="en-US" portalRoot={portalRoot}>
-                      <App {...props} supportsDeepLinks={actuallySupportsDeepLinks} />
-                    </UIProviders>
-                  </HttpClientProvider>
-                </LoggerProvider>
-              </OfflineNotificationManager>
-            </Suspense>
-          </ErrorBoundary>
+          <DevtoolsProvider>
+            <ErrorBoundary>
+              <Suspense fallback={<LoadingScreen />}>
+                <OfflineNotificationManager>
+                  <LoggerProvider logger={logger}>
+                    <HttpClientProvider httpClient={httpClient}>
+                      <UIProviders locale="en-US" portalRoot={portalRoot}>
+                        <App {...props} supportsDeepLinks={actuallySupportsDeepLinks} />
+                      </UIProviders>
+                    </HttpClientProvider>
+                  </LoggerProvider>
+                </OfflineNotificationManager>
+              </Suspense>
+            </ErrorBoundary>
 
-          <ReactQueryDevtools />
+            <ReactQueryDevtools />
+          </DevtoolsProvider>
         </QueryClientProvider>
       </React.StrictMode>,
     )

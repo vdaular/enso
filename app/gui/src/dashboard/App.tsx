@@ -519,13 +519,11 @@ function AppRouter(props: AppRouterProps) {
                     <LocalBackendPathSynchronizer />
                     <VersionChecker />
                     {routes}
-                    {detect.IS_DEV_MODE && (
-                      <suspense.Suspense>
-                        <errorBoundary.ErrorBoundary>
-                          <devtools.EnsoDevtools />
-                        </errorBoundary.ErrorBoundary>
-                      </suspense.Suspense>
-                    )}
+                    <suspense.Suspense>
+                      <errorBoundary.ErrorBoundary>
+                        <devtools.EnsoDevtools />
+                      </errorBoundary.ErrorBoundary>
+                    </suspense.Suspense>
                   </errorBoundary.ErrorBoundary>
                 </DriveProvider>
               </InputBindingsProvider>
