@@ -424,6 +424,9 @@ add_specs suite_builder =
     suite_builder.group "SQLite_Format should allow connecting to SQLite files" group_builder->
         data = File_Connection.setup database_file
 
+        group_builder.teardown <|
+            data.teardown
+
         group_builder.specify "should recognise a SQLite database file" <|
             Auto_Detect.get_reading_format data.file . should_be_a SQLite_Format
 
