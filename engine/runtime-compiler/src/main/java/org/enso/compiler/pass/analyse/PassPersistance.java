@@ -143,7 +143,6 @@ public final class PassPersistance {
 
       var nextIdCounter = in.readInt();
       var g = new Graph(rootScope, nextIdCounter, links);
-      g.freeze();
       return g;
     }
 

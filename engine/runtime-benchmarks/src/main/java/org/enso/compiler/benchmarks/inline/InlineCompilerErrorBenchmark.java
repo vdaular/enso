@@ -80,8 +80,8 @@ public class InlineCompilerErrorBenchmark {
 
   @Benchmark
   public void expressionWithErrors(Blackhole blackhole) throws IOException {
-    try (InlineContextResource resource = mainInlineContextResourceFactory.create()) {
-      var tuppleOpt = compiler.runInline(expressionWithErrors, resource.inlineContext());
+    try (var inlineCtx = mainInlineContextResourceFactory.create()) {
+      var tuppleOpt = compiler.runInline(expressionWithErrors, inlineCtx);
       blackhole.consume(tuppleOpt);
     }
   }

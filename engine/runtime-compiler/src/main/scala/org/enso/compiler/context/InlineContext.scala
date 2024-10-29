@@ -25,9 +25,15 @@ case class InlineContext(
   freshNameSupply: Option[FreshNameSupply]     = None,
   passConfiguration: Option[PassConfiguration] = None,
   pkgRepo: Option[PackageRepository]           = None
-) {
+) extends AutoCloseable {
   def bindingsAnalysis(): BindingsMap = module.bindingsAnalysis()
   def getModule()                     = module.module
+
+  def close(): Unit = {
+    this.localScope
+      .foreach(_.scope.removeScopeFromParent())
+  }
+
 }
 object InlineContext {
 

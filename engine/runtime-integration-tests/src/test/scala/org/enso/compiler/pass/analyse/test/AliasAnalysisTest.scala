@@ -1,4 +1,4 @@
-package org.enso.compiler.test.pass.analyse
+package org.enso.compiler.pass.analyse.test
 
 import org.enso.compiler.Passes
 import org.enso.compiler.context.{FreshNameSupply, InlineContext, ModuleContext}

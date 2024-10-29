@@ -784,8 +784,6 @@ case object AliasAnalysis extends IRPass {
       parentScope.add(occurrence)
       if (!isConstructorNameInPatternContext && !name.isMethod) {
         graph.resolveLocalUsage(occurrence)
-      } else {
-        graph.resolveGlobalUsage(occurrence)
       }
     }
     name.updateMetadata(
