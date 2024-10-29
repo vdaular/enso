@@ -190,10 +190,19 @@ final class ChangesetBuilder[A: TextEditor: IndexedSource](
         val edit         = edits.dequeue()
         val locationEdit = ChangesetBuilder.toLocationEdit(edit, source)
         var invalidatedSet =
-          ChangesetBuilder.invalidated(tree, locationEdit.location, true)
+          ChangesetBuilder.invalidated(
+            tree,
+            locationEdit.location,
+            locationEdit.isNodeRemoved,
+            true
+          )
         if (invalidatedSet.isEmpty) {
-          invalidatedSet =
-            ChangesetBuilder.invalidated(tree, locationEdit.location, false)
+          invalidatedSet = ChangesetBuilder.invalidated(
+            tree,
+            locationEdit.location,
+            locationEdit.isNodeRemoved,
+            false
+          )
         }
         val newTree   = ChangesetBuilder.updateLocations(tree, locationEdit)
         val newSource = TextEditor[A].edit(source, edit)
@@ -260,8 +269,13 @@ object ChangesetBuilder {
     *
     * @param location the location of the edit
     * @param length the length of the inserted text
+    * @param isNodeRemoved the flag indicating that the edit removes a node
     */
-  private case class LocationEdit(location: Location, length: Int) {
+  private case class LocationEdit(
+    location: Location,
+    length: Int,
+    isNodeRemoved: Boolean
+  ) {
 
     /** The difference in length between the edited text and the inserted text.
       * Determines how much the rest of the text will be shifted after applying
@@ -409,19 +423,50 @@ object ChangesetBuilder {
   /** Calculate the invalidated subset of the tree affected by the edit by
     * comparing the source locations.
     *
+    * The `isNodeRemoved` argument covers the case when the user removes a
+    * single line, for example:
+    *
+    * {{{
+    * 0|main =
+    *  |
+    * 1|    x = 0
+    *  |    ^^^^^^
+    * 2|    y = 1
+    *  |^^^^
+    * 3|    y
+    * }}}
+    *
+    * In this case, when removing the line (1) `x = 0`, the expression `y = 1`
+    * on the line (2) should not be affected by the edit because it causes
+    * invalidation of all the subsequent expressions in the body of `main`
+    * function. Instead, the algorithm detects that only the `x` variable name
+    * was changed and later finds all its usages through the `DataflowAnalysis`
+    * metadata. Also note that we ignore the right hand side of the `x = ...`
+    * binding because the removal of rhs expression does not affect other
+    * expressions in the `main` body, while the usage of a common symbol, i.e.
+    * `foo`:
+    * {{{
+    *   x = foo
+    *   y = foo
+    * }}}
+    * will lead to the invalidation of the `y` expression as well (when looking
+    * for dynamic usages of the `foo` symbol) which is unwanted.
+    *
     * @param tree the source tree
     * @param edit the location of the edit
+    * @param isNodeRemoved flag indicating that the edit removes a single node
     * @return the invalidated nodes of the tree
     */
   private def invalidated(
     tree: Tree,
     edit: Location,
+    isNodeRemoved: Boolean,
     onlyLeafs: Boolean
   ): Tree = {
     val invalidated = mutable.TreeSet[ChangesetBuilder.Node]()
     tree.iterator.foreach { node =>
       if (!onlyLeafs || node.leaf) {
-        if (intersect(edit, node)) {
+        if (intersect(edit, node, isNodeRemoved)) {
           invalidated += node
           tree -= node
         }
@@ -438,12 +483,14 @@ object ChangesetBuilder {
     */
   private def intersect(
     edit: Location,
-    node: ChangesetBuilder.Node
+    node: ChangesetBuilder.Node,
+    isNodeRemoved: Boolean
   ): Boolean = {
-    intersect(edit, node.location)
+    if (isNodeRemoved) intersectWhenNodeRemoved(edit, node.location)
+    else intersect(edit, node.location)
   }
 
-  /** Check if the node location intersects the edit location.
+  /** Check if the node location intersects or borders with the edit location.
     *
     * @param edit location of the edit
     * @param node location of the node
@@ -456,7 +503,23 @@ object ChangesetBuilder {
     inside(edit.end, node)
   }
 
-  /** Check if the character position index is inside the location.
+  /** Check if the node location intersects the edit that removes the line.
+    *
+    * In this case we assume that the edit removes the binding
+    * `name = expression`, and we only interested in detecting the `name` part.
+    *
+    * @param edit location of the edit
+    * @param node location of the node
+    * @return true if the node and edit locations are intersecting
+    */
+  private def intersectWhenNodeRemoved(
+    edit: Location,
+    node: Location
+  ): Boolean = {
+    node.start == edit.start && node.end < edit.end
+  }
+
+  /** Check if the character position index is inside or on the border of the location.
     *
     * @param index the character position
     * @param location the location
@@ -476,7 +539,12 @@ object ChangesetBuilder {
     edit: TextEdit,
     source: A
   ): LocationEdit = {
-    LocationEdit(toLocation(edit, source), edit.text.length)
+    def isSameOffset: Boolean =
+      edit.range.end.character == edit.range.start.character
+    def isAcrossLines: Boolean =
+      edit.range.end.line > edit.range.start.line
+    val isNodeRemoved = edit.text.isEmpty && isSameOffset && isAcrossLines
+    LocationEdit(toLocation(edit, source), edit.text.length, isNodeRemoved)
   }
 
   /** Convert [[TextEdit]] location to [[Location]] in the provided source.

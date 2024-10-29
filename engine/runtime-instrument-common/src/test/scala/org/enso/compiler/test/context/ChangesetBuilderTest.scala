@@ -221,6 +221,27 @@ class ChangesetBuilderTest
       )
     }
 
+    "multiline remove node" in {
+      val code =
+        """x ->
+          |    y = foo 5
+          |    z = foo 7
+          |    y + x""".stripMargin.linesIterator.mkString("\n")
+      val edit = TextEdit(Range(Position(2, 4), Position(3, 4)), "")
+
+      val ir = code
+        .preprocessExpression(freshInlineContext)
+        .get
+        .asInstanceOf[Function.Lambda]
+
+      val secondLine = ir.body.children()(1).asInstanceOf[Expression.Binding]
+      val zName      = secondLine.name
+
+      invalidated(ir, code, edit) should contain theSameElementsAs Seq(
+        zName.getId
+      )
+    }
+
     "multiline insert line 1" in {
       val code =
         """x ->
@@ -434,6 +455,7 @@ class ChangesetBuilderTest
         atCode
       )
     }
+
   }
 
   def findIR(ir: IR, uuid: String): IR = {
