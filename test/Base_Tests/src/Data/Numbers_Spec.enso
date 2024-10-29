@@ -303,7 +303,7 @@ add_specs suite_builder =
             Float.parse "aaaa" l . should_fail_with Number_Parse_Error
 
         group_builder.specify "should parse correctly with format and/or locale" <|
-            Float.parse "123,456,789.87654" . should_equal 123456789.87654
+            Float.parse "123,456,789.87654" locale=Locale.default . should_equal 123456789.87654
             Float.parse "123.456.789,87654" locale=Locale.italy . should_equal 123456789.87654
 
             Float.parse "123,456,789.88" format="#,###.##" . should_equal 123456789.88
