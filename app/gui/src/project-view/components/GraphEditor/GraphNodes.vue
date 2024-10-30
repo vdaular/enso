@@ -17,7 +17,7 @@ import { stackItemsEqual } from 'ydoc-shared/languageServerTypes'
 
 const emit = defineEmits<{
   nodeOutputPortDoubleClick: [portId: AstId]
-  nodeDoubleClick: [nodeId: NodeId]
+  enterNode: [nodeId: NodeId]
   createNodes: [source: NodeId, options: NodeCreationOptions[]]
   toggleDocPanel: []
 }>()
@@ -75,7 +75,7 @@ const graphNodeSelections = shallowRef<HTMLElement>()
       @draggingCancelled="dragging.cancelDrag()"
       @outputPortClick="(event, port) => graphStore.createEdgeFromOutput(port, event)"
       @outputPortDoubleClick="(_event, port) => emit('nodeOutputPortDoubleClick', port)"
-      @doubleClick="emit('nodeDoubleClick', id)"
+      @enterNode="emit('enterNode', id)"
       @createNodes="emit('createNodes', id, $event)"
       @toggleDocPanel="emit('toggleDocPanel')"
       @setNodeColor="graphStore.overrideNodeColor(id, $event)"

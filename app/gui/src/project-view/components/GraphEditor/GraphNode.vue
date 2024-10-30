@@ -61,7 +61,7 @@ const emit = defineEmits<{
   replaceSelection: []
   outputPortClick: [event: PointerEvent, portId: AstId]
   outputPortDoubleClick: [event: PointerEvent, portId: AstId]
-  doubleClick: []
+  enterNode: []
   createNodes: [options: NodeCreationOptions[]]
   setNodeColor: [color: string | undefined]
   toggleDocPanel: []
@@ -377,7 +377,7 @@ const handleNodeClick = useDoubleClick(
     }
   },
   () => {
-    if (!significantMove.value) emit('doubleClick')
+    if (!significantMove.value) emit('enterNode')
   },
 ).handleClick
 
@@ -469,6 +469,8 @@ watchEffect(() => {
       :matchableNodeColors="matchableNodeColors"
       :documentationUrl="documentationUrl"
       :isRemovable="props.node.type === 'component'"
+      :isEnterable="graph.nodeCanBeEntered(nodeId)"
+      @enterNode="emit('enterNode')"
       @startEditing="startEditingNode"
       @startEditingComment="editingComment = true"
       @openFullMenu="openFullMenu"

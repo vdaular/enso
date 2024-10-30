@@ -15,6 +15,7 @@
 - [Size of Table Input Widget is preserved and restored after project
   re-opening][11435]
 - [Added application version to the title bar.][11446]
+- [Added "open grouped components" action to the context menu.][11447]
 
 [11151]: https://github.com/enso-org/enso/pull/11151
 [11271]: https://github.com/enso-org/enso/pull/11271
@@ -25,6 +26,7 @@
 [11398]: https://github.com/enso-org/enso/pull/11398
 [11435]: https://github.com/enso-org/enso/pull/11435
 [11446]: https://github.com/enso-org/enso/pull/11446
+[11447]: https://github.com/enso-org/enso/pull/11447
 
 #### Enso Standard Library
 

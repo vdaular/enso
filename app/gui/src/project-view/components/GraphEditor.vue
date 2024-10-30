@@ -726,7 +726,7 @@ const documentationEditorFullscreen = ref(false)
       <div ref="viewportNode" class="viewport" @click="handleClick">
         <GraphNodes
           @nodeOutputPortDoubleClick="handleNodeOutputPortDoubleClick"
-          @nodeDoubleClick="(id) => stackNavigator.enterNode(id)"
+          @enterNode="(id) => stackNavigator.enterNode(id)"
           @createNodes="createNodesFromSource"
           @toggleDocPanel="toggleRightDockHelpPanel"
         />

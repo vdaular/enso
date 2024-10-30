@@ -1,7 +1,6 @@
 import type { BreadcrumbItem } from '@/components/NavBreadcrumbs.vue'
 import { type GraphStore, type NodeId } from '@/stores/graph'
 import { type ProjectStore } from '@/stores/project'
-import { qnLastSegment, tryQualifiedName } from '@/util/qualifiedName'
 import { computed, onMounted, ref } from 'vue'
 import { methodPointerEquals, type StackItem } from 'ydoc-shared/languageServerTypes'
 
@@ -45,19 +44,8 @@ export function useStackNavigator(projectStore: ProjectStore, graphStore: GraphS
   }
 
   function enterNode(id: NodeId) {
-    const expressionInfo = graphStore.db.getExpressionInfo(id)
-    if (expressionInfo == null || expressionInfo.methodCall == null) {
-      console.debug('Cannot enter node that has no method call.')
-      return
-    }
-    const definedOnType = tryQualifiedName(expressionInfo.methodCall.methodPointer.definedOnType)
-    if (!projectStore.modulePath?.ok) {
-      console.warn('Cannot enter node while no module is open.')
-      return
-    }
-    const openModuleName = qnLastSegment(projectStore.modulePath.value)
-    if (definedOnType.ok && qnLastSegment(definedOnType.value) !== openModuleName) {
-      console.debug('Cannot enter node that is not defined on current module.')
+    if (!graphStore.nodeCanBeEntered(id)) {
+      console.warn('Trying to enter a node that cannot be entered.')
       return
     }
     projectStore.executionContext.push(id)
