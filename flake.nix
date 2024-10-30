@@ -30,7 +30,11 @@
             buildInputs = with pkgs; [
               # === Graal dependencies ===
               libxcrypt-legacy
-            ];
+            ] ++ (if !isOnLinux then [
+              # === macOS-specific dependencies ===
+              darwin.apple_sdk.frameworks.IOKit # Required by `enso-formatter`.
+              darwin.apple_sdk.frameworks.Security # Required by `enso-formatter`.
+            ] else [ ]);
 
             packages = with pkgs; [
               # === TypeScript dependencies ===
