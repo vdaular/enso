@@ -12,6 +12,8 @@
 - [Changed the way of adding new column in Table Input Widget][11388]. The
   "virtual column" is replaced with an explicit (+) button.
 - [New dropdown-based component menu][11398].
+- [Size of Table Input Widget is preserved and restored after project
+  re-opening][11435]
 
 [11151]: https://github.com/enso-org/enso/pull/11151
 [11271]: https://github.com/enso-org/enso/pull/11271
@@ -20,6 +22,7 @@
 [11383]: https://github.com/enso-org/enso/pull/11383
 [11388]: https://github.com/enso-org/enso/pull/11388
 [11398]: https://github.com/enso-org/enso/pull/11398
+[11435]: https://github.com/enso-org/enso/pull/11435
 
 #### Enso Standard Library
 

@@ -474,12 +474,14 @@ class ModulePersistence extends ObservableV2<{ removed: () => void }> {
 
   private static getIdMapToPersist(
     idMap: IdMap | undefined,
-    metadata: fileFormat.IdeMetadata['node'],
+    metadata: fileFormat.IdeMetadata,
   ): IdMap | undefined {
     if (idMap === undefined) {
       return
     } else {
-      const entriesIntersection = idMap.entries().filter(([, id]) => id in metadata)
+      const entriesIntersection = idMap
+        .entries()
+        .filter(([, id]) => id in metadata.node || id in (metadata.widget ?? {}))
       return new IdMap(entriesIntersection)
     }
   }
@@ -496,7 +498,7 @@ class ModulePersistence extends ObservableV2<{ removed: () => void }> {
     synced: EnsoFileParts,
     newCode: string | undefined,
     newIdMap: IdMap | undefined,
-    newMetadata: fileFormat.IdeMetadata['node'] | undefined,
+    newMetadata: fileFormat.IdeMetadata | undefined,
   ) {
     if (this.syncedContent == null || this.syncedVersion == null) return
 
@@ -508,14 +510,13 @@ class ModulePersistence extends ObservableV2<{ removed: () => void }> {
       json.stringify({
         ...this.syncedMeta,
         ide: {
-          ...this.syncedMeta.ide,
+          ...newMetadata,
           ...newSnapshot,
-          node: newMetadata,
         },
       })
     const idMapToPersist =
       (newIdMap || newMetadata) &&
-      ModulePersistence.getIdMapToPersist(newIdMap, newMetadata ?? this.syncedMeta.ide.node)
+      ModulePersistence.getIdMapToPersist(newIdMap, newMetadata ?? this.syncedMeta.ide)
     const newIdMapToPersistJson = idMapToPersist && serializeIdMap(idMapToPersist)
     const code = newCode ?? synced.code
     const newContent = combineFileParts({
@@ -566,7 +567,7 @@ class ModulePersistence extends ObservableV2<{ removed: () => void }> {
       if (!result.ok) return handleError(result.error)
       this.syncedContent = newContent
       this.syncedVersion = newVersion
-      if (newMetadata) this.syncedMeta.ide.node = newMetadata
+      if (newMetadata) this.syncedMeta.ide = newMetadata
       if (newCode) this.syncedCode = newCode
       if (newIdMapToPersistJson) this.syncedIdMap = newIdMapToPersistJson
       if (newMetadataJson) this.syncedMetaJson = newMetadataJson
@@ -583,6 +584,7 @@ class ModulePersistence extends ObservableV2<{ removed: () => void }> {
       const { code, idMapJson, metadataJson } = contentsReceived
       const metadata = fileFormat.tryParseMetadataOrFallback(metadataJson)
       const nodeMeta = Object.entries(metadata.ide.node)
+      const widgetMeta = Object.entries(metadata.ide.widget ?? {})
 
       let parsedSpans
       let parsedIdMap
@@ -646,7 +648,7 @@ class ModulePersistence extends ObservableV2<{ removed: () => void }> {
         (code !== this.syncedCode ||
           idMapJson !== this.syncedIdMap ||
           metadataJson !== this.syncedMetaJson) &&
-        nodeMeta.length !== 0
+        (nodeMeta.length !== 0 || widgetMeta.length !== 0)
       ) {
         const externalIdToAst = new Map<ExternalId, Ast.Ast>()
         astRoot.visitRecursiveAst(ast => {
@@ -671,6 +673,18 @@ class ModulePersistence extends ObservableV2<{ removed: () => void }> {
           const newColorOverride = meta.colorOverride
           if (oldColorOverride !== newColorOverride) metadata.set('colorOverride', newColorOverride)
         }
+        for (const [id, meta] of widgetMeta) {
+          if (typeof id !== 'string') continue
+          const ast = externalIdToAst.get(id as ExternalId)
+          if (!ast) {
+            missing.add(id)
+            continue
+          }
+          const widgetsMetadata = syncModule.getVersion(ast).mutableWidgetsMetadata()
+          for (const [widgetKey, widgetMeta] of Object.entries(meta)) {
+            widgetsMetadata.set(widgetKey, widgetMeta)
+          }
+        }
       }
 
       this.syncedCode = code
@@ -685,7 +699,7 @@ class ModulePersistence extends ObservableV2<{ removed: () => void }> {
         contentsReceived,
         this.syncedCode ?? undefined,
         unsyncedIdMap,
-        this.syncedMeta?.ide?.node,
+        this.syncedMeta?.ide,
       )
   }
 

@@ -29,11 +29,28 @@ import type {
 } from 'ag-grid-enterprise'
 import { computed, markRaw, ref } from 'vue'
 import type { ComponentExposed } from 'vue-component-type-helpers'
+import { z } from 'zod'
 
 const props = defineProps(widgetProps(widgetDefinition))
 const graph = useGraphStore()
 const suggestionDb = useSuggestionDbStore()
 const grid = ref<ComponentExposed<typeof AgGridTableView<RowData, any>>>()
+
+const configSchema = z.object({ size: z.object({ x: z.number(), y: z.number() }) })
+type Config = z.infer<typeof configSchema>
+
+const DEFAULT_CFG: Config = { size: { x: 200, y: 150 } }
+
+const config = computed(() => {
+  const configObj = props.input.value.widgetMetadata('WidgetTableEditor')
+  if (configObj == null) return DEFAULT_CFG
+  const parsed = configSchema.safeParse(configObj)
+  if (parsed.success) return parsed.data
+  else {
+    console.warn('Table Editor Widget: could not read config; invalid format: ', parsed.error)
+    return DEFAULT_CFG
+  }
+})
 
 const { rowData, columnDefs, moveColumn, moveRow, pasteFromClipboard } = useTableNewArgument(
   () => props.input,
@@ -131,15 +148,22 @@ const headerEditHandler = new HeaderEditing()
 
 // === Resizing ===
 
-const size = ref(new Vec2(200, 150))
 const graphNav = injectGraphNavigator()
+
+const size = computed(() => Vec2.FromXY(config.value.size))
 
 const clientBounds = computed({
   get() {
     return new Rect(Vec2.Zero, size.value.scale(graphNav.scale))
   },
   set(value) {
-    size.value = new Vec2(value.width / graphNav.scale, value.height / graphNav.scale)
+    props.onUpdate({
+      portUpdate: {
+        origin: props.input.portId,
+        metadataKey: 'WidgetTableEditor',
+        metadata: { size: { x: value.width / graphNav.scale, y: value.height / graphNav.scale } },
+      },
+    })
   },
 })
 

@@ -40,6 +40,7 @@ export interface ModuleUpdate {
   nodesUpdated: Set<AstId>
   updateRoots: Set<AstId>
   metadataUpdated: { id: AstId; changes: Map<string, unknown> }[]
+  widgetMetadataUpdated: Set<AstId>
   origin: Origin | undefined
 }
 
@@ -280,6 +281,12 @@ export class MutableModule implements Module {
           metadata.get(key as any),
         ])
         updateBuilder.updateMetadata(id, changes)
+      } else if (event.target.parent.parent.parent === this.nodes) {
+        // Updates to some specific widget's metadata
+        const id = event.target.parent.parent.get('id')
+        assertAstId(id)
+        if (!this.nodes.get(id)) continue
+        updateBuilder.updateWidgets(id)
       }
     }
     return updateBuilder.finish()
@@ -351,6 +358,7 @@ export class MutableModule implements Module {
     const metadata = new Y.Map() as unknown as FixedMap<object>
     const metadataFields = setAll(metadata, {
       externalId: externalId ?? newExternalId(),
+      widget: new Y.Map<unknown>(),
     })
     const fields = setAll(map_, {
       id,
@@ -437,7 +445,11 @@ class UpdateBuilder {
   readonly nodesAdded = new Set<AstId>()
   readonly nodesDeleted = new Set<AstId>()
   readonly nodesUpdated = new Set<AstId>()
-  readonly metadataUpdated: { id: AstId; changes: Map<string, unknown> }[] = []
+  readonly metadataUpdated: {
+    id: AstId
+    changes: Map<string, unknown>
+  }[] = []
+  readonly widgetMetadataUpdated = new Set<AstId>()
   readonly origin: Origin | undefined
 
   private readonly module: Module
@@ -471,13 +483,27 @@ class UpdateBuilder {
       }
     }
     if (fieldsChanged) this.nodesUpdated.add(id)
-    if (metadataChanges) this.metadataUpdated.push({ id, changes: metadataChanges })
+    if (metadataChanges) {
+      this.metadataUpdated.push({ id, changes: metadataChanges })
+      if (metadataChanges.has('widget')) {
+        this.widgetMetadataUpdated.add(id)
+      }
+    }
   }
 
   updateMetadata(id: AstId, changes: Iterable<readonly [string, unknown]>) {
     const changeMap = new Map<string, unknown>()
-    for (const [key, value] of changes) changeMap.set(key, value)
+    for (const [key, value] of changes) {
+      changeMap.set(key, value)
+      if (key === 'widget') {
+        this.widgetMetadataUpdated.add(id)
+      }
+    }
     this.metadataUpdated.push({ id, changes: changeMap })
+  }
+
+  updateWidgets(id: AstId) {
+    this.widgetMetadataUpdated.add(id)
   }
 
   deleteNode(id: AstId) {

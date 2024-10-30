@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-declaration-merging */
+import * as Y from 'yjs'
 import type {
   Identifier,
   IdentifierOrOperatorIdentifier,
@@ -53,6 +54,7 @@ export type AstId = string & { [brandAstId]: never }
 /** @internal */
 export interface MetadataFields {
   externalId: ExternalId
+  widget: Y.Map<unknown>
 }
 export interface NodeMetadataFields {
   position?: { x: number; y: number } | undefined
@@ -66,6 +68,7 @@ const nodeMetadataKeys = allKeys<NodeMetadataFields>({
 })
 export type NodeMetadata = FixedMapView<NodeMetadataFields & MetadataFields>
 export type MutableNodeMetadata = FixedMap<NodeMetadataFields & MetadataFields>
+
 /** @internal */
 interface RawAstFields {
   id: AstId
@@ -103,6 +106,16 @@ export abstract class Ast {
   get nodeMetadata(): NodeMetadata {
     const metadata = this.fields.get('metadata')
     return metadata as FixedMapView<NodeMetadataFields & MetadataFields>
+  }
+
+  /** Get metadata of all widgets assigned to this node. */
+  widgetsMetadata(): FixedMapView<Record<string, unknown>> {
+    return this.fields.get('metadata').get('widget')
+  }
+
+  /** Get metadata of given widget assigned to this node. */
+  widgetMetadata(widgetKey: string): DeepReadonly<unknown> | undefined {
+    return this.fields.get('metadata').get('widget').get(widgetKey)
   }
 
   /** Returns a JSON-compatible object containing all metadata properties. */
@@ -247,6 +260,16 @@ export abstract class MutableAst extends Ast {
   /** TODO: Add docs */
   setExternalId(id: ExternalId) {
     this.fields.get('metadata').set('externalId', id)
+  }
+
+  /** Set the widget's new metadata. */
+  setWidgetMetadata(widgetKey: string, widgetMetadata: unknown) {
+    this.fields.get('metadata').get('widget').set(widgetKey, widgetMetadata)
+  }
+
+  /** Get map of all widget's metadata. */
+  mutableWidgetsMetadata() {
+    return this.fields.get('metadata').get('widget')
   }
 
   /** TODO: Add docs */

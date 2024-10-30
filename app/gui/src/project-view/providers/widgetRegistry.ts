@@ -12,7 +12,7 @@ import type { WidgetEditHandlerParent } from './widgetRegistry/editHandler'
 export type WidgetComponent<T extends WidgetInput> = Component<WidgetProps<T>>
 
 export namespace WidgetInput {
-  /** TODO: Add docs */
+  /** Create a basic {@link WidgetInput } from AST node. */
   export function FromAst<A extends Ast.Ast | Ast.Token>(ast: A): WidgetInput & { value: A } {
     return {
       portId: ast.id,
@@ -20,7 +20,7 @@ export namespace WidgetInput {
     }
   }
 
-  /** TODO: Add docs */
+  /** Create a basic {@link WidgetInput } from AST node with enforced port. */
   export function FromAstWithPort<A extends Ast.Ast | Ast.Token>(
     ast: A,
   ): WidgetInput & { value: A } {
@@ -31,7 +31,7 @@ export namespace WidgetInput {
     }
   }
 
-  /** TODO: Add docs */
+  /** A string representation of widget's value - the code in case of AST value. */
   export function valueRepr(input: WidgetInput): string | undefined {
     if (typeof input.value === 'string') return input.value
     else return input.value?.code()
@@ -56,24 +56,24 @@ export namespace WidgetInput {
       isPlaceholder(input) || input.value instanceof nodeType
   }
 
-  /** TODO: Add docs */
+  /** Check if input's value is existing AST node (not placeholder or token). */
   export function isAst(input: WidgetInput): input is WidgetInput & { value: Ast.Ast } {
     return input.value instanceof Ast.Ast
   }
 
-  /** Rule out token inputs. */
+  /** Check if input's value is existing AST node or placeholder. Rule out token inputs. */
   export function isAstOrPlaceholder(
     input: WidgetInput,
   ): input is WidgetInput & { value: Ast.Ast | string | undefined } {
     return isPlaceholder(input) || isAst(input)
   }
 
-  /** TODO: Add docs */
+  /** Check if input's value is an AST token. */
   export function isToken(input: WidgetInput): input is WidgetInput & { value: Ast.Token } {
     return input.value instanceof Ast.Token
   }
 
-  /** TODO: Add docs */
+  /** Check if input's value is an AST which potentially may be a function call. */
   export function isFunctionCall(
     input: WidgetInput,
   ): input is WidgetInput & { value: Ast.App | Ast.Ident | Ast.PropertyAccess | Ast.OprApp } {
@@ -163,15 +163,18 @@ export interface WidgetProps<T> {
  * port may not represent any existing AST node) with `edit` containing any additional modifications
  * (like inserting necessary imports).
  *
+ * The same way widgets may set their metadata (as this is also technically an AST modification).
+ * Every widget type should set it's name as `metadataKey`.
+ *
  * The handlers interested in a specific port update should apply it using received edit. The edit
  * is committed in {@link NodeWidgetTree}.
  */
 export interface WidgetUpdate {
   edit?: MutableModule | undefined
-  portUpdate?: {
-    value: Ast.Owned | string | undefined
-    origin: PortId
-  }
+  portUpdate?: { origin: PortId } & (
+    | { value: Ast.Owned | string | undefined }
+    | { metadataKey: string; metadata: unknown }
+  )
 }
 
 /**

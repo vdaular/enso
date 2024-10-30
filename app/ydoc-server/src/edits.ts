@@ -38,7 +38,7 @@ const MAX_SIZE_FOR_NORMAL_DIFF = 30000
 interface AppliedUpdates {
   newCode: string | undefined
   newIdMap: IdMap | undefined
-  newMetadata: fileFormat.IdeMetadata['node'] | undefined
+  newMetadata: fileFormat.IdeMetadata | undefined
 }
 
 /** Return an object containing updated versions of relevant fields, given an update payload. */
@@ -49,7 +49,7 @@ export function applyDocumentUpdates(
 ): AppliedUpdates {
   const codeChanged = update.nodesUpdated.size || update.nodesAdded.size || update.nodesDeleted.size
   let idsChanged = false
-  let metadataChanged = false
+  let metadataChanged = update.widgetMetadataUpdated.size > 0
   for (const { changes } of update.metadataUpdated) {
     for (const [key] of changes) {
       if (key === 'externalId') {
@@ -63,7 +63,7 @@ export function applyDocumentUpdates(
 
   let newIdMap = undefined
   let newCode = undefined
-  let newMetadata = undefined
+  let newMetadata: fileFormat.IdeMetadata | undefined = undefined
 
   const syncModule = new MutableModule(doc.ydoc)
   const root = syncModule.root()
@@ -76,18 +76,25 @@ export function applyDocumentUpdates(
   if (codeChanged || idsChanged || metadataChanged) {
     // Update the metadata object.
     // Depth-first key order keeps diffs small.
-    newMetadata = {} satisfies fileFormat.IdeMetadata['node']
+    newMetadata = { node: {}, widget: {} }
     root.visitRecursiveAst(ast => {
       let pos = ast.nodeMetadata.get('position')
       const vis = ast.nodeMetadata.get('visualization')
       const colorOverride = ast.nodeMetadata.get('colorOverride')
       if (vis && !pos) pos = { x: 0, y: 0 }
       if (pos) {
-        newMetadata![ast.externalId] = {
+        newMetadata!.node[ast.externalId] = {
           position: { vector: [Math.round(pos.x), Math.round(-pos.y)] },
           visualization: vis && translateVisualizationToFile(vis),
           colorOverride,
         }
+      }
+      const widgets = ast.widgetsMetadata()
+      if (!widgets.entries().next().done) {
+        if (newMetadata!.widget == null) newMetadata!.widget = {}
+        newMetadata!.widget[ast.externalId] = Object.fromEntries(
+          widgets.entries() as IterableIterator<[string, Record<string, unknown>]>,
+        )
       }
     })
   }

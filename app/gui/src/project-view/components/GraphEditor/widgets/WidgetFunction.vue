@@ -82,6 +82,11 @@ const innerInput = computed(() => {
 function handleArgUpdate(update: WidgetUpdate): boolean {
   const app = application.value
   if (update.portUpdate && app instanceof ArgumentApplication) {
+    if (!('value' in update.portUpdate)) {
+      if (!Ast.isAstId(update.portUpdate.origin))
+        console.error('Tried to set metadata on arg placeholder. This is not implemented yet!')
+      return false
+    }
     const { value, origin } = update.portUpdate
     const edit = update.edit ?? graph.startEdit()
     // Find the updated argument by matching origin port/expression with the appropriate argument.
