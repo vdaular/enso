@@ -2,7 +2,17 @@
 
 import type { ObservableV2 } from 'lib0/observable'
 
+/** Possible events which can be emitted by Observable. */
 export type Events<O extends ObservableV2<any>> = O extends ObservableV2<infer E> ? E : never
+
+/** Validate if a list of arguments covers all variants of the union type. */
+export function stringUnionToArray<T>() {
+  return <U extends NonEmptyArray<T>>(...elements: MustInclude<T, U>) => elements
+}
+
+type ValueOf<T> = T[keyof T]
+type NonEmptyArray<T> = [T, ...T[]]
+type MustInclude<T, U extends T[]> = [T] extends [ValueOf<U>] ? U : never
 
 /**
  * Returns promise which will resolve on the next event. The promise will have the event's

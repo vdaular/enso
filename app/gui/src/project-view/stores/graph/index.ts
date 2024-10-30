@@ -22,8 +22,9 @@ import { isAstId, isIdentifier } from '@/util/ast/abstract'
 import { RawAst, visitRecursive } from '@/util/ast/raw'
 import { reactiveModule } from '@/util/ast/reactive'
 import { partition } from '@/util/data/array'
+import { Events, stringUnionToArray } from '@/util/data/observable'
 import { Rect } from '@/util/data/rect'
-import { Err, Ok, mapOk, unwrap, type Result } from '@/util/data/result'
+import { Err, mapOk, Ok, unwrap, type Result } from '@/util/data/result'
 import { Vec2 } from '@/util/data/vec2'
 import { normalizeQualifiedName, qnLastSegment, tryQualifiedName } from '@/util/qualifiedName'
 import { useWatchContext } from '@/util/reactivity'
@@ -58,6 +59,7 @@ import type {
   VisualizationMetadata,
 } from 'ydoc-shared/yjsModel'
 import { defaultLocalOrigin, sourceRangeKey, visMetadataEquals } from 'ydoc-shared/yjsModel'
+import { UndoManager } from 'yjs'
 
 const FALLBACK_BINDING_PREFIX = 'node'
 
@@ -364,6 +366,29 @@ export const { injectFn: useGraphStore, provideFn: provideGraphStore } = createC
       })
     }
 
+    const undoManagerStatus = reactive({
+      canUndo: false,
+      canRedo: false,
+      update(m: UndoManager) {
+        this.canUndo = m.canUndo()
+        this.canRedo = m.canRedo()
+      },
+    })
+    watch(
+      () => proj.module?.undoManager,
+      (m) => {
+        if (m) {
+          const update = () => undoManagerStatus.update(m)
+          const events = stringUnionToArray<keyof Events<UndoManager>>()(
+            'stack-item-added',
+            'stack-item-popped',
+            'stack-cleared',
+            'stack-item-updated',
+          )
+          events.forEach((event) => m.on(event, update))
+        }
+      },
+    )
     const undoManager = {
       undo() {
         proj.module?.undoManager.undo()
@@ -374,6 +399,8 @@ export const { injectFn: useGraphStore, provideFn: provideGraphStore } = createC
       undoStackBoundary() {
         proj.module?.undoManager.stopCapturing()
       },
+      canUndo: computed(() => undoManagerStatus.canUndo),
+      canRedo: computed(() => undoManagerStatus.canRedo),
     }
 
     function setNodePosition(nodeId: NodeId, position: Vec2) {

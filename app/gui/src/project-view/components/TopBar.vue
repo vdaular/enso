@@ -3,6 +3,7 @@ import ExtendedMenu from '@/components/ExtendedMenu.vue'
 import NavBreadcrumbs from '@/components/NavBreadcrumbs.vue'
 import RecordControl from '@/components/RecordControl.vue'
 import SelectionMenu from '@/components/SelectionMenu.vue'
+import UndoRedoButtons from './UndoRedoButtons.vue'
 
 const showColorPicker = defineModel<boolean>('showColorPicker', { required: true })
 const showCodeEditor = defineModel<boolean>('showCodeEditor', { required: true })
@@ -24,6 +25,7 @@ const emit = defineEmits<{
   <div class="TopBar">
     <NavBreadcrumbs />
     <RecordControl />
+    <UndoRedoButtons />
     <Transition name="selection-menu">
       <SelectionMenu
         v-if="componentsSelected > 1"
