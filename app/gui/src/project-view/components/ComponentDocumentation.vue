@@ -2,12 +2,12 @@
 import DocumentationPanel from '@/components/DocumentationPanel.vue'
 import { injectGraphSelection } from '@/providers/graphSelection'
 import { useGraphStore } from '@/stores/graph'
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import type { SuggestionId } from 'ydoc-shared/languageServerTypes/suggestions'
-import { Err, Ok } from 'ydoc-shared/util/data/result'
+import { Err, Ok, unwrapOr } from 'ydoc-shared/util/data/result'
 
-const props = defineProps<{ displayedSuggestionId: SuggestionId | null }>()
-const emit = defineEmits<{ 'update:displayedSuggestionId': [SuggestionId] }>()
+// A displayed component can be overridren by this model, e.g. when the user clicks links in the documenation.
+const overrideDisplayed = defineModel<SuggestionId | null>({ default: null })
 const selection = injectGraphSelection()
 const graphStore = useGraphStore()
 
@@ -19,20 +19,20 @@ function docsForSelection() {
   return Ok(suggestionId)
 }
 
-const displayedId = computed(() =>
-  props.displayedSuggestionId != null ? Ok(props.displayedSuggestionId) : docsForSelection(),
-)
+const docs = computed(() => docsForSelection())
+// When the selection changes, we cancel the displayed suggestion override that can be in place.
+watch(docs, (_) => (overrideDisplayed.value = null))
+
+const displayedId = computed(() => overrideDisplayed.value ?? unwrapOr(docs.value, null))
 </script>
 
 <template>
   <DocumentationPanel
-    v-if="displayedId?.ok"
-    :selectedEntry="displayedId.value"
-    @update:selectedEntry="emit('update:displayedSuggestionId', $event)"
+    v-if="displayedId"
+    :selectedEntry="displayedId"
+    @update:selectedEntry="overrideDisplayed = $event"
   />
-  <div v-else-if="displayedId?.ok === false" class="help-placeholder">
-    {{ displayedId.error.payload }}.
-  </div>
+  <div v-else-if="!displayedId && !docs.ok" class="help-placeholder">{{ docs.error.payload }}.</div>
 </template>
 
 <style scoped>

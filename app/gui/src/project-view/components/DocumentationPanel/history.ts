@@ -8,47 +8,59 @@ export class HistoryStack {
   private index: Ref<number>
   public current: ComputedRef<SuggestionId | undefined>
 
-  /** TODO: Add docs */
+  /**
+   * Initializes the history stack.
+   */
   constructor() {
     this.stack = reactive([])
     this.index = ref(0)
     this.current = computed(() => this.stack[this.index.value] ?? undefined)
   }
 
-  /** TODO: Add docs */
+  /**
+   * Resets the history stack to contain only the current suggestion.
+   * @param current - The current suggestion ID to reset the stack with.
+   */
   public reset(current: SuggestionId) {
     this.stack.length = 0
     this.stack.push(current)
     this.index.value = 0
   }
 
-  /** TODO: Add docs */
+  /**
+   * Adds a new suggestion ID to the history stack, removing any forward history.
+   * @param id - The suggestion ID to record.
+   */
   public record(id: SuggestionId) {
     this.stack.splice(this.index.value + 1)
     this.stack.push(id)
     this.index.value = this.stack.length - 1
   }
 
-  /** TODO: Add docs */
+  /**
+   * Moves the history index forward by one step if possible.
+   */
   public forward() {
     if (this.canGoForward()) {
       this.index.value += 1
     }
   }
 
-  /** TODO: Add docs */
+  /**
+   * Navigates backward in the history if possible.
+   */
   public backward() {
     if (this.canGoBackward()) {
       this.index.value -= 1
     }
   }
 
-  /** TODO: Add docs */
+  /** @returns whether or not it is possible to navigate back in history from current position. */
   public canGoBackward(): boolean {
     return this.index.value > 0
   }
 
-  /** TODO: Add docs */
+  /** @returns whether or not it is possible to navigate forward in history from current position. */
   public canGoForward(): boolean {
     return this.index.value < this.stack.length - 1
   }
