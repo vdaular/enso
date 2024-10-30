@@ -44,7 +44,7 @@ export async function readEnvironmentFromFile() {
     if (!isProduction || entries.length > 0) {
       Object.assign(process.env, variables)
     }
-    process.env.ENSO_CLOUD_DASHBOARD_VERSION ??= buildInfo.version
+    process.env.ENSO_CLOUD_DASHBOARD_VERSION ??= buildInfo.version ?? '0.0.0-dev'
     process.env.ENSO_CLOUD_DASHBOARD_COMMIT_HASH ??= buildInfo.commit
   } catch (error) {
     process.env.ENSO_CLOUD_DASHBOARD_VERSION ??= buildInfo.version
