@@ -1,5 +1,8 @@
 package org.enso.interpreter.caches;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
@@ -29,9 +32,13 @@ public class HelloWorldCacheTest {
     // the second run must read Hello_World from its .ir file!
     var secondMsgs = executeOnce(helloWorld);
     assertTrue("Contains hello world:\n" + secondMsgs, secondMsgs.contains("Hello World"));
-    assertTrue(
+    assertThat(
         "Properly deserialized:\n" + secondMsgs,
-        secondMsgs.contains("Deserializing module Hello_World from IR file: true"));
+        secondMsgs,
+        allOf(
+            containsString("Deserializing module"),
+            containsString("Hello_World"),
+            containsString("from IR file: true")));
   }
 
   private static String executeOnce(File src) throws Exception {

@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.enso.common.MethodNames;
 import org.enso.compiler.PackageRepository;
+import org.enso.editions.LibraryName;
 import org.enso.interpreter.EnsoLanguage;
 import org.enso.interpreter.runtime.EnsoContext;
 import org.enso.interpreter.runtime.Module;
@@ -151,7 +152,15 @@ public final class TopLevelScope implements EnsoObject {
           Types.extractArguments(arguments, String.class, String.class);
       QualifiedName qualName = QualifiedName.fromString(args.getFirst());
       File location = new File(args.getSecond());
-      Module module = new Module(qualName, null, context.getTruffleFile(location));
+      var libName = LibraryName.fromModuleName(qualName.toString());
+      Package<TruffleFile> pkg = null;
+      if (libName.isDefined()) {
+        var pkgOpt = context.getPackageRepository().getPackageForLibraryJava(libName.get());
+        if (pkgOpt.isPresent()) {
+          pkg = pkgOpt.get();
+        }
+      }
+      Module module = new Module(qualName, pkg, context.getTruffleFile(location));
       scope.packageRepository.registerModuleCreatedInRuntime(module.asCompilerModule());
       return module;
     }

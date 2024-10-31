@@ -1,5 +1,6 @@
 package org.enso.compiler.test.semantic
 
+import com.oracle.truffle.api.TruffleFile
 import org.enso.compiler.core.Implicits.AsMetadata
 import org.enso.compiler.core.ir.{Module, ProcessingPass, Warning}
 import org.enso.compiler.core.ir.expression.errors
@@ -11,17 +12,18 @@ import org.enso.interpreter.runtime
 import org.enso.interpreter.runtime.EnsoContext
 import org.enso.persist.Persistance
 import org.enso.pkg.QualifiedName
+import org.enso.pkg.Package
 import org.enso.common.LanguageInfo
-import org.enso.common.MethodNames
 import org.enso.compiler.phase.exports.Node
 import org.enso.common.RuntimeOptions
+import org.enso.test.utils.{ContextUtils, ProjectUtils}
 import org.graalvm.polyglot.{Context, Engine}
-import org.scalatest.BeforeAndAfter
+import org.scalatest.{BeforeAndAfter}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
 import java.io.ByteArrayOutputStream
-import java.nio.file.Paths
+import java.nio.file.{Files, Path, Paths}
 import java.util.logging.Level
 import java.io.IOException
 
@@ -35,12 +37,17 @@ class ImportExportTest
     with BeforeAndAfter {
   private val out = new ByteArrayOutputStream()
 
+  private val namespace   = "local"
+  private val packageName = "My_Package"
+  private val packageQualifiedName =
+    QualifiedName.fromString(namespace + "." + packageName)
+
   private val engine = Engine
     .newBuilder("enso")
     .allowExperimentalOptions(true)
     .build()
 
-  private val ctx = Context
+  private val ctxBldr = Context
     .newBuilder(LanguageInfo.ID)
     .engine(engine)
     .allowExperimentalOptions(true)
@@ -51,7 +58,7 @@ class ImportExportTest
     .option(RuntimeOptions.LOG_LEVEL, Level.WARNING.getName())
     .option(RuntimeOptions.DISABLE_IR_CACHES, "true")
     .option(RuntimeOptions.STRICT_ERRORS, "false")
-    .logHandler(System.err)
+    .logHandler(out)
     .option(
       RuntimeOptions.LANGUAGE_HOME_OVERRIDE,
       Paths
@@ -60,23 +67,34 @@ class ImportExportTest
         .getAbsolutePath
     )
     .option(RuntimeOptions.EDITION_OVERRIDE, "0.0.0-dev")
-    .build()
 
-  private val langCtx: EnsoContext = ctx
-    .getBindings(LanguageInfo.ID)
-    .invokeMember(MethodNames.TopScope.LEAK_CONTEXT)
-    .asHostObject[EnsoContext]()
+  private var ctx: Context              = _
+  private var langCtx: EnsoContext      = _
+  private var tmpDir: Path              = _
+  private var pkg: Package[TruffleFile] = _
 
-  private val namespace   = "my_pkg"
-  private val packageName = "My_Package"
-  private val packageQualifiedName =
-    QualifiedName.fromString(namespace + "." + packageName)
+  before {
+    // Create temp dir with skeleton project structure. In the tests, we will create
+    // synthetic modules that will be part of this project.
+    tmpDir = Files.createTempDirectory("enso-test")
+    ProjectUtils.createProject(packageName, "main = 42", tmpDir)
+    ctxBldr.option(RuntimeOptions.PROJECT_ROOT, tmpDir.toAbsolutePath.toString)
+    ctx     = ctxBldr.build()
+    langCtx = ContextUtils.leakContext(ctx)
+    langCtx.getPackageRepository.getMainProjectPackage shouldBe defined
+    pkg = langCtx.getPackageRepository.getMainProjectPackage.get
+    ctx.enter()
+  }
 
-  langCtx.getPackageRepository.registerSyntheticPackage(namespace, packageName)
+  after {
+    ctx.leave()
+    out.reset()
+    ProjectUtils.deleteRecursively(tmpDir)
+  }
 
   implicit private class CreateModule(moduleCode: String) {
     def createModule(moduleName: QualifiedName): runtime.Module = {
-      val module = new runtime.Module(moduleName, null, moduleCode)
+      val module = new runtime.Module(moduleName, pkg, moduleCode)
       langCtx.getPackageRepository.registerModuleCreatedInRuntime(
         module.asCompilerModule()
       )
@@ -112,15 +130,6 @@ class ImportExportTest
     sortedCompilerModules.map(
       org.enso.interpreter.runtime.Module.fromCompilerModule
     )
-  }
-
-  before {
-    ctx.enter()
-  }
-
-  after {
-    ctx.leave()
-    out.reset()
   }
 
   "Import resolution with just two modules" should {
