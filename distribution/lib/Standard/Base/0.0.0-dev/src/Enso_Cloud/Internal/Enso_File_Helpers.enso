@@ -6,6 +6,7 @@ import project.Data.Dictionary.Dictionary
 import project.Data.Hashset.Hashset
 import project.Data.Json.Invalid_JSON
 import project.Data.Json.JS_Object
+import project.Data.Numbers.Integer
 import project.Data.Text.Text
 import project.Data.Vector.Vector
 import project.Enso_Cloud.Enso_File.Enso_Asset_Type
@@ -18,28 +19,27 @@ import project.Error.Error
 import project.Errors.File_Error.File_Error
 import project.Errors.Illegal_Argument.Illegal_Argument
 import project.Errors.Illegal_State.Illegal_State
+import project.Network.HTTP.HTTP
 import project.Network.HTTP.HTTP_Method.HTTP_Method
+import project.Network.HTTP.Request_Body.Request_Body
 import project.Network.HTTP.Request_Error
 import project.Network.URI.URI
 import project.Nothing.Nothing
 import project.Random.Random
+import project.Runtime
 import project.System.File.File
+import project.System.File.File_Access.File_Access
 import project.System.Output_Stream.Output_Stream
 from project.Data.Boolean import Boolean, False, True
 from project.Data.Text.Extensions import all
 from project.Enso_Cloud.Data_Link_Helpers import data_link_encoding, data_link_extension
 from project.Enso_Cloud.Public_Utils import get_required_field
 
+polyglot java import java.lang.Thread
+
 ## PRIVATE
 upload_file (local_file : File) (destination : Enso_File) (replace_existing : Boolean) -> Enso_File =
-    result = perform_upload destination replace_existing [local_file, destination]
-    result.catch Enso_Cloud_Error error->
-        is_source_file_not_found = case error of
-            Enso_Cloud_Error.Connection_Error cause -> case cause of
-                request_error : Request_Error -> request_error.error_type == 'java.io.FileNotFoundException'
-                _ -> False
-            _ -> False
-        if is_source_file_not_found then Error.throw (File_Error.Not_Found local_file) else result
+    perform_upload destination replace_existing [local_file, destination]
 
 ## PRIVATE
    A helper function that gathers the common logic for checking existence of
@@ -73,26 +73,58 @@ generic_create_asset (destination : Enso_File) (allow_existing : Boolean) (creat
 
 ## PRIVATE
    `generate_request_body_and_result` should return a pair,
-   where the first element is the request body and the second element is the result to be returned.
+   where the first element is the file to be uploaded and the second element is the result to be returned.
    It is executed lazily, only after all pre-conditions are successfully met.
 perform_upload (destination : Enso_File) (allow_existing : Boolean) (~generate_request_body_and_result) =
     generic_create_asset destination allow_existing parent_directory_asset-> existing_asset-> error_handlers->
         if existing_asset.is_nothing.not && existing_asset.asset_type != Enso_Asset_Type.File then Error.throw (Illegal_Argument.Error "The destination must be a path to a file, not "+existing_asset.asset_type.to_text+".") else
-            existing_asset_id = existing_asset.if_not_nothing <| existing_asset.id
             file_name = destination.name
-            base_uri = URI.from Utils.files_api
-                . add_query_argument "parent_directory_id" parent_directory_asset.id
-                . add_query_argument "file_name" file_name
-            full_uri = case existing_asset_id of
-                Nothing -> base_uri
-                _ -> base_uri . add_query_argument "file_id" existing_asset_id
+            base_uri = (URI.from Utils.files_api) / "upload"
+
             pair = generate_request_body_and_result
+            payload = pair.first : File
+            result = pair.second
+            file_size = payload.size
+
             Asset_Cache.invalidate destination
-            response = Utils.http_request_as_json HTTP_Method.Post full_uri pair.first error_handlers=error_handlers
-            response.if_not_error <|
-                id = get_required_field "id" response expected_type=Text
-                Asset_Cache.update destination (Existing_Enso_Asset.new id file_name) . if_not_error <|
-                    pair.second
+            upload_start_payload = JS_Object.from_pairs [["fileName", file_name], ["size", file_size]]
+            upload_setup = Utils.http_request_as_json HTTP_Method.Post (base_uri / "start") upload_start_payload error_handlers=error_handlers
+
+            upload_setup.if_not_error <|
+                presigned_urls = get_required_field "presignedUrls" upload_setup expected_type=Vector
+
+                # Metadata to be passed to `upload/end`
+                upload_id = get_required_field "uploadId" upload_setup expected_type=Text
+                source_path = get_required_field "sourcePath" upload_setup expected_type=Text
+
+                # Currently we upload chunks one-by-one, in the future this could be done in parallel.
+                chunk_size = (file_size / presigned_urls.length).ceil
+                parts = payload.with_input_stream [File_Access.Read] input_stream->
+                    presigned_urls.map_with_index i-> part_url->
+                        chunk_bytes = input_stream.read_n_bytes chunk_size
+                        request_body = Request_Body.Byte_Array chunk_bytes
+                        response = _send_chunk_with_retries part_url request_body
+                        e_tag = response.get_header "ETag" if_missing=(Error.throw (Illegal_State.Error "The ETag header is missing in the multipart upload response."))
+                        JS_Object.from_pairs [["partNumber", i + 1], ["eTag", e_tag]]
+
+                upload_end_payload = JS_Object.from_pairs <|
+                    [["uploadId", upload_id], ["sourcePath", source_path]]
+                        + [["parts", parts]]
+                        + [["fileName", file_name], ["parentDirectoryId", parent_directory_asset.id]]
+                        + (if existing_asset.is_nothing.not then [["assetId", existing_asset.id]] else [])
+                response = Utils.http_request_as_json HTTP_Method.Post (base_uri / "end") upload_end_payload error_handlers=error_handlers
+                response.if_not_error <|
+                    id = get_required_field "id" response expected_type=Text
+                    Asset_Cache.update destination (Existing_Enso_Asset.new id file_name) . if_not_error <|
+                        result
+
+private _send_chunk_with_retries uri request_body attempt:Integer=0 =
+    result = HTTP.post uri request_body HTTP_Method.Put
+    exponential_backoff = [100, 200, 400]
+    if result.is_error.not || (attempt >= exponential_backoff.length) then result else
+        sleep_time = exponential_backoff.at attempt
+        Thread.sleep sleep_time
+        @Tail_Call _send_chunk_with_retries uri request_body attempt+1
 
 ## PRIVATE
    Creates a directory at the given path, also creating parent directories if needed.

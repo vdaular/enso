@@ -260,6 +260,9 @@ private _resolve_body body:Request_Body hash_function =
             ## ToDo: Support hashing a file.
             hash = if hash_function.is_nothing then "" else Unimplemented.throw "Hashing a file body is not yet supported."
             Resolved_Body.Value (body_publishers.ofFile path) Nothing hash
+        Request_Body.Byte_Array bytes ->
+            hash = if hash_function.is_nothing then "" else hash_function bytes
+            Resolved_Body.Value (body_publishers.ofByteArray bytes) Nothing hash
         Request_Body.Form_Data form_data url_encoded ->
             _resolve_form_body form_data url_encoded hash_function
         Request_Body.Empty ->

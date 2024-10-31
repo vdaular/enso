@@ -43,6 +43,12 @@ type Request_Body
        - file: The file to send.
     Binary (file:File=(Missing_Argument.throw "file"))
 
+    ## PRIVATE
+       ADVANCED
+       Raw bytes array to be sent as binary data.
+       This is mostly used for internal purposes.
+    Byte_Array bytes
+
     ## Request body with form data.
 
        Arguments:
@@ -61,10 +67,12 @@ type Request_Body
     default_content_type_header : Header | Nothing
     default_content_type_header self =
         case self of
-            Request_Body.Text _ _ _ -> Header.content_type "text/plain" encoding=Encoding.utf_8
-            Request_Body.Json _ -> Header.content_type "application/json"
-            Request_Body.Binary _ -> Header.content_type "application/octet-stream"
-            Request_Body.Form_Data _ url_encoded -> if url_encoded then Header.application_x_www_form_urlencoded else Nothing
+            Request_Body.Text _ _ _   -> Header.content_type "text/plain" encoding=Encoding.utf_8
+            Request_Body.Json _       -> Header.content_type "application/json"
+            Request_Body.Binary _     -> Header.content_type "application/octet-stream"
+            Request_Body.Byte_Array _ -> Header.content_type "application/octet-stream"
+            Request_Body.Form_Data _ url_encoded ->
+                if url_encoded then Header.application_x_www_form_urlencoded else Nothing
             Request_Body.Empty -> Nothing
 
 ## PRIVATE

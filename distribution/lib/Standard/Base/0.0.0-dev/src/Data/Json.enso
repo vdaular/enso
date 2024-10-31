@@ -11,6 +11,7 @@ import project.Data.Text.Text
 import project.Data.Time.Date.Date
 import project.Data.Time.Date_Time.Date_Time
 import project.Data.Time.Time_Of_Day.Time_Of_Day
+import project.Data.Vector.No_Wrap
 import project.Data.Vector.Vector
 import project.Error.Error
 import project.Errors.Common.No_Such_Conversion
@@ -172,7 +173,7 @@ type JS_Object
         mapper = ObjectMapper.new
         new_object = mapper.createObjectNode
         keys = Vector.build builder->
-            pairs.map pair->
+            pairs.map on_problems=No_Wrap pair->
                 case pair.first of
                     text : Text ->
                         ## Ensure that any dataflow errors that could be stored in `pair.second` are propagated.
