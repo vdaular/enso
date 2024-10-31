@@ -933,6 +933,14 @@ add_specs suite_builder =
             filtered1b = root.list name_filter="*.txt" recursive=True . map .to_text
             filtered1b.sort.should_equal (resolve ["sample.txt", "subdirectory/a.txt", "subdirectory/nested/b.txt"])
 
+            # It should also work if more complicated pattern is used
+            filtered1c = root.list name_filter="{*.txt,foobarbaz}" recursive=True . map .to_text
+            filtered1c.sort.should_equal (resolve ["sample.txt", "subdirectory/a.txt", "subdirectory/nested/b.txt"])
+
+            # And correctly match file 'starts with' condition in recursive mode
+            filtered1d = root.list name_filter="a*.txt" recursive=True . map .to_text
+            filtered1d.sort.should_equal (resolve ["subdirectory/a.txt"])
+
             filtered2 = root.list name_filter="*/*/*" recursive=True . map .to_text
             filtered2.should_equal (resolve ["subdirectory/nested/b.txt"])
 

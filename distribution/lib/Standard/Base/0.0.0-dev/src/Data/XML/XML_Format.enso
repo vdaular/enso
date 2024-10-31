@@ -9,6 +9,7 @@ import project.Network.URI.URI
 import project.Nothing.Nothing
 import project.System.File.File
 import project.System.File.Generic.Writable_File.Writable_File
+import project.System.File_Format.File_Name_Pattern
 import project.System.File_Format_Metadata.File_Format_Metadata
 import project.System.Input_Stream.Input_Stream
 from project.Data.Text.Extensions import all
@@ -49,6 +50,10 @@ type XML_Format
     ## PRIVATE
     get_dropdown_options : Vector Option
     get_dropdown_options = [Option "XML" (Meta.get_qualified_type_name XML_Format)]
+
+    ## PRIVATE
+    get_name_patterns -> Vector File_Name_Pattern =
+        [File_Name_Pattern.Value "XML" ["*.xml"]]
 
     ## PRIVATE
        Implements the `File.read` for this `File_Format`
