@@ -7,6 +7,9 @@ import org.graalvm.polyglot.HostAccess;
 /**
  * Implements the <a href="https://nodejs.org/api/url.html">URL</a> Node.js interface and can be
  * used directly for interop with JS.
+ *
+ * <p>Note that {@code HostAccess.Export} entries are not detected by the Native Image Agent {@code
+ * -agentlib:native-image-agent} and should be manually listed in the reflect-config.json.
  */
 public final class URL {
 

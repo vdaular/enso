@@ -473,7 +473,7 @@ val commons = Seq(
 
 // === Helidon ================================================================
 val jakartaVersion = "2.0.1"
-val helidonVersion = "4.0.8"
+val helidonVersion = "4.1.2"
 val helidon = Seq(
   "io.helidon"                 % "helidon"                     % helidonVersion,
   "io.helidon.builder"         % "helidon-builder-api"         % helidonVersion,
@@ -1879,7 +1879,7 @@ lazy val `ydoc-server` = project
   .enablePlugins(JPMSPlugin)
   .configs(Test)
   .settings(
-    frgaalJavaCompilerSetting,
+    customFrgaalJavaCompilerSettings("21"),
     javaModuleName := "org.enso.ydoc",
     Compile / exportJars := true,
     crossPaths := false,
@@ -1897,8 +1897,9 @@ lazy val `ydoc-server` = project
     ),
     libraryDependencies ++= Seq(
       "org.graalvm.truffle"        % "truffle-api"                 % graalMavenPackagesVersion % "provided",
-      "org.graalvm.polyglot"       % "inspect"                     % graalMavenPackagesVersion % "runtime",
-      "org.graalvm.polyglot"       % "js"                          % graalMavenPackagesVersion % "runtime",
+      "org.graalvm.sdk"            % "nativeimage"                 % graalMavenPackagesVersion % "provided",
+      "org.graalvm.polyglot"       % "inspect-community"           % graalMavenPackagesVersion % "runtime",
+      "org.graalvm.polyglot"       % "js-community"                % graalMavenPackagesVersion % "runtime",
       "org.slf4j"                  % "slf4j-api"                   % slf4jVersion,
       "io.helidon.webclient"       % "helidon-webclient-websocket" % helidonVersion,
       "io.helidon.webserver"       % "helidon-webserver-websocket" % helidonVersion,
@@ -1950,9 +1951,25 @@ lazy val `ydoc-server` = project
         )
         .taskValue
   )
+  .settings(
+    NativeImage.smallJdk := None,
+    NativeImage.additionalCp := Seq.empty,
+    rebuildNativeImage := NativeImage
+      .buildNativeImage(
+        "ydoc",
+        staticOnLinux = false,
+        mainClass     = Some("org.enso.ydoc.Main")
+      )
+      .value,
+    buildNativeImage := NativeImage
+      .incrementalNativeImageBuild(
+        rebuildNativeImage,
+        "ydoc"
+      )
+      .value
+  )
   .dependsOn(`syntax-rust-definition`)
   .dependsOn(`logging-service-logback`)
-  .dependsOn(`profiling-utils`)
 
 lazy val `persistance` = (project in file("lib/java/persistance"))
   .enablePlugins(JPMSPlugin)
