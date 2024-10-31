@@ -19,7 +19,7 @@ import AssetListEventType from '#/events/AssetListEventType'
 
 import * as eventListProvider from '#/layouts/AssetsTable/EventListProvider'
 import * as categoryModule from '#/layouts/CategorySwitcher/Category'
-import GlobalContextMenu from '#/layouts/GlobalContextMenu'
+import { GlobalContextMenu } from '#/layouts/GlobalContextMenu'
 
 import ContextMenu from '#/components/ContextMenu'
 import ContextMenuEntry from '#/components/ContextMenuEntry'

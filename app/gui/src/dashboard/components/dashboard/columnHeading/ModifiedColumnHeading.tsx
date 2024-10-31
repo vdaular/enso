@@ -41,8 +41,14 @@ export default function ModifiedColumnHeading(props: AssetColumnHeadingProps) {
         variant="custom"
         className="flex grow justify-start gap-icon-with-text"
         onPress={() => {
+          if (!sortInfo) {
+            setSortInfo({ field: Column.modified, direction: SortDirection.ascending })
+            return
+          }
+
           const nextDirection =
             isSortActive ? nextSortDirection(sortInfo.direction) : SortDirection.ascending
+
           if (nextDirection == null) {
             setSortInfo(null)
           } else {

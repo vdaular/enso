@@ -136,11 +136,11 @@ export default function MenuEntry(props: MenuEntryProps) {
     // at once.
     if (isDisabled) {
       return
-    } else {
-      return inputBindings.attach(sanitizedEventTargets.document.body, 'keydown', {
-        [action]: doAction,
-      })
     }
+
+    return inputBindings.attach(sanitizedEventTargets.document.body, 'keydown', {
+      [action]: doAction,
+    })
   }, [isDisabled, inputBindings, action, doAction])
 
   return hidden ? null : (
