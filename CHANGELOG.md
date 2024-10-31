@@ -17,6 +17,8 @@
   re-opening][11435]
 - [Added application version to the title bar.][11446]
 - [Added "open grouped components" action to the context menu.][11447]
+- [Added an error message screen displayed when viewing a deleted
+  component.][11452]
 
 [11151]: https://github.com/enso-org/enso/pull/11151
 [11271]: https://github.com/enso-org/enso/pull/11271
@@ -25,10 +27,11 @@
 [11383]: https://github.com/enso-org/enso/pull/11383
 [11388]: https://github.com/enso-org/enso/pull/11388
 [11398]: https://github.com/enso-org/enso/pull/11398
-[11398]: https://github.com/enso-org/enso/pull/11433
+[11433]: https://github.com/enso-org/enso/pull/11433
 [11435]: https://github.com/enso-org/enso/pull/11435
 [11446]: https://github.com/enso-org/enso/pull/11446
 [11447]: https://github.com/enso-org/enso/pull/11447
+[11452]: https://github.com/enso-org/enso/pull/11452
 
 #### Enso Standard Library
 
