@@ -378,7 +378,7 @@ type Matrix
 
              example_to_image = Examples.matrix.to_image
     to_image : Image
-    to_image self = Image (Image.from_vector self.normalize.to_vector self.rows self.channels)
+    to_image self = Image.from_vector self.normalize.to_vector self.rows self.channels
 
     ## GROUP Standard.Base.Conversions
        ICON convert

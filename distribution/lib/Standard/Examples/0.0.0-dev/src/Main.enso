@@ -136,7 +136,11 @@ type No_Methods
 
 ## Returns a no_such_method_error as a value.
 no_such_method : No_Such_Method
-no_such_method = Panic.recover Any No_Methods.frobnicate . catch
+no_such_method =
+    ## We expect a No_Such_Method error here, so we annotate the type with `Any`
+       to avoid getting the warning from the static type checker.
+    no_methods_as_any = No_Methods : Any
+    Panic.recover Any no_methods_as_any.frobnicate . catch
 
 ## A simple error type for example purposes.
 type My_Error

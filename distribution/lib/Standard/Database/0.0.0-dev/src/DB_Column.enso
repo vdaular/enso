@@ -999,7 +999,10 @@ type DB_Column
     round_integer : Integer -> Boolean -> DB_Column
     round_integer self decimal_places use_bankers =
         new_name = self.naming_helper.function_name "round" [self]
-        scale = 10 ^ -decimal_places
+        Runtime.assert (decimal_places <= 0)
+        ## We assert that the decimal_places is non-positive, so the scale will be an Integer.
+           We can tell that to the type-checker by adding an annotation.
+        scale = (10 ^ -decimal_places) : Integer
         halfway = scale.div 2
         remainder = self % scale
         remainder.let "remainer" remainder->
