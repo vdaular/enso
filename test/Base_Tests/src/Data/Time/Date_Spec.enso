@@ -2,6 +2,7 @@ from Standard.Base import all
 import Standard.Base.Errors.Common.Incomparable_Values
 import Standard.Base.Errors.Common.Type_Error
 import Standard.Base.Errors.Time_Error.Time_Error
+import Standard.Base.Runtime.Debug
 
 from Standard.Test import all
 
@@ -95,6 +96,11 @@ spec_with suite_builder name create_new_date parse_date pending=Nothing =
             datetime = time.to_date_time date
             datetime.date . should_equal date
             datetime.time_of_day . should_equal time
+
+        group_builder.specify "should convert to Enso code" <|
+            date = create_new_date 2001 12 21
+            date.pretty . should_equal "Date.new 2001 12 21"
+            Debug.eval date.pretty . should_equal date
 
         group_builder.specify "should convert to Json" <|
             date = create_new_date 2001 12 21

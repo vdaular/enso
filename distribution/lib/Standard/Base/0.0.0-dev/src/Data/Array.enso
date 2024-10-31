@@ -795,6 +795,13 @@ type Array
     to_display_text : Text
     to_display_text self = self.short_display_text max_entries=40
 
+    ## PRIVATE
+       GROUP convert
+       ICON enso_logo
+       Convert the value to a corresponding Enso code representation.
+    pretty : Text
+    pretty self = self.map .pretty . join ", " "[" "]"
+
     ## ICON column_add
        Combines all the elements of a non-empty array using a binary operation.
        If the array is empty, it returns `if_empty`.

@@ -3739,6 +3739,12 @@ type Table
                     if merged_columns.is_empty then problem_builder_for_unification.raise_no_output_columns_with_cause else
                         Table.new merged_columns
 
+    ## PRIVATE
+    pretty : Text
+    pretty self =
+        data = self.columns.map c->("[" + c.name.pretty + ", " + c.to_vector.pretty + "]") . join ", "
+        "Table.new [" + data + "]"
+
 ## PRIVATE
    A helper to create a new table consisting of slices of the original table.
 slice_ranges table ranges =

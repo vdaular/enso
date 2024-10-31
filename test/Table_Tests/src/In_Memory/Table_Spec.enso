@@ -4,6 +4,7 @@ import Standard.Base.Errors.Common.Incomparable_Values
 import Standard.Base.Errors.Common.Index_Out_Of_Bounds
 import Standard.Base.Errors.Common.Type_Error
 import Standard.Base.Errors.Illegal_Argument.Illegal_Argument
+import Standard.Base.Runtime.Debug
 
 from Standard.Table import Table, Column, Sort_Column, Aggregate_Column, Blank_Selector, Value_Type
 from Standard.Table.Errors import Invalid_Column_Names, Duplicate_Output_Column_Names, No_Input_Columns_Selected, Missing_Input_Columns, No_Such_Column, Floating_Point_Equality, Invalid_Value_Type, Row_Count_Mismatch
@@ -87,6 +88,23 @@ add_specs suite_builder =
             r2.row_count . should_equal 0
             r2.at "foo" . to_vector . should_equal []
             r2.at "bar" . to_vector . should_equal []
+
+        group_builder.specify "should allow creating Enso code from a Table" <|
+            r = Table.new [["foo", [1, 2, 3]], ["bar", [False, True, False]]]
+            r.pretty . should_equal "Table.new [['foo', [1, 2, 3]], ['bar', [False, True, False]]]"
+            Debug.eval r.pretty . should_equal r
+
+            r2 = Table.new [["foo", []], ["bar", []]]
+            r2.pretty . should_equal "Table.new [['foo', []], ['bar', []]]"
+            Debug.eval r2.pretty . should_equal r2
+
+            r3 = Table.new [["date", [Date.new 2022 8 27, Date.new 1999 1 1]], ["time", [Time_Of_Day.new 18, Time_Of_Day.new 1 2 34]]]
+            r3.pretty . should_equal "Table.new [['date', [Date.new 2022 8 27, Date.new 1999 1 1]], ['time', [Time_Of_Day.new 18, Time_Of_Day.new 1 2 34]]]"
+            Debug.eval r3.pretty . should_equal r3
+
+            r4 = Table.new [["foo", [1, 2, 3]], ["bar", [False, True, False]], ["date", [Date.new 2022 8 27, Date.new 1999 1 1, Date.new 2012 1 23]], ["time", [Time_Of_Day.new 18, Time_Of_Day.new 1 2 34, Time_Of_Day.new 12 0]]]
+            r4.pretty . should_equal "Table.new [['foo', [1, 2, 3]], ['bar', [False, True, False]], ['date', [Date.new 2022 8 27, Date.new 1999 1 1, Date.new 2012 1 23]], ['time', [Time_Of_Day.new 18, Time_Of_Day.new 1 2 34, Time_Of_Day.new 12]]]"
+            Debug.eval r4.pretty . should_equal r4
 
         group_builder.specify "should handle error scenarios gracefully" <|
             Table.new [["X", [1,2,3]], ["Y", [4]]] . should_fail_with Illegal_Argument

@@ -355,20 +355,20 @@ type Request_Error
 
 ## PRIVATE
    Access the HTTP's timeout (for testing purposes).
-get_timeout : HTTP -> Duration
-get_timeout http:HTTP = http.timeout
+_get_timeout : HTTP -> Duration
+_get_timeout http:HTTP = http.timeout
 
 ## PRIVATE
    Access the HTTP's follow_redirects (for testing purposes).
-get_follow_redirects : HTTP -> Boolean
-get_follow_redirects http:HTTP = http.follow_redirects
+_get_follow_redirects : HTTP -> Boolean
+_get_follow_redirects http:HTTP = http.follow_redirects
 
 ## PRIVATE
    Access the HTTP's proxy (for testing purposes).
-get_proxy : HTTP -> Proxy
-get_proxy http:HTTP = http.proxy
+_get_proxy : HTTP -> Proxy
+_get_proxy http:HTTP = http.proxy
 
 ## PRIVATE
     Access the HTTP's version (for testing purposes).
-get_version : HTTP -> HTTP_Version
-get_version http:HTTP = http.version
+_get_version : HTTP -> HTTP_Version
+_get_version http:HTTP = http.version

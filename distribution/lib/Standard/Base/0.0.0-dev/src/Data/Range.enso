@@ -574,6 +574,23 @@ type Range
         step = if self.step.abs == 1 then "" else " by " + self.step.to_display_text
         start + step + "]"
 
+    ## PRIVATE
+       GROUP convert
+       ICON enso_logo
+       Convert the value to a corresponding Enso code representation.
+
+       > Example
+         Getting the Enso code of the range 1 until 29.
+
+             1.up_to 29 . pretty
+             ## Returns a Text
+                Range.new 1 29
+    pretty : Text
+    pretty self =
+        start = self.start.pretty
+        end = self.end.pretty
+        "Range.new " + start + " " + end + (if self.step.abs == 1 then "" else " step=" + self.step.abs.pretty)
+
 ## PRIVATE
 throw_zero_step_error = Error.throw (Illegal_State.Error "A range with step = 0 is ill-formed.")
 

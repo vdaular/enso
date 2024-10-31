@@ -1,4 +1,5 @@
 from Standard.Base import all
+import Standard.Base.Runtime.Debug
 
 import project.Util
 
@@ -256,6 +257,20 @@ add_specs suite_builder =
 
             r2 = Column.from_vector "X" [] (Value_Type.Char size=0 variable_length=True)
             r2.should_fail_with Illegal_Argument
+
+        group_builder.specify "should be able to serialize to Enso code" <|
+            c1 = Column.from_vector "X" [1, 2] Value_Type.Float
+            c1.pretty . should_equal 'Column.from_vector \'X\' [1.0, 2.0]'
+            Debug.eval c1.pretty . should_equal c1
+
+            c2 = Column.from_vector "X" ["a", 42]
+            c2.pretty . should_equal 'Column.from_vector \'X\' [\'a\', 42]'
+
+            c3 = Column.from_vector "X" ["aaa", "bbb"]
+            c3.pretty . should_equal 'Column.from_vector \'X\' [\'aaa\', \'bbb\']'
+
+            c4 = Column.from_vector "X" [Time_Of_Day.new 10 11 12, Time_Of_Day.new 11 30]
+            c4.pretty . should_equal 'Column.from_vector \'X\' [Time_Of_Day.new 10 11 12, Time_Of_Day.new 11 30]'
 
     suite_builder.group "Rounding" group_builder->
         group_builder.specify "should be able to round a column of decimals" <|

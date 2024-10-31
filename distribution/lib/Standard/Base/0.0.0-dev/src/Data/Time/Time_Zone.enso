@@ -214,10 +214,11 @@ type Time_Zone
     zone_names = Time_Utils.getZoneNames
 
     ## PRIVATE
-       Convert to a Enso code representation of this Time_Of_Day.
+       GROUP convert
+       ICON enso_logo
+       Convert the value to a corresponding Enso code representation.
     pretty : Text
-    pretty self = "(Time_Zone.parse '" + self.zone_id + "')"
-
+    pretty self = "Time_Zone.parse " + self.zone_id.pretty
 
 ## PRIVATE
 Time_Zone.from (that:JS_Object) =

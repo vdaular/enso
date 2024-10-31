@@ -101,9 +101,22 @@ type Date_Range
         start + step + "]"
 
     ## PRIVATE
-       Convert to a human-readable representation.
+       GROUP convert
+       ICON enso_logo
+       Convert the value to a corresponding Enso code representation.
+
+       > Example
+         Getting the Enso code of the date range 10-September-2024 until
+         29-October-2024.
+
+             (Date.new 2024 09 10).up_to (Date.new 2024 10 29) . pretty
+             ## Returns a Text
+                Date_Range.new (Date.new 2024 09 10) (Date.new 2024 10 29)
     pretty : Text
-    pretty self = self.to_text
+    pretty self =
+        start = self.start.pretty
+        end = self.end.pretty
+        "Date_Range.new (" + start + ") (" + end + (if self.step == (Period.new days=1) then ")" else ") (" + self.step.pretty + ")")
 
     ## PRIVATE
        Converts this value to a JSON serializable object.

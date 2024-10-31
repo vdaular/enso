@@ -12,6 +12,7 @@ import Standard.Base.Errors.Common.Not_Found
 import Standard.Base.Errors.Common.Type_Error
 import Standard.Base.Errors.Illegal_Argument.Illegal_Argument
 import Standard.Base.Errors.Unimplemented.Unimplemented
+import Standard.Base.Runtime.Debug
 import Standard.Base.Runtime.Ref.Ref
 import Standard.Base.Runtime.State
 from Standard.Base.Panic import Wrapped_Dataflow_Error
@@ -1243,6 +1244,11 @@ add_specs suite_builder =
             [Nothing].pretty.should_equal "[Nothing]"
             [True, False, 'a'].pretty . should_equal "[True, False, 'a']"
             [Foo.Value True].pretty . should_equal "[(Foo.Value True)]"
+            [Date.new 2022 1 1].pretty . should_equal "[Date.new 2022 1 1]"
+
+            mixed = [1, 2, 'a', (Foo.Value True), Date.new 2022 1 1, Nothing]
+            mixed.pretty . should_equal "[1, 2, 'a', (Foo.Value True), Date.new 2022 1 1, Nothing]"
+            Debug.eval (mixed.pretty) . should_equal [1, 2, 'a', Foo.Value True, Date.new 2022 1 1, Nothing]
 
     type_spec suite_builder "Use Vector as vectors" identity
     type_spec suite_builder "Use Array as vectors" (v -> v.to_array)

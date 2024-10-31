@@ -878,6 +878,14 @@ type Vector a
     short_display_text self (max_entries : Integer = 10) =
         Array_Like_Helpers.short_display_text self max_entries
 
+    ## PRIVATE
+       GROUP convert
+       ICON enso_logo
+       Convert the value to a corresponding Enso code representation.
+    pretty : Text
+    pretty self = self.map .pretty . join ", " "[" "]"
+
+
     ## ALIAS append, concatenate, union
        GROUP Operators
        ICON union

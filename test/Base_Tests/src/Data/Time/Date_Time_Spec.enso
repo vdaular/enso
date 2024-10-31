@@ -2,6 +2,7 @@ from Standard.Base import all
 import Standard.Base.Errors.Common.Incomparable_Values
 import Standard.Base.Errors.Common.Type_Error
 import Standard.Base.Errors.Time_Error.Time_Error
+import Standard.Base.Runtime.Debug
 
 from Standard.Test import all
 
@@ -118,6 +119,18 @@ spec_with suite_builder name create_new_datetime parse_datetime nanoseconds_loss
         group_builder.specify "should format using default pattern" <|
             text = create_new_datetime 1970 (zone = Time_Zone.utc) . to_text
             text . should_equal "1970-01-01 00:00:00Z[UTC]"
+
+        group_builder.specify "should convert to Enso code" <|
+            create_new_datetime 1970 . pretty . should_equal "Date_Time.new 1970 1 1"
+            create_new_datetime 1923 9 24 . pretty . should_equal "Date_Time.new 1923 9 24"
+            create_new_datetime 1923 9 24 12 20 44 . pretty . should_equal "Date_Time.new 1923 9 24 12 20 44"
+            if nanoseconds_loss_in_precision.not then
+                create_new_datetime 1923 9 24 12 20 nanosecond=500000000 . pretty . should_equal "Date_Time.new 1923 9 24 12 20 millisecond=500"
+                create_new_datetime 1923 9 24 12 20 nanosecond=500000 . pretty . should_equal "Date_Time.new 1923 9 24 12 20 microsecond=500"
+                create_new_datetime 1923 9 24 12 20 nanosecond=500 . pretty . should_equal "Date_Time.new 1923 9 24 12 20 nanosecond=500"
+
+            date_time = create_new_datetime 1970 12 21 11 23 45 nanosecond=123456789 zone=Time_Zone.utc
+            Debug.eval date_time.pretty . should_equal date_time
 
         group_builder.specify "should convert to Json" <|
             time = create_new_datetime 1970 12 21 (zone = Time_Zone.utc)

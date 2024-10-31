@@ -3,6 +3,7 @@ import Standard.Base.Errors.Common.Incomparable_Values
 import Standard.Base.Errors.Common.Type_Error
 import Standard.Base.Errors.Illegal_Argument.Illegal_Argument
 import Standard.Base.Errors.Time_Error.Time_Error
+import Standard.Base.Runtime.Debug
 
 from Standard.Test import all
 
@@ -57,6 +58,16 @@ specWith suite_builder name create_new_time parse_time nanoseconds_loss_in_preci
         group_builder.specify "should format local time using default pattern" <|
             text = create_new_time 12 20 44 . to_text
             text . should_equal "12:20:44"
+
+        group_builder.specify "should convert to Enso code" <|
+            create_new_time 12 20 . pretty . should_equal "Time_Of_Day.new 12 20"
+            create_new_time 12 20 44 . pretty . should_equal "Time_Of_Day.new 12 20 44"
+            create_new_time 12 20 0 500000000 . pretty . should_equal "Time_Of_Day.new 12 20 millisecond=500"
+            create_new_time 12 20 0 500000 . pretty . should_equal "Time_Of_Day.new 12 20 microsecond=500"
+            if nanoseconds_loss_in_precision.not then create_new_time 12 20 0 500 . pretty . should_equal "Time_Of_Day.new 12 20 nanosecond=500"
+
+            time = create_new_time 12 20 0 500000
+            Debug.eval time.pretty . should_equal time
 
         group_builder.specify "should convert to Json" <|
             time = create_new_time 1 2 3

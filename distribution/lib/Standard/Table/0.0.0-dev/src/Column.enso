@@ -2589,6 +2589,13 @@ type Column
         data = Statistic.running self.to_vector statistic
         Column.from_vector name data
 
+    ## PRIVATE
+    pretty : Text
+    pretty self =
+        name = self.name.pretty
+        data = self.to_vector.pretty
+        "Column.from_vector " + name + " " + data
+
 ## PRIVATE
 
    Folds the vectorized operation over the provided column and values. When more

@@ -530,6 +530,7 @@ type Enso_File
         "Enso_File "+self.path
 
     ## PRIVATE
+       Converts the file descriptor to a JSON object.
     to_js_object : JS_Object
     to_js_object self =
         JS_Object.from_pairs [["type", "Enso_File"], ["constructor", "new"], ["path", self.path.to_text]]

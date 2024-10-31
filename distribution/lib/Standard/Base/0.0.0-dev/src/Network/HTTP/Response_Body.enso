@@ -180,7 +180,7 @@ type Response_Body
 
              example_write =
                 Examples.get_geo_data.write Examples.scratch_file
-    @path (Widget.Text_Input display=Display.Always)
+    @file (Widget.Text_Input display=Display.Always)
     write : Writable_File -> Existing_File_Behavior -> File
     write self file:Writable_File on_existing_file=Existing_File_Behavior.Backup =
         self.with_stream body_stream->

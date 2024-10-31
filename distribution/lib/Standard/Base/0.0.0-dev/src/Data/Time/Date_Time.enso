@@ -836,18 +836,28 @@ type Date_Time
         self.format "yyyy-MM-dd "+time_format+zone_format
 
     ## PRIVATE
-       Convert to a Enso code representation of this Time_Of_Day.
-    pretty : Text
-    pretty self = "(Date_Time.new " + self.year.to_text + " " + self.month.to_text + " " + self.day.to_text
-        + (if self.hour == 0 then "" else " hour="+self.hour.to_text)
-        + (if self.minute == 0 then "" else " minute="+self.minute.to_text)
-        + (if self.second == 0 then "" else " second="+self.second.to_text)
-        + (if self.millisecond == 0 then "" else " millisecond="+self.millisecond.to_text)
-        + (if self.microsecond == 0 then "" else " microsecond="+self.microsecond.to_text)
-        + (if self.nanosecond == 0 then "" else " nanosecond="+self.nanosecond.to_text)
-        + (if self.zone == Time_Zone.system then "" else " zone="+self.zone.pretty)
-        + ")"
+       GROUP convert
+       ICON enso_logo
+       Convert the value to a corresponding Enso code representation.
 
+       > Example
+         Getting the Enso code of the date 29-October-2024 12:34.
+
+             (Date_Time.new 2024 10 29 12 34).pretty
+             ## Returns a Text
+                Date_Time.new 2024 10 29 12 34
+    pretty : Text
+    pretty self =
+        parts = Vector.build builder->
+            builder.append ("Date_Time.new " + self.year.to_text + " " + self.month.to_text + " " + self.day.to_text)
+            if self.hour != 0 then builder.append ((if builder.length!=1 then " hour=" else " ") + self.hour.to_text)
+            if self.minute != 0 then builder.append ((if builder.length!=2 then " minute=" else " ") + self.minute.to_text)
+            if self.second != 0 then builder.append ((if builder.length!=3 then " second=" else " ") + self.second.to_text)
+            if self.millisecond != 0 then builder.append ((if builder.length!=4 then " millisecond=" else " ") + self.millisecond.to_text)
+            if self.microsecond != 0 then builder.append ((if builder.length!=5 then " microsecond=" else " ") + self.microsecond.to_text)
+            if self.nanosecond != 0 then builder.append ((if builder.length!=6 then " nanosecond=" else " ") + self.nanosecond.to_text)
+            if self.zone != Time_Zone.system then builder.append ((if builder.length!=7 then " zone=(" else " (") + self.zone.pretty + ")")
+        parts.join ""
 
     ## PRIVATE
        Convert to a JavaScript Object representing a Date_Time.

@@ -78,14 +78,23 @@ type Any
     to_text : Text
     to_text self = @Builtin_Method "Any.to_text"
 
-    ## ICON convert
-       Generic conversion of an arbitrary Enso value to a corresponding human-readable
-       representation.
+    ## GROUP convert
+       ICON enso_logo
+       Convert the value to a corresponding Enso code representation.
 
        > Example
-         Getting a human-readable representation of the number 7.
+         Getting the Enso code of the number 7.
 
-             7.to_text
+             7.pretty
+             ## Returns a Text
+                7
+
+       > Example
+         Getting the Enso code of the text Hello World!.
+
+             "Hello World!".pretty
+             ## Returns a Text
+                'Hello World!'
     pretty : Text
     pretty self = @Builtin_Method "Any.pretty"
 

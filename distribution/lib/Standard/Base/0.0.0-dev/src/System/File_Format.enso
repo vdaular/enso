@@ -232,7 +232,7 @@ type Bytes
 type JSON_Format
     ## PRIVATE
        Resolve an unresolved constructor to the actual type.
-    resolve : Function -> Bytes | Nothing
+    resolve : Function -> JSON_Format | Nothing
     resolve constructor =
         _ = constructor
         Nothing
