@@ -20,6 +20,12 @@
   --color-invert-opacity: 100%;
   --color-invert: rgb(var(--color-invert-rgb) / var(--color-invert-opacity));
 
+  --color-dashboard-background-rgb: 239 234 228;
+  --color-dashboard-background-opacity: 100%;
+  --color-dashboard-background: rgb(
+    var(--color-dashboard-background-rgb) / var(--color-dashboard-background-opacity)
+  );
+
   --top-bar-height: 3rem;
   --row-height: 2rem;
   --table-row-height: 2.3125rem;

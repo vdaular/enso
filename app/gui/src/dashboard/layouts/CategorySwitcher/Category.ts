@@ -109,14 +109,48 @@ export const CATEGORY_TO_FILTER_BY: Readonly<Record<Category['type'], FilterBy |
   'local-directory': FilterBy.active,
 }
 
+/**
+ * The type of the cached value for a category.
+ * We use const enums because they compile to numeric values and they are faster than strings.
+ */
+const enum CategoryCacheType {
+  cloud = 0,
+  local = 1,
+}
+
+const CATEGORY_CACHE = new Map<Category['type'], CategoryCacheType>()
+
 /** Whether the category is only accessible from the cloud. */
 export function isCloudCategory(category: Category): category is AnyCloudCategory {
-  return ANY_CLOUD_CATEGORY_SCHEMA.safeParse(category).success
+  const cached = CATEGORY_CACHE.get(category.type)
+
+  if (cached != null) {
+    return cached === CategoryCacheType.cloud
+  }
+
+  const result = ANY_CLOUD_CATEGORY_SCHEMA.safeParse(category)
+  CATEGORY_CACHE.set(
+    category.type,
+    result.success ? CategoryCacheType.cloud : CategoryCacheType.local,
+  )
+
+  return result.success
 }
 
 /** Whether the category is only accessible locally. */
 export function isLocalCategory(category: Category): category is AnyLocalCategory {
-  return ANY_LOCAL_CATEGORY_SCHEMA.safeParse(category).success
+  const cached = CATEGORY_CACHE.get(category.type)
+
+  if (cached != null) {
+    return cached === CategoryCacheType.local
+  }
+
+  const result = ANY_LOCAL_CATEGORY_SCHEMA.safeParse(category)
+  CATEGORY_CACHE.set(
+    category.type,
+    result.success ? CategoryCacheType.local : CategoryCacheType.cloud,
+  )
+  return result.success
 }
 
 /** Whether the given categories are equal. */

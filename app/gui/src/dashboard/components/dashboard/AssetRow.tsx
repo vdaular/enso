@@ -539,7 +539,7 @@ export const AssetRow = React.memo(function AssetRow(props: AssetRowProps) {
                   }
                 }}
                 className={tailwindMerge.twMerge(
-                  'h-table-row rounded-full transition-all ease-in-out rounded-rows-child',
+                  'h-table-row rounded-full transition-all ease-in-out rounded-rows-child [contain-intrinsic-size:40px] [content-visibility:auto]',
                   visibility,
                   (isDraggedOver || selected) && 'selected',
                 )}

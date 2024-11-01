@@ -65,7 +65,6 @@ import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import { useIntersectionRatio } from '#/hooks/intersectionHooks'
 import { useOpenProject } from '#/hooks/projectHooks'
 import { useToastAndLog } from '#/hooks/toastAndLogHooks'
-import useOnScroll from '#/hooks/useOnScroll'
 import type * as assetSearchBar from '#/layouts/AssetSearchBar'
 import * as eventListProvider from '#/layouts/AssetsTable/EventListProvider'
 import AssetsTableContextMenu from '#/layouts/AssetsTableContextMenu'
@@ -197,13 +196,6 @@ const MINIMUM_DROPZONE_INTERSECTION_RATIO = 0.5
 const ROW_HEIGHT_PX = 38
 /** The size of the loading spinner. */
 const LOADING_SPINNER_SIZE_PX = 36
-/**
- * The number of pixels the header bar should shrink when the column selector is visible,
- * assuming 0 icons are visible in the column selector.
- */
-const COLUMNS_SELECTOR_BASE_WIDTH_PX = 4
-/** The number of pixels the header bar should shrink per collapsed column. */
-const COLUMNS_SELECTOR_ICON_WIDTH_PX = 28
 
 const SUGGESTIONS_FOR_NO: assetSearchBar.Suggestion[] = [
   {
@@ -827,7 +819,6 @@ export default function AssetsTable(props: AssetsTableProps) {
   /** Events sent when the asset list was still loading. */
   const queuedAssetListEventsRef = useRef<AssetListEvent[]>([])
   const rootRef = useRef<HTMLDivElement | null>(null)
-  const cleanupRootRef = useRef(() => {})
   const mainDropzoneRef = useRef<HTMLButtonElement | null>(null)
   const lastSelectedIdsRef = useRef<AssetId | ReadonlySet<AssetId> | null>(null)
   const headerRowRef = useRef<HTMLTableRowElement>(null)
@@ -2233,26 +2224,6 @@ export default function AssetsTable(props: AssetsTableProps) {
     }
   }, [hidden])
 
-  // This is required to prevent the table body from overlapping the table header, because
-  // the table header is transparent.
-  const updateClipPath = useOnScroll(() => {
-    if (bodyRef.current != null && rootRef.current != null) {
-      bodyRef.current.style.clipPath = `inset(${rootRef.current.scrollTop}px 0 0 0)`
-    }
-    if (
-      backend.type === BackendType.remote &&
-      rootRef.current != null &&
-      headerRowRef.current != null
-    ) {
-      const shrinkBy =
-        COLUMNS_SELECTOR_BASE_WIDTH_PX + COLUMNS_SELECTOR_ICON_WIDTH_PX * hiddenColumns.length
-      const rightOffset = rootRef.current.clientWidth + rootRef.current.scrollLeft - shrinkBy
-      headerRowRef.current.style.clipPath = `polygon(0 0, ${rightOffset}px 0, ${rightOffset}px 100%, 0 100%)`
-    }
-  }, [backend.type, hiddenColumns.length])
-
-  const updateClipPathObserver = useMemo(() => new ResizeObserver(updateClipPath), [updateClipPath])
-
   useEffect(
     () =>
       inputBindings.attach(
@@ -2605,7 +2576,7 @@ export default function AssetsTable(props: AssetsTableProps) {
   )
 
   const headerRow = (
-    <tr ref={headerRowRef} className="sticky top-[1px] text-sm font-semibold">
+    <tr ref={headerRowRef} className="rounded-none text-sm font-semibold">
       {columns.map((column) => {
         // This is a React component, even though it does not contain JSX.
         const Heading = COLUMN_HEADING[column]
@@ -2701,8 +2672,8 @@ export default function AssetsTable(props: AssetsTableProps) {
         }
       }}
     >
-      <table className="table-fixed border-collapse rounded-rows">
-        <thead>{headerRow}</thead>
+      <table className="isolate table-fixed border-collapse rounded-rows">
+        <thead className="sticky top-0 z-1 bg-dashboard">{headerRow}</thead>
         <tbody ref={bodyRef}>
           {itemRows}
           <tr className="hidden h-row first:table-row">
@@ -2802,21 +2773,8 @@ export default function AssetsTable(props: AssetsTableProps) {
           {(innerProps) => (
             <div
               {...mergeProps<JSX.IntrinsicElements['div']>()(innerProps, {
-                ref: (value) => {
-                  rootRef.current = value
-                  cleanupRootRef.current()
-                  if (value) {
-                    updateClipPathObserver.observe(value)
-                    cleanupRootRef.current = () => {
-                      updateClipPathObserver.unobserve(value)
-                    }
-                  } else {
-                    cleanupRootRef.current = () => {}
-                  }
-                },
                 className: 'flex-1 overflow-auto container-size w-full h-full',
                 onKeyDown,
-                onScroll: updateClipPath,
                 onBlur: (event) => {
                   if (
                     event.relatedTarget instanceof HTMLElement &&
@@ -2838,6 +2796,7 @@ export default function AssetsTable(props: AssetsTableProps) {
                 onDragEnd: () => {
                   setIsDraggingFiles(false)
                 },
+                ref: rootRef,
               })}
             >
               {!hidden && hiddenContextMenu}
