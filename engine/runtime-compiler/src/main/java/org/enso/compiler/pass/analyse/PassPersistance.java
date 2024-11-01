@@ -26,7 +26,6 @@ import org.enso.compiler.pass.resolve.TypeSignatures$;
 import org.enso.persist.Persistable;
 import org.enso.persist.Persistance;
 import org.openide.util.lookup.ServiceProvider;
-import scala.Option;
 import scala.Tuple2$;
 
 @Persistable(clazz = CachePreferenceAnalysis.WeightInfo.class, id = 1111)
@@ -107,11 +106,10 @@ public final class PassPersistance {
       var occurrences = occurrencesValues.map(v -> Tuple2$.MODULE$.apply(v.id(), v)).toMap(null);
       var allDefinitions = in.readInline(scala.collection.immutable.List.class);
       var parent = new Graph.Scope(childScopes, occurrences, allDefinitions);
-      var optionParent = Option.apply(parent);
       childScopes.forall(
           (object) -> {
             var ch = (Graph.Scope) object;
-            ch.parent_$eq(optionParent);
+            ch.withParent(parent);
             return null;
           });
       return parent;
@@ -155,13 +153,12 @@ public final class PassPersistance {
     }
 
     private static void assignParents(Graph.Scope scope) {
-      var option = Option.apply(scope);
       scope
           .childScopes()
           .foreach(
               (ch) -> {
                 assignParents(ch);
-                ch.parent_$eq(option);
+                ch.withParent(scope);
                 return null;
               });
     }

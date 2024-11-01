@@ -318,12 +318,17 @@ object Graph {
     *                       Note that there may not be a link for all these definitions.
     */
   sealed class Scope(
-    var childScopes: List[Scope]                  = List(),
-    var occurrences: Map[Id, GraphOccurrence]     = HashMap(),
-    var allDefinitions: List[GraphOccurrence.Def] = List()
+    private[Graph] var _childScopes: List[Scope]                  = List(),
+    private[Graph] var _occurrences: Map[Id, GraphOccurrence]     = HashMap(),
+    private[Graph] var _allDefinitions: List[GraphOccurrence.Def] = List()
   ) {
 
-    var parent: Option[Scope] = None
+    private[Graph] var _parent: Scope = null
+
+    def childScopes    = _childScopes
+    def occurrences    = _occurrences
+    def allDefinitions = _allDefinitions
+    def parent         = if (this._parent eq null) None else Some(_parent)
 
     /** Counts the number of scopes from this scope to the root.
       *
@@ -342,8 +347,10 @@ object Graph {
       * @return this scope with parent scope set
       */
     final def withParent(parentScope: Scope): this.type = {
-      org.enso.common.Asserts.assertInJvm(parent.isEmpty)
-      this.parent = Some(parentScope)
+      if (this._parent ne parentScope) {
+        org.enso.common.Asserts.assertInJvm(parent.isEmpty)
+        this._parent = parentScope
+      }
       this
     }
 
@@ -396,8 +403,8 @@ object Graph {
       */
     final def addChild(): Scope = {
       val scope = new Scope()
-      scope.parent = Some(this)
-      childScopes ::= scope
+      scope._parent = this
+      _childScopes ::= scope
 
       scope
     }
@@ -412,7 +419,7 @@ object Graph {
           s"Multiple occurrences found for ID ${occurrence.id}."
         )
       } else {
-        occurrences += ((occurrence.id, occurrence))
+        _occurrences += ((occurrence.id, occurrence))
       }
     }
 
@@ -422,7 +429,7 @@ object Graph {
       * @param definition The definition to add.
       */
     final def addDefinition(definition: GraphOccurrence.Def): Unit = {
-      allDefinitions = allDefinitions ++ List(definition)
+      _allDefinitions = allDefinitions ++ List(definition)
     }
 
     /** Finds an occurrence for the provided ID in the current scope, if it
@@ -489,7 +496,7 @@ object Graph {
         case None =>
           parent.flatMap(_.resolveUsage(occurrence, parentCounter + 1))
         case Some(target) =>
-          Some(Graph.Link(occurrence.id, parentCounter, target.id))
+          Some(Graph.Link(occurrence.id, parentCounter, target.id()))
       }
     }
 
@@ -641,7 +648,7 @@ object Graph {
     }
 
     private def removeScopeFromParent(scope: Scope): Unit = {
-      childScopes = childScopes.filter(_ != scope)
+      _childScopes = childScopes.filter(_ != scope)
     }
 
     /** Disassociates this Scope from its parent.
