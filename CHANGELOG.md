@@ -17,6 +17,7 @@
   re-opening][11435]
 - [Added application version to the title bar.][11446]
 - [Added "open grouped components" action to the context menu.][11447]
+- [Table Input Widget has now a limit of 256 cells.][11448]
 - [Added an error message screen displayed when viewing a deleted
   component.][11452]
 
@@ -31,6 +32,7 @@
 [11435]: https://github.com/enso-org/enso/pull/11435
 [11446]: https://github.com/enso-org/enso/pull/11446
 [11447]: https://github.com/enso-org/enso/pull/11447
+[11448]: https://github.com/enso-org/enso/pull/11448
 [11452]: https://github.com/enso-org/enso/pull/11452
 
 #### Enso Standard Library

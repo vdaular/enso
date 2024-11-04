@@ -2,6 +2,7 @@
 import { WidgetInputIsSpecificMethodCall } from '@/components/GraphEditor/widgets/WidgetFunction.vue'
 import TableHeader from '@/components/GraphEditor/widgets/WidgetTableEditor/TableHeader.vue'
 import {
+  CELLS_LIMIT,
   tableNewCallMayBeHandled,
   useTableNewArgument,
   type RowData,
@@ -16,6 +17,7 @@ import { useGraphStore } from '@/stores/graph'
 import { useSuggestionDbStore } from '@/stores/suggestionDatabase'
 import { Rect } from '@/util/data/rect'
 import { Vec2 } from '@/util/data/vec2'
+import { useToast } from '@/util/toast'
 import '@ag-grid-community/styles/ag-grid.css'
 import '@ag-grid-community/styles/ag-theme-alpine.css'
 import type {
@@ -35,6 +37,7 @@ const props = defineProps(widgetProps(widgetDefinition))
 const graph = useGraphStore()
 const suggestionDb = useSuggestionDbStore()
 const grid = ref<ComponentExposed<typeof AgGridTableView<RowData, any>>>()
+const pasteWarning = useToast.warning()
 
 const configSchema = z.object({ size: z.object({ x: z.number(), y: z.number() }) })
 type Config = z.infer<typeof configSchema>
@@ -194,10 +197,13 @@ function processDataFromClipboard({ data, api }: ProcessDataFromClipboardParams<
   const focusedCell = api.getFocusedCell()
   if (focusedCell === null) console.warn('Pasting while no cell is focused!')
   else {
-    pasteFromClipboard(data, {
+    const pasted = pasteFromClipboard(data, {
       rowIndex: focusedCell.rowIndex,
       colId: focusedCell.column.getColId(),
     })
+    if (pasted.rows < data.length || pasted.columns < (data[0]?.length ?? 0)) {
+      pasteWarning.show(`Truncated pasted data to keep table within ${CELLS_LIMIT} limit`)
+    }
   }
   return []
 }

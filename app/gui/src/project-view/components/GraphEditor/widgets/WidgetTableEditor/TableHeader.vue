@@ -16,11 +16,8 @@ export interface HeaderEditHandlers {
  * (not in defaultColumnDef).
  */
 export type ColumnSpecificHeaderParams =
-  | {
-      type: 'astColumn'
-      editHandlers: HeaderEditHandlers
-    }
-  | { type: 'newColumn'; newColumnRequested: () => void }
+  | { type: 'astColumn'; editHandlers: HeaderEditHandlers }
+  | { type: 'newColumn'; enabled?: boolean; newColumnRequested: () => void }
   | { type: 'rowIndexColumn' }
 
 /**
@@ -105,6 +102,7 @@ function onMouseRightClick(event: MouseEvent) {
     class="addColumnButton"
     name="add"
     title="Add new column"
+    :disabled="!(params.enabled ?? true)"
     @click.stop="params.newColumnRequested()"
   />
   <div
