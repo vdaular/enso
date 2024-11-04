@@ -15,6 +15,7 @@ import org.enso.interpreter.node.expression.builtin.meta.AtomWithAHoleNode;
 import org.enso.interpreter.runtime.EnsoContext;
 import org.enso.interpreter.runtime.builtin.Builtins;
 import org.enso.interpreter.runtime.callable.UnresolvedSymbol;
+import org.enso.interpreter.runtime.data.EnsoMultiValue;
 import org.enso.interpreter.runtime.data.EnsoObject;
 import org.enso.interpreter.runtime.data.Type;
 import org.enso.interpreter.runtime.error.DataflowError;
@@ -74,6 +75,16 @@ public abstract class TypeOfNode extends Node {
     return withoutWarning.execute(value.getValue());
   }
 
+  static boolean isWithType(Object value, TypesLibrary types, InteropLibrary iop) {
+    if (value instanceof EnsoMultiValue) {
+      return true;
+    }
+    if (iop.isNumber(value)) {
+      return false;
+    }
+    return types.hasType(value);
+  }
+
   static boolean isWithoutType(Object value, TypesLibrary types) {
     if (value instanceof EnsoObject) {
       return false;
@@ -94,7 +105,7 @@ public abstract class TypeOfNode extends Node {
     return delegate.execute(type, value);
   }
 
-  @Specialization(guards = {"types.hasType(value)", "!interop.isNumber(value)"})
+  @Specialization(guards = {"isWithType(value, types, interop)"})
   Object doType(
       Object value,
       @Shared("interop") @CachedLibrary(limit = "3") InteropLibrary interop,
