@@ -320,6 +320,7 @@ class Fixture {
     aliases: ['Test Type'],
     isPrivate: false,
     isUnstable: false,
+    parentType: unwrap(tryQualifiedName('Standard.Base.Any.Any')),
     reexportedIn: unwrap(tryQualifiedName('Standard.Base.Another.Module')),
     annotations: [],
   }
@@ -415,6 +416,7 @@ class Fixture {
           name: 'Type',
           params: [this.arg1],
           documentation: this.typeDocs,
+          parentType: 'Standard.Base.Any.Any',
           reexport: 'Standard.Base.Another.Module',
         },
       },

@@ -37,6 +37,7 @@ interface UnfinishedEntry {
   selfType?: Typename
   arguments?: SuggestionEntryArgument[]
   returnType?: Typename
+  parentType?: QualifiedName
   reexportedIn?: QualifiedName
   documentation?: Doc.Section[]
   scope?: SuggestionEntryScope
@@ -110,6 +111,16 @@ function setLsReexported(
   return true
 }
 
+function setLsParentType(
+  entry: UnfinishedEntry,
+  parentType: string,
+): entry is UnfinishedEntry & { parentType: QualifiedName } {
+  const qn = tryQualifiedName(parentType)
+  if (!qn.ok) return false
+  entry.parentType = normalizeQualifiedName(qn.value)
+  return true
+}
+
 function setLsDocumentation(
   entry: UnfinishedEntry & { definedIn: QualifiedName },
   documentation: Opt<string>,
@@ -171,6 +182,8 @@ export function entryFromLs(
           if (!setLsModule(entry, lsEntry.module)) return Err('Invalid module name')
           if (lsEntry.reexport != null && !setLsReexported(entry, lsEntry.reexport))
             return Err('Invalid reexported module name')
+          if (lsEntry.parentType != null && !setLsParentType(entry, lsEntry.parentType))
+            return Err('Invalid parent type')
           setLsDocumentation(entry, lsEntry.documentation, groups)
           assert(entry.returnType !== '') // Should be overwriten
           return Ok({

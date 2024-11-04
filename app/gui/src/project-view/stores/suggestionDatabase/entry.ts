@@ -59,6 +59,8 @@ export interface SuggestionEntry {
   arguments: SuggestionEntryArgument[]
   /** A type returned by the suggested object. */
   returnType: Typename
+  /** Qualified name of the parent type. */
+  parentType?: QualifiedName
   /** A least-nested module reexporting this entity. */
   reexportedIn?: QualifiedName
   documentation: Doc.Section[]

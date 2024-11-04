@@ -248,9 +248,13 @@ export class Filtering {
     if (currentModule != null) this.currentModule = currentModule
   }
 
-  private selfTypeMatches(entry: SuggestionEntry): boolean {
+  private selfTypeMatches(entry: SuggestionEntry, additionalSelfTypes: QualifiedName[]): boolean {
     if (this.selfArg == null) return entry.selfType == null
-    else if (this.selfArg.type == 'known') return entry.selfType === this.selfArg.typename
+    else if (this.selfArg.type == 'known')
+      return (
+        entry.selfType === this.selfArg.typename ||
+        additionalSelfTypes.some((t) => entry.selfType === t)
+      )
     else return entry.selfType != null
   }
 
@@ -271,11 +275,11 @@ export class Filtering {
   }
 
   /** TODO: Add docs */
-  filter(entry: SuggestionEntry): MatchResult | null {
+  filter(entry: SuggestionEntry, additionalSelfTypes: QualifiedName[]): MatchResult | null {
     if (entry.isPrivate || entry.kind != SuggestionKind.Method || entry.memberOf == null)
       return null
     if (this.selfArg == null && isInternal(entry)) return null
-    if (!this.selfTypeMatches(entry)) return null
+    if (!this.selfTypeMatches(entry, additionalSelfTypes)) return null
     if (this.pattern) {
       if (entry.memberOf == null) return null
       const patternMatch = this.pattern.tryMatch(entry.name, entry.aliases, entry.memberOf)

@@ -12,7 +12,7 @@ import {
   makeStaticMethod,
   SuggestionEntry,
 } from '@/stores/suggestionDatabase/entry'
-import { qnLastSegment } from '@/util/qualifiedName'
+import { qnLastSegment, QualifiedName } from '@/util/qualifiedName'
 import { Opt } from 'ydoc-shared/util/data/opt'
 
 test.each([
@@ -24,7 +24,7 @@ test.each([
   makeStaticMethod('local.Project.Internalization.internalize'),
 ])('$name entry is in the CB main view', (entry) => {
   const filtering = new Filtering({})
-  expect(filtering.filter(entry)).not.toBeNull()
+  expect(filtering.filter(entry, [])).not.toBeNull()
 })
 
 test.each([
@@ -36,7 +36,7 @@ test.each([
   makeStaticMethod('Standard.Base.Internal.Foo.bar'), // Internal method
 ])('$name entry is not in the CB main view', (entry) => {
   const filtering = new Filtering({})
-  expect(filtering.filter(entry)).toBeNull()
+  expect(filtering.filter(entry, [])).toBeNull()
 })
 
 test('An Instance method is shown when self arg matches', () => {
@@ -45,16 +45,34 @@ test('An Instance method is shown when self arg matches', () => {
   const filteringWithSelfType = new Filtering({
     selfArg: { type: 'known', typename: 'Standard.Base.Data.Vector.Vector' },
   })
-  expect(filteringWithSelfType.filter(entry1)).not.toBeNull()
-  expect(filteringWithSelfType.filter(entry2)).toBeNull()
+  expect(filteringWithSelfType.filter(entry1, [])).not.toBeNull()
+  expect(filteringWithSelfType.filter(entry2, [])).toBeNull()
   const filteringWithAnySelfType = new Filtering({
     selfArg: { type: 'unknown' },
   })
-  expect(filteringWithAnySelfType.filter(entry1)).not.toBeNull()
-  expect(filteringWithAnySelfType.filter(entry2)).not.toBeNull()
+  expect(filteringWithAnySelfType.filter(entry1, [])).not.toBeNull()
+  expect(filteringWithAnySelfType.filter(entry2, [])).not.toBeNull()
   const filteringWithoutSelfType = new Filtering({ pattern: 'get' })
-  expect(filteringWithoutSelfType.filter(entry1)).toBeNull()
-  expect(filteringWithoutSelfType.filter(entry2)).toBeNull()
+  expect(filteringWithoutSelfType.filter(entry1, [])).toBeNull()
+  expect(filteringWithoutSelfType.filter(entry2, [])).toBeNull()
+})
+
+test('Additional self types are taken into account when filtering', () => {
+  const entry1 = makeMethod('Standard.Base.Data.Vector.Vector.get')
+  const entry2 = makeMethod('Standard.Base.Any.Any.to_string')
+  const additionalSelfType = 'Standard.Base.Any.Any' as QualifiedName
+  const filtering = new Filtering({
+    selfArg: { type: 'known', typename: 'Standard.Base.Data.Vector.Vector' },
+  })
+  expect(filtering.filter(entry1, [additionalSelfType])).not.toBeNull()
+  expect(filtering.filter(entry2, [additionalSelfType])).not.toBeNull()
+  expect(filtering.filter(entry2, [])).toBeNull()
+
+  const filteringWithoutSelfType = new Filtering({})
+  expect(filteringWithoutSelfType.filter(entry1, [additionalSelfType])).toBeNull()
+  expect(filteringWithoutSelfType.filter(entry2, [additionalSelfType])).toBeNull()
+  expect(filteringWithoutSelfType.filter(entry1, [])).toBeNull()
+  expect(filteringWithoutSelfType.filter(entry2, [])).toBeNull()
 })
 
 test.each([
@@ -69,7 +87,7 @@ test.each([
   const filtering = new Filtering({
     selfArg: { type: 'known', typename: 'Standard.Base.Data.Vector.Vector' },
   })
-  expect(filtering.filter(entry)).toBeNull()
+  expect(filtering.filter(entry, [])).toBeNull()
 })
 
 test.each`
@@ -84,7 +102,7 @@ test.each`
 `('$name is not matched by pattern $pattern', ({ name, pattern }) => {
   const entry = makeModuleMethod(`local.Project.${name}`)
   const filtering = new Filtering({ pattern })
-  expect(filtering.filter(entry)).toBeNull()
+  expect(filtering.filter(entry, [])).toBeNull()
 })
 
 function matchedText(ownerName: string, name: string, matchResult: MatchResult) {
@@ -200,7 +218,7 @@ test.each([
     ...makeModuleMethod(`${module ?? 'local.Project'}.${name}`),
     aliases: aliases ?? [],
   }))
-  const matchResults = Array.from(matchedSortedEntries, (entry) => filtering.filter(entry))
+  const matchResults = Array.from(matchedSortedEntries, (entry) => filtering.filter(entry, []))
   // Checking matching entries
   function checkResult(entry: SuggestionEntry, result: Opt<MatchResult>) {
     expect(result, `Matching entry ${entryQn(entry)}`).not.toBeNull()
@@ -226,6 +244,6 @@ test.each([
       ...makeModuleMethod(`${module ?? 'local.Project'}.${name}`),
       aliases: aliases ?? [],
     }
-    expect(filtering.filter(entry), entryQn(entry)).toBeNull()
+    expect(filtering.filter(entry, []), entryQn(entry)).toBeNull()
   }
 })

@@ -10,7 +10,8 @@ import { isSome } from '@/util/data/opt'
 import { Range } from '@/util/data/range'
 import { displayedIconOf } from '@/util/getIconName'
 import type { Icon } from '@/util/iconName'
-import { qnLastSegmentIndex } from '@/util/qualifiedName'
+import { qnLastSegmentIndex, QualifiedName, tryQualifiedName } from '@/util/qualifiedName'
+import { unwrap } from 'ydoc-shared/util/data/result'
 
 interface ComponentLabelInfo {
   label: string
@@ -107,11 +108,21 @@ export function makeComponent({ id, entry, match }: ComponentInfo): Component {
   }
 }
 
+const ANY_TYPE = unwrap(tryQualifiedName('Standard.Base.Any.Any'))
+
 /** Create {@link Component} list from filtered suggestions. */
 export function makeComponentList(db: SuggestionDb, filtering: Filtering): Component[] {
   function* matchSuggestions() {
+    // All types are descendants of `Any`, so we can safely prepopulate it here.
+    // This way, we will use it even when `selfArg` is not a valid qualified name.
+    const additionalSelfTypes: QualifiedName[] = [ANY_TYPE]
+    if (filtering.selfArg?.type === 'known') {
+      const maybeName = tryQualifiedName(filtering.selfArg.typename)
+      if (maybeName.ok) populateAdditionalSelfTypes(db, additionalSelfTypes, maybeName.value)
+    }
+
     for (const [id, entry] of db.entries()) {
-      const match = filtering.filter(entry)
+      const match = filtering.filter(entry, additionalSelfTypes)
       if (isSome(match)) {
         yield { id, entry, match }
       }
@@ -119,4 +130,17 @@ export function makeComponentList(db: SuggestionDb, filtering: Filtering): Compo
   }
   const matched = Array.from(matchSuggestions()).sort(compareSuggestions)
   return Array.from(matched, (info) => makeComponent(info))
+}
+
+/**
+ * Type can inherit methods from `parentType`, and it can do that recursively.
+ * In practice, these hierarchies are at most two levels deep.
+ */
+function populateAdditionalSelfTypes(db: SuggestionDb, list: QualifiedName[], name: QualifiedName) {
+  let entry = db.getEntryByQualifiedName(name)
+  // We don’t need to add `Any` to the list, because the caller already did that.
+  while (entry != null && entry.parentType != null && entry.parentType !== ANY_TYPE) {
+    list.push(entry.parentType)
+    entry = db.getEntryByQualifiedName(entry.parentType)
+  }
 }
