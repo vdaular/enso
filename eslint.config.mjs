@@ -233,7 +233,9 @@ export default [
         },
       ],
       '@typescript-eslint/no-namespace': 'off',
-      '@typescript-eslint/no-empty-object-type': ['error'],
+      // Empty interfaces have valid uses; e.g. although an empty interface extending a class is semantically equivalent
+      // to a type alias, it is not resolved by IDEs to the base type (which may be internal).
+      '@typescript-eslint/no-empty-object-type': ['error', { allowInterfaces: 'always' }],
       'no-unused-labels': 'off',
       // Taken care of by prettier
       'vue/max-attributes-per-line': 'off',

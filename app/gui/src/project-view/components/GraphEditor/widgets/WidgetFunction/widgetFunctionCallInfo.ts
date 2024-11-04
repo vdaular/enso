@@ -29,7 +29,7 @@ export const GET_WIDGETS_METHOD = 'get_widget_json'
  * expression updates.
  */
 export function useWidgetFunctionCallInfo(
-  input: ToValue<WidgetInput & { value: Ast.Ast }>,
+  input: ToValue<WidgetInput & { value: Ast.Expression }>,
   graphDb: {
     getMethodCallInfo(id: AstId): MethodCallInfo | undefined
     getExpressionInfo(id: AstId): ExpressionInfo | undefined

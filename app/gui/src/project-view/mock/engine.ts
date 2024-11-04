@@ -459,8 +459,10 @@ export const mockLSHandler: MockTransportData = async (method, data, transport) 
         expressionId: ExpressionId
         expression: string
       }
-      const aiPromptPat = Pattern.parse('Standard.Visualization.AI.build_ai_prompt __ . to_json')
-      const exprAst = Ast.parse(data_.expression)
+      const aiPromptPat = Pattern.parseExpression(
+        'Standard.Visualization.AI.build_ai_prompt __ . to_json',
+      )
+      const exprAst = Ast.parseExpression(data_.expression)!
       if (aiPromptPat.test(exprAst)) {
         sendVizUpdate(
           data_.visualizationId,

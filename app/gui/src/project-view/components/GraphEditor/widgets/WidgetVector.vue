@@ -19,7 +19,7 @@ const itemConfig = computed(() =>
 
 const defaultItem = computed(() =>
   props.input.dynamicConfig?.kind === 'Vector_Editor' ?
-    Ast.parse(props.input.dynamicConfig.item_default)
+    Ast.parseExpression(props.input.dynamicConfig.item_default)
   : DEFAULT_ITEM.value,
 )
 
@@ -45,22 +45,27 @@ const value = computed({
 
 const navigator = injectGraphNavigator(true)
 
-function useChildEditForwarding(input: WatchSource<Ast.Ast | unknown>) {
+function useChildEditForwarding(input: WatchSource<Ast.Expression | unknown>) {
   let editStarted = false
-  const childEdit = shallowRef<{ origin: PortId; editedValue: Ast.Owned | string }>()
+  const childEdit = shallowRef<{
+    origin: PortId
+    editedValue: Ast.Owned<Ast.MutableExpression> | string
+  }>()
 
   watchEffect(() => {
     if (!editStarted && !childEdit.value) return
     const inputValue = toValue(input)
     if (!(inputValue instanceof Ast.Ast)) return
-    const editedAst = Ast.copyIntoNewModule(inputValue)
+    const editedAst = Ast.copyIntoNewModule(inputValue as Ast.Expression)
     if (childEdit.value) {
       const module = editedAst.module
       const origin = childEdit.value.origin
       const ast = isAstId(origin) ? module.tryGet(origin) : undefined
       if (ast) {
         const replacement = childEdit.value.editedValue
-        ast.replace(typeof replacement === 'string' ? Ast.parse(replacement, module) : replacement)
+        ast.replace(
+          typeof replacement === 'string' ? Ast.parseExpression(replacement, module)! : replacement,
+        )
       }
     }
     editHandler.edit(editedAst)
@@ -71,7 +76,7 @@ function useChildEditForwarding(input: WatchSource<Ast.Ast | unknown>) {
     childEnded: (origin: PortId) => {
       if (childEdit.value?.origin === origin) childEdit.value = undefined
     },
-    edit: (origin: PortId, value: Ast.Owned | string) => {
+    edit: (origin: PortId, value: Ast.Owned<Ast.MutableExpression> | string) => {
       // The ID is used to locate a subtree; if the port isn't identified by an AstId, the lookup will simply fail.
       childEdit.value = { origin, editedValue: value }
     },
@@ -86,7 +91,7 @@ const editHandler = WidgetEditHandler.New('WidgetVector', props.input, {
   edit,
 })
 
-function itemInput(ast: Ast.Ast): WidgetInput {
+function itemInput(ast: Ast.Expression): WidgetInput {
   return {
     ...WidgetInput.FromAst(ast),
     dynamicConfig: itemConfig.value,
@@ -118,11 +123,11 @@ const DEFAULT_ITEM = computed(() => Ast.Wildcard.new())
   <ListWidget
     v-model="value"
     :newItem="newItem"
-    :getKey="(ast: Ast.Ast) => ast.id"
+    :getKey="(ast: Ast.Expression) => ast.id"
     dragMimeType="application/x-enso-ast-node"
-    :toPlainText="(ast: Ast.Ast) => ast.code()"
-    :toDragPayload="(ast: Ast.Ast) => Ast.serialize(ast)"
-    :fromDragPayload="Ast.deserialize"
+    :toPlainText="(ast: Ast.Expression) => ast.code()"
+    :toDragPayload="(ast: Ast.Expression) => Ast.serializeExpression(ast)"
+    :fromDragPayload="Ast.deserializeExpression"
     :toDragPosition="(p) => navigator?.clientToScenePos(p) ?? p"
     class="WidgetVector"
     contenteditable="false"

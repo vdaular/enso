@@ -26,7 +26,7 @@ export function useAI(
         const lsRpc = project.lsRpcConnection
         const sourceNodeId = graphDb.getIdentDefiningNode(sourceIdentifier)
         const contextId =
-          sourceNodeId && graphDb.nodeIdToNode.get(sourceNodeId)?.outerExpr.externalId
+          sourceNodeId && graphDb.nodeIdToNode.get(sourceNodeId)?.outerAst.externalId
         if (!contextId) return Err(`Cannot find node with name ${sourceIdentifier}`)
 
         const prompt = await withContext(

@@ -42,7 +42,7 @@ const dropdownElement = ref<HTMLElement>()
 const activityElement = ref<HTMLElement>()
 
 const editedWidget = ref<string>()
-const editedValue = ref<Ast.Owned | string | undefined>()
+const editedValue = ref<Ast.Owned<Ast.MutableExpression> | string | undefined>()
 const isHovered = ref(false)
 /** See @{link Actions.setActivity} */
 const activity = shallowRef<VNode>()
@@ -96,7 +96,7 @@ const { floatingStyles } = dropdownStyles(dropdownElement, true)
 const { floatingStyles: activityStyles } = dropdownStyles(activityElement, false)
 
 class ExpressionTag {
-  private cachedExpressionAst: Ast.Ast | undefined
+  private cachedExpressionAst: Ast.Expression | undefined
 
   constructor(
     readonly expression: string,
@@ -135,7 +135,7 @@ class ExpressionTag {
 
   get expressionAst() {
     if (this.cachedExpressionAst == null) {
-      this.cachedExpressionAst = Ast.parse(this.expression)
+      this.cachedExpressionAst = Ast.parseExpression(this.expression)
     }
     return this.cachedExpressionAst
   }
@@ -154,7 +154,7 @@ class ActionTag {
 
 type ExpressionFilter = (tag: ExpressionTag) => boolean
 function makeExpressionFilter(pattern: Ast.Ast | string): ExpressionFilter | undefined {
-  const editedAst = typeof pattern === 'string' ? Ast.parse(pattern) : pattern
+  const editedAst = typeof pattern === 'string' ? Ast.parseExpression(pattern) : pattern
   const editedCode = pattern instanceof Ast.Ast ? pattern.code() : pattern
   if (editedAst instanceof Ast.TextLiteral) {
     return (tag: ExpressionTag) =>
@@ -249,11 +249,7 @@ provideSelectionArrow(
         if (node instanceof Ast.AutoscopedIdentifier) return node.identifier.id
         if (node instanceof Ast.PropertyAccess) return node.rhs.id
         if (node instanceof Ast.App) node = node.function
-        else {
-          const wrapped = node.wrappedExpression()
-          if (wrapped != null) node = wrapped
-          else break
-        }
+        else break
       }
       return null
     }),
@@ -369,7 +365,7 @@ function toggleVectorValue(vector: Ast.MutableVector, value: string, previousSta
   if (previousState) {
     vector.keep((ast) => ast.code() !== value)
   } else {
-    vector.push(Ast.parse(value, vector.module))
+    vector.push(Ast.parseExpression(value, vector.module)!)
   }
 }
 

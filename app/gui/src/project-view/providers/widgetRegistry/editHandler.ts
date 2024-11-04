@@ -60,7 +60,7 @@ export abstract class WidgetEditHandlerParent {
     this.parent?.unsetActiveChild(this)
   }
 
-  protected onEdit(origin: PortId, value: Ast.Owned | string): void {
+  protected onEdit(origin: PortId, value: Ast.Owned<Ast.MutableExpression> | string): void {
     this.hooks.edit?.(origin, value)
     this.parent?.onEdit(origin, value)
   }
@@ -265,8 +265,8 @@ export class WidgetEditHandler extends WidgetEditHandlerParent {
     this.onStart(this.portId)
   }
 
-  /** TODO: Add docs */
-  edit(value: Ast.Owned | string) {
+  /** Emit an event updating the widget's value. */
+  edit(value: Ast.Owned<Ast.MutableExpression> | string) {
     this.onEdit(this.portId, value)
   }
 }
@@ -281,7 +281,7 @@ export interface WidgetEditHooks extends Interaction {
   end?(origin?: PortId | undefined): void
   childEnded?(origin?: PortId | undefined): void
   /** Hook called when a child widget provides an updated value. */
-  edit?(origin: PortId, value: Ast.Owned | string): void
+  edit?(origin: PortId, value: Ast.Owned<Ast.MutableExpression> | string): void
   /**
    * Hook enabling a widget to provide a handler for the add-item intent of a child widget. The parent can return true
    * to indicate that creating the new item has been handled and the child should not perform its action in this case.

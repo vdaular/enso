@@ -1,14 +1,13 @@
 import { assert } from '@/util/assert'
 import {
   RawAst,
-  astPrettyPrintType,
   parsedTreeOrTokenRange,
   rawParseModule,
   readAstOrTokenSpan,
   readTokenSpan,
 } from '@/util/ast/raw'
 import { MappedKeyMap, MappedSet, NonEmptyStack } from '@/util/containers'
-import type { LazyObject } from 'ydoc-shared/ast/parserSupport'
+import { LazyObject } from 'ydoc-shared/ast/parserSupport'
 import { rangeIsBefore, sourceRangeKey, type SourceRange } from 'ydoc-shared/yjsModel'
 
 const ACCESSOR_OPERATOR = '.'
@@ -323,7 +322,7 @@ export class AliasAnalyzer {
           }
         }
         break
-      case RawAst.Tree.Type.Documented:
+      case RawAst.Tree.Type.ExpressionStatement:
         // Intentionally omit documentation, as it is not a "real" code.
         this.processTree(node.expression)
         break
@@ -346,5 +345,12 @@ export class AliasAnalyzer {
 function log(...messages: Array<() => any>) {
   if (LOGGING_ENABLED ?? false) {
     console.log(...messages.map((message) => message()))
+  }
+}
+
+function astPrettyPrintType(obj: unknown): string | undefined {
+  if (obj instanceof LazyObject && Object.hasOwnProperty.call(obj, 'type')) {
+    const proto = Object.getPrototypeOf(obj)
+    return proto?.constructor?.name
   }
 }

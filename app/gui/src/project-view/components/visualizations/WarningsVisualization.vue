@@ -13,7 +13,9 @@ export const defaultPreprocessor = [
 ] as const
 
 const removeWarnings = computed(() =>
-  Pattern.new((ast) => Ast.PropertyAccess.new(ast.module, ast, Ast.identifier('remove_warnings')!)),
+  Pattern.new<Ast.Expression>((ast) =>
+    Ast.PropertyAccess.new(ast.module, ast, Ast.identifier('remove_warnings')!),
+  ),
 )
 </script>
 

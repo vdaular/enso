@@ -50,7 +50,7 @@ export interface ColumnDef extends ColDef<RowData> {
 
 namespace cellValueConversion {
   /** Convert AST node to a value for Grid (to be returned from valueGetter, for example). */
-  export function astToAgGrid(ast: Ast.Ast) {
+  export function astToAgGrid(ast: Ast.Expression) {
     if (ast instanceof Ast.TextLiteral) return Ok(ast.rawTextContent)
     else if (ast instanceof Ast.Ident && ast.code() === NOTHING_NAME) return Ok(null)
     else if (ast instanceof Ast.PropertyAccess && ast.rhs.code() === NOTHING_NAME) return Ok(null)
@@ -69,7 +69,7 @@ namespace cellValueConversion {
   export function agGridToAst(
     value: unknown,
     module: Ast.MutableModule,
-  ): { ast: Ast.Owned; requireNothingImport: boolean } {
+  ): { ast: Ast.Owned<Ast.MutableExpression>; requireNothingImport: boolean } {
     if (value == null || value === '') {
       return { ast: Ast.Ident.new(module, 'Nothing' as Ast.Identifier), requireNothingImport: true }
     } else if (typeof value === 'number') {
@@ -88,7 +88,7 @@ namespace cellValueConversion {
   }
 }
 
-function retrieveColumnsAst(call: Ast.Ast) {
+function retrieveColumnsAst(call: Ast.Expression): Result<Ast.Vector | undefined> {
   if (!(call instanceof Ast.App)) return Ok(undefined)
   if (call.argument instanceof Ast.Vector) return Ok(call.argument)
   if (call.argument instanceof Ast.Wildcard) return Ok(undefined)
@@ -96,7 +96,7 @@ function retrieveColumnsAst(call: Ast.Ast) {
 }
 
 function readColumn(
-  ast: Ast.Ast,
+  ast: Ast.Expression,
 ): Result<{ id: Ast.AstId; name: Ast.TextLiteral; data: Ast.Vector }> {
   const errormsg = () => `${ast.code} is not a vector of two elements`
   if (!(ast instanceof Ast.Vector)) return Err(errormsg())
@@ -125,7 +125,7 @@ function retrieveColumnsDefinitions(columnsAst: Ast.Vector) {
  *
  * This widget may handle table definitions filled with literals or `Nothing` values.
  */
-export function tableNewCallMayBeHandled(call: Ast.Ast) {
+export function tableNewCallMayBeHandled(call: Ast.Expression) {
   const columnsAst = retrieveColumnsAst(call)
   if (!columnsAst.ok) return false
   if (!columnsAst.value) return true // We can handle lack of the argument
@@ -147,7 +147,7 @@ export function tableNewCallMayBeHandled(call: Ast.Ast) {
  * @param onUpdate callback called when AGGrid was edited by user, resulting in AST change.
  */
 export function useTableNewArgument(
-  input: ToValue<WidgetInput & { value: Ast.Ast }>,
+  input: ToValue<WidgetInput & { value: Ast.Expression }>,
   graph: {
     startEdit(): Ast.MutableModule
     addMissingImports(edit: Ast.MutableModule, newImports: RequiredImport[]): void
@@ -343,7 +343,7 @@ export function useTableNewArgument(
             if (data == null) return undefined
             const ast = toValue(input).value.module.tryGet(data.cells[col.data.id])
             if (ast == null) return null
-            const value = cellValueConversion.astToAgGrid(ast)
+            const value = cellValueConversion.astToAgGrid(ast as Ast.Expression)
             if (!value.ok) {
               console.error(
                 `Cannot read \`${ast.code}\` as value in Table Widget; the Table widget should not be matched here!`,

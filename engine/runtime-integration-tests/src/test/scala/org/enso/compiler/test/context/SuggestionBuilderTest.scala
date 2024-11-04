@@ -2275,7 +2275,7 @@ class SuggestionBuilderTest extends AnyWordSpecLike with Matchers {
           |
           |## My sweet type
           |type Mtp
-          |    ## My sweet type
+          |    ## My sweet value
           |    MyType a b""".stripMargin
       val module = code.preprocessModule()
 
@@ -2306,7 +2306,7 @@ class SuggestionBuilderTest extends AnyWordSpecLike with Matchers {
                   .Argument("b", SuggestionBuilder.Any, false, false, None)
               ),
               returnType    = "Test.Mtp",
-              documentation = Some(" My sweet type"),
+              documentation = Some(" My sweet value"),
               annotations   = Seq()
             ),
             Vector()

@@ -1,15 +1,14 @@
 import * as map from 'lib0/map'
-import type {
+import {
   AstId,
   FunctionFields,
   Module,
+  MutableInvalid,
   NodeChild,
   Owned,
   OwnedRefs,
   TextElement,
   TextToken,
-} from '.'
-import {
   Token,
   asOwned,
   isTokenId,
@@ -39,7 +38,6 @@ import {
   type SourceRange,
   type SourceRangeKey,
 } from '../yjsModel'
-import { graphParentPointers } from './debug'
 import { parse_block, parse_module, xxHash128 } from './ffi'
 import * as RawAst from './generated/ast'
 import { MutableModule } from './mutableModule'
@@ -50,7 +48,7 @@ import {
   Ast,
   AutoscopedIdentifier,
   BodyBlock,
-  Documented,
+  ExpressionStatement,
   Function,
   Generic,
   Group,
@@ -60,7 +58,10 @@ import {
   MutableAssignment,
   MutableAst,
   MutableBodyBlock,
+  MutableExpression,
+  MutableExpressionStatement,
   MutableIdent,
+  MutableStatement,
   NegationApp,
   NumericLiteral,
   OprApp,
@@ -95,7 +96,7 @@ export function normalize(rootIn: Ast): Ast {
   const module = MutableModule.Transient()
   const tree = rawParseModule(printed.code)
   const { root: parsed, spans } = abstract(module, tree, printed.code)
-  module.replaceRoot(parsed)
+  module.setRoot(parsed)
   setExternalIds(module, spans, idMap)
   return parsed
 }
@@ -154,6 +155,20 @@ class Abstractor {
     this.toRaw = new Map()
   }
 
+  abstractStatement(tree: RawAst.Tree): {
+    whitespace: string | undefined
+    node: Owned<MutableStatement>
+  } {
+    return this.abstractTree(tree) as any
+  }
+
+  abstractExpression(tree: RawAst.Tree): {
+    whitespace: string | undefined
+    node: Owned<MutableExpression>
+  } {
+    return this.abstractTree(tree) as any
+  }
+
   abstractTree(tree: RawAst.Tree): { whitespace: string | undefined; node: Owned } {
     const whitespaceStart = tree.whitespaceStartInCodeParsed
     const whitespaceEnd = whitespaceStart + tree.whitespaceLengthInCodeParsed
@@ -168,54 +183,14 @@ class Abstractor {
       case RawAst.Tree.Type.BodyBlock: {
         const lines = Array.from(tree.statements, line => {
           const newline = this.abstractToken(line.newline)
-          const expression = line.expression ? this.abstractTree(line.expression) : undefined
-          return { newline, expression }
+          const statement = line.expression ? this.abstractStatement(line.expression) : undefined
+          return { newline, statement }
         })
         node = BodyBlock.concrete(this.module, lines)
         break
       }
       case RawAst.Tree.Type.Function: {
-        const annotationLines = Array.from(tree.annotationLines, anno => ({
-          annotation: {
-            operator: this.abstractToken(anno.annotation.operator),
-            annotation: this.abstractToken(anno.annotation.annotation),
-            argument: anno.annotation.argument && this.abstractTree(anno.annotation.argument),
-          },
-          newlines: Array.from(anno.newlines, this.abstractToken.bind(this)),
-        }))
-        const signatureLine = tree.signatureLine && {
-          signature: this.abstractTypeSignature(tree.signatureLine.signature),
-          newlines: Array.from(tree.signatureLine.newlines, this.abstractToken.bind(this)),
-        }
-        const private_ = tree.private && this.abstractToken(tree.private)
-        const name = this.abstractTree(tree.name)
-        const argumentDefinitions = Array.from(tree.args, arg => ({
-          open: arg.open && this.abstractToken(arg.open),
-          open2: arg.open2 && this.abstractToken(arg.open2),
-          suspension: arg.suspension && this.abstractToken(arg.suspension),
-          pattern: this.abstractTree(arg.pattern),
-          type: arg.typeNode && {
-            operator: this.abstractToken(arg.typeNode.operator),
-            type: this.abstractTree(arg.typeNode.typeNode),
-          },
-          close2: arg.close2 && this.abstractToken(arg.close2),
-          defaultValue: arg.default && {
-            equals: this.abstractToken(arg.default.equals),
-            expression: this.abstractTree(arg.default.expression),
-          },
-          close: arg.close && this.abstractToken(arg.close),
-        }))
-        const equals = this.abstractToken(tree.equals)
-        const body = tree.body !== undefined ? this.abstractTree(tree.body) : undefined
-        node = Function.concrete(this.module, {
-          annotationLines,
-          signatureLine,
-          private_,
-          name,
-          argumentDefinitions,
-          equals,
-          body,
-        } satisfies FunctionFields<OwnedRefs>)
+        node = this.abstractFunction(tree)
         break
       }
       case RawAst.Tree.Type.Ident: {
@@ -224,24 +199,25 @@ class Abstractor {
         break
       }
       case RawAst.Tree.Type.Assignment: {
-        const pattern = this.abstractTree(tree.pattern)
+        const docLine = tree.docLine && this.abstractDocLine(tree.docLine)
+        const pattern = this.abstractExpression(tree.pattern)
         const equals = this.abstractToken(tree.equals)
-        const value = this.abstractTree(tree.expr)
-        node = Assignment.concrete(this.module, pattern, equals, value)
+        const value = this.abstractExpression(tree.expr)
+        node = Assignment.concrete(this.module, docLine, pattern, equals, value)
         break
       }
       case RawAst.Tree.Type.App: {
-        const func = this.abstractTree(tree.func)
-        const arg = this.abstractTree(tree.arg)
+        const func = this.abstractExpression(tree.func)
+        const arg = this.abstractExpression(tree.arg)
         node = App.concrete(this.module, func, undefined, undefined, arg)
         break
       }
       case RawAst.Tree.Type.NamedApp: {
-        const func = this.abstractTree(tree.func)
+        const func = this.abstractExpression(tree.func)
         const open = tree.open ? this.abstractToken(tree.open) : undefined
         const name = this.abstractToken(tree.name)
         const equals = this.abstractToken(tree.equals)
-        const arg = this.abstractTree(tree.arg)
+        const arg = this.abstractExpression(tree.arg)
         const close = tree.close ? this.abstractToken(tree.close) : undefined
         const parens = open && close ? { open, close } : undefined
         const nameSpecification = { name, equals }
@@ -250,7 +226,7 @@ class Abstractor {
       }
       case RawAst.Tree.Type.UnaryOprApp: {
         const opr = this.abstractToken(tree.opr)
-        const arg = tree.rhs ? this.abstractTree(tree.rhs) : undefined
+        const arg = tree.rhs ? this.abstractExpression(tree.rhs) : undefined
         if (arg && opr.node.code() === '-') {
           node = NegationApp.concrete(this.module, opr, arg)
         } else {
@@ -265,12 +241,12 @@ class Abstractor {
         break
       }
       case RawAst.Tree.Type.OprApp: {
-        const lhs = tree.lhs ? this.abstractTree(tree.lhs) : undefined
+        const lhs = tree.lhs ? this.abstractExpression(tree.lhs) : undefined
         const opr =
           tree.opr.ok ?
             [this.abstractToken(tree.opr.value)]
           : Array.from(tree.opr.error.payload.operators, this.abstractToken.bind(this))
-        const rhs = tree.rhs ? this.abstractTree(tree.rhs) : undefined
+        const rhs = tree.rhs ? this.abstractExpression(tree.rhs) : undefined
         const soleOpr = tryGetSoleValue(opr)
         if (soleOpr?.node.code() === '.' && rhs?.node instanceof MutableIdent) {
           // Propagate type.
@@ -302,7 +278,7 @@ class Abstractor {
       // (which makes it impossible to give them unique IDs in the current IdMap format).
       case RawAst.Tree.Type.OprSectionBoundary:
       case RawAst.Tree.Type.TemplateFunction:
-        return { whitespace, node: this.abstractTree(tree.ast).node }
+        return { whitespace, node: this.abstractExpression(tree.ast).node }
       case RawAst.Tree.Type.Invalid: {
         const expression = this.abstractTree(tree.ast)
         node = Invalid.concrete(this.module, expression)
@@ -310,7 +286,7 @@ class Abstractor {
       }
       case RawAst.Tree.Type.Group: {
         const open = tree.open ? this.abstractToken(tree.open) : undefined
-        const expression = tree.body ? this.abstractTree(tree.body) : undefined
+        const expression = tree.body ? this.abstractExpression(tree.body) : undefined
         const close = tree.close ? this.abstractToken(tree.close) : undefined
         node = Group.concrete(this.module, open, expression, close)
         break
@@ -323,18 +299,16 @@ class Abstractor {
         node = TextLiteral.concrete(this.module, open, newline, elements, close)
         break
       }
-      case RawAst.Tree.Type.Documented: {
-        const open = this.abstractToken(tree.documentation.open)
-        const elements = Array.from(tree.documentation.elements, this.abstractTextToken.bind(this))
-        const newlines = Array.from(tree.documentation.newlines, this.abstractToken.bind(this))
-        const expression = tree.expression ? this.abstractTree(tree.expression) : undefined
-        node = Documented.concrete(this.module, open, elements, newlines, expression)
+      case RawAst.Tree.Type.ExpressionStatement: {
+        const docLine = tree.docLine && this.abstractDocLine(tree.docLine)
+        const expression = this.abstractExpression(tree.expression)
+        node = ExpressionStatement.concrete(this.module, docLine, expression)
         break
       }
       case RawAst.Tree.Type.Import: {
         const recurseBody = (tree: RawAst.Tree) => {
-          const body = this.abstractTree(tree)
-          if (body.node instanceof Invalid && body.node.code() === '') return undefined
+          const body = this.abstractExpression(tree)
+          if (body.node instanceof MutableInvalid && body.node.code() === '') return undefined
           return body
         }
         const recurseSegment = (segment: RawAst.MultiSegmentAppSegment) => ({
@@ -353,12 +327,12 @@ class Abstractor {
       case RawAst.Tree.Type.Array: {
         const left = this.abstractToken(tree.left)
         const elements = []
-        if (tree.first) elements.push({ value: this.abstractTree(tree.first) })
+        if (tree.first) elements.push({ value: this.abstractExpression(tree.first) })
         else if (!tree.rest.next().done) elements.push({ value: undefined })
         for (const rawElement of tree.rest) {
           elements.push({
             delimiter: this.abstractToken(rawElement.operator),
-            value: rawElement.body && this.abstractTree(rawElement.body),
+            value: rawElement.body && this.abstractExpression(rawElement.body),
           })
         }
         const right = this.abstractToken(tree.right)
@@ -372,6 +346,52 @@ class Abstractor {
     this.toRaw.set(node.id, tree)
     map.setIfUndefined(this.nodes, spanKey, (): Ast[] => []).unshift(node)
     return { node, whitespace }
+  }
+
+  private abstractFunction(tree: RawAst.Tree.Function) {
+    const docLine = tree.docLine && this.abstractDocLine(tree.docLine)
+    const annotationLines = Array.from(tree.annotationLines, anno => ({
+      annotation: {
+        operator: this.abstractToken(anno.annotation.operator),
+        annotation: this.abstractToken(anno.annotation.annotation),
+        argument: anno.annotation.argument && this.abstractExpression(anno.annotation.argument),
+      },
+      newlines: Array.from(anno.newlines, this.abstractToken.bind(this)),
+    }))
+    const signatureLine = tree.signatureLine && {
+      signature: this.abstractTypeSignature(tree.signatureLine.signature),
+      newlines: Array.from(tree.signatureLine.newlines, this.abstractToken.bind(this)),
+    }
+    const private_ = tree.private && this.abstractToken(tree.private)
+    const name = this.abstractExpression(tree.name)
+    const argumentDefinitions = Array.from(tree.args, arg => ({
+      open: arg.open && this.abstractToken(arg.open),
+      open2: arg.open2 && this.abstractToken(arg.open2),
+      suspension: arg.suspension && this.abstractToken(arg.suspension),
+      pattern: this.abstractExpression(arg.pattern),
+      type: arg.typeNode && {
+        operator: this.abstractToken(arg.typeNode.operator),
+        type: this.abstractExpression(arg.typeNode.typeNode),
+      },
+      close2: arg.close2 && this.abstractToken(arg.close2),
+      defaultValue: arg.default && {
+        equals: this.abstractToken(arg.default.equals),
+        expression: this.abstractExpression(arg.default.expression),
+      },
+      close: arg.close && this.abstractToken(arg.close),
+    }))
+    const equals = this.abstractToken(tree.equals)
+    const body = tree.body !== undefined ? this.abstractExpression(tree.body) : undefined
+    return Function.concrete(this.module, {
+      docLine,
+      annotationLines,
+      signatureLine,
+      private_,
+      name,
+      argumentDefinitions,
+      equals,
+      body,
+    } satisfies FunctionFields<OwnedRefs>)
   }
 
   private abstractToken(token: RawAst.Token): { whitespace: string; node: Token } {
@@ -412,7 +432,7 @@ class Abstractor {
         return {
           type: 'splice',
           open: this.abstractToken(raw.open),
-          expression: raw.expression && this.abstractTree(raw.expression),
+          expression: raw.expression && this.abstractExpression(raw.expression),
           close: this.abstractToken(raw.close),
         }
     }
@@ -440,9 +460,19 @@ class Abstractor {
 
   private abstractTypeSignature(signature: RawAst.TypeSignature) {
     return {
-      name: this.abstractTree(signature.name),
+      name: this.abstractExpression(signature.name),
       operator: this.abstractToken(signature.operator),
-      type: this.abstractTree(signature.typeNode),
+      type: this.abstractExpression(signature.typeNode),
+    }
+  }
+
+  private abstractDocLine(docLine: RawAst.DocLine) {
+    return {
+      docs: {
+        open: this.abstractToken(docLine.docs.open),
+        elements: Array.from(docLine.docs.elements, this.abstractTextToken.bind(this)),
+      },
+      newlines: Array.from(docLine.newlines, this.abstractToken.bind(this)),
     }
   }
 }
@@ -512,144 +542,81 @@ export function print(ast: Ast): PrintedSource {
     nodes: new Map(),
     tokens: new Map(),
   }
-  const code = ast.printSubtree(info, 0, undefined)
+  const code = ast.printSubtree(info, 0, null)
   return { info, code }
 }
 
 /**
- * Used by `Ast.printSubtree`. Note that some AST types have overrides.
+ * Used by `Ast.printSubtree`.
  * @internal
  */
 export function printAst(
   ast: Ast,
   info: SpanMap,
   offset: number,
-  parentIndent: string | undefined,
-  verbatim?: boolean,
+  parentIndent: string | null,
+  verbatim: boolean = false,
 ): string {
   let code = ''
-  for (const child of ast.concreteChildren(verbatim)) {
+  let currentLineIndent = parentIndent
+  let prevIsNewline = false
+  let isFirstToken = offset === 0
+  for (const child of ast.concreteChildren({ verbatim, indent: parentIndent })) {
     if (!isTokenId(child.node) && ast.module.get(child.node) === undefined) continue
-    if (child.whitespace != null) {
-      code += child.whitespace
-    } else if (code.length != 0) {
-      code += ' '
+    if (prevIsNewline) currentLineIndent = child.whitespace
+    const token = isTokenId(child.node) ? ast.module.getToken(child.node) : undefined
+    // Every line in a block starts with a newline token. In an AST produced by the parser, the newline token at the
+    // first line of a module is zero-length. In order to handle whitespace correctly if the lines of a module are
+    // rearranged, if a zero-length newline is encountered within a block, it is printed as an ordinary newline
+    // character, and if an ordinary newline is found at the beginning of the output, it is not printed; however if the
+    // output begins with a newline including a (plain) comment, we print the line as we would in any other block.
+    if (
+      token?.tokenType_ == RawAst.Token.Type.Newline &&
+      isFirstToken &&
+      (!token.code_ || token.code_ === '\n')
+    ) {
+      prevIsNewline = true
+      isFirstToken = false
+      continue
     }
-    if (isTokenId(child.node)) {
+    code += child.whitespace
+    if (token) {
       const tokenStart = offset + code.length
-      const token = ast.module.getToken(child.node)
-      const span = tokenKey(tokenStart, token.code().length)
+      prevIsNewline = token.tokenType_ == RawAst.Token.Type.Newline
+      let tokenCode = token.code_
+      if (token.tokenType_ == RawAst.Token.Type.Newline) {
+        tokenCode = tokenCode || '\n'
+      }
+      const span = tokenKey(tokenStart, tokenCode.length)
       info.tokens.set(span, token)
-      code += token.code()
+      code += tokenCode
     } else {
+      assert(!isTokenId(child.node))
+      prevIsNewline = false
       const childNode = ast.module.get(child.node)
-      code += childNode.printSubtree(info, offset + code.length, parentIndent, verbatim)
+      code += childNode.printSubtree(info, offset + code.length, currentLineIndent, verbatim)
       // Extra structural validation.
       assertEqual(childNode.id, child.node)
       if (parentId(childNode) !== ast.id) {
-        console.error(
-          `Inconsistent parent pointer (expected ${ast.id})`,
-          childNode,
-          graphParentPointers(ast.module.root()!),
-        )
+        console.error(`Inconsistent parent pointer (expected ${ast.id})`, childNode)
       }
       assertEqual(parentId(childNode), ast.id)
     }
+    isFirstToken = false
   }
-  const span = nodeKey(offset, code.length)
+  // Adjustment to handle an edge case: A module starts with a zero-length newline token. If its first line is indented,
+  // the initial whitespace belongs to the first line because it isn't hoisted past the (zero-length) newline to be the
+  // leading whitespace for the block. In that case, our representation of the block contains leading whitespace at the
+  // beginning, which must be excluded when calculating spans.
+  const leadingWhitespace = code.match(/ */)?.[0].length ?? 0
+  const span = nodeKey(offset + leadingWhitespace, code.length - leadingWhitespace)
   map.setIfUndefined(info.nodes, span, (): Ast[] => []).unshift(ast)
   return code
 }
 
-/**
- * Use `Ast.code()' to stringify.
- * @internal
- */
-export function printBlock(
-  block: BodyBlock,
-  info: SpanMap,
-  offset: number,
-  parentIndent: string | undefined,
-  verbatim?: boolean,
-): string {
-  let blockIndent: string | undefined
-  let code = ''
-  block.fields.get('lines').forEach((line, index) => {
-    code += line.newline.whitespace ?? ''
-    const newlineCode = block.module.getToken(line.newline.node).code()
-    // Only print a newline if this isn't the first line in the output, or it's a comment.
-    if (offset || index || newlineCode.startsWith('#')) {
-      // If this isn't the first line in the output, but there is a concrete newline token:
-      // if it's a zero-length newline, ignore it and print a normal newline.
-      code += newlineCode || '\n'
-    }
-    if (line.expression) {
-      if (blockIndent === undefined) {
-        if ((line.expression.whitespace?.length ?? 0) > (parentIndent?.length ?? 0)) {
-          blockIndent = line.expression.whitespace!
-        } else if (parentIndent !== undefined) {
-          blockIndent = parentIndent + '    '
-        } else {
-          blockIndent = ''
-        }
-      }
-      const validIndent = (line.expression.whitespace?.length ?? 0) > (parentIndent?.length ?? 0)
-      code += validIndent ? line.expression.whitespace : blockIndent
-      const lineNode = block.module.get(line.expression.node)
-      assertEqual(lineNode.id, line.expression.node)
-      assertEqual(parentId(lineNode), block.id)
-      code += lineNode.printSubtree(info, offset + code.length, blockIndent, verbatim)
-    }
-  })
-  const span = nodeKey(offset, code.length)
-  map.setIfUndefined(info.nodes, span, (): Ast[] => []).unshift(block)
-  return code
-}
-
-/**
- * Use `Ast.code()' to stringify.
- * @internal
- */
-export function printDocumented(
-  documented: Documented,
-  info: SpanMap,
-  offset: number,
-  parentIndent: string | undefined,
-  verbatim?: boolean,
-): string {
-  const open = documented.fields.get('open')
-  const topIndent = parentIndent ?? open.whitespace ?? ''
-  let code = ''
-  code += open.node.code_
-  const minWhitespaceLength = topIndent.length + 1
-  let preferredWhitespace = topIndent + '  '
-  documented.fields.get('elements').forEach(({ token }, i) => {
-    if (i === 0) {
-      const whitespace = token.whitespace ?? ' '
-      code += whitespace
-      code += token.node.code_
-      preferredWhitespace += whitespace
-    } else if (token.node.tokenType_ === RawAst.Token.Type.TextSection) {
-      if (token.whitespace && (verbatim || token.whitespace.length >= minWhitespaceLength))
-        code += token.whitespace
-      else code += preferredWhitespace
-      code += token.node.code_
-    } else {
-      code += token.whitespace ?? ''
-      code += token.node.code_
-    }
-  })
-  code += documented.fields
-    .get('newlines')
-    .map(({ whitespace, node }) => (whitespace ?? '') + node.code_)
-    .join('')
-  if (documented.expression) {
-    code += documented.fields.get('expression')?.whitespace ?? topIndent
-    code += documented.expression.printSubtree(info, offset + code.length, topIndent, verbatim)
-  }
-  const span = nodeKey(offset, code.length)
-  map.setIfUndefined(info.nodes, span, (): Ast[] => []).unshift(documented)
-  return code
+/** Parse the input as a complete module. */
+export function parseModule(code: string, module?: MutableModule): Owned<MutableBodyBlock> {
+  return parseModuleWithSpans(code, module).root
 }
 
 /** Parse the input as a body block, not the top level of a module. */
@@ -659,17 +626,41 @@ export function parseBlock(code: string, module?: MutableModule): Owned<MutableB
 }
 
 /**
- * Parse the input. If it contains a single expression at the top level, return it; otherwise, parse it as a body block.
+ * Parse the input as a statement. If it cannot be parsed as a statement (e.g. it is invalid or a block), returns
+ * `undefined`.
  */
-export function parse(code: string, module?: MutableModule): Owned {
+export function parseStatement(
+  code: string,
+  module?: MutableModule,
+): Owned<MutableStatement> | undefined {
   const module_ = module ?? MutableModule.Transient()
   const ast = parseBlock(code, module)
   const soleStatement = tryGetSoleValue(ast.statements())
-  if (!soleStatement) return ast
+  if (!soleStatement) return
   const parent = parentId(soleStatement)
   if (parent) module_.delete(parent)
   soleStatement.fields.set('parent', undefined)
   return asOwned(soleStatement)
+}
+
+/**
+ * Parse the input as an expression. If it cannot be parsed as an expression (e.g. it is a statement or block), returns
+ * `undefined`.
+ */
+export function parseExpression(
+  code: string,
+  module?: MutableModule,
+): Owned<MutableExpression> | undefined {
+  const module_ = module ?? MutableModule.Transient()
+  const ast = parseBlock(code, module)
+  const soleStatement = tryGetSoleValue(ast.statements())
+  if (!(soleStatement instanceof MutableExpressionStatement)) return undefined
+  const expression = soleStatement.expression
+  module_.delete(soleStatement.id)
+  const parent = parentId(expression)
+  if (parent) module_.delete(parent)
+  expression.fields.set('parent', undefined)
+  return asOwned(expression)
 }
 
 /** Parse a module, and return it along with a mapping from source locations to parsed objects. */
@@ -690,7 +681,7 @@ export function parseExtended(code: string, idMap?: IdMap | undefined, inModule?
   const module = inModule ?? MutableModule.Transient()
   const { root, spans, toRaw } = module.transact(() => {
     const { root, spans, toRaw } = abstract(module, rawRoot, code)
-    root.module.replaceRoot(root)
+    root.module.setRoot(root)
     if (idMap) setExternalIds(root.module, spans, idMap)
     return { root, spans, toRaw }
   })
@@ -702,7 +693,7 @@ export function parseExtended(code: string, idMap?: IdMap | undefined, inModule?
 /** Return the number of `Ast`s in the tree, including the provided root. */
 export function astCount(ast: Ast): number {
   let count = 0
-  ast.visitRecursiveAst(_subtree => {
+  ast.visitRecursive(_subtree => {
     count += 1
   })
   return count
@@ -784,11 +775,11 @@ export function repair(
   const fixes = module ?? root.module.edit()
   for (const ast of lostInline) {
     if (ast instanceof Group) continue
-    fixes.getVersion(ast).update(ast => Group.new(fixes, ast))
+    fixes.getVersion(ast).update(ast => Group.new(fixes, ast as any))
   }
 
   // Verify that it's fixed.
-  const printed2 = print(fixes.getVersion(root))
+  const printed2 = print(fixes.root()!)
   const reparsed2 = parseModuleWithSpans(printed2.code)
   const { lostInline: lostInline2, lostBlock: lostBlock2 } = checkSpans(
     printed2.info.nodes,
@@ -851,7 +842,7 @@ function resync(
 function hashSubtreeSyntax(ast: Ast, hashesOut: Map<SyntaxHash, Ast[]>): SyntaxHash {
   let content = ''
   content += ast.typeName + ':'
-  for (const child of ast.concreteChildren()) {
+  for (const child of ast.concreteChildren({ verbatim: false, indent: '' })) {
     content += child.whitespace ?? '?'
     if (isTokenId(child.node)) {
       content += 'Token:' + hashString(ast.module.getToken(child.node).code())
@@ -883,12 +874,6 @@ function syntaxHash(root: Ast) {
   const hashes = new Map<SyntaxHash, Ast[]>()
   const rootHash = hashSubtreeSyntax(root, hashes)
   return { root: rootHash, hashes }
-}
-
-/** If the input is a block containing a single expression, return the expression; otherwise return the input. */
-function rawBlockToInline(tree: RawAst.Tree.Tree) {
-  if (tree.type !== RawAst.Tree.Type.BodyBlock) return tree
-  return tryGetSoleValue(tree.statements)?.expression ?? tree
 }
 
 /** Update `ast` to match the given source code, while modifying it as little as possible. */
@@ -984,9 +969,22 @@ export function applyTextEditsToAst(
 ) {
   const printed = print(ast)
   const code = applyTextEdits(printed.code, textEdits)
-  const rawParsedBlock = rawParseModule(code)
-  const rawParsed =
-    ast instanceof MutableBodyBlock ? rawParsedBlock : rawBlockToInline(rawParsedBlock)
+  const astModuleRoot = ast.module.root()
+  const rawParsedBlock =
+    ast instanceof MutableBodyBlock && astModuleRoot && ast.is(astModuleRoot) ?
+      rawParseModule(code)
+    : rawParseBlock(code)
+  const rawParsedStatement =
+    ast instanceof MutableBodyBlock ? undefined : (
+      tryGetSoleValue(rawParsedBlock.statements)?.expression
+    )
+  const rawParsedExpression =
+    ast.isExpression() ?
+      rawParsedStatement?.type === RawAst.Tree.Type.ExpressionStatement ?
+        rawParsedStatement.expression
+      : undefined
+    : undefined
+  const rawParsed = rawParsedExpression ?? rawParsedStatement ?? rawParsedBlock
   const parsed = abstract(ast.module, rawParsed, code)
   const toSync = calculateCorrespondence(
     ast,
@@ -1031,7 +1029,7 @@ function syncTree(
     target.fields.get('metadata').set('externalId', newExternalId())
   }
   const newRoot = syncRoot ? target : newContent
-  newRoot.visitRecursiveAst(ast => {
+  newRoot.visitRecursive(ast => {
     const syncFieldsFrom = toSync.get(ast.id)
     const editAst = edit.getVersion(ast)
     if (syncFieldsFrom) {

@@ -18,10 +18,14 @@ use crate::syntax::statement::type_def::try_parse_type_def;
 use crate::syntax::token;
 use crate::syntax::tree;
 use crate::syntax::tree::block;
+use crate::syntax::tree::AnnotationLine;
 use crate::syntax::tree::ArgumentDefinition;
+use crate::syntax::tree::DocComment;
+use crate::syntax::tree::DocLine;
 use crate::syntax::tree::FunctionAnnotation;
 use crate::syntax::tree::SyntaxError;
 use crate::syntax::tree::TypeSignature;
+use crate::syntax::tree::TypeSignatureLine;
 use crate::syntax::treebuilding::Spacing;
 use crate::syntax::Item;
 use crate::syntax::Token;
@@ -44,7 +48,7 @@ impl<'s> BodyBlockParser<'s> {
     ) -> Tree<'s> {
         let lines = compound_lines_with_tail_expression(lines, |prefixes, line, is_tail| {
             if is_tail {
-                self.statement_parser.parse_tail_expression(line, precedence)
+                self.statement_parser.parse_tail_expression(prefixes, line, precedence)
             } else {
                 self.statement_parser.parse_statement(prefixes, line, precedence)
             }
@@ -68,7 +72,7 @@ impl<'s> BodyBlockParser<'s> {
 fn compound_lines<'s>(
     lines: &mut Vec<item::Line<'s>>,
     mut parse_line: impl FnMut(
-        &mut Vec<Line<'s, StatementPrefix<'s>>>,
+        &mut StatementPrefixes<'s>,
         item::Line<'s>,
     ) -> Line<'s, StatementOrPrefix<'s>>,
 ) -> Vec<block::Line<'s>> {
@@ -82,7 +86,7 @@ fn compound_lines<'s>(
 fn compound_lines_with_tail_expression<'s>(
     lines: &mut Vec<item::Line<'s>>,
     parse_line: impl FnMut(
-        &mut Vec<Line<'s, StatementPrefix<'s>>>,
+        &mut StatementPrefixes<'s>,
         item::Line<'s>,
         bool,
     ) -> Line<'s, StatementOrPrefix<'s>>,
@@ -97,36 +101,32 @@ fn compound_lines_with_tail_expression<'s>(
 fn compound_lines_maybe_with_tail_expression<'s>(
     lines: &mut Vec<item::Line<'s>>,
     mut parse_line: impl FnMut(
-        &mut Vec<Line<'s, StatementPrefix<'s>>>,
+        &mut StatementPrefixes<'s>,
         item::Line<'s>,
         bool,
     ) -> Line<'s, StatementOrPrefix<'s>>,
     tail_index: Option<usize>,
 ) -> Vec<block::Line<'s>> {
     let mut block_lines = Vec::new();
-    let mut line_prefixes = Vec::new();
+    let mut line_prefixes = StatementPrefixes::default();
     for (i, line) in lines.drain(..).enumerate() {
         let is_tail = tail_index == Some(i);
         match parse_line(&mut line_prefixes, line, is_tail) {
             Line { newline, content: Some(StatementOrPrefix::Statement(statement)) } => {
-                for Line { newline, content } in line_prefixes.drain(..) {
-                    block_lines.push(block::Line { newline, expression: content.map(Tree::from) })
-                }
+                line_prefixes.drain_unused_into(&mut block_lines);
                 block_lines.push(block::Line { newline, expression: Some(statement) })
             }
             Line { newline, content: Some(StatementOrPrefix::Prefix(prefix)) } =>
-                line_prefixes.push(Line { newline, content: Some(prefix) }),
+                line_prefixes.push(newline, prefix),
             Line { newline, content: None } =>
-                if line_prefixes.is_empty() {
+                if line_prefixes.prefixes.is_empty() {
                     block_lines.push(newline.into());
                 } else {
-                    line_prefixes.push(newline.into());
+                    line_prefixes.push_newline(newline);
                 },
         }
     }
-    for Line { newline, content } in line_prefixes {
-        block_lines.push(block::Line { newline, expression: content.map(Tree::from) })
-    }
+    line_prefixes.drain_unused_into(&mut block_lines);
     block_lines
 }
 
@@ -157,7 +157,7 @@ struct StatementParser<'s> {
 impl<'s> StatementParser<'s> {
     fn parse_statement(
         &mut self,
-        prefixes: &mut Vec<Line<'s, StatementPrefix<'s>>>,
+        prefixes: &mut StatementPrefixes<'s>,
         line: item::Line<'s>,
         precedence: &mut Precedence<'s>,
     ) -> Line<'s, StatementOrPrefix<'s>> {
@@ -170,10 +170,11 @@ impl<'s> StatementParser<'s> {
 
     fn parse_tail_expression(
         &mut self,
+        prefixes: &mut StatementPrefixes<'s>,
         line: item::Line<'s>,
         precedence: &mut Precedence<'s>,
     ) -> Line<'s, StatementOrPrefix<'s>> {
-        parse_statement(&mut vec![], line, precedence, &mut self.args_buffer, StatementContext {
+        parse_statement(prefixes, line, precedence, &mut self.args_buffer, StatementContext {
             evaluation_context: EvaluationContext::Eager,
             visibility_context: VisibilityContext::Private,
             tail_expression:    true,
@@ -182,7 +183,7 @@ impl<'s> StatementParser<'s> {
 
     fn parse_module_statement(
         &mut self,
-        prefixes: &mut Vec<Line<'s, StatementPrefix<'s>>>,
+        prefixes: &mut StatementPrefixes<'s>,
         line: item::Line<'s>,
         precedence: &mut Precedence<'s>,
     ) -> Line<'s, StatementOrPrefix<'s>> {
@@ -219,6 +220,7 @@ fn scan_private_keywords<'s>(items: impl IntoIterator<Item = impl AsRef<Item<'s>
 enum StatementPrefix<'s> {
     TypeSignature(TypeSignature<'s>),
     Annotation(FunctionAnnotation<'s>),
+    Documentation(DocComment<'s>),
 }
 
 impl<'s> From<StatementPrefix<'s>> for Tree<'s> {
@@ -228,6 +230,7 @@ impl<'s> From<StatementPrefix<'s>> for Tree<'s> {
                 Tree::type_signature_declaration(signature),
             StatementPrefix::Annotation(annotation) =>
                 Tree::annotation(annotation).with_error(SyntaxError::AnnotationExpectedDefinition),
+            StatementPrefix::Documentation(docs) => Tree::documentation(docs),
         }
     }
 }
@@ -261,8 +264,27 @@ impl<'s> From<Tree<'s>> for StatementOrPrefix<'s> {
     }
 }
 
+enum StatementPrefixLine<'s> {
+    TypeSignature(TypeSignatureLine<'s>),
+    Annotation(AnnotationLine<'s>),
+    Documentation(DocLine<'s>),
+}
+
+impl<'s> StatementPrefixLine<'s> {
+    fn new(prefix: StatementPrefix<'s>, newlines: NonEmptyVec<token::Newline<'s>>) -> Self {
+        match prefix {
+            StatementPrefix::TypeSignature(signature) =>
+                Self::TypeSignature(TypeSignatureLine { signature, newlines }),
+            StatementPrefix::Annotation(annotation) =>
+                Self::Annotation(AnnotationLine { annotation, newlines }),
+            StatementPrefix::Documentation(docs) =>
+                Self::Documentation(DocLine { docs, newlines: newlines.into() }),
+        }
+    }
+}
+
 fn parse_statement<'s>(
-    prefixes: &mut Vec<Line<'s, StatementPrefix<'s>>>,
+    prefixes: &mut StatementPrefixes<'s>,
     mut line: item::Line<'s>,
     precedence: &mut Precedence<'s>,
     args_buffer: &mut Vec<ArgumentDefinition<'s>>,
@@ -273,27 +295,30 @@ fn parse_statement<'s>(
     let private_keywords = scan_private_keywords(&line.items);
     let start = private_keywords;
     let items = &mut line.items;
-    if let Some(annotation) = try_parse_annotation(items, start, precedence) {
+    let parsed = None
+        .or_else(|| {
+            try_parse_annotation(items, start, precedence)
+                .map(StatementPrefix::Annotation)
+                .map(StatementOrPrefix::Prefix)
+        })
+        .or_else(|| {
+            try_parse_type_def(items, start, precedence, args_buffer)
+                .map(StatementOrPrefix::Statement)
+        })
+        .or_else(|| {
+            try_parse_doc_comment(items)
+                .map(StatementPrefix::Documentation)
+                .map(StatementOrPrefix::Prefix)
+        });
+    if let Some(parsed) = parsed {
         debug_assert_eq!(items.len(), start);
         return Line {
             newline,
             content: apply_private_keywords(
-                Some(StatementOrPrefix::Prefix(StatementPrefix::Annotation(annotation))),
+                Some(parsed),
                 items.drain(..),
                 statement_context.visibility_context,
             ),
-        };
-    }
-    if let Some(type_def) = try_parse_type_def(items, start, precedence, args_buffer) {
-        debug_assert_eq!(items.len(), start);
-        return Line {
-            newline,
-            content: apply_private_keywords(
-                Some(type_def),
-                items.drain(..),
-                statement_context.visibility_context,
-            )
-            .map(StatementOrPrefix::Statement),
         };
     }
     let top_level_operator = match find_top_level_operator(&items[start..]) {
@@ -334,19 +359,190 @@ fn parse_statement<'s>(
             }
         }
         Some(_) => unreachable!(),
-        None => {
-            let statement = precedence.resolve_offset(start, items);
-            debug_assert!(items.len() <= start);
-            Line {
-                newline,
-                content: apply_private_keywords(
-                    statement,
-                    items.drain(..),
-                    statement_context.visibility_context,
-                )
-                .map(StatementOrPrefix::Statement),
-            }
+        None => parse_expression_statement(
+            prefixes,
+            start,
+            item::Line { newline, items: mem::take(items) },
+            precedence,
+            statement_context.visibility_context,
+        )
+        .map_content(StatementOrPrefix::Statement),
+    }
+}
+
+#[derive(Default)]
+struct StatementPrefixes<'s> {
+    prefixes: Vec<(token::Newline<'s>, StatementPrefix<'s>, usize)>,
+    newlines: Vec<token::Newline<'s>>,
+}
+
+impl<'s> StatementPrefixes<'s> {
+    fn push(&mut self, newline: token::Newline<'s>, prefix: StatementPrefix<'s>) {
+        let newlines_start = self.newlines.len();
+        self.prefixes.push((newline, prefix, newlines_start))
+    }
+
+    fn push_newline(&mut self, newline: token::Newline<'s>) {
+        self.newlines.push(newline)
+    }
+
+    fn last(&self) -> Option<&StatementPrefix<'s>> {
+        self.prefixes.last().map(|(_, prefix, _)| prefix)
+    }
+
+    /// `first_newline`:
+    /// - Before the call, must contain the first newline after the prefix.
+    /// - Upon return, will contain the newline before the prefix.
+    fn pop(&mut self, first_newline: &mut token::Newline<'s>) -> StatementPrefixLine<'s> {
+        let (newline_before_prefix, prefix, trailing_newlines_start) = self.prefixes.pop().unwrap();
+        let original_first_newline = mem::replace(first_newline, newline_before_prefix);
+        let trailing_newlines = self.newlines.drain(trailing_newlines_start..);
+        let mut newlines = Vec::with_capacity(trailing_newlines.len() + 1);
+        newlines.extend(trailing_newlines);
+        let newlines = NonEmptyVec::from_vec_and_last(newlines, original_first_newline);
+        StatementPrefixLine::new(prefix, newlines)
+    }
+
+    fn drain_unused_into(&mut self, lines: &mut Vec<block::Line<'s>>) {
+        lines.reserve(self.prefixes.len() + self.newlines.len());
+        let mut empty_lines = self.newlines.drain(..).map(block::Line::from);
+        let mut prev_trailing_newlines_start = 0;
+        for (newline_before_prefix, prefix, trailing_newlines_start) in self.prefixes.drain(..) {
+            let trailing_newlines = trailing_newlines_start - prev_trailing_newlines_start;
+            prev_trailing_newlines_start = trailing_newlines_start;
+            lines.extend((&mut empty_lines).take(trailing_newlines));
+            lines.push(block::Line {
+                newline:    newline_before_prefix,
+                expression: Some(prefix.into()),
+            });
         }
+        lines.extend(empty_lines);
+    }
+}
+
+fn take_doc_line<'s>(
+    prefixes: &mut StatementPrefixes<'s>,
+    first_newline: &mut token::Newline<'s>,
+) -> Option<DocLine<'s>> {
+    if let Some(StatementPrefix::Documentation(_)) = prefixes.last() {
+        let StatementPrefixLine::Documentation(doc_line) = prefixes.pop(first_newline) else {
+            unreachable!()
+        };
+        Some(doc_line)
+    } else {
+        None
+    }
+}
+
+fn parse_expression_statement<'s>(
+    prefixes: &mut StatementPrefixes<'s>,
+    start: usize,
+    mut line: item::Line<'s>,
+    precedence: &mut Precedence<'s>,
+    visibility_context: VisibilityContext,
+) -> Line<'s, Tree<'s>> {
+    let expression = precedence.resolve_offset(start, &mut line.items);
+    debug_assert!(line.items.len() <= start);
+    let expression = apply_private_keywords(expression, line.items.drain(..), visibility_context);
+    let mut first_newline = line.newline;
+    let expression =
+        expression.map(|expression| to_statement(prefixes, &mut first_newline, expression));
+    Line { newline: first_newline, content: expression }
+}
+
+/// `first_newline`:
+/// - Before the call, must contain the first newline before `expression_or_statement`.
+/// - Upon return, will contain the newline before the returned `Tree` (which will be different from
+///   the passed value if any prefixes were consumed).
+fn to_statement<'s>(
+    prefixes: &mut StatementPrefixes<'s>,
+    first_newline: &mut token::Newline<'s>,
+    expression_or_statement: Tree<'s>,
+) -> Tree<'s> {
+    use tree::Variant::*;
+    let is_expression = match &expression_or_statement.variant {
+        // Currently could be expression or statement--treating as expression.
+        Invalid(_) => true,
+        // Currently could be expression or statement--treating as statement so prefix-line
+        // annotations don't affect how documentation is attached to a type.
+        AnnotatedBuiltin(_) => false,
+        // Expression
+        ArgumentBlockApplication(_)
+        | OperatorBlockApplication(_)
+        | Ident(_)
+        | Number(_)
+        | Wildcard(_)
+        | SuspendedDefaultArguments(_)
+        | TextLiteral(_)
+        | App(_)
+        | NamedApp(_)
+        | OprApp(_)
+        | UnaryOprApp(_)
+        | AutoscopedIdentifier(_)
+        | OprSectionBoundary(_)
+        | TemplateFunction(_)
+        | MultiSegmentApp(_)
+        | Group(_)
+        | TypeAnnotated(_)
+        | CaseOf(_)
+        | Lambda(_)
+        | Array(_)
+        | Tuple(_) => true,
+        // Statement
+        Private(_)
+        | TypeDef(_)
+        | Assignment(_)
+        | Function(_)
+        | ForeignFunction(_)
+        | Import(_)
+        | Export(_)
+        | TypeSignatureDeclaration(_)
+        | Annotation(_)
+        | Documentation(_)
+        | ConstructorDefinition(_) => false,
+        // Unexpected here
+        BodyBlock(_) | ExpressionStatement(_) => false,
+    };
+    if is_expression {
+        let doc_line = take_doc_line(prefixes, first_newline);
+        Tree::expression_statement(doc_line, expression_or_statement)
+    } else {
+        expression_or_statement
+    }
+}
+
+/// Parse the input as a documentation comment, if it matches the syntax.
+pub fn try_parse_doc_comment<'s>(items: &mut Vec<Item<'s>>) -> Option<DocComment<'s>> {
+    match items.first() {
+        Some(Item::Token(token @ Token { variant: token::Variant::TextStart(_), .. }))
+            if token.code.repr.0 == "##" =>
+        {
+            let mut items = items.drain(..);
+            let Some(Item::Token(open)) = items.next() else { unreachable!() };
+            let elements = items
+                .filter_map(|item| {
+                    let Item::Token(token) = item else { unreachable!() };
+                    match token.variant {
+                        token::Variant::TextSection(variant) => {
+                            let token = token.with_variant(variant);
+                            Some(tree::TextElement::Section { text: token })
+                        }
+                        token::Variant::TextEscape(variant) => {
+                            let token = token.with_variant(variant);
+                            Some(tree::TextElement::Escape { token })
+                        }
+                        token::Variant::TextNewline(_) => {
+                            let token = token::newline(token.left_offset, token.code);
+                            Some(tree::TextElement::Newline { newline: token })
+                        }
+                        token::Variant::TextEnd(_) => None,
+                        _ => unreachable!(),
+                    }
+                })
+                .collect();
+            Some(DocComment { open: open.with_variant(token::variant::TextStart()), elements })
+        }
+        _ => None,
     }
 }
 
@@ -473,7 +669,7 @@ enum VisibilityContext {
 }
 
 fn parse_assignment_like_statement<'s>(
-    prefixes: &mut Vec<Line<'s, StatementPrefix<'s>>>,
+    prefixes: &mut StatementPrefixes<'s>,
     mut line: item::Line<'s>,
     start: usize,
     operator: usize,
@@ -537,14 +733,14 @@ fn parse_assignment_like_statement<'s>(
         (expression, Some(qn_len)) => Type::Function { expression, qn_len },
         (None, None) => Type::InvalidNoExpressionNoQn,
     } {
-        Type::Assignment { expression } => Line {
-            newline,
-            content: apply_private_keywords(
-                Some(parse_assignment(start, items, operator, expression, precedence)),
-                items.drain(..),
-                visibility_context,
-            ),
-        },
+        Type::Assignment { expression } => AssignmentBuilder::new(
+            start,
+            item::Line { newline, items: mem::take(items) },
+            operator,
+            expression,
+            precedence,
+        )
+        .build(prefixes, visibility_context),
         Type::Function { expression, qn_len } => FunctionBuilder::new(
             item::Line { newline, items: mem::take(items) },
             start,
@@ -567,16 +763,45 @@ fn parse_assignment_like_statement<'s>(
     }
 }
 
-fn parse_assignment<'s>(
-    start: usize,
-    items: &mut Vec<Item<'s>>,
-    operator: token::AssignmentOperator<'s>,
-    expression: Tree<'s>,
-    precedence: &mut Precedence<'s>,
-) -> Tree<'s> {
-    let pattern =
-        expression_to_pattern(precedence.resolve_non_section_offset(start, items).unwrap());
-    Tree::assignment(pattern, operator, expression)
+struct AssignmentBuilder<'s> {
+    newline:      token::Newline<'s>,
+    pattern:      Tree<'s>,
+    operator:     token::AssignmentOperator<'s>,
+    expression:   Tree<'s>,
+    excess_items: Vec<Item<'s>>,
+}
+
+impl<'s> AssignmentBuilder<'s> {
+    fn new(
+        start: usize,
+        mut line: item::Line<'s>,
+        operator: token::AssignmentOperator<'s>,
+        expression: Tree<'s>,
+        precedence: &mut Precedence<'s>,
+    ) -> Self {
+        let pattern = expression_to_pattern(
+            precedence.resolve_non_section_offset(start, &mut line.items).unwrap(),
+        );
+        Self { newline: line.newline, pattern, operator, expression, excess_items: line.items }
+    }
+
+    fn build(
+        self,
+        prefixes: &mut StatementPrefixes<'s>,
+        visibility_context: VisibilityContext,
+    ) -> Line<'s, Tree<'s>> {
+        let Self { newline, pattern, operator, expression, excess_items } = self;
+        let mut first_newline = newline;
+        let doc_line = take_doc_line(prefixes, &mut first_newline);
+        Line {
+            newline: first_newline,
+            content: apply_private_keywords(
+                Some(Tree::assignment(doc_line, pattern, operator, expression)),
+                excess_items.into_iter(),
+                visibility_context,
+            ),
+        }
+    }
 }
 
 fn parse_pattern<'s>(

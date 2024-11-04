@@ -68,7 +68,7 @@ const testNodeInputs: {
   { code: '## Documentation\nfoo = 2 + 2' },
 ]
 const testNodes = testNodeInputs.map(({ code, visualization, colorOverride }) => {
-  const root = Ast.Ast.parse(code)
+  const root = [...Ast.parseBlock(code).statements()][0]!
   root.setNodeMetadata({ visualization, colorOverride })
   const node = nodeFromAst(root, false)
   assertDefined(node)
@@ -82,7 +82,9 @@ test.each([...testNodes.map((node) => [node]), testNodes])(
     const clipboardItem = clipboardItemFromTypes(nodesToClipboardData(sourceNodes))
     const pastedNodes = await nodesFromClipboardContent([clipboardItem])
     sourceNodes.forEach((sourceNode, i) => {
-      expect(pastedNodes[i]?.documentation).toBe(sourceNode.docs?.documentation())
+      const documentation =
+        sourceNode.outerAst.isStatement() ? sourceNode.outerAst.documentationText() : undefined
+      expect(pastedNodes[i]?.documentation).toBe(documentation)
       expect(pastedNodes[i]?.expression).toBe(sourceNode.innerExpr.code())
       expect(pastedNodes[i]?.metadata?.colorOverride).toBe(sourceNode.colorOverride)
       expect(pastedNodes[i]?.metadata?.visualization).toBe(sourceNode.vis)

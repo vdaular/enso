@@ -64,14 +64,14 @@ const argumentName = computed(() => {
 </script>
 
 <script lang="ts">
-function isBoolNode(ast: Ast.Ast) {
+function isBoolNode(ast: Ast.Expression) {
   const candidate =
     ast instanceof Ast.PropertyAccess && ast.lhs?.code() === 'Boolean' ? ast.rhs
     : ast instanceof Ast.Ident ? ast.token
     : undefined
   return candidate && ['True', 'False'].includes(candidate.code())
 }
-function setBoolNode(ast: Ast.Mutable, value: Identifier): { requiresImport: boolean } {
+function setBoolNode(ast: Ast.MutableExpression, value: Identifier): { requiresImport: boolean } {
   if (ast instanceof Ast.MutablePropertyAccess) {
     ast.setRhs(value)
     return { requiresImport: false }

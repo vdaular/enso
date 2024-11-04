@@ -13,7 +13,7 @@ use crate::syntax::statement::EvaluationContext;
 use crate::syntax::statement::Line;
 use crate::syntax::statement::StatementContext;
 use crate::syntax::statement::StatementOrPrefix;
-use crate::syntax::statement::StatementPrefix;
+use crate::syntax::statement::StatementPrefixes;
 use crate::syntax::statement::VisibilityContext;
 use crate::syntax::token;
 use crate::syntax::tree;
@@ -79,7 +79,7 @@ pub fn try_parse_type_def<'s>(
 }
 
 fn parse_type_body_statement<'s>(
-    prefixes: &mut Vec<Line<'s, StatementPrefix<'s>>>,
+    prefixes: &mut StatementPrefixes<'s>,
     mut line: item::Line<'s>,
     precedence: &mut Precedence<'s>,
     args_buffer: &mut Vec<ArgumentDefinition<'s>>,
@@ -121,7 +121,8 @@ fn parse_type_body_statement<'s>(
                     tree::Variant::Function(_)
                     | tree::Variant::ForeignFunction(_)
                     | tree::Variant::Assignment(_)
-                    | tree::Variant::Documented(_)
+                    | tree::Variant::Documentation(_)
+                    | tree::Variant::ExpressionStatement(_)
                     | tree::Variant::Annotation(_)
                     | tree::Variant::AnnotatedBuiltin(_) => None,
                     tree::Variant::TypeSignatureDeclaration(_) => None,

@@ -77,7 +77,7 @@ export function applyDocumentUpdates(
     // Update the metadata object.
     // Depth-first key order keeps diffs small.
     newMetadata = { node: {}, widget: {} }
-    root.visitRecursiveAst(ast => {
+    root.visitRecursive(ast => {
       let pos = ast.nodeMetadata.get('position')
       const vis = ast.nodeMetadata.get('visualization')
       const colorOverride = ast.nodeMetadata.get('colorOverride')

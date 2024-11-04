@@ -60,13 +60,13 @@ test.each`
       ...(attachedSpan != null ? { attached: attachedSpan as [number, number] } : {}),
     }
     const { ast, eid, id } = parseWithSpans(code, spans)
-    const line = ast.lines[0]?.expression
-    assert(line != null)
-    expect(line.node.externalId).toBe(eid('entireFunction'))
+    const node = (ast.lines[0]?.statement?.node as Ast.ExpressionStatement).expression
+    assert(node != null)
+    expect(node.externalId).toBe(eid('entireFunction'))
 
     let visConfig: Ref<Opt<NodeVisualizationConfiguration>> | undefined
     useWidgetFunctionCallInfo(
-      WidgetInput.FromAst(line.node),
+      WidgetInput.FromAst(node),
       {
         getMethodCallInfo(astId) {
           if (astId === id('entireFunction')) {
@@ -93,7 +93,7 @@ test.each`
       },
       {
         useVisualizationData(config) {
-          expect(visConfig, 'Only one visualizaiton is expected').toBeUndefined()
+          expect(visConfig, 'Only one visualization is expected').toBeUndefined()
           visConfig = config
           return ref(null)
         },

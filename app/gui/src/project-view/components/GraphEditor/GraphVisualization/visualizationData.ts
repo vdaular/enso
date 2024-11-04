@@ -126,7 +126,10 @@ export function useVisualizationData({
         const preprocessor = visPreprocessor.value
         const args = preprocessor.positionalArgumentsExpressions
         const tempModule = Ast.MutableModule.Transient()
-        const preprocessorModule = Ast.parse(preprocessor.visualizationModule, tempModule)
+        const preprocessorModule = Ast.parseExpression(
+          preprocessor.visualizationModule,
+          tempModule,
+        )!
         // TODO[ao]: it work with builtin visualization, but does not work in general case.
         // Tracked in https://github.com/orgs/enso-org/discussions/6832#discussioncomment-7754474.
         if (!isIdentifier(preprocessor.expression)) {
@@ -140,9 +143,9 @@ export function useVisualizationData({
         )
         const preprocessorInvocation = Ast.App.PositionalSequence(preprocessorQn, [
           Ast.Wildcard.new(tempModule),
-          ...args.map((arg) => Ast.Group.new(tempModule, Ast.parse(arg, tempModule))),
+          ...args.map((arg) => Ast.Group.new(tempModule, Ast.parseExpression(arg, tempModule)!)),
         ])
-        const rhs = Ast.parse(dataSourceValue.expression, tempModule)
+        const rhs = Ast.parseExpression(dataSourceValue.expression, tempModule)!
         const expression = Ast.OprApp.new(tempModule, preprocessorInvocation, '<|', rhs)
         return projectStore.executeExpression(dataSourceValue.contextId, expression.code())
       } catch (e) {

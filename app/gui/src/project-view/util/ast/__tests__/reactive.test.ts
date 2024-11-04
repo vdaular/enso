@@ -5,21 +5,28 @@ import { nextTick, watchEffect } from 'vue'
 import * as Y from 'yjs'
 
 test('Module reactivity: applyEdit', async () => {
-  const beforeEdit = Ast.parse('func arg1 arg2')
-  beforeEdit.module.replaceRoot(beforeEdit)
+  const beforeEdit = Ast.parseBlock('func arg1 arg2')
+  beforeEdit.module.setRoot(beforeEdit)
 
   const module = reactiveModule(new Y.Doc(), () => {})
   module.applyEdit(beforeEdit.module)
   expect(module.root()!.code()).toBe(beforeEdit.code())
 
-  const app2 = module.root() as unknown as Ast.App
+  const app2 = (
+    (module.root() as Ast.MutableBodyBlock).lines[0]!.statement!
+      .node as Ast.MutableExpressionStatement
+  ).expression as unknown as Ast.App
   let app2Code: string | undefined = undefined
   watchEffect(() => (app2Code = app2.argument.code()))
   expect(app2Code).toBe('arg2')
 
   const edit = beforeEdit.module.edit()
-  const editApp2 = edit.getVersion(beforeEdit) as any as Ast.MutableApp
-  editApp2.setArgument(Ast.Ident.tryParse('newArg', edit)!)
+  const editApp2 = (
+    edit.getVersion(beforeEdit).lines[0]!.statement!.node as Ast.MutableExpressionStatement
+  ).expression as Ast.MutableApp
+  const newArg = Ast.Ident.tryParse('newArg', edit)
+  expect(newArg).toBeDefined()
+  editApp2.setArgument(newArg!)
   const codeAfterEdit = 'func arg1 newArg'
   expect(edit.root()!.code()).toBe(codeAfterEdit)
 
@@ -30,8 +37,8 @@ test('Module reactivity: applyEdit', async () => {
 })
 
 test('Module reactivity: Direct Edit', async () => {
-  const beforeEdit = Ast.parse('func arg1 arg2')
-  beforeEdit.module.replaceRoot(beforeEdit)
+  const beforeEdit = Ast.parseExpression('func arg1 arg2')
+  beforeEdit.module.setRoot(beforeEdit)
 
   const module = reactiveModule(new Y.Doc(), () => {})
   module.applyEdit(beforeEdit.module)
@@ -52,29 +59,37 @@ test('Module reactivity: Direct Edit', async () => {
 })
 
 test('Module reactivity: Tracking access to ancestors', async () => {
-  const docsBeforeEdit = 'The main method'
-  const beforeEdit = Ast.parseBlock(`## ${docsBeforeEdit}\nmain =\n    23`)
-  beforeEdit.module.replaceRoot(beforeEdit)
+  const beforeEdit = Ast.parseModule('main = 23\nother = f')
+  beforeEdit.module.setRoot(beforeEdit)
 
   const module = reactiveModule(new Y.Doc(), () => {})
   module.applyEdit(beforeEdit.module)
   expect(module.root()!.code()).toBe(beforeEdit.code())
 
   const block = module.root() as any as Ast.BodyBlock
-  const expression = ([...block.statements()][0] as Ast.Documented).expression as Ast.Function
-  expect(expression.name.code()).toBe('main')
-  let mainDocs: string | undefined = undefined
-  watchEffect(() => (mainDocs = expression.documentingAncestor()?.documentation()))
-  expect(mainDocs).toBe(docsBeforeEdit)
+
+  const [func, otherFunc] = block.statements() as [Ast.Function, Ast.Function]
+  expect(func.name.code()).toBe('main')
+  expect(otherFunc.name.code()).toBe('other')
+  const expression = Array.from(func.bodyExpressions())[0]!
+  expect(expression.code()).toBe('23')
+  const otherExpression = Array.from(otherFunc.bodyExpressions())[0]!
+  expect(otherExpression.code()).toBe('f')
+
+  let parentAccesses = 0
+  watchEffect(() => {
+    expect(expression.parent()).toBeDefined()
+    parentAccesses += 1
+  })
+  expect(parentAccesses).toBe(1)
 
   const edit = beforeEdit.module.edit()
-  const editBlock = edit.getVersion(beforeEdit) as any as Ast.MutableBodyBlock
-  const editDoc = [...editBlock.statements()][0] as Ast.MutableDocumented
-  const docsAfterEdit = 'The main method, now with more documentation'
-  editDoc.setDocumentationText(docsAfterEdit)
-
+  const taken = edit.getVersion(expression).replaceValue(Ast.parseExpression('replacement', edit))
+  edit.getVersion(otherExpression).updateValue((oe) => Ast.App.positional(oe, taken, edit))
   module.applyEdit(edit)
-  expect(mainDocs).toBe(docsBeforeEdit)
+
+  expect(module.root()?.code()).toBe('main = replacement\nother = f 23')
+  expect(parentAccesses).toBe(1)
   await nextTick()
-  expect(mainDocs).toBe(docsAfterEdit)
+  expect(parentAccesses).toBe(2)
 })

@@ -52,6 +52,7 @@ import type { SuggestionId } from '@/stores/suggestionDatabase/entry'
 import { suggestionDocumentationUrl, type Typename } from '@/stores/suggestionDatabase/entry'
 import { provideVisualizationStore } from '@/stores/visualization'
 import { bail } from '@/util/assert'
+import { Ast } from '@/util/ast'
 import type { AstId } from '@/util/ast/abstract'
 import { colorFromString } from '@/util/colors'
 import { partition } from '@/util/data/array'
@@ -579,7 +580,7 @@ function clearFocus() {
 function createNodesFromSource(sourceNode: NodeId, options: NodeCreationOptions[]) {
   const sourcePort = graphStore.db.getNodeFirstOutputPort(sourceNode)
   if (sourcePort == null) return
-  const sourcePortAst = graphStore.viewModule.get(sourcePort)
+  const sourcePortAst = graphStore.viewModule.get(sourcePort) as Ast.Expression
   const [toCommit, toEdit] = partition(options, (opts) => opts.commit)
   createNodes(
     toCommit.map((options: NodeCreationOptions) => ({
@@ -631,14 +632,14 @@ function collapseNodes() {
     }
     const selectedNodeRects = filterDefined(Array.from(selected, graphStore.visibleArea))
     graphStore.edit((edit) => {
-      const { refactoredExpressionAstId, collapsedNodeIds, outputAstId } = performCollapse(
+      const { collapsedCallRoot, collapsedNodeIds, outputAstId } = performCollapse(
         info.value,
         edit.getVersion(topLevel),
         graphStore.db,
         currentMethodName,
       )
       const position = collapsedNodePlacement(selectedNodeRects)
-      edit.get(refactoredExpressionAstId).mutableNodeMetadata().set('position', position.xy())
+      edit.get(collapsedCallRoot).mutableNodeMetadata().set('position', position.xy())
       if (outputAstId != null) {
         const collapsedNodeRects = filterDefined(
           Array.from(collapsedNodeIds, graphStore.visibleArea),

@@ -1,62 +1,52 @@
 import { normalizeQualifiedName, qnFromSegments } from '@/util/qualifiedName'
-import type {
-  AstId,
-  IdentifierOrOperatorIdentifier,
-  Mutable,
-  MutableAst,
-  NodeKey,
-  Owned,
-  QualifiedName,
-  TokenId,
-  TokenKey,
-} from 'ydoc-shared/ast'
 import {
   Ast,
   BodyBlock,
+  Expression,
   Function,
   Ident,
+  IdentifierOrOperatorIdentifier,
+  Mutable,
+  MutableAst,
   MutableBodyBlock,
+  MutableExpression,
+  MutableFunction,
   MutableIdent,
   MutableModule,
   MutablePropertyAccess,
+  MutableStatement,
   NegationApp,
   NumericLiteral,
   OprApp,
+  Owned,
   PropertyAccess,
+  QualifiedName,
+  Statement,
   Token,
   isTokenId,
+  parseExpression,
   print,
 } from 'ydoc-shared/ast'
+
 export * from 'ydoc-shared/ast'
 
-/** TODO: Add docs */
-export function deserialize(serialized: string): Owned {
-  const parsed: SerializedPrintedSource = JSON.parse(serialized)
+/** Given an output of {@link serializeExpression}, returns a deserialized expression. */
+export function deserializeExpression(serialized: string): Owned<MutableExpression> {
   // Not implemented: restoring serialized external IDs. This is not the best approach anyway;
   // Y.Js can't merge edits to objects when they're being serialized and deserialized.
-  return Ast.parse(parsed.code)
+  return parseExpression(serialized)!
 }
 
-interface SerializedInfoMap {
-  nodes: Record<NodeKey, AstId[]>
-  tokens: Record<TokenKey, TokenId>
-}
-
-interface SerializedPrintedSource {
-  info: SerializedInfoMap
-  code: string
-}
-
-/** TODO: Add docs */
-export function serialize(ast: Ast): string {
-  return JSON.stringify(print(ast))
+/** Returns a serialized representation of the expression. */
+export function serializeExpression(ast: Expression): string {
+  return print(ast).code
 }
 
 export type TokenTree = (TokenTree | string)[]
-/** TODO: Add docs */
+/** Returns a debug representation. */
 export function tokenTree(root: Ast): TokenTree {
   const module = root.module
-  return Array.from(root.concreteChildren(), (child) => {
+  return Array.from(root.concreteChildren({ verbatim: false, indent: '' }), (child) => {
     if (isTokenId(child.node)) {
       return module.getToken(child.node).code()
     } else {
@@ -71,7 +61,7 @@ export function tokenTreeWithIds(root: Ast): TokenTree {
   const module = root.module
   return [
     root.externalId,
-    ...Array.from(root.concreteChildren(), (child) => {
+    ...Array.from(root.concreteChildren({ verbatim: false, indent: '' }), (child) => {
       if (isTokenId(child.node)) {
         return module.getToken(child.node).code()
       } else {
@@ -86,38 +76,45 @@ export function tokenTreeWithIds(root: Ast): TokenTree {
 export function moduleMethodNames(topLevel: BodyBlock): Set<string> {
   const result = new Set<string>()
   for (const statement of topLevel.statements()) {
-    const inner = statement.innerExpression()
-    if (inner instanceof Function) {
-      result.add(inner.name.code())
-    }
+    if (statement instanceof Function) result.add(statement.name.code())
   }
   return result
 }
 
-// FIXME: We should use alias analysis to handle ambiguous names correctly.
-/** TODO: Add docs */
-export function findModuleMethod(topLevel: BodyBlock, name: string): Function | undefined {
-  for (const statement of topLevel.statements()) {
-    const inner = statement.innerExpression()
-    if (inner instanceof Function && inner.name.code() === name) {
-      return inner
-    }
+export function findModuleMethod(
+  topLevel: MutableBodyBlock,
+  name: string,
+): { statement: MutableFunction; index: number } | undefined
+export function findModuleMethod(
+  topLevel: BodyBlock,
+  name: string,
+): { statement: Function; index: number } | undefined
+/** Find the definition of the function with the specified name in the given block. */
+export function findModuleMethod(
+  topLevel: BodyBlock,
+  name: string,
+): { statement: Function; index: number } | undefined {
+  // FIXME: We should use alias analysis to handle shadowing correctly.
+  const isFunctionWithName = (statement: Statement, name: string) =>
+    statement instanceof Function && statement.name.code() === name
+  const index = topLevel.lines.findIndex(
+    (line) => line.statement && isFunctionWithName(line.statement.node, name),
+  )
+  if (index === -1) return undefined
+  const statement = topLevel.lines[index]!.statement!.node as Function
+  return {
+    /** The `Function` definition. */
+    statement,
+    /** The index into the block's `lines` where the definition was found. */
+    index,
   }
-  return undefined
 }
 
-/** TODO: Add docs */
-export function functionBlock(topLevel: BodyBlock, name: string) {
-  const func = findModuleMethod(topLevel, name)
-  if (!(func?.body instanceof BodyBlock)) return undefined
-  return func.body
-}
-
-/** TODO: Add docs */
-export function deleteFromParentBlock(ast: MutableAst) {
+/** Delete the specified statement from its containing block. */
+export function deleteFromParentBlock(ast: MutableStatement) {
   const parent = ast.mutableParent()
   if (parent instanceof MutableBodyBlock)
-    parent.updateLines((lines) => lines.filter((line) => line.expression?.node.id !== ast.id))
+    parent.updateLines((lines) => lines.filter((line) => line.statement?.node.id !== ast.id))
 }
 
 /**
@@ -219,10 +216,10 @@ export function substituteQualifiedName(
   if (expr instanceof MutablePropertyAccess || expr instanceof MutableIdent) {
     const qn = parseQualifiedName(expr)
     if (qn === pattern) {
-      expr.updateValue(() => Ast.parse(to, expr.module))
+      expr.updateValue(() => parseExpression(to, expr.module)!)
     } else if (qn && qn.startsWith(pattern)) {
       const withoutPattern = qn.replace(pattern, '')
-      expr.updateValue(() => Ast.parse(to + withoutPattern, expr.module))
+      expr.updateValue(() => parseExpression(to + withoutPattern, expr.module)!)
     }
   } else {
     for (const child of expr.children()) {
@@ -267,6 +264,11 @@ export function copyIntoNewModule<T extends Ast>(ast: T): Owned<Mutable<T>> {
   const module = MutableModule.Transient()
   module.importCopy(ast)
   return module.getVersion(ast) as Owned<Mutable<T>>
+}
+
+/** Safely cast a mutable or owned value to its base type. */
+export function dropMutability<T extends Ast>(value: Owned<Mutable<T>>): T {
+  return value as unknown as T
 }
 
 declare const tokenKey: unique symbol

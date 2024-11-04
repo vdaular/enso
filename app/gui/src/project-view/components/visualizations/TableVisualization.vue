@@ -367,7 +367,7 @@ function toRowField(name: string, valueType?: ValueType | null | undefined) {
 
 function getAstPattern(selector?: string | number, action?: string) {
   if (action && selector != null) {
-    return Pattern.new((ast) =>
+    return Pattern.new<Ast.Expression>((ast) =>
       Ast.App.positional(
         Ast.PropertyAccess.new(ast.module, ast, Ast.identifier(action)!),
         typeof selector === 'number' ?

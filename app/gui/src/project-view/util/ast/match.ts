@@ -2,14 +2,21 @@ import { assert, assertDefined } from '@/util/assert'
 import { Ast } from '@/util/ast'
 import { zipLongest } from '@/util/data/iterable'
 
-/** TODO: Add docs */
-export class Pattern {
-  private readonly template: Ast.Ast
+/**
+ * A pattern is an AST object with "placeholder" expressions.
+ *
+ * It can be used in two ways:
+ * - It can be matched against an AST node, in which case each placeholder will match any expression, and the matches
+ *   will be returned.
+ * - It can be instantiated, by providing an expression to be substituted for each placeholder.
+ */
+export class Pattern<T extends Ast.Ast = Ast.Expression> {
+  private readonly template: T
   private readonly placeholders: Ast.AstId[]
   private readonly placeholder: string
 
-  private constructor(template: Ast.Owned, placeholder: string) {
-    this.template = template
+  private constructor(template: Ast.Owned<Ast.Mutable<T>>, placeholder: string) {
+    this.template = Ast.dropMutability(template)
     this.placeholders = findPlaceholders(template, placeholder)
     this.placeholder = placeholder
   }
@@ -18,13 +25,20 @@ export class Pattern {
    * Parse an expression template in which a specified identifier (by default `__`)
    *  may match any arbitrary subtree.
    */
-  static parse(template: string, placeholder: string = '__'): Pattern {
-    const ast = Ast.parse(template)
+  static parseExpression(template: string, placeholder: string = '__'): Pattern {
+    const ast = Ast.parseExpression(template)
+    assertDefined(ast)
     return new Pattern(ast, placeholder)
   }
 
-  /** TODO: Add docs */
-  static new(f: (placeholder: Ast.Owned) => Ast.Owned, placeholder: string = '__'): Pattern {
+  /**
+   * Given a function that constructs an AST value when provided an expression, creates a `Pattern` that constructs an
+   * equivalent AST value when instantiated with an expression.
+   */
+  static new<T extends Ast.Ast>(
+    f: (placeholder: Ast.Owned<Ast.MutableExpression>) => Ast.Owned<Ast.Mutable<T>>,
+    placeholder: string = '__',
+  ): Pattern<T> {
     assert(Ast.isIdentifier(placeholder))
     const module = Ast.MutableModule.Transient()
     return new Pattern(f(Ast.Ident.new(module, placeholder)), placeholder)
@@ -48,7 +62,10 @@ export class Pattern {
   }
 
   /** Create a new concrete example of the pattern, with the placeholders replaced with the given subtrees. */
-  instantiate(edit: Ast.MutableModule, subtrees: Ast.Owned[]): Ast.Owned {
+  instantiate(
+    edit: Ast.MutableModule,
+    subtrees: Ast.Owned<Ast.MutableExpression>[],
+  ): Ast.Owned<Ast.Mutable<T>> {
     const template = edit.copy(this.template)
     const placeholders = findPlaceholders(template, this.placeholder).map((ast) => edit.tryGet(ast))
     for (const [placeholder, replacement] of zipLongest(placeholders, subtrees)) {
@@ -59,19 +76,19 @@ export class Pattern {
     return template
   }
 
-  /** TODO: Add docs */
-  instantiateCopied(subtrees: Ast.Ast[], edit?: Ast.MutableModule): Ast.Owned {
+  /**
+   * Helper that creates the AST described by the pattern, as {@link instantiate}, after first copying each of the
+   * referenced subtrees into a different module.
+   */
+  instantiateCopied(
+    subtrees: (Ast.Expression | Ast.MutableExpression)[],
+    edit?: Ast.MutableModule,
+  ): Ast.Owned<Ast.Mutable<T>> {
     const module = edit ?? Ast.MutableModule.Transient()
     return this.instantiate(
       module,
       subtrees.map((ast) => module.copy(ast)),
     )
-  }
-
-  /** TODO: Add docs */
-  compose(f: (pattern: Ast.Owned) => Ast.Owned): Pattern {
-    const module = Ast.MutableModule.Transient()
-    return new Pattern(f(module.copy(this.template)), this.placeholder)
   }
 }
 

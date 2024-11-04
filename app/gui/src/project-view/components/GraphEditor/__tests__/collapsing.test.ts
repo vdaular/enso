@@ -1,11 +1,18 @@
-import { prepareCollapsedInfo } from '@/components/GraphEditor/collapsing'
+import { performCollapseImpl, prepareCollapsedInfo } from '@/components/GraphEditor/collapsing'
 import { GraphDb, type NodeId } from '@/stores/graph/graphDatabase'
 import { assert } from '@/util/assert'
 import { Ast, RawAst } from '@/util/ast'
+import { findExpressions } from '@/util/ast/__tests__/testCase'
 import { unwrap } from '@/util/data/result'
 import { tryIdentifier } from '@/util/qualifiedName'
 import { expect, test } from 'vitest'
 import { watchEffect } from 'vue'
+import { Identifier } from 'ydoc-shared/ast'
+import { nodeIdFromOuterAst } from '../../../stores/graph/graphDatabase'
+
+// ===============================
+// === Collapse Analysis Tests ===
+// ===============================
 
 function setupGraphDb(code: string, graphDb: GraphDb) {
   const { root, toRaw, getSpan } = Ast.parseExtended(code)
@@ -210,4 +217,74 @@ main =
   expect(refactored.id).toEqual(nodes[2])
   expect(refactored.pattern).toEqual('sum')
   expect(refactored.arguments).toEqual(['input', 'four'])
+})
+
+// ================================
+// === Collapse Execution Tests ===
+// ================================
+
+test('Perform collapse', () => {
+  const root = Ast.parseModule(
+    [
+      'main =',
+      '    keep1 = 1',
+      '    extract1 = keep1',
+      '    keep2 = 2',
+      '    extract2 = extract1 + 1',
+      '    target = extract2',
+    ].join('\n'),
+  )
+  root.module.setRoot(root)
+  const before = findExpressions(root, {
+    'keep1 = 1': Ast.Assignment,
+    'extract1 = keep1': Ast.Assignment,
+    'keep2 = 2': Ast.Assignment,
+    'extract2 = extract1 + 1': Ast.Assignment,
+    'target = extract2': Ast.Assignment,
+  })
+  const statementsToExtract = new Set<Ast.AstId>()
+  const statementToReplace = before['target = extract2'].id
+  statementsToExtract.add(before['extract1 = keep1'].id)
+  statementsToExtract.add(before['extract2 = extract1 + 1'].id)
+  statementsToExtract.add(statementToReplace)
+  const { collapsedCallRoot, outputAstId, collapsedNodeIds } = performCollapseImpl(
+    root,
+    {
+      args: ['keep1' as Identifier],
+      statementsToExtract,
+      statementToReplace: before['target = extract2'].id,
+    },
+    'main',
+  )
+  expect(root.code()).toBe(
+    [
+      '## ICON group',
+      'collapsed keep1 =',
+      '    extract1 = keep1',
+      '    extract2 = extract1 + 1',
+      '    target = extract2',
+      '    target',
+      '',
+      'main =',
+      '    keep1 = 1',
+      '    keep2 = 2',
+      '    target = Main.collapsed keep1',
+    ].join('\n'),
+  )
+  const after = findExpressions(root, {
+    'extract1 = keep1': Ast.Assignment,
+    'extract2 = extract1 + 1': Ast.Assignment,
+    'target = extract2': Ast.Assignment,
+    target: Ast.ExpressionStatement,
+    'keep1 = 1': Ast.Assignment,
+    'keep2 = 2': Ast.Assignment,
+    'target = Main.collapsed keep1': Ast.Assignment,
+  })
+  expect(collapsedNodeIds).toStrictEqual(
+    [after['target = extract2'], after['extract2 = extract1 + 1'], after['extract1 = keep1']].map(
+      nodeIdFromOuterAst,
+    ),
+  )
+  expect(outputAstId).toBe(after['target'].expression.id)
+  expect(collapsedCallRoot).toBe(after['target = Main.collapsed keep1'].expression.id)
 })

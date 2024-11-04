@@ -10,7 +10,7 @@ export { injectFn as injectWidgetTree, provideFn as provideWidgetTree }
 const { provideFn, injectFn } = createContextStore(
   'Widget tree',
   (
-    astRoot: Ref<Ast.Ast>,
+    astRoot: Ref<Ast.Expression>,
     nodeId: Ref<NodeId>,
     nodeElement: Ref<HTMLElement | undefined>,
     nodeSize: Ref<Vec2>,

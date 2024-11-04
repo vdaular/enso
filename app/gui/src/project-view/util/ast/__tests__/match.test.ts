@@ -80,9 +80,9 @@ test.each([
     extracted: ['with_enabled_context', "'current_context_name'", 'a + b'],
   },
 ])('`isMatch` and `extractMatches`', ({ target, pattern, extracted }) => {
-  const targetAst = Ast.parse(target)
+  const targetAst = Ast.parseExpression(target)
   const module = targetAst.module
-  const patternAst = Pattern.parse(pattern)
+  const patternAst = Pattern.parseExpression(pattern)
   expect(
     patternAst.match(targetAst) !== undefined,
     `'${target}' has CST ${extracted != null ? '' : 'not '}matching '${pattern}'`,
@@ -101,9 +101,9 @@ test.each([
   { template: 'a __ c', source: 'b', result: 'a b c' },
   { template: 'a . __ . c', source: 'b', result: 'a . b . c' },
 ])('instantiate', ({ template, source, result }) => {
-  const pattern = Pattern.parse(template)
+  const pattern = Pattern.parseExpression(template)
   const edit = MutableModule.Transient()
-  const intron = Ast.parse(source, edit)
+  const intron = Ast.parseExpression(source, edit)
   const instantiated = pattern.instantiate(edit, [intron])
   expect(instantiated.code()).toBe(result)
 })

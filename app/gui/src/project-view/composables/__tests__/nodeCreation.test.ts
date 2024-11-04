@@ -15,7 +15,7 @@ test.each([
 ])('New node location in block', (...linesWithInsertionPoint: string[]) => {
   const inputLines = linesWithInsertionPoint.filter((line) => line !== '*')
   const bodyBlock = Ast.parseBlock(inputLines.join('\n'))
-  insertNodeStatements(bodyBlock, [Ast.parse('newNodePositionMarker')])
+  insertNodeStatements(bodyBlock, [Ast.parseStatement('newNodePositionMarker')!])
   const lines = bodyBlock
     .code()
     .split('\n')
@@ -26,11 +26,13 @@ test.each([
 // This is a special case because when a block is empty, adding a line requires adding *two* linebreaks.
 test('Adding node to empty block', () => {
   const module = Ast.MutableModule.Transient()
-  const func = Ast.Function.fromStatements(module, identifier('f')!, [], [])
+  const func = Ast.Function.new(identifier('f')!, [], Ast.BodyBlock.new([], module), {
+    edit: module,
+  })
   const rootBlock = Ast.BodyBlock.new([], module)
   rootBlock.push(func)
   expect(rootBlock.code().trimEnd()).toBe('f =')
-  insertNodeStatements(func.bodyAsBlock(), [Ast.parse('newNode')])
+  insertNodeStatements(func.bodyAsBlock(), [Ast.parseStatement('newNode')!])
   expect(
     rootBlock
       .code()

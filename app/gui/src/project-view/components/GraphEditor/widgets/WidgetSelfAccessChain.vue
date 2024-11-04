@@ -23,7 +23,7 @@ const displayedIcon = computed(() => {
 const iconInput = computed(() => {
   const lhs = props.input.value.lhs
   if (!lhs) return
-  const input = WidgetInput.FromAstWithPort(lhs)
+  const input = WidgetInput.WithPort(WidgetInput.FromAst(lhs))
   const icon = displayedIcon.value
   if (icon) input[DisplayIcon] = { icon, showContents: showFullAccessChain.value }
   return input

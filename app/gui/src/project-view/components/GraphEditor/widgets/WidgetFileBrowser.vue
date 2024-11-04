@@ -53,16 +53,15 @@ const label = computed(() => {
   }
 })
 
-const fileConPattern = Pattern.parse(`${FILE_TYPE}.new __`)
-const fileShortConPattern = Pattern.parse(`File.new __`)
+const fileConPattern = Pattern.parseExpression(`${FILE_TYPE}.new __`)
+const fileShortConPattern = Pattern.parseExpression(`File.new __`)
 const currentPath = computed(() => {
   if (typeof props.input.value === 'string') {
     return props.input.value
   } else if (props.input.value) {
-    const expression = props.input.value.innerExpression()
+    const expression = props.input.value
     const match = fileShortConPattern.match(expression) ?? fileConPattern.match(expression)
-    const pathAst =
-      match && match[0] ? expression.module.get(match[0]).innerExpression() : expression
+    const pathAst = match && match[0] ? expression.module.get(match[0]) : expression
     if (pathAst instanceof TextLiteral) {
       return pathAst.rawTextContent
     }
@@ -70,7 +69,11 @@ const currentPath = computed(() => {
   return undefined
 })
 
-function makeValue(edit: Ast.MutableModule, useFileConstructor: boolean, path: string): Ast.Owned {
+function makeValue(
+  edit: Ast.MutableModule,
+  useFileConstructor: boolean,
+  path: string,
+): Ast.Owned<Ast.MutableExpression> {
   if (useFileConstructor) {
     const arg = Ast.TextLiteral.new(path, edit)
     const requiredImport = {

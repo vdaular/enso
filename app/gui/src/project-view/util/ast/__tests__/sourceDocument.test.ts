@@ -12,7 +12,7 @@ test('Test SourceDocument', () => {
   const code = '1 + 1'
   const edit1 = syncModule.edit()
   const root = Ast.parseBlock(code, edit1)
-  edit1.replaceRoot(root)
+  edit1.setRoot(root)
   syncModule.applyEdit(edit1)
   expect(sourceDoc.text).toBe(code)
 

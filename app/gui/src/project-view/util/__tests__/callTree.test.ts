@@ -101,7 +101,7 @@ test.each`
     expectedPattern,
     fixture: { allowInfix, mockSuggestion, argsParameters },
   }: TestData) => {
-    const ast = Ast.parse(expression.trim())
+    const ast = Ast.parseExpression(expression.trim())
 
     const configuration: widgetCfg.FunctionCall = {
       kind: 'FunctionCall',
@@ -207,7 +207,7 @@ test.each([
   ({ code, subapplicationIndex, notAppliedArguments, expectedNotAppliedArguments }: TestCase) => {
     const { db, expectedMethodCall, expectedSuggestion, setExpressionInfo } =
       prepareMocksForGetMethodCallTest()
-    const ast = Ast.parse(code)
+    const ast = Ast.parseExpression(code)
     db.updateExternalIds(ast)
     const subApplication = nthSubapplication(ast, subapplicationIndex)
     assert(subApplication)
@@ -345,7 +345,7 @@ test.each([
   'Computing IDs of arguments: $description',
   ({ code, subapplicationIndex, notAppliedArguments, expectedSameIds }: ArgsTestCase) => {
     const { db, expectedMethodCall, setExpressionInfo } = prepareMocksForGetMethodCallTest()
-    const ast = Ast.parse(code)
+    const ast = Ast.parseExpression(code)
     const subApplication = nthSubapplication(ast, subapplicationIndex)
     assert(subApplication)
     db.updateExternalIds(ast)

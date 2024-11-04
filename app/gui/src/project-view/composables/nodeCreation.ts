@@ -126,9 +126,13 @@ export function useNodeCreation(
     const createdIdentifiers = new Set<Identifier>()
     const identifiersRenameMap = new Map<Identifier, Identifier>()
     graphStore.edit((edit) => {
-      const statements = new Array<Ast.Owned>()
+      const statements = new Array<Ast.Owned<Ast.MutableStatement>>()
       for (const options of placedNodes) {
-        const rhs = Ast.parse(options.expression, edit)
+        const rhs = Ast.parseExpression(options.expression, edit)
+        if (!rhs) {
+          console.error('Cannot create node: invalid expression', options.expression)
+          continue
+        }
         const ident = getIdentifier(rhs, options, createdIdentifiers)
         createdIdentifiers.add(ident)
         const { id, rootExpression } = newAssignmentNode(
@@ -192,19 +196,16 @@ export function useNodeCreation(
   function newAssignmentNode(
     edit: Ast.MutableModule,
     ident: Ast.Identifier,
-    rhs: Ast.Owned,
+    rhs: Ast.Owned<Ast.MutableExpression>,
     options: NodeCreationOptions,
     identifiersRenameMap: Map<Ast.Identifier, Ast.Identifier>,
   ) {
     rhs.setNodeMetadata(options.metadata ?? {})
-    const assignment = Ast.Assignment.new(edit, ident, rhs)
+    const { documentation } = options
+    const assignment = Ast.Assignment.new(ident, rhs, { edit, documentation })
     afterCreation(edit, assignment, ident, options, identifiersRenameMap)
     const id = asNodeId(rhs.externalId)
-    const rootExpression =
-      options.documentation != null ?
-        Ast.Documented.new(options.documentation, assignment)
-      : assignment
-    return { rootExpression, id }
+    return { rootExpression: assignment, id }
   }
 
   function getIdentifier(
@@ -270,10 +271,14 @@ function existingNameToPrefix(name: string): string {
  * The location will be after any statements in the block that bind identifiers; if the block ends in an expression
  * statement, the location will be before it so that the value of the block will not be affected.
  */
-export function insertNodeStatements(bodyBlock: Ast.MutableBodyBlock, statements: Ast.Owned[]) {
+export function insertNodeStatements(
+  bodyBlock: Ast.MutableBodyBlock,
+  statements: Ast.Owned<Ast.MutableStatement>[],
+) {
   const lines = bodyBlock.lines
+  const lastStatement = lines[lines.length - 1]?.statement?.node
   const index =
-    lines[lines.length - 1]?.expression?.node.isBindingStatement !== false ?
+    lastStatement instanceof Ast.MutableAssignment || lastStatement instanceof Ast.MutableFunction ?
       lines.length
     : lines.length - 1
   bodyBlock.insert(index, ...statements)

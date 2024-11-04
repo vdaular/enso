@@ -25,7 +25,7 @@ export function parseWithSpans<T extends Record<string, SourceRange>>(code: stri
 
   const { root: ast, toRaw, getSpan } = Ast.parseExtended(code, idMap)
   const idFromExternal = new Map<ExternalId, AstId>()
-  ast.visitRecursiveAst((ast) => {
+  ast.visitRecursive((ast) => {
     idFromExternal.set(ast.externalId, ast.id)
   })
   const id = (name: keyof T) => idFromExternal.get(eid(name))!

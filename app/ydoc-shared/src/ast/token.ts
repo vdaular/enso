@@ -157,7 +157,7 @@ export function isOperator(code: string): code is Operator {
 
 /** @internal */
 export function isTokenId(
-  t: DeepReadonly<SyncTokenId | AstId | Ast | Owned<Ast> | Owned>,
+  t: DeepReadonly<SyncTokenId | AstId | Ast | Owned>,
 ): t is DeepReadonly<SyncTokenId> {
   return typeof t === 'object' && !(t instanceof Ast)
 }

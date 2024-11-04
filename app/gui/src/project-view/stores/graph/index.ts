@@ -2,7 +2,7 @@ import { usePlacement } from '@/components/ComponentBrowser/placement'
 import { createContextStore } from '@/providers'
 import type { PortId } from '@/providers/portInfo'
 import type { WidgetUpdate } from '@/providers/widgetRegistry'
-import { GraphDb, nodeIdFromOuterExpr, type NodeId } from '@/stores/graph/graphDatabase'
+import { GraphDb, nodeIdFromOuterAst, type NodeId } from '@/stores/graph/graphDatabase'
 import {
   addImports,
   detectImportConflicts,
@@ -223,7 +223,7 @@ export const { injectFn: useGraphStore, provideFn: provideGraphStore } = createC
         return Err('Method pointer is not a module method')
       const method = Ast.findModuleMethod(topLevel, ptr.name)
       if (!method) return Err(`No method with name ${ptr.name} in ${modulePath.value}`)
-      return Ok(method)
+      return Ok(method.statement)
     }
 
     /**
@@ -330,8 +330,8 @@ export const { injectFn: useGraphStore, provideFn: provideGraphStore } = createC
 
             updatePortValue(edit, usage, undefined)
           }
-          const outerExpr = edit.getVersion(node.outerExpr)
-          if (outerExpr) Ast.deleteFromParentBlock(outerExpr)
+          const outerAst = edit.getVersion(node.outerAst)
+          if (outerAst.isStatement()) Ast.deleteFromParentBlock(outerAst)
           nodeRects.delete(id)
           nodeHoverAnimations.delete(id)
           deletedNodes.add(id)
@@ -576,7 +576,7 @@ export const { injectFn: useGraphStore, provideFn: provideGraphStore } = createC
     function updatePortValue(
       edit: MutableModule,
       id: PortId,
-      value: Ast.Owned | undefined,
+      value: Ast.Owned<Ast.MutableExpression> | undefined,
     ): boolean {
       const update = getPortPrimaryInstance(id)?.onUpdate
       if (!update) return false
@@ -692,7 +692,7 @@ export const { injectFn: useGraphStore, provideFn: provideGraphStore } = createC
       const body = func.bodyExpressions()
       const result: NodeId[] = []
       for (const expr of body) {
-        const nodeId = nodeIdFromOuterExpr(expr)
+        const nodeId = nodeIdFromOuterAst(expr)
         if (nodeId && ids.has(nodeId)) result.push(nodeId)
       }
       return result
@@ -710,14 +710,14 @@ export const { injectFn: useGraphStore, provideFn: provideGraphStore } = createC
       sourceNodeId: NodeId,
       targetNodeId: NodeId,
     ) {
-      const sourceExpr = db.nodeIdToNode.get(sourceNodeId)?.outerExpr.id
-      const targetExpr = db.nodeIdToNode.get(targetNodeId)?.outerExpr.id
+      const sourceExpr = db.nodeIdToNode.get(sourceNodeId)?.outerAst.id
+      const targetExpr = db.nodeIdToNode.get(targetNodeId)?.outerAst.id
       const body = edit.getVersion(unwrap(getExecutedMethodAst(edit))).bodyAsBlock()
       assert(sourceExpr != null)
       assert(targetExpr != null)
       const lines = body.lines
-      const sourceIdx = lines.findIndex((line) => line.expression?.node.id === sourceExpr)
-      const targetIdx = lines.findIndex((line) => line.expression?.node.id === targetExpr)
+      const sourceIdx = lines.findIndex((line) => line.statement?.node.id === sourceExpr)
+      const targetIdx = lines.findIndex((line) => line.statement?.node.id === targetExpr)
       assert(sourceIdx != null)
       assert(targetIdx != null)
 
@@ -727,7 +727,7 @@ export const { injectFn: useGraphStore, provideFn: provideGraphStore } = createC
         const deps = reachable([targetNodeId], (node) => db.nodeDependents.lookup(node))
 
         const dependantLines = new Set(
-          Array.from(deps, (id) => db.nodeIdToNode.get(id)?.outerExpr.id),
+          Array.from(deps, (id) => db.nodeIdToNode.get(id)?.outerAst.id),
         )
         // Include the new target itself in the set of lines that must be placed after source node.
         dependantLines.add(targetExpr)
@@ -744,7 +744,7 @@ export const { injectFn: useGraphStore, provideFn: provideGraphStore } = createC
 
           // Split those lines into two buckets, whether or not they depend on the target.
           const [linesAfter, linesBefore] = partition(linesToSort, (line) =>
-            dependantLines.has(line.expression?.node.id),
+            dependantLines.has(line.statement?.node.id),
           )
 
           // Recombine all lines after splitting, keeping existing dependants below the target.

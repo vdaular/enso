@@ -13,7 +13,7 @@ import { computed, toRef, watch } from 'vue'
 import { DisplayIcon } from './widgets/WidgetIcon.vue'
 
 const props = defineProps<{
-  ast: Ast.Ast
+  ast: Ast.Expression
   nodeId: NodeId
   nodeElement: HTMLElement | undefined
   nodeType: NodeType

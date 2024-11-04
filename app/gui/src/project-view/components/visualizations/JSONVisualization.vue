@@ -16,7 +16,9 @@ const { data } = defineProps<{ data: unknown }>()
 
 const config = useVisualizationConfig()
 
-type ConstructivePattern = (placeholder: Ast.Owned) => Ast.Owned
+type ConstructivePattern = (
+  placeholder: Ast.Owned<Ast.MutableExpression>,
+) => Ast.Owned<Ast.MutableExpression>
 
 const JSON_OBJECT_TYPE = 'Standard.Base.Data.Json.JS_Object'
 
@@ -26,7 +28,7 @@ function projector(parentPattern: ConstructivePattern | undefined) {
   const style = {
     spaced: parentPattern !== undefined,
   }
-  return (selector: number | string) => (source: Ast.Owned) =>
+  return (selector: number | string) => (source: Ast.Owned<Ast.MutableExpression>) =>
     Ast.App.positional(
       Ast.PropertyAccess.new(
         source.module,

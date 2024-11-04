@@ -148,7 +148,7 @@ const spreadsheetDecoder: ClipboardDecoder<CopiedNode[]> = {
   },
 }
 
-const toTable = computed(() => Pattern.parse('__.to Table'))
+const toTable = computed(() => Pattern.parseExpression('__.to Table'))
 
 /** Create Enso Expression generating table from this tsvData. */
 export function tsvTableToEnsoExpression(tsvData: string) {
@@ -186,9 +186,10 @@ export function writeClipboard(data: MimeData) {
 // === Serializing nodes ===
 
 function nodeStructuredData(node: Node): CopiedNode {
+  const documentation = node.outerAst.isStatement() ? node.outerAst.documentationText() : undefined
   return {
     expression: node.innerExpr.code(),
-    documentation: node.docs?.documentation(),
+    documentation,
     metadata: node.rootExpr.serializeMetadata(),
     ...(node.pattern ? { binding: node.pattern.code() } : {}),
   }
@@ -204,6 +205,6 @@ export function clipboardNodeData(nodes: CopiedNode[]): MimeData {
 export function nodesToClipboardData(nodes: Node[]): MimeData {
   return {
     ...clipboardNodeData(nodes.map(nodeStructuredData)),
-    'text/plain': nodes.map((node) => node.outerExpr.code()).join('\n'),
+    'text/plain': nodes.map((node) => node.outerAst.code()).join('\n'),
   }
 }

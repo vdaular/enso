@@ -45,7 +45,10 @@ const operatorStyle = computed(() => {
     application.value.appTree instanceof Ast.OprApp ||
     application.value.appTree instanceof Ast.PropertyAccess
   ) {
-    const [_lhs, opr, rhs] = application.value.appTree.concreteChildren()
+    const [_lhs, opr, rhs] = application.value.appTree.concreteChildren({
+      verbatim: true,
+      indent: '',
+    })
     return {
       '--whitespace-pre': `${JSON.stringify(opr?.whitespace ?? '')}`,
       '--whitespace-post': `${JSON.stringify(rhs?.whitespace ?? '')}`,

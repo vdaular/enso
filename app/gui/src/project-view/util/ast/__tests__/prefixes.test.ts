@@ -1,4 +1,4 @@
-import { Ast } from '@/util/ast/abstract'
+import { Ast } from '@/util/ast'
 import { Prefixes } from '@/util/ast/prefixes'
 import { expect, test } from 'vitest'
 
@@ -67,13 +67,13 @@ test.each([
   },
 ])('modify', ({ prefixes: lines, modifications, source, target }) => {
   const prefixes = Prefixes.FromLines(lines as any)
-  const sourceAst = Ast.parse(source)
-  sourceAst.module.replaceRoot(sourceAst)
+  const sourceAst = Ast.parseExpression(source)
+  sourceAst.module.setRoot(sourceAst)
   const edit = sourceAst.module.edit()
   const modificationAsts = Object.fromEntries(
     Object.entries(modifications).map(([k, v]) => [
       k,
-      v ? Array.from(v, (mod) => Ast.parse(mod, edit)) : undefined,
+      v ? Array.from(v, (mod) => Ast.parseExpression(mod, edit)) : undefined,
     ]),
   )
   prefixes.modify(edit.getVersion(sourceAst), modificationAsts)

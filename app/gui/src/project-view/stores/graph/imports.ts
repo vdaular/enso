@@ -99,9 +99,9 @@ export interface UnqualifiedImport {
 }
 
 /** Read imports from given module block */
-export function readImports(ast: Ast.Ast): Import[] {
+export function readImports(ast: Ast.BodyBlock): Import[] {
   const imports: Import[] = []
-  ast.visitRecursiveAst((node) => {
+  ast.visitRecursive((node) => {
     if (node instanceof Ast.Import) {
       const recognized = recognizeImport(node)
       if (recognized) {
@@ -132,8 +132,8 @@ function newImportsLocation(scope: Ast.BodyBlock): number {
   const lines = scope.lines
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!
-    if (line.expression) {
-      if (line.expression.node?.innerExpression() instanceof Ast.Import) {
+    if (line.statement) {
+      if (line.statement.node instanceof Ast.Import) {
         lastImport = i
       } else {
         break
