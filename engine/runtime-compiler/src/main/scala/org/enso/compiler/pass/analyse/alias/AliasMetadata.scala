@@ -2,6 +2,7 @@ package org.enso.compiler.pass.analyse.alias
 
 import org.enso.compiler.pass.IRPass
 import org.enso.compiler.pass.analyse.alias.graph.Graph
+import org.enso.compiler.pass.analyse.alias.graph.GraphBuilder
 
 /** Information about the aliasing state for a given IR node. */
 sealed trait AliasMetadata extends IRPass.IRMetadata {
@@ -45,6 +46,10 @@ object AliasMetadata {
     override val graph: Graph,
     scope: Graph.Scope
   ) extends Scope {
+    def this(b: GraphBuilder) = {
+      this(b.toGraph(), b.toScope())
+    }
+
     override val metadataName: String = "AliasMetadata.ChildScope"
 
     /** @inheritdoc */

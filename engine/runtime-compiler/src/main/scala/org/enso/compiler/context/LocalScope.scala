@@ -6,6 +6,7 @@ import org.enso.compiler.pass.analyse.FrameVariableNames
 import org.enso.compiler.pass.analyse.DataflowAnalysis
 import org.enso.compiler.pass.analyse.alias.graph.{
   GraphOccurrence,
+  GraphBuilder,
   Graph => AliasGraph
 }
 
@@ -92,7 +93,9 @@ class LocalScope(
     *
     * @return a child of this scope
     */
-  def createChild(): LocalScope = createChild(() => scope.addChild())
+  def createChild(): LocalScope = createChild(() => {
+    GraphBuilder.create(null, scope).addChild().toScope()
+  })
 
   /** Creates a child using a known aliasing scope.
     *

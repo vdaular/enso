@@ -29,8 +29,7 @@ import org.enso.compiler.core.ir.{
 import org.enso.compiler.core.{CompilerError, IR}
 import org.enso.compiler.pass.IRPass
 import org.enso.compiler.pass.IRProcessingPass
-import org.enso.compiler.pass.analyse.alias.graph.Graph
-import org.enso.compiler.pass.analyse.alias.graph.GraphOccurrence
+import org.enso.compiler.pass.analyse.alias.graph.GraphBuilder
 import org.enso.compiler.pass.analyse.alias.graph.Graph.Scope
 import org.enso.compiler.pass.desugar._
 import org.enso.compiler.pass.lint.UnusedBindings
@@ -140,7 +139,7 @@ case object AliasAnalysis extends IRPass {
             val mapping = mutable.Map(localScope.scope -> scope)
             ag.deepCopy(mapping)
           }
-        val result = analyseExpression(ir, graph, scope)
+        val result = analyseExpression(ir, GraphBuilder.create(graph, scope))
 
         result
       }
@@ -232,7 +231,7 @@ case object AliasAnalysis extends IRPass {
   def analyseModuleDefinition(
     ir: Definition
   ): Definition = {
-    val topLevelGraph = new Graph
+    val builder = GraphBuilder.create()
 
     ir match {
       case m: definition.Method.Conversion =>
@@ -241,14 +240,13 @@ case object AliasAnalysis extends IRPass {
             m.copy(
               body = analyseExpression(
                 m.body,
-                topLevelGraph,
-                topLevelGraph.rootScope,
+                builder,
                 lambdaReuseScope = true
               )
             ).updateMetadata(
               new MetadataPair(
                 this,
-                alias.AliasMetadata.RootScope(topLevelGraph)
+                alias.AliasMetadata.RootScope(builder.toGraph())
               )
             )
           case _ =>
@@ -262,14 +260,13 @@ case object AliasAnalysis extends IRPass {
             m.copy(
               body = analyseExpression(
                 m.body,
-                topLevelGraph,
-                topLevelGraph.rootScope,
+                builder,
                 lambdaReuseScope = true
               )
             ).updateMetadata(
               new MetadataPair(
                 this,
-                alias.AliasMetadata.RootScope(topLevelGraph)
+                alias.AliasMetadata.RootScope(builder.toGraph())
               )
             )
           case _ =>
@@ -285,39 +282,42 @@ case object AliasAnalysis extends IRPass {
         t.copy(
           params = analyseArgumentDefs(
             t.params,
-            topLevelGraph,
-            topLevelGraph.rootScope
+            builder
           ),
           members = t.members.map(d => {
-            val graph = new Graph
+            val graph = GraphBuilder.create()
             d.copy(
               arguments = analyseArgumentDefs(
                 d.arguments,
-                graph,
-                graph.rootScope
+                graph
               ),
               annotations = d.annotations.map { ann =>
                 ann
                   .copy(
                     expression = analyseExpression(
                       ann.expression,
-                      topLevelGraph,
-                      topLevelGraph.rootScope
+                      builder
                     )
                   )
                   .updateMetadata(
                     new MetadataPair(
                       this,
-                      alias.AliasMetadata.RootScope(topLevelGraph)
+                      alias.AliasMetadata.RootScope(builder.toGraph())
                     )
                   )
               }
             ).updateMetadata(
-              new MetadataPair(this, alias.AliasMetadata.RootScope(graph))
+              new MetadataPair(
+                this,
+                alias.AliasMetadata.RootScope(graph.toGraph())
+              )
             )
           })
         ).updateMetadata(
-          new MetadataPair(this, alias.AliasMetadata.RootScope(topLevelGraph))
+          new MetadataPair(
+            this,
+            alias.AliasMetadata.RootScope(builder.toGraph())
+          )
         )
       case _: Definition.SugaredType =>
         throw new CompilerError(
@@ -343,12 +343,14 @@ case object AliasAnalysis extends IRPass {
           .copy(expression =
             analyseExpression(
               ann.expression,
-              topLevelGraph,
-              topLevelGraph.rootScope
+              builder
             )
           )
           .updateMetadata(
-            new MetadataPair(this, alias.AliasMetadata.RootScope(topLevelGraph))
+            new MetadataPair(
+              this,
+              alias.AliasMetadata.RootScope(builder.toGraph())
+            )
           )
       case err: Error => err
     }
@@ -363,99 +365,90 @@ case object AliasAnalysis extends IRPass {
     * information. Please see the pass header documentation for more details.
     *
     * @param expression       the expression to perform alias analysis on
-    * @param graph            the aliasing graph in which the analysis is being performed
-    * @param parentScope      the parent scope for this expression
+    * @param builder          the scope builder
     * @param lambdaReuseScope whether to reuse the parent scope for a lambda
     *                         instead of creating a new scope
     * @return `expression`, potentially with aliasing information attached
     */
   private def analyseExpression(
     expression: Expression,
-    graph: Graph,
-    parentScope: Scope,
+    builder: GraphBuilder,
     lambdaReuseScope: Boolean = false
   ): Expression = {
     expression match {
       case fn: Function =>
-        analyseFunction(fn, graph, parentScope, lambdaReuseScope)
+        analyseFunction(fn, builder, lambdaReuseScope)
       case name: Name =>
         analyseName(
           name,
           isInPatternContext                = false,
           isConstructorNameInPatternContext = false,
-          graph,
-          parentScope
+          builder
         )
-      case cse: Case => analyseCase(cse, graph, parentScope)
+      case cse: Case => analyseCase(cse, builder)
       case block: Expression.Block =>
         val currentScope =
-          if (!block.suspended) parentScope else parentScope.addChild()
+          if (!block.suspended) builder else builder.addChild()
 
         block
           .copy(
             expressions = block.expressions.map((expression: Expression) =>
               analyseExpression(
                 expression,
-                graph,
                 currentScope
               )
             ),
             returnValue = analyseExpression(
               block.returnValue,
-              graph,
               currentScope
             )
           )
           .updateMetadata(
             new MetadataPair(
               this,
-              alias.AliasMetadata.ChildScope(graph, currentScope)
+              new alias.AliasMetadata.ChildScope(currentScope)
             )
           )
       case binding @ Expression.Binding(name, expression, _, _) =>
-        if (
-          !parentScope.hasSymbolOccurrenceAs[GraphOccurrence.Def](name.name)
-        ) {
+        if (builder.findDef(name.name) == -1) {
           val isSuspended = expression match {
             case Expression.Block(_, _, _, isSuspended, _) => isSuspended
             case _                                         => false
           }
-          val occurrence = graph.newDef(
+          val occurrence = builder.newDef(
             name.name,
             binding.getId(),
             binding.getExternalId,
             isSuspended
           )
 
-          parentScope.add(occurrence)
-          parentScope.addDefinition(occurrence)
+          builder.add(occurrence)
+          builder.addDefinition(occurrence)
 
           binding
             .copy(
               expression = analyseExpression(
                 expression,
-                graph,
-                parentScope
+                builder
               )
             )
             .updateMetadata(
               new MetadataPair(
                 this,
-                alias.AliasMetadata.Occurrence(graph, occurrence.id)
+                alias.AliasMetadata.Occurrence(builder.toGraph(), occurrence.id)
               )
             )
         } else {
           errors.Redefined.Binding(binding)
         }
       case app: Application =>
-        analyseApplication(app, graph, parentScope)
-      case tpe: Type => analyseType(tpe, graph, parentScope)
+        analyseApplication(app, builder)
+      case tpe: Type => analyseType(tpe, builder)
       case x =>
         x.mapExpressions((expression: Expression) =>
           analyseExpression(
             expression,
-            graph,
-            parentScope
+            builder
           )
         )
     }
@@ -464,48 +457,46 @@ case object AliasAnalysis extends IRPass {
   /** Performs alias analysis on a type-related expression.
     *
     * @param value       the ir to analyse
-    * @param graph       the graph in which the analysis is taking place
-    * @param parentScope the parent scope in which `value` occurs
+    * @param builder       the graph builder
     * @return `value`, annotated with aliasing information
     */
   def analyseType(
     value: Type,
-    graph: Graph,
-    parentScope: Scope
+    builder: GraphBuilder
   ): Type = {
     value match {
       case member @ `type`.Set.Member(label, memberType, value, _, _) =>
         val memberTypeScope = memberType match {
-          case _: Literal => parentScope
-          case _          => parentScope.addChild()
+          case _: Literal => builder
+          case _          => builder.addChild()
         }
 
         val valueScope = value match {
-          case _: Literal => parentScope
-          case _          => parentScope.addChild()
+          case _: Literal => builder
+          case _          => builder.addChild()
         }
 
-        val definition = graph.newDef(
+        val definition = builder.newDef(
           label.name,
           label.getId,
           label.getExternalId
         )
-        parentScope.add(definition)
-        parentScope.addDefinition(definition)
+        builder.add(definition)
+        builder.addDefinition(definition)
 
         member
           .copy(
-            memberType = analyseExpression(memberType, graph, memberTypeScope),
-            value      = analyseExpression(value, graph, valueScope)
+            memberType = analyseExpression(memberType, memberTypeScope),
+            value      = analyseExpression(value, valueScope)
           )
           .updateMetadata(
             new MetadataPair(
               this,
-              alias.AliasMetadata.Occurrence(graph, definition.id)
+              alias.AliasMetadata.Occurrence(builder.toGraph(), definition.id)
             )
           )
       case x =>
-        x.mapExpressions(analyseExpression(_, graph, parentScope))
+        x.mapExpressions(analyseExpression(_, builder))
     }
   }
 
@@ -520,15 +511,12 @@ case object AliasAnalysis extends IRPass {
     * the argument's scope).
     *
     * @param args  the list of arguments to perform analysis on
-    * @param graph the graph in which the analysis is taking place
-    * @param scope the scope of the function for which `args` are being
-    *              defined
+    * @param builder the graph builder
     * @return `args`, potentially
     */
   private def analyseArgumentDefs(
     args: List[DefinitionArgument],
-    graph: Graph,
-    scope: Scope
+    builder: GraphBuilder
   ): List[DefinitionArgument] = {
     args.map {
       case arg @ DefinitionArgument.Specified(
@@ -541,22 +529,21 @@ case object AliasAnalysis extends IRPass {
           ) =>
         // Synthetic `self` must not be added to the scope, but it has to be added as a
         // definition for frame index metadata
-        val definition = graph.newDef(
+        val definition = builder.newDef(
           selfName.name,
           arg.getId(),
           arg.getExternalId
         )
-        scope.addDefinition(definition)
+        builder.addDefinition(definition)
         arg
           .updateMetadata(
             new MetadataPair(
               this,
-              alias.AliasMetadata.Occurrence(graph, definition.id)
+              alias.AliasMetadata.Occurrence(builder.toGraph(), definition.id)
             )
           )
           .copy(
-            ascribedType =
-              arg.ascribedType.map(analyseExpression(_, graph, scope))
+            ascribedType = arg.ascribedType.map(analyseExpression(_, builder))
           )
 
       case arg @ DefinitionArgument.Specified(
@@ -568,41 +555,35 @@ case object AliasAnalysis extends IRPass {
             _
           ) =>
         val nameOccursInScope =
-          scope.hasSymbolOccurrenceAs[GraphOccurrence.Def](
+          builder.findDef(
             name.name
           )
-        if (!nameOccursInScope) {
-          val argScope = if (suspended) scope.addChild() else scope
+        if (nameOccursInScope == -1) {
+          val argScope = if (suspended) builder.addChild() else builder
           val newDefault =
-            value.map((ir: Expression) =>
-              analyseExpression(ir, graph, argScope)
-            )
+            value.map((ir: Expression) => analyseExpression(ir, argScope))
 
-          val definition = graph.newDef(
+          val definition = builder.newDef(
             name.name,
             arg.getId(),
             arg.getExternalId,
             suspended
           )
-          scope.add(definition)
-          scope.addDefinition(definition)
+          builder.add(definition)
+          builder.addDefinition(definition)
 
           arg
             .copy(
               defaultValue = newDefault,
-              ascribedType =
-                arg.ascribedType.map(analyseExpression(_, graph, scope))
+              ascribedType = arg.ascribedType.map(analyseExpression(_, builder))
             )
             .updateMetadata(
               new MetadataPair(
                 this,
-                alias.AliasMetadata.Occurrence(graph, definition.id)
+                alias.AliasMetadata.Occurrence(builder.toGraph(), definition.id)
               )
             )
         } else {
-          val f = scope.occurrences.values.collectFirst {
-            case x if x.symbol == name.name => x
-          }
           arg
             .copy(
               ascribedType = Some(Redefined.Arg(name, arg.identifiedLocation))
@@ -610,7 +591,8 @@ case object AliasAnalysis extends IRPass {
             .updateMetadata(
               new MetadataPair(
                 this,
-                alias.AliasMetadata.Occurrence(graph, f.get.id)
+                alias.AliasMetadata
+                  .Occurrence(builder.toGraph(), nameOccursInScope)
               )
             )
         }
@@ -626,29 +608,28 @@ case object AliasAnalysis extends IRPass {
     */
   def analyseApplication(
     application: Application,
-    graph: Graph,
-    scope: Graph.Scope
+    builder: GraphBuilder
   ): Application = {
     application match {
       case app: Application.Prefix =>
         app.copy(
-          function  = analyseExpression(app.function, graph, scope),
-          arguments = analyseCallArguments(app.arguments, graph, scope)
+          function  = analyseExpression(app.function, builder),
+          arguments = analyseCallArguments(app.arguments, builder)
         )
       case app: Application.Force =>
-        app.copy(target = analyseExpression(app.target, graph, scope))
+        app.copy(target = analyseExpression(app.target, builder))
       case app: Application.Sequence =>
-        app.copy(items = app.items.map(analyseExpression(_, graph, scope)))
+        app.copy(items = app.items.map(analyseExpression(_, builder)))
       case tSet: Application.Typeset =>
-        val newScope = scope.addChild()
+        val newScope = builder.addChild()
         tSet
           .copy(expression =
-            tSet.expression.map(analyseExpression(_, graph, newScope))
+            tSet.expression.map(analyseExpression(_, newScope))
           )
           .updateMetadata(
             new MetadataPair(
               this,
-              alias.AliasMetadata.ChildScope(graph, newScope)
+              new alias.AliasMetadata.ChildScope(newScope)
             )
           )
       case _: Operator.Binary =>
@@ -665,26 +646,24 @@ case object AliasAnalysis extends IRPass {
   /** Performs alias analysis on function call arguments.
     *
     * @param args        the list of arguments to analyse
-    * @param graph       the graph in which the analysis is taking place
-    * @param parentScope the scope in which the arguments are defined
+    * @param builder     the graph builder
     * @return `args`, with aliasing information attached to each argument
     */
   private def analyseCallArguments(
     args: List[CallArgument],
-    graph: Graph,
-    parentScope: Graph.Scope
+    builder: GraphBuilder
   ): List[CallArgument] = {
     args.map { case arg @ CallArgument.Specified(_, expr, _, _) =>
       val currentScope = expr match {
-        case _: Literal => parentScope
-        case _          => parentScope.addChild()
+        case _: Literal => builder
+        case _          => builder.addChild()
       }
       arg
-        .copy(value = analyseExpression(expr, graph, currentScope))
+        .copy(value = analyseExpression(expr, currentScope))
         .updateMetadata(
           new MetadataPair(
             this,
-            alias.AliasMetadata.ChildScope(graph, currentScope)
+            new alias.AliasMetadata.ChildScope(currentScope)
           )
         )
     }
@@ -693,37 +672,34 @@ case object AliasAnalysis extends IRPass {
   /** Performs alias analysis on a function definition.
     *
     * @param function         the function to analyse
-    * @param graph            the graph in which the analysis is taking place
-    * @param parentScope      the scope in which the function is declared
+    * @param builder            the graph builder
     * @param lambdaReuseScope whether or not the lambda should reuse the parent
     *                         scope or allocate a child of it
     * @return `function`, with alias analysis information attached
     */
   def analyseFunction(
     function: Function,
-    graph: Graph,
-    parentScope: Scope,
+    builder: GraphBuilder,
     lambdaReuseScope: Boolean = false
   ): Function = {
     val currentScope =
-      if (lambdaReuseScope) parentScope else parentScope.addChild()
+      if (lambdaReuseScope) builder else builder.addChild()
 
     function match {
       case lambda: Function.Lambda =>
         lambda
           .copy(
-            arguments =
-              analyseArgumentDefs(lambda.arguments, graph, currentScope),
+            arguments = analyseArgumentDefs(lambda.arguments, currentScope),
             body = analyseExpression(
               lambda.body,
-              graph,
               currentScope
             )
           )
           .updateMetadata(
             new MetadataPair(
               this,
-              alias.AliasMetadata.ChildScope(graph, currentScope)
+              alias.AliasMetadata
+                .ChildScope(currentScope.toGraph(), currentScope.toScope())
             )
           )
       case _: Function.Binding =>
@@ -740,44 +716,42 @@ case object AliasAnalysis extends IRPass {
     *                           pattern context
     * @param isConstructorNameInPatternContext whether or not the name is
     *                           constructor name occurring in a pattern context
-    * @param graph the graph in which the analysis is taking place
-    * @param parentScope the scope in which `name` is declared
+    * @param builder the graph builder
     * @return `name`, with alias analysis information attached
     */
   def analyseName(
     name: Name,
     isInPatternContext: Boolean,
     isConstructorNameInPatternContext: Boolean,
-    graph: Graph,
-    parentScope: Scope
+    builder: GraphBuilder
   ): Name = {
     val occurrenceId =
       if (isInPatternContext && !isConstructorNameInPatternContext) {
-        val definition = graph.newDef(
+        val definition = builder.newDef(
           name.name,
           name.getId,
           name.getExternalId
         )
-        parentScope.add(definition)
-        parentScope.addDefinition(definition)
+        builder.add(definition)
+        builder.addDefinition(definition)
         definition.id
       } else {
         val occurrence =
-          graph.newUse(
+          builder.newUse(
             name.name,
             name.getId,
             name.getExternalId
           )
-        parentScope.add(occurrence)
+        builder.add(occurrence)
         if (!isConstructorNameInPatternContext && !name.isMethod) {
-          graph.resolveLocalUsage(occurrence)
+          builder.resolveLocalUsage(occurrence)
         }
         occurrence.id
       }
     name.updateMetadata(
       new MetadataPair(
         this,
-        alias.AliasMetadata.Occurrence(graph, occurrenceId)
+        alias.AliasMetadata.Occurrence(builder.toGraph(), occurrenceId)
       )
     )
   }
@@ -791,17 +765,14 @@ case object AliasAnalysis extends IRPass {
     */
   def analyseCase(
     ir: Case,
-    graph: Graph,
-    parentScope: Scope
+    builder: GraphBuilder
   ): Case = {
     ir match {
       case caseExpr: Case.Expr =>
         caseExpr
           .copy(
-            scrutinee =
-              analyseExpression(caseExpr.scrutinee, graph, parentScope),
-            branches =
-              caseExpr.branches.map(analyseCaseBranch(_, graph, parentScope))
+            scrutinee = analyseExpression(caseExpr.scrutinee, builder),
+            branches  = caseExpr.branches.map(analyseCaseBranch(_, builder))
           )
       case _: Case.Branch =>
         throw new CompilerError("Case branch in `analyseCase`.")
@@ -811,30 +782,27 @@ case object AliasAnalysis extends IRPass {
   /** Performs alias analysis on a case branch.
     *
     * @param branch the case branch to analyse
-    * @param graph the graph in which the analysis is taking place
-    * @param parentScope the scope in which the case branch occurs
+    * @param builder the graph builder
     * @return `branch`, possibly with alias analysis information attached
     */
   def analyseCaseBranch(
     branch: Case.Branch,
-    graph: Graph,
-    parentScope: Scope
+    builder: GraphBuilder
   ): Case.Branch = {
-    val currentScope = parentScope.addChild()
+    val currentScope = builder.addChild()
 
     branch
       .copy(
-        pattern = analysePattern(branch.pattern, graph, currentScope),
+        pattern = analysePattern(branch.pattern, currentScope),
         expression = analyseExpression(
           branch.expression,
-          graph,
           currentScope
         )
       )
       .updateMetadata(
         new MetadataPair(
           this,
-          alias.AliasMetadata.ChildScope(graph, currentScope)
+          new alias.AliasMetadata.ChildScope(currentScope)
         )
       )
   }
@@ -842,14 +810,12 @@ case object AliasAnalysis extends IRPass {
   /** Performs alias analysis on a pattern.
     *
     * @param pattern the pattern to analyse
-    * @param graph the graph in which the analysis is taking place
-    * @param parentScope the scope in which the case branch occurs
+    * @param builder the graph builder
     * @return `pattern`, possibly with alias analysis information attached
     */
   def analysePattern(
     pattern: Pattern,
-    graph: Graph,
-    parentScope: Scope
+    builder: GraphBuilder
   ): Pattern = {
     pattern match {
       case named: Pattern.Name =>
@@ -858,8 +824,7 @@ case object AliasAnalysis extends IRPass {
             named.name,
             isInPatternContext                = true,
             isConstructorNameInPatternContext = false,
-            graph,
-            parentScope
+            builder
           )
         )
       case cons: Pattern.Constructor =>
@@ -875,10 +840,9 @@ case object AliasAnalysis extends IRPass {
             cons.constructor,
             isInPatternContext                = true,
             isConstructorNameInPatternContext = true,
-            graph,
-            parentScope
+            builder
           ),
-          fields = cons.fields.map(analysePattern(_, graph, parentScope))
+          fields = cons.fields.map(analysePattern(_, builder))
         )
       case literalPattern: Pattern.Literal =>
         literalPattern
@@ -888,15 +852,13 @@ case object AliasAnalysis extends IRPass {
             typePattern.name,
             isInPatternContext                = true,
             isConstructorNameInPatternContext = false,
-            graph,
-            parentScope
+            builder
           ),
           tpe = analyseName(
             typePattern.tpe,
             isInPatternContext                = false,
             isConstructorNameInPatternContext = false,
-            graph,
-            parentScope
+            builder
           )
         )
       case _: Pattern.Documentation =>
