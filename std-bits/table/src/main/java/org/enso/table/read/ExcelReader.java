@@ -311,6 +311,7 @@ public class ExcelReader {
       int skipRows,
       int rowCount,
       ProblemAggregator problemAggregator) {
+
     ExcelSheet sheet = new ExcelSheet(workbook, sheetIndex);
 
     // Expand Single Cell

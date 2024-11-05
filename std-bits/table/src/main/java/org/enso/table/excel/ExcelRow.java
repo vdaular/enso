@@ -2,6 +2,7 @@ package org.enso.table.excel;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormatter;
@@ -18,11 +19,13 @@ public class ExcelRow {
   private final Row row;
   private final int firstColumn;
   private final int lastColumn;
+  private final boolean use1904Format;
 
-  public ExcelRow(Row row) {
+  public ExcelRow(Row row, boolean use1904Format) {
     this.row = row;
     this.firstColumn = row.getFirstCellNum() + 1;
     this.lastColumn = row.getLastCellNum();
+    this.use1904Format = use1904Format;
   }
 
   public int getFirstColumn() {
@@ -45,16 +48,32 @@ public class ExcelRow {
         double dblValue = cell.getNumericCellValue();
         var nf = ExcelNumberFormat.from(cell, null);
         if (nf != null && DateUtil.isADateFormat(nf.getIdx(), nf.getFormat())) {
-          var temporal = ExcelUtils.fromExcelDateTime(dblValue);
+          var temporal =
+              use1904Format
+                  ? ExcelUtils.fromExcelDateTime1904(dblValue)
+                  : ExcelUtils.fromExcelDateTime(dblValue);
+
           if (temporal == null) {
             return null;
           }
+
           return switch (temporal) {
             case LocalDate date -> {
               var dateFormat = cell.getCellStyle().getDataFormatString();
               yield (dateFormat.contains("h") || dateFormat.contains("H"))
                   ? date.atStartOfDay(ZoneId.systemDefault())
                   : date;
+            }
+            case ZonedDateTime zdt -> {
+              if (!use1904Format || zdt.getYear() != 1904 || zdt.getDayOfYear() != 1) {
+                yield temporal;
+              }
+              var dateFormat = cell.getCellStyle().getDataFormatString();
+              yield (dateFormat.contains("y")
+                      || dateFormat.contains("M")
+                      || dateFormat.contains("d"))
+                  ? zdt
+                  : zdt.toLocalTime();
             }
             default -> temporal;
           };

@@ -446,6 +446,8 @@ public class ExcelWriter {
       return;
     }
 
+    boolean use1904Format = ExcelUtils.is1904DateSystem(workbook);
+
     Storage<?>[] storages = Arrays.stream(columns).map(Column::getStorage).toArray(Storage[]::new);
     for (int i = 0; i < rowCount; i++) {
       Row row = sheet.getRow(currentRow);
@@ -462,7 +464,7 @@ public class ExcelWriter {
           cell = row.createCell(idx);
         }
 
-        writeValueToCell(cell, i, storage, workbook);
+        writeValueToCell(cell, i, storage, workbook, use1904Format);
       }
       currentRow++;
     }
@@ -483,7 +485,8 @@ public class ExcelWriter {
     return newStyle;
   }
 
-  private static void writeValueToCell(Cell cell, int j, Storage<?> storage, Workbook workbook)
+  private static void writeValueToCell(
+      Cell cell, int j, Storage<?> storage, Workbook workbook, boolean use1904Format)
       throws IllegalStateException {
     if (storage.isNothing(j)) {
       cell.setBlank();
@@ -501,15 +504,20 @@ public class ExcelWriter {
         case Double d -> cell.setCellValue(d);
         case Long l -> cell.setCellValue(l);
         case ZonedDateTime zdt -> {
-          cell.setCellValue(ExcelUtils.toExcelDateTime(zdt));
+          cell.setCellValue(
+              use1904Format
+                  ? ExcelUtils.toExcelDateTime1904(zdt)
+                  : ExcelUtils.toExcelDateTime(zdt));
           cell.setCellStyle(getDateTimeStyle(workbook, "yyyy-MM-dd HH:mm:ss"));
         }
         case LocalDate ld -> {
-          cell.setCellValue(ExcelUtils.toExcelDateTime(ld));
+          cell.setCellValue(
+              use1904Format ? ExcelUtils.toExcelDateTime1904(ld) : ExcelUtils.toExcelDateTime(ld));
           cell.setCellStyle(getDateTimeStyle(workbook, "yyyy-MM-dd"));
         }
         case LocalTime lt -> {
-          cell.setCellValue(ExcelUtils.toExcelDateTime(lt));
+          cell.setCellValue(
+              use1904Format ? ExcelUtils.toExcelDateTime1904(lt) : ExcelUtils.toExcelDateTime(lt));
           cell.setCellStyle(getDateTimeStyle(workbook, "HH:mm:ss"));
         }
         default -> {
