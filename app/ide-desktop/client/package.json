@@ -45,7 +45,7 @@
     "enso-common": "workspace:*",
     "enso-gui": "workspace:*",
     "enso-runner": "workspace:*",
-    "esbuild": "^0.19.3",
+    "esbuild": "^0.23.0",
     "esbuild-plugin-wasm": "^1.1.0",
     "fast-glob": "^3.2.12",
     "portfinder": "^1.0.32",
