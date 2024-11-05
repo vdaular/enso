@@ -247,6 +247,9 @@ type Data_Formatter
 
     ## PRIVATE
     get_specific_type_parsers self =
+        ## Have to do date parsing first to allow for pure numeric formats.
+        date_parsers = [self.make_date_time_parser, self.make_date_parser, self.make_time_of_day_parser]
+
         try_us_parsers_first = self.decimal_point == Auto && self.thousand_separator != "."
         preferred_auto_parsers = case try_us_parsers_first of
             ## If we are in auto mode, we will first try parsing US integers,
@@ -264,8 +267,8 @@ type Data_Formatter
             ## However, if the `decimal_point` is set to something else,
                we don't do auto inference, so this extra logic is not needed.
             False -> []
-        remaining_parsers = [self.make_integer_parser auto_mode=True, self.make_decimal_parser auto_mode=True, self.make_date_time_parser, self.make_date_parser, self.make_time_of_day_parser, self.make_boolean_parser]
-        parsers = preferred_auto_parsers + remaining_parsers
+        remaining_parsers = [self.make_integer_parser auto_mode=True, self.make_decimal_parser auto_mode=True, self.make_boolean_parser]
+        parsers = date_parsers + preferred_auto_parsers + remaining_parsers
         ## Unfortunately, the [] literal allows to create a vector containing
            dataflow errors. That is not handled well later by Polyglot. So we
            ensure all errors surface here.

@@ -37,6 +37,13 @@ type Rows_To_Read
         Rows_To_Read.First_With_Warning rows -> rows
 
     ## PRIVATE
+    attach_warning_vector self input:Vector -> Vector = case self of
+        Rows_To_Read.First_With_Warning rows -> if input.length <= rows then input else
+            Problem_Behavior.Report_Warning.attach_problem_after (input.take (..First rows)) <|
+                Not_All_Rows_Downloaded.Warning rows
+        _ -> input
+
+    ## PRIVATE
     attach_warning self input:Table -> Table = case self of
         Rows_To_Read.First_With_Warning rows -> if input.row_count <= rows then input else
             Problem_Behavior.Report_Warning.attach_problem_after (input.take (..First rows)) <|

@@ -626,6 +626,23 @@ add_specs suite_builder =
             r8.to_vector . should_equal [Nothing, Nothing, Nothing]
             Problems.assume_no_problems r8
 
+        group_builder.specify "should be able to parse numeric date formats with a Data_Formatter" <|
+            formatter = Data_Formatter.Value . with_datetime_formats date_formats=["yyyyMMdd"]
+
+            c1 = Column.from_vector "A" ["20241018", "20240315", "20240917"]
+            r1 = c1.parse format=formatter
+            r1.value_type.should_equal Value_Type.Date
+            r1.to_vector.should_equal [Date.new 2024 10 18, Date.new 2024 3 15, Date.new 2024 9 17]
+
+            r1b = c1.parse
+            r1b.value_type.should_equal Value_Type.Integer
+            r1b.to_vector.should_equal [20241018, 20240315, 20240917]
+
+            c2 = Column.from_vector "A" ["20241018", "2024", "20240917"]
+            r2 = c2.parse format=formatter
+            r2.value_type.should_equal Value_Type.Integer
+            r2.to_vector.should_equal [20241018, 2024, 20240917]
+
         group_builder.specify "should error if invalid target type is provided" <|
             c1 = Column.from_vector "A" ["1", "2", "3"]
             Test.expect_panic Type_Error (c1.parse type=Nothing)

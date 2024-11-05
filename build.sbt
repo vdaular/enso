@@ -586,7 +586,8 @@ val bouncyCastle = Seq(
 // === Google =================================================================
 val googleApiClientVersion         = "2.2.0"
 val googleApiServicesSheetsVersion = "v4-rev612-1.25.0"
-val googleAnalyticsDataVersion     = "0.44.0"
+val googleAnalyticsAdminVersion    = "0.62.0"
+val googleAnalyticsDataVersion     = "0.63.0"
 
 // === Other ==================================================================
 
@@ -4598,6 +4599,7 @@ lazy val `std-google-api` = project
     libraryDependencies ++= Seq(
       "com.google.api-client" % "google-api-client"          % googleApiClientVersion exclude ("com.google.code.findbugs", "jsr305"),
       "com.google.apis"       % "google-api-services-sheets" % googleApiServicesSheetsVersion exclude ("com.google.code.findbugs", "jsr305"),
+      "com.google.analytics"  % "google-analytics-admin"     % googleAnalyticsAdminVersion exclude ("com.google.code.findbugs", "jsr305"),
       "com.google.analytics"  % "google-analytics-data"      % googleAnalyticsDataVersion exclude ("com.google.code.findbugs", "jsr305")
     ),
     Compile / packageBin := Def.task {
@@ -4612,6 +4614,7 @@ lazy val `std-google-api` = project
       result
     }.value
   )
+  .dependsOn(`std-table` % "provided")
 
 lazy val `std-database` = project
   .in(file("std-bits") / "database")

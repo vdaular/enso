@@ -100,7 +100,7 @@ type Widget
 
 ## PRIVATE
 make_single_choice : Vector -> Display -> Widget
-make_single_choice values display=Display.Always =
+make_single_choice values display:Display=..Always =
     make_option value = case value of
         _ : Vector -> Choice.Option value.first value.second
         _ : Text -> Choice.Option value value.pretty
