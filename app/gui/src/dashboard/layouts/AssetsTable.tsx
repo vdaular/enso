@@ -118,6 +118,7 @@ import {
   createSpecialLoadingAsset,
   DatalinkId,
   DirectoryId,
+  escapeSpecialCharacters,
   extractProjectExtension,
   fileIsNotProject,
   fileIsProject,
@@ -1674,12 +1675,7 @@ export default function AssetsTable(props: AssetsTableProps) {
         const siblingProjects = siblings.filter(assetIsProject)
         const siblingFileTitles = new Set(siblingFiles.map((asset) => asset.title))
         const siblingProjectTitles = new Set(siblingProjects.map((asset) => asset.title))
-        const files = reversedFiles.filter(fileIsNotProject)
-        const projects = reversedFiles.filter(fileIsProject)
-        const duplicateFiles = files.filter((file) => siblingFileTitles.has(file.name))
-        const duplicateProjects = projects.filter((project) =>
-          siblingProjectTitles.has(stripProjectExtension(project.name)),
-        )
+
         const ownerPermission = tryCreateOwnerPermission(
           parent?.path ?? '',
           category,
@@ -1687,7 +1683,35 @@ export default function AssetsTable(props: AssetsTableProps) {
           users ?? [],
           userGroups ?? [],
         )
-        const fileMap = new Map<AssetId, File>()
+
+        const files = reversedFiles.filter(fileIsNotProject).map((file) => {
+          const asset = createPlaceholderFileAsset(
+            escapeSpecialCharacters(file.name),
+            event.parentId,
+            ownerPermission,
+          )
+          return { asset, file }
+        })
+        const projects = reversedFiles.filter(fileIsProject).map((file) => {
+          const basename = escapeSpecialCharacters(stripProjectExtension(file.name))
+          const asset = createPlaceholderProjectAsset(
+            basename,
+            event.parentId,
+            ownerPermission,
+            user,
+            localBackend?.joinPath(event.parentId, basename) ?? null,
+          )
+
+          return { asset, file }
+        })
+        const duplicateFiles = files.filter((file) => siblingFileTitles.has(file.asset.title))
+        const duplicateProjects = projects.filter((project) =>
+          siblingProjectTitles.has(stripProjectExtension(project.asset.title)),
+        )
+        const fileMap = new Map<AssetId, File>([
+          ...files.map(({ asset, file }) => [asset.id, file] as const),
+          ...projects.map(({ asset, file }) => [asset.id, file] as const),
+        ])
         const uploadedFileIds: AssetId[] = []
         const addIdToSelection = (id: AssetId) => {
           uploadedFileIds.push(id)
@@ -1704,7 +1728,7 @@ export default function AssetsTable(props: AssetsTableProps) {
             switch (true) {
               case assetIsProject(asset): {
                 const { extension } = extractProjectExtension(file.name)
-                const title = stripProjectExtension(asset.title)
+                const title = escapeSpecialCharacters(stripProjectExtension(asset.title))
 
                 await uploadFileMutation
                   .mutateAsync(
@@ -1725,11 +1749,9 @@ export default function AssetsTable(props: AssetsTableProps) {
                 break
               }
               case assetIsFile(asset): {
+                const title = escapeSpecialCharacters(asset.title)
                 await uploadFileMutation
-                  .mutateAsync(
-                    { fileId, fileName: asset.title, parentDirectoryId: asset.parentId },
-                    file,
-                  )
+                  .mutateAsync({ fileId, fileName: title, parentDirectoryId: asset.parentId }, file)
                   .then(({ id }) => {
                     addIdToSelection(id)
                   })
@@ -1743,26 +1765,7 @@ export default function AssetsTable(props: AssetsTableProps) {
         }
 
         if (duplicateFiles.length === 0 && duplicateProjects.length === 0) {
-          const placeholderFiles = files.map((file) => {
-            const asset = createPlaceholderFileAsset(file.name, event.parentId, ownerPermission)
-            fileMap.set(asset.id, file)
-            return asset
-          })
-
-          const placeholderProjects = projects.map((project) => {
-            const basename = stripProjectExtension(project.name)
-            const asset = createPlaceholderProjectAsset(
-              basename,
-              event.parentId,
-              ownerPermission,
-              user,
-              localBackend?.joinPath(event.parentId, basename) ?? null,
-            )
-            fileMap.set(asset.id, project)
-            return asset
-          })
-
-          const assets = [...placeholderFiles, ...placeholderProjects]
+          const assets = [...files, ...projects].map(({ asset }) => asset)
 
           doToggleDirectoryExpansion(event.parentId, event.parentKey, true)
 
@@ -1776,12 +1779,12 @@ export default function AssetsTable(props: AssetsTableProps) {
             // This is SAFE, as `duplicateFiles` only contains files that have siblings
             // with the same name.
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            current: siblingFilesByName.get(file.name)!,
-            new: createPlaceholderFileAsset(file.name, event.parentId, ownerPermission),
-            file,
+            current: siblingFilesByName.get(file.asset.title)!,
+            new: createPlaceholderFileAsset(file.asset.title, event.parentId, ownerPermission),
+            file: file.file,
           }))
           const conflictingProjects = duplicateProjects.map((project) => {
-            const basename = stripProjectExtension(project.name)
+            const basename = stripProjectExtension(project.asset.title)
             return {
               // This is SAFE, as `duplicateProjects` only contains projects that have
               // siblings with the same name.
@@ -1794,7 +1797,7 @@ export default function AssetsTable(props: AssetsTableProps) {
                 user,
                 localBackend?.joinPath(event.parentId, basename) ?? null,
               ),
-              file: project,
+              file: project.file,
             }
           })
           setModal(
@@ -1821,23 +1824,24 @@ export default function AssetsTable(props: AssetsTableProps) {
                 doToggleDirectoryExpansion(event.parentId, event.parentKey, true)
 
                 const newFiles = files
-                  .filter((file) => !siblingFileTitles.has(file.name))
+                  .filter((file) => !siblingFileTitles.has(file.asset.title))
                   .map((file) => {
                     const asset = createPlaceholderFileAsset(
-                      file.name,
+                      file.asset.title,
                       event.parentId,
                       ownerPermission,
                     )
-                    fileMap.set(asset.id, file)
+                    fileMap.set(asset.id, file.file)
                     return asset
                   })
 
                 const newProjects = projects
                   .filter(
-                    (project) => !siblingProjectTitles.has(stripProjectExtension(project.name)),
+                    (project) =>
+                      !siblingProjectTitles.has(stripProjectExtension(project.asset.title)),
                   )
                   .map((project) => {
-                    const basename = stripProjectExtension(project.name)
+                    const basename = stripProjectExtension(project.asset.title)
                     const asset = createPlaceholderProjectAsset(
                       basename,
                       event.parentId,
@@ -1845,7 +1849,7 @@ export default function AssetsTable(props: AssetsTableProps) {
                       user,
                       localBackend?.joinPath(event.parentId, basename) ?? null,
                     )
-                    fileMap.set(asset.id, project)
+                    fileMap.set(asset.id, project.file)
                     return asset
                   })
 

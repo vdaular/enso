@@ -1411,6 +1411,13 @@ export function stripProjectExtension(name: string) {
 }
 
 /**
+ * Escape special characters in a project name to prevent them from being interpreted as path or regex
+ */
+export function escapeSpecialCharacters(name: string): string {
+  return name.replace(/[*+?^${}()|[\]\\]/g, ':')
+}
+
+/**
  * Return both the name and extension of the project file name (if any).
  * Otherwise, returns the entire name as the basename.
  */
