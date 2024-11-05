@@ -1,9 +1,16 @@
+import { globalExternals } from '@fal-works/esbuild-plugin-global-externals'
 import esbuild from 'esbuild'
 import fs from 'fs/promises'
 import path from 'path'
 import url from 'url'
 
 const watchMode = process.argv[2] === 'watch'
+const globals = {
+  'node:zlib': {
+    varName: 'zlib',
+    type: 'cjs',
+  },
+}
 
 const ctx = await esbuild.context({
   outfile: 'dist/main.cjs',
@@ -14,7 +21,7 @@ const ctx = await esbuild.context({
   define: {
     self: 'globalThis',
   },
-  plugins: [usePolyglotFfi()],
+  plugins: [usePolyglotFfi(), globalExternals(globals)],
   conditions: watchMode ? ['source'] : [],
   external: ['node:url'], // Not actually used, tree-shaken out
   format: 'cjs',

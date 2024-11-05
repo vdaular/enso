@@ -34,6 +34,9 @@ public final class WebEnvironment {
     var abortController = new AbortController();
     abortController.initialize(ctx);
 
+    var zlib = new Zlib();
+    zlib.initialize(ctx);
+
     var webSocketPolyfill = new WebSocket(executor);
     webSocketPolyfill.initialize(ctx);
   }

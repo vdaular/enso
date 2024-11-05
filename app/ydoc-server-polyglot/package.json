@@ -15,12 +15,13 @@
     "lint": "eslint . --max-warnings=0"
   },
   "dependencies": {
-    "ydoc-shared": "workspace:*",
-    "ydoc-server": "workspace:*"
+    "ydoc-server": "workspace:*",
+    "ydoc-shared": "workspace:*"
   },
   "devDependencies": {
-    "esbuild-plugin-wasm": "^1.1.0",
+    "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
     "esbuild": "^0.23.0",
+    "esbuild-plugin-wasm": "^1.1.0",
     "typescript": "^5.5.3"
   }
 }
