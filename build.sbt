@@ -106,6 +106,11 @@ ThisBuild / publish / skip := true
 val simpleLibraryServerTag = Tags.Tag("simple-library-server")
 Global / concurrentRestrictions += Tags.limit(simpleLibraryServerTag, 1)
 
+/** Tag limiting the concurrent spawning of `native-image` subprocess.
+  */
+val nativeImageBuildTag = NativeImage.nativeImageBuildTag
+Global / concurrentRestrictions += Tags.limit(nativeImageBuildTag, 1)
+
 lazy val gatherLicenses =
   taskKey[Unit](
     "Gathers licensing information for relevant dependencies of all distributions"

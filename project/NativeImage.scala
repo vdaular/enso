@@ -49,6 +49,12 @@ object NativeImage {
 
   val NATIVE_IMAGE_ARG_FILE = "native-image-args.txt"
 
+  /** Tag limiting the concurrent access to `native-image` subprocess spawning, i.e.,
+    * there should be just a single such subprocess. This should ensure that we do
+    * not run out of memory.
+    */
+  val nativeImageBuildTag = Tags.Tag("native-image-build")
+
   /** Creates a task that builds a native image for the current project.
     *
     * This task must be setup in such a way that the assembly JAR is built
@@ -262,6 +268,7 @@ object NativeImage {
       }
       log.info(s"$targetLoc native image build successful.")
     }
+    .tag(nativeImageBuildTag)
     .dependsOn(Compile / compile)
 
   /** Creates a task which watches for changes of any compiled files or
