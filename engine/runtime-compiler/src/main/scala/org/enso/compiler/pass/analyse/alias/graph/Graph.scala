@@ -26,7 +26,7 @@ sealed class Graph(
 
   /** @return the next counter value
     */
-  def nextIdCounter: Int = _nextIdCounter
+  private[graph] def nextIdCounter: Int = _nextIdCounter
 
   /** @return a deep structural copy of `this` */
   final def deepCopy(
@@ -80,13 +80,34 @@ sealed class Graph(
     *
     * @return a unique identifier for this graph
     */
-  final def nextId(): Graph.Id = {
+  private def nextId(): Graph.Id = {
     val nextId = _nextIdCounter
     if (nextId < 0) {
       throw new IllegalStateException("Cannot emit new IDs. Frozen!")
     }
     _nextIdCounter += 1
     nextId
+  }
+
+  /** Factory method to create new [GraphOccurrence.Def].
+    */
+  final def newDef(
+    symbol: String,
+    identifier: java.util.UUID,
+    externalId: Option[java.util.UUID],
+    suspended: Boolean = false
+  ): GraphOccurrence.Def = {
+    new GraphOccurrence.Def(nextId(), symbol, identifier, externalId, suspended)
+  }
+
+  /** Factory method to create new [GraphOccurrence.Use].
+    */
+  final def newUse(
+    symbol: String,
+    identifier: java.util.UUID,
+    externalId: Option[java.util.UUID]
+  ): GraphOccurrence.Use = {
+    new GraphOccurrence.Use(nextId(), symbol, identifier, externalId)
   }
 
   /** Resolves any links for the given usage of a symbol, assuming the symbol

@@ -61,8 +61,6 @@ import scala.Tuple2$;
 @Persistable(clazz = AliasMetadata.Occurrence.class, id = 1261, allowInlining = false)
 @Persistable(clazz = AliasMetadata.RootScope.class, id = 1262, allowInlining = false)
 @Persistable(clazz = AliasMetadata.ChildScope.class, id = 1263, allowInlining = false)
-@Persistable(clazz = GraphOccurrence.Use.class, id = 1264, allowInlining = false)
-@Persistable(clazz = GraphOccurrence.Def.class, id = 1265, allowInlining = false)
 @Persistable(clazz = Graph.Link.class, id = 1266, allowInlining = false)
 @Persistable(clazz = TypeInference.class, id = 1280)
 @Persistable(clazz = FramePointerAnalysis$.class, id = 1281)

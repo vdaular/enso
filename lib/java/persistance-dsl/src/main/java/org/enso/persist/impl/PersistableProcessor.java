@@ -108,10 +108,7 @@ public class PersistableProcessor extends AbstractProcessor {
         };
     var constructors =
         typeElem.getEnclosedElements().stream()
-            .filter(
-                e ->
-                    e.getModifiers().contains(Modifier.PUBLIC)
-                        && e.getKind() == ElementKind.CONSTRUCTOR)
+            .filter(e -> isVisibleFrom(e, orig) && e.getKind() == ElementKind.CONSTRUCTOR)
             .sorted(richerConstructor)
             .collect(Collectors.toList());
 
@@ -124,7 +121,7 @@ public class PersistableProcessor extends AbstractProcessor {
                   e ->
                       e.getKind() == ElementKind.FIELD
                           && e.getModifiers().contains(Modifier.STATIC)
-                          && e.getModifiers().contains(Modifier.PUBLIC))
+                          && isVisibleFrom(e, orig))
               .filter(e -> tu.isSameType(e.asType(), typeElem.asType()))
               .collect(Collectors.toList());
       if (singletonFields.isEmpty()) {
@@ -273,6 +270,17 @@ public class PersistableProcessor extends AbstractProcessor {
       w.append("}\n");
     }
     return true;
+  }
+
+  private boolean isVisibleFrom(Element e, Element from) {
+    if (e.getModifiers().contains(Modifier.PUBLIC)) {
+      return true;
+    }
+    if (e.getModifiers().contains(Modifier.PRIVATE)) {
+      return false;
+    }
+    var eu = processingEnv.getElementUtils();
+    return eu.getPackageOf(e) == eu.getPackageOf(from);
   }
 
   private int countInlineRef(List<? extends VariableElement> parameters) {

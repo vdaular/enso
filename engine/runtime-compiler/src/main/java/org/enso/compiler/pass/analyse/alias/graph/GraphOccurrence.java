@@ -3,6 +3,7 @@ package org.enso.compiler.pass.analyse.alias.graph;
 import java.util.UUID;
 import org.enso.compiler.core.ExternalID;
 import org.enso.compiler.core.Identifier;
+import org.enso.persist.Persistable;
 
 /**
  * An occurrence of a given symbol in the aliasing graph. Note that this is not present in the
@@ -14,6 +15,7 @@ public sealed interface GraphOccurrence permits GraphOccurrence.Def, GraphOccurr
   public abstract String symbol();
 
   /** The definition of a symbol in the aliasing graph. */
+  @Persistable(id = 1265, allowInlining = false)
   public static final class Def implements GraphOccurrence {
     private final int id;
     private final String symbol;
@@ -30,17 +32,12 @@ public sealed interface GraphOccurrence permits GraphOccurrence.Def, GraphOccurr
      * @param externalId the external identifier for the IR node defining the symbol
      * @param isLazy whether or not the symbol is defined as lazy
      */
-    public Def(
-        int id, String symbol, UUID identifier, scala.Option<UUID> externalId, boolean isLazy) {
+    Def(int id, String symbol, UUID identifier, scala.Option<UUID> externalId, boolean isLazy) {
       this.id = id;
       this.externalId = externalId.nonEmpty() ? externalId.get() : null;
       this.identifier = identifier;
       this.isLazy = isLazy;
       this.symbol = symbol;
-    }
-
-    public Def(int id, String symbol, UUID identifier, scala.Option<UUID> externalId) {
-      this(id, symbol, identifier, externalId, false);
     }
 
     @Override
@@ -77,6 +74,7 @@ public sealed interface GraphOccurrence permits GraphOccurrence.Def, GraphOccurr
   }
 
   /** A usage of a symbol in the aliasing graph */
+  @Persistable(id = 1264, allowInlining = false)
   public static final class Use implements GraphOccurrence {
     private final int id;
     private final String symbol;
@@ -94,7 +92,7 @@ public sealed interface GraphOccurrence permits GraphOccurrence.Def, GraphOccurr
      * @param identifier the identifier of the symbol
      * @param externalId the external identifier for the IR node defining the symbol
      */
-    public Use(int id, String symbol, UUID identifier, scala.Option<UUID> externalId) {
+    Use(int id, String symbol, UUID identifier, scala.Option<UUID> externalId) {
       this.id = id;
       this.symbol = symbol;
       this.externalId = externalId.nonEmpty() ? externalId.get() : null;
