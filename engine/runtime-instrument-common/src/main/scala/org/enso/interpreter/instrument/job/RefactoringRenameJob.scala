@@ -34,7 +34,7 @@ final class RefactoringRenameJob(
     ) {
 
   /** @inheritdoc */
-  override def run(implicit ctx: RuntimeContext): Seq[File] = {
+  override def runImpl(implicit ctx: RuntimeContext): Seq[File] = {
     val logger = ctx.executionService.getLogger
     ctx.locking.withReadCompilationLock(
       this.getClass,

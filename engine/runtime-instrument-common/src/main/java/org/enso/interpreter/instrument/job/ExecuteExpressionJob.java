@@ -32,7 +32,7 @@ public class ExecuteExpressionJob extends Job<Executable> implements UniqueJob<E
   }
 
   @Override
-  public Executable run(RuntimeContext ctx) {
+  public Executable runImpl(RuntimeContext ctx) {
     return ctx.locking()
         .withContextLock(
             ctx.locking().getOrCreateContextLock(contextId),

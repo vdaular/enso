@@ -58,7 +58,7 @@ class EnsureCompiledJob(
   import EnsureCompiledJob._
 
   /** @inheritdoc */
-  override def run(implicit ctx: RuntimeContext): CompilationStatus = {
+  override def runImpl(implicit ctx: RuntimeContext): CompilationStatus = {
     ctx.locking.withWriteCompilationLock(
       this.getClass,
       () => {

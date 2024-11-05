@@ -26,7 +26,7 @@ class ActorLoggingReceive(
       case _       => ""
     }
     val template =
-      s"received ${if (handled) "handled" else "unhandled"} {} from {}$labelText"
+      s"receive ${if (handled) "handled" else "unhandled"} {} from {}$labelText"
     logger.trace(template, o, context.sender())
     handled
   }

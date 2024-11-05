@@ -310,7 +310,7 @@ class ReentrantLocking(logger: TruffleLogger) extends Locking {
     val now2 = System.currentTimeMillis()
     logger.log(
       Level.FINEST,
-      "Waited [{0}] {1}ms for the {2} lock",
+      "Waited [{0}] {1}ms for the {2}",
       Array[Any](where.getSimpleName, now2 - now, msg)
     )
     now2

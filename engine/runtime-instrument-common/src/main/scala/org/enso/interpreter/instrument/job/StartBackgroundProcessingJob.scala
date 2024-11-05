@@ -14,7 +14,7 @@ final class StartBackgroundProcessingJob()
     ) {
 
   /** @inheritdoc */
-  override def run(implicit ctx: RuntimeContext): Unit =
+  override def runImpl(implicit ctx: RuntimeContext): Unit =
     StartBackgroundProcessingJob.startBackgroundJobs()
 }
 

@@ -27,10 +27,29 @@ class ExecuteJob(
       mayInterruptIfRunning = true
     ) {
 
+  private var _threadName: String            = "<unknown>"
+  @volatile private var _hasStarted: Boolean = false
+  private var _jobId: UUID                   = _
+
+  override def threadNameExecutingJob(): String = _threadName
+
+  override def hasStarted(): Boolean = _hasStarted
+
+  override def setJobId(id: UUID): Unit = {
+    _jobId = id
+  }
+
   /** @inheritdoc */
-  override def run(implicit ctx: RuntimeContext): Unit = {
+  override def runImpl(implicit ctx: RuntimeContext): Unit = {
+    _hasStarted = true
+    _threadName = Thread.currentThread().getName
     try {
-      runImpl
+      ctx.executionService.getLogger.log(
+        Level.INFO,
+        "Starting ExecuteJob[{}]",
+        _jobId
+      )
+      execute
     } catch {
       case t: Throwable =>
         ctx.executionService.getLogger.log(Level.SEVERE, "Failed to execute", t)
@@ -55,10 +74,16 @@ class ExecuteJob(
             )
           )
         )
+    } finally {
+      ctx.executionService.getLogger.log(
+        Level.FINEST,
+        "Finished ExecuteJob[{0}]",
+        _jobId
+      )
     }
   }
 
-  private def runImpl(implicit ctx: RuntimeContext): Unit = {
+  private def execute(implicit ctx: RuntimeContext): Unit = {
     ctx.state.executionHooks.run()
 
     ctx.locking.withContextLock(
@@ -116,7 +141,7 @@ class ExecuteJob(
   }
 
   override def toString(): String = {
-    s"ExecuteJob(contextId=$contextId)"
+    s"ExecuteJob(contextId=$contextId, jobId=${_jobId})"
   }
 
 }

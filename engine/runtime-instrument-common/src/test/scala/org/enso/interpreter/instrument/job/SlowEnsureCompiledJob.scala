@@ -10,7 +10,7 @@ class SlowEnsureCompiledJob(
   isCancellable: Boolean = true
 ) extends EnsureCompiledJob(files, isCancellable) {
 
-  override def run(implicit ctx: RuntimeContext): CompilationStatus = {
+  override def runImpl(implicit ctx: RuntimeContext): CompilationStatus = {
     Thread.sleep(1000)
     super.run(ctx)
   }

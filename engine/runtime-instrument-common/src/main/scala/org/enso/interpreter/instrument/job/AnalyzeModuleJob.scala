@@ -26,7 +26,7 @@ final class AnalyzeModuleJob(
 ) extends BackgroundJob[Unit](AnalyzeModuleJob.Priority) {
 
   /** @inheritdoc */
-  override def run(implicit ctx: RuntimeContext): Unit = {
+  override def runImpl(implicit ctx: RuntimeContext): Unit = {
     AnalyzeModuleJob.analyzeModule(module, state, ir, changeset)
   }
 
