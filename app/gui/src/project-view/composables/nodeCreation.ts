@@ -12,11 +12,11 @@ import type { Typename } from '@/stores/suggestionDatabase/entry'
 import { Ast } from '@/util/ast'
 import { isIdentifier, substituteIdentifier, type Identifier } from '@/util/ast/abstract'
 import { partition } from '@/util/data/array'
-import { filterDefined } from '@/util/data/iterable'
 import { Rect } from '@/util/data/rect'
 import { Vec2 } from '@/util/data/vec2'
 import { qnLastSegment, tryQualifiedName } from '@/util/qualifiedName'
 import type { ToValue } from '@/util/reactivity'
+import * as iter from 'enso-common/src/utilities/data/iter'
 import { nextTick, toValue } from 'vue'
 import { assert, assertNever } from 'ydoc-shared/util/assert'
 import { mustExtend } from 'ydoc-shared/util/types'
@@ -76,7 +76,8 @@ export function useNodeCreation(
       : placement.type === 'mouse' ? tryMouse() ?? place()
       : placement.type === 'mouseRelative' ? tryMouseRelative(placement.posOffset) ?? place()
       : placement.type === 'mouseEvent' ? mouseDictatedPlacement(placement.position)
-      : placement.type === 'source' ? place(filterDefined([graphStore.visibleArea(placement.node)]))
+      : placement.type === 'source' ?
+        place(iter.filterDefined([graphStore.visibleArea(placement.node)]))
       : placement.type === 'fixed' ? placement.position
       : assertNever(placement)
     )
@@ -278,7 +279,10 @@ export function insertNodeStatements(
   const lines = bodyBlock.lines
   const lastStatement = lines[lines.length - 1]?.statement?.node
   const index =
-    lastStatement instanceof Ast.MutableAssignment || lastStatement instanceof Ast.MutableFunction ?
+    (
+      lastStatement instanceof Ast.MutableAssignment ||
+      lastStatement instanceof Ast.MutableFunctionDef
+    ) ?
       lines.length
     : lines.length - 1
   bodyBlock.insert(index, ...statements)

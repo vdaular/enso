@@ -23,7 +23,7 @@ export function parseWithSpans<T extends Record<string, SourceRange>>(code: stri
     idMap.insertKnownId(span, eid)
   }
 
-  const { root: ast, toRaw, getSpan } = Ast.parseExtended(code, idMap)
+  const { root: ast, toRaw, getSpan } = Ast.parseUpdatingIdMap(code, idMap)
   const idFromExternal = new Map<ExternalId, AstId>()
   ast.visitRecursive((ast) => {
     idFromExternal.set(ast.externalId, ast.id)
@@ -58,7 +58,7 @@ test('Reading graph from definition', () => {
   const db = GraphDb.Mock()
   const expressions = Array.from(ast.statements())
   const func = expressions[0]
-  assert(func instanceof Ast.Function)
+  assert(func instanceof Ast.FunctionDef)
   const rawFunc = toRaw.get(func.id)
   assert(rawFunc?.type === RawAst.Tree.Type.Function)
   db.updateExternalIds(ast)

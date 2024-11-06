@@ -4,7 +4,7 @@ import AutoSizedInput, { type Range } from '@/components/widgets/AutoSizedInput.
 import type { useNavigator } from '@/composables/navigator'
 import type { Icon } from '@/util/iconName'
 import { computed, ref, watch, type DeepReadonly } from 'vue'
-import { ComponentExposed } from 'vue-component-type-helpers'
+import type { ComponentExposed } from 'vue-component-type-helpers'
 
 const content = defineModel<DeepReadonly<{ text: string; selection: Range | undefined }>>({
   required: true,

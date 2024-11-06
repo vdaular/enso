@@ -1,5 +1,5 @@
 import { useApproach } from '@/composables/animation'
-import { ToValue } from '@/util/reactivity'
+import type { ToValue } from '@/util/reactivity'
 import { computed, ref, toValue } from 'vue'
 
 export type ScrollTarget =

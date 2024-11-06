@@ -1,10 +1,12 @@
-import type { AstId, DeepReadonly, NodeChild, Owned } from '.'
-import { Ast, newExternalId } from '.'
 import { assert } from '../util/assert'
 import type { ExternalId } from '../yjsModel'
 import { isUuid } from '../yjsModel'
 import { is_ident_or_operator } from './ffi'
 import * as RawAst from './generated/ast'
+import { newExternalId } from './idMap'
+import type { AstId, DeepReadonly, NodeChild, Owned } from './tree'
+import { Ast } from './tree'
+export import TokenType = RawAst.Token.Type
 
 /** Whether the given value is a {@link Token}. */
 export function isToken(maybeToken: unknown): maybeToken is Token {
@@ -27,16 +29,16 @@ function newTokenId(): TokenId {
 export interface SyncTokenId {
   readonly id: TokenId
   readonly code_: string
-  readonly tokenType_: RawAst.Token.Type | undefined
+  readonly tokenType_: TokenType | undefined
 }
 
 /** A structure representing a lexical source code unit in the AST. */
 export class Token implements SyncTokenId {
   readonly id: TokenId
   code_: string
-  tokenType_: RawAst.Token.Type | undefined
+  tokenType_: TokenType | undefined
 
-  private constructor(code: string, type: RawAst.Token.Type | undefined, id: TokenId) {
+  private constructor(code: string, type: TokenType | undefined, id: TokenId) {
     this.id = id
     this.code_ = code
     this.tokenType_ = type
@@ -48,12 +50,12 @@ export class Token implements SyncTokenId {
   }
 
   /** Construct a {@link Token} without a {@link TokenId}. */
-  static new(code: string, type?: RawAst.Token.Type) {
+  static new(code: string, type?: TokenType) {
     return new this(code, type, newTokenId())
   }
 
   /** Construct a {@link Token} with a {@link TokenId}. */
-  static withId(code: string, type: RawAst.Token.Type | undefined, id: TokenId) {
+  static withId(code: string, type: TokenType | undefined, id: TokenId) {
     assert(isUuid(id))
     return new this(code, type, id)
   }

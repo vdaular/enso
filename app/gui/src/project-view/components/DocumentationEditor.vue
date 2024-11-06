@@ -9,8 +9,11 @@ import type { ToValue } from '@/util/reactivity'
 import { ref, toRef, toValue, watch } from 'vue'
 import type { Path } from 'ydoc-shared/languageServerTypes'
 import { Err, Ok, mapOk, withContext, type Result } from 'ydoc-shared/util/data/result'
+import * as Y from 'yjs'
 
-const documentation = defineModel<string>({ required: true })
+const { yText } = defineProps<{
+  yText: Y.Text
+}>()
 const emit = defineEmits<{
   'update:fullscreen': [boolean]
 }>()
@@ -88,7 +91,7 @@ watch(
       </div>
       <div class="scrollArea">
         <MarkdownEditor
-          v-model="documentation"
+          :yText="yText"
           :transformImageUrl="transformImageUrl"
           :toolbarContainer="toolbarElement"
         />

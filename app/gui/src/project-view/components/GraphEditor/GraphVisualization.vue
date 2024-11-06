@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import { visualizationBindings } from '@/bindings'
-import {
-  RawDataSource,
-  useVisualizationData,
-} from '@/components/GraphEditor/GraphVisualization/visualizationData'
+import type { RawDataSource } from '@/components/GraphEditor/GraphVisualization/visualizationData'
+import { useVisualizationData } from '@/components/GraphEditor/GraphVisualization/visualizationData'
 import VisualizationToolbar from '@/components/GraphEditor/GraphVisualization/VisualizationToolbar.vue'
 import type { NodeCreationOptions } from '@/components/GraphEditor/nodeCreation'
 import ResizeHandles from '@/components/ResizeHandles.vue'
 import WithFullscreenMode from '@/components/WithFullscreenMode.vue'
 import { focusIsIn, useEvent, useResizeObserver } from '@/composables/events'
-import { VisualizationDataSource } from '@/stores/visualization'
+import type { VisualizationDataSource } from '@/stores/visualization'
 import type { Opt } from '@/util/data/opt'
 import { type BoundsSet, Rect } from '@/util/data/rect'
 import { Vec2 } from '@/util/data/vec2'

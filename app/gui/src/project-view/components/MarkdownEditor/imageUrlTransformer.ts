@@ -7,11 +7,11 @@ export type TransformUrlResult = Result<{ url: string; dispose?: () => void }>
 export type UrlTransformer = (url: string) => Promise<TransformUrlResult>
 
 export {
-  injectFn as injectLexicalImageUrlTransformer,
-  provideFn as provideLexicalImageUrlTransformer,
+  injectFn as injectDocumentationImageUrlTransformer,
+  provideFn as provideDocumentationImageUrlTransformer,
 }
 const { provideFn, injectFn } = createContextStore(
-  'Lexical image URL transformer',
+  'Documentation image URL transformer',
   (transformUrl: ToValue<UrlTransformer | undefined>) => ({
     transformUrl: (url: string) => toValue(transformUrl)?.(url),
   }),
@@ -59,7 +59,10 @@ export function fetcherUrlTransformer<ResourceLocation>(
       return Ok({
         url: result.value.value,
         dispose: () => {
-          if (!(result.value.refs -= 1)) URL.revokeObjectURL(result.value.value)
+          if (!(result.value.refs -= 1)) {
+            URL.revokeObjectURL(result.value.value)
+            allocatedUrls.delete(uniqueId)
+          }
         },
       })
     }

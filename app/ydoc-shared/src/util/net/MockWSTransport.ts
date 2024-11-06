@@ -3,7 +3,7 @@ import type {
   JSONRPCRequestData,
 } from '@open-rpc/client-js/build/Request'
 import type { WebSocketEventMap } from 'partysocket/ws'
-import { Notifications } from '../../languageServerTypes'
+import type { Notifications } from '../../languageServerTypes'
 import { ReconnectingWebSocketTransport } from './ReconnectingWSTransport'
 
 type ArgumentsType<T> = T extends (...args: infer U) => any ? U : never

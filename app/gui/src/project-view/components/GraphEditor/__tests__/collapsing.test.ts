@@ -15,10 +15,10 @@ import { nodeIdFromOuterAst } from '../../../stores/graph/graphDatabase'
 // ===============================
 
 function setupGraphDb(code: string, graphDb: GraphDb) {
-  const { root, toRaw, getSpan } = Ast.parseExtended(code)
+  const { root, toRaw, getSpan } = Ast.parseUpdatingIdMap(code)
   const expressions = Array.from(root.statements())
   const func = expressions[0]
-  assert(func instanceof Ast.Function)
+  assert(func instanceof Ast.FunctionDef)
   const rawFunc = toRaw.get(func.id)
   assert(rawFunc?.type === RawAst.Tree.Type.Function)
   graphDb.updateExternalIds(root)

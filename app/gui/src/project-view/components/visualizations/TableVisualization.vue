@@ -1,7 +1,7 @@
 <script lang="ts">
 import icons from '@/assets/icons.svg'
 import AgGridTableView, { commonContextMenuActions } from '@/components/shared/AgGridTableView.vue'
-import { SortModel, useTableVizToolbar } from '@/components/visualizations/tableVizToolbar'
+import { useTableVizToolbar, type SortModel } from '@/components/visualizations/tableVizToolbar'
 import { Ast } from '@/util/ast'
 import { Pattern } from '@/util/ast/match'
 import { useVisualizationConfig } from '@/util/visualizationBuiltins'

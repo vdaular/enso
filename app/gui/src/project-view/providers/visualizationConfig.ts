@@ -1,8 +1,8 @@
-import { NodeCreationOptions } from '@/components/GraphEditor/nodeCreation'
-import { ToolbarItem } from '@/components/visualizations/toolbar'
+import type { NodeCreationOptions } from '@/components/GraphEditor/nodeCreation'
+import type { ToolbarItem } from '@/components/visualizations/toolbar'
 import { createContextStore } from '@/providers'
-import { Vec2 } from '@/util/data/vec2'
-import { ToValue } from '@/util/reactivity'
+import type { Vec2 } from '@/util/data/vec2'
+import type { ToValue } from '@/util/reactivity'
 import { reactive } from 'vue'
 
 export interface VisualizationConfig {

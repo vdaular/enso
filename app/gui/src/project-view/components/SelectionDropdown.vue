@@ -4,7 +4,7 @@
 import DropdownMenu from '@/components/DropdownMenu.vue'
 import MenuButton from '@/components/MenuButton.vue'
 import SvgIcon from '@/components/SvgIcon.vue'
-import { SelectionMenuOption } from '@/components/visualizations/toolbar'
+import type { SelectionMenuOption } from '@/components/visualizations/toolbar'
 import { ref } from 'vue'
 
 type Key = number | string | symbol

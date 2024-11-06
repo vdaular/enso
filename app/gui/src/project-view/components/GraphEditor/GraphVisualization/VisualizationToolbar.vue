@@ -3,18 +3,18 @@ import FullscreenButton from '@/components/FullscreenButton.vue'
 import SelectionDropdown from '@/components/SelectionDropdown.vue'
 import SvgButton from '@/components/SvgButton.vue'
 import ToggleIcon from '@/components/ToggleIcon.vue'
+import type { ToolbarItem } from '@/components/visualizations/toolbar'
 import {
   isActionButton,
   isSelectionMenu,
   isToggleButton,
-  ToolbarItem,
 } from '@/components/visualizations/toolbar'
 import VisualizationSelector from '@/components/VisualizationSelector.vue'
 import { useEvent } from '@/composables/events'
 import { provideInteractionHandler } from '@/providers/interactionHandler'
 import { isQualifiedName, qnLastSegment } from '@/util/qualifiedName'
 import { computed, toValue } from 'vue'
-import { VisualizationIdentifier } from 'ydoc-shared/yjsModel'
+import type { VisualizationIdentifier } from 'ydoc-shared/yjsModel'
 
 const isFullscreen = defineModel<boolean>('isFullscreen', { required: true })
 const currentVis = defineModel<VisualizationIdentifier>('currentVis', { required: true })

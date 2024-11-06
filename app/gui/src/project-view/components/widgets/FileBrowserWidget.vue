@@ -3,15 +3,14 @@ import LoadingSpinner from '@/components/shared/LoadingSpinner.vue'
 import SvgButton from '@/components/SvgButton.vue'
 import SvgIcon from '@/components/SvgIcon.vue'
 import { useBackend } from '@/composables/backend'
-import { ToValue } from '@/util/reactivity'
-import Backend, {
-  assetIsDirectory,
-  assetIsFile,
+import type { ToValue } from '@/util/reactivity'
+import type {
   DirectoryAsset,
   DirectoryId,
   FileAsset,
   FileId,
 } from 'enso-common/src/services/Backend'
+import Backend, { assetIsDirectory, assetIsFile } from 'enso-common/src/services/Backend'
 import { computed, ref, toValue, watch } from 'vue'
 
 const emit = defineEmits<{

@@ -2,9 +2,9 @@ import type { NodeCreationOptions } from '@/composables/nodeCreation'
 import type { GraphStore, Node, NodeId } from '@/stores/graph'
 import { Ast } from '@/util/ast'
 import { Pattern } from '@/util/ast/match'
-import { filterDefined } from '@/util/data/iterable'
 import { Vec2 } from '@/util/data/vec2'
 import type { ToValue } from '@/util/reactivity'
+import * as iter from 'enso-common/src/utilities/data/iter'
 import { computed, toValue } from 'vue'
 import type { NodeMetadataFields } from 'ydoc-shared/ast'
 
@@ -131,7 +131,7 @@ async function decodeClipboard<T>(
       }
     }
   }
-  return filterDefined(await Promise.all(clipboardItems.map(decodeItem)))
+  return iter.filterDefined(await Promise.all(clipboardItems.map(decodeItem)))
 }
 
 // === Spreadsheet clipboard decoder ===

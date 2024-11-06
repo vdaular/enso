@@ -43,8 +43,8 @@ import {
 } from '@lezer/common'
 import { styleTags, tags } from '@lezer/highlight'
 import { EditorView } from 'codemirror'
+import * as iter from 'enso-common/src/utilities/data/iter'
 import type { Diagnostic as LSDiagnostic } from 'ydoc-shared/languageServerTypes'
-import { tryGetSoleValue } from 'ydoc-shared/util/data/iterable'
 import type { SourceRangeEdit } from 'ydoc-shared/util/data/text'
 
 /** TODO: Add docs */
@@ -124,7 +124,7 @@ function astToCodeMirrorTree(
   const [start, end] = ast.span()
   const children = ast.children()
 
-  const childrenToConvert = tryGetSoleValue(children)?.isToken() ? [] : children
+  const childrenToConvert = iter.tryGetSoleValue(children)?.isToken() ? [] : children
 
   const tree = new Tree(
     nodeSet.types[ast.inner.type + (ast.isToken() ? RawAst.Tree.typeNames.length : 0)]!,

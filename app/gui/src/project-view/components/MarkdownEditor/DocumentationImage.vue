@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {
-  injectLexicalImageUrlTransformer,
+  injectDocumentationImageUrlTransformer,
   type TransformUrlResult,
 } from '@/components/MarkdownEditor/imageUrlTransformer'
 import { computedAsync } from '@vueuse/core'
@@ -14,10 +14,10 @@ const props = defineProps<{
   alt: string
 }>()
 
-const urlTransformer = injectLexicalImageUrlTransformer(true)
+const urlTransformer = injectDocumentationImageUrlTransformer(true)
 
-// NOTE: Garbage-collecting image data when the `src` changes is not implemented. Current users of `LexicalImage` don't
-// change the `src` after creating an image.
+// NOTE: Garbage-collecting image data when the `src` changes is not implemented. Current users of `DocumentationImage`
+// don't change the `src` after creating an image.
 const data: Ref<TransformUrlResult | undefined> =
   urlTransformer ?
     computedAsync(() => urlTransformer.transformUrl(props.src), undefined, {

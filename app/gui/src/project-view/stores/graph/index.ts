@@ -22,15 +22,15 @@ import { isAstId, isIdentifier } from '@/util/ast/abstract'
 import { RawAst, visitRecursive } from '@/util/ast/raw'
 import { reactiveModule } from '@/util/ast/reactive'
 import { partition } from '@/util/data/array'
-import { Events, stringUnionToArray } from '@/util/data/observable'
+import { stringUnionToArray, type Events } from '@/util/data/observable'
 import { Rect } from '@/util/data/rect'
 import { Err, mapOk, Ok, unwrap, type Result } from '@/util/data/result'
 import { Vec2 } from '@/util/data/vec2'
 import { normalizeQualifiedName, qnLastSegment, tryQualifiedName } from '@/util/qualifiedName'
 import { useWatchContext } from '@/util/reactivity'
 import { computedAsync } from '@vueuse/core'
+import * as iter from 'enso-common/src/utilities/data/iter'
 import { map, set } from 'lib0'
-import { iteratorFilter } from 'lib0/iterator'
 import {
   computed,
   markRaw,
@@ -98,7 +98,7 @@ export const { injectFn: useGraphStore, provideFn: provideGraphStore } = createC
     const vizRects = reactive(new Map<NodeId, Rect>())
     // The currently visible nodes' areas (including visualization).
     const visibleNodeAreas = computed(() => {
-      const existing = iteratorFilter(nodeRects.entries(), ([id]) => db.isNodeId(id))
+      const existing = iter.filter(nodeRects.entries(), ([id]) => db.isNodeId(id))
       return Array.from(existing, ([id, rect]) => vizRects.get(id) ?? rect)
     })
     function visibleArea(nodeId: NodeId): Rect | undefined {
@@ -146,7 +146,7 @@ export const { injectFn: useGraphStore, provideFn: provideGraphStore } = createC
       },
     )
 
-    const methodAst = computed<Result<Ast.Function>>(() =>
+    const methodAst = computed<Result<Ast.FunctionDef>>(() =>
       syncModule.value ? getExecutedMethodAst(syncModule.value) : Err('AST not yet initialized'),
     )
 
@@ -188,7 +188,7 @@ export const { injectFn: useGraphStore, provideFn: provideGraphStore } = createC
       db.updateBindings(method, rawFunc, moduleSource.text, getSpan)
     })
 
-    function getExecutedMethodAst(module?: Ast.Module): Result<Ast.Function> {
+    function getExecutedMethodAst(module?: Ast.Module): Result<Ast.FunctionDef> {
       const executionStackTop = proj.executionContext.getStackTop()
       switch (executionStackTop.type) {
         case 'ExplicitCall': {
@@ -204,7 +204,7 @@ export const { injectFn: useGraphStore, provideFn: provideGraphStore } = createC
       }
     }
 
-    function getMethodAst(ptr: MethodPointer, edit?: Ast.Module): Result<Ast.Function> {
+    function getMethodAst(ptr: MethodPointer, edit?: Ast.Module): Result<Ast.FunctionDef> {
       const topLevel = (edit ?? syncModule.value)?.root()
       if (!topLevel) return Err('Module unavailable')
       assert(topLevel instanceof Ast.BodyBlock)

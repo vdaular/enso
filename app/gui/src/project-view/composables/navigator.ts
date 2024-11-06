@@ -11,7 +11,7 @@ import type { KeyboardComposable } from '@/composables/keyboard'
 import { Rect } from '@/util/data/rect'
 import { Vec2 } from '@/util/data/vec2'
 import { useEventListener } from '@vueuse/core'
-import { Handler, useGesture } from '@vueuse/gesture'
+import { useGesture, type Handler } from '@vueuse/gesture'
 import {
   computed,
   onScopeDispose,

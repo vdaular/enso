@@ -1,10 +1,10 @@
-import { NodeCreationOptions } from '@/components/GraphEditor/nodeCreation'
-import { TextFormatOptions } from '@/components/visualizations/TableVisualization.vue'
-import { ToolbarItem } from '@/components/visualizations/toolbar'
+import type { NodeCreationOptions } from '@/components/GraphEditor/nodeCreation'
+import type { TextFormatOptions } from '@/components/visualizations/TableVisualization.vue'
+import type { ToolbarItem } from '@/components/visualizations/toolbar'
 import { Ast } from '@/util/ast'
 import { Pattern } from '@/util/ast/match'
-import { ToValue } from '@/util/reactivity'
-import { computed, ComputedRef, Ref, toValue } from 'vue'
+import type { ToValue } from '@/util/reactivity'
+import { computed, type ComputedRef, type Ref, toValue } from 'vue'
 
 type SortDirection = 'asc' | 'desc'
 export type SortModel = {

@@ -84,7 +84,7 @@ export const addNewNodeButton = componentLocator('.PlusButton')
 export const componentBrowser = componentLocator('.ComponentBrowser')
 export const nodeOutputPort = componentLocator('.outputPortHoverArea')
 export const smallPlusButton = componentLocator('.SmallPlusButton')
-export const lexicalContent = componentLocator('.LexicalContent')
+export const editorRoot = componentLocator('.EditorRoot')
 
 /**
  * A not-selected variant of Component Browser Entry.

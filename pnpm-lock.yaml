@@ -85,6 +85,9 @@ importers:
       idb-keyval:
         specifier: ^6.2.1
         version: 6.2.1
+      lib0:
+        specifier: ^0.2.85
+        version: 0.2.94
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -124,6 +127,9 @@ importers:
       '@codemirror/commands':
         specifier: ^6.6.0
         version: 6.6.0
+      '@codemirror/lang-markdown':
+        specifier: ^v6.3.0
+        version: 6.3.0
       '@codemirror/language':
         specifier: ^6.10.2
         version: 6.10.2
@@ -151,28 +157,10 @@ importers:
       '@internationalized/date':
         specifier: ^3.5.5
         version: 3.5.5
-      '@lexical/code':
-        specifier: ^0.16.0
-        version: 0.16.0
       '@lexical/link':
         specifier: ^0.16.0
         version: 0.16.0
-      '@lexical/list':
-        specifier: ^0.16.0
-        version: 0.16.0
-      '@lexical/markdown':
-        specifier: ^0.16.0
-        version: 0.16.0
       '@lexical/plain-text':
-        specifier: ^0.16.0
-        version: 0.16.0
-      '@lexical/rich-text':
-        specifier: ^0.16.0
-        version: 0.16.0
-      '@lexical/selection':
-        specifier: ^0.16.0
-        version: 0.16.0
-      '@lexical/table':
         specifier: ^0.16.0
         version: 0.16.0
       '@lexical/utils':
@@ -184,6 +172,9 @@ importers:
       '@lezer/highlight':
         specifier: ^1.1.6
         version: 1.2.0
+      '@lezer/markdown':
+        specifier: ^1.3.1
+        version: 1.3.1
       '@monaco-editor/react':
         specifier: 4.6.0
         version: 4.6.0(monaco-editor@0.48.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -776,6 +767,9 @@ importers:
       debug:
         specifier: ^4.3.6
         version: 4.3.7
+      enso-common:
+        specifier: workspace:*
+        version: link:../common
       fast-diff:
         specifier: ^1.3.0
         version: 1.3.0
@@ -1282,8 +1276,20 @@ packages:
   '@codemirror/commands@6.6.0':
     resolution: {integrity: sha512-qnY+b7j1UNcTS31Eenuc/5YJB6gQOzkUoNmJQc0rznwqSRpeaWWpjkWy2C/MPTcePpsKJEM26hXrOXl1+nceXg==}
 
+  '@codemirror/lang-css@6.3.0':
+    resolution: {integrity: sha512-CyR4rUNG9OYcXDZwMPvJdtb6PHbBDKUc/6Na2BIwZ6dKab1JQqKa4di+RNRY9Myn7JB81vayKwJeQ7jEdmNVDA==}
+
+  '@codemirror/lang-html@6.4.9':
+    resolution: {integrity: sha512-aQv37pIMSlueybId/2PVSP6NPnmurFDVmZwzc7jszd2KAF8qd4VBbvNYPXWQq90WIARjsdVkPbw29pszmHws3Q==}
+
+  '@codemirror/lang-javascript@6.2.2':
+    resolution: {integrity: sha512-VGQfY+FCc285AhWuwjYxQyUQcYurWlxdKYT4bqwr3Twnd5wP5WSeu52t4tvvuWmljT4EmgEgZCqSieokhtY8hg==}
+
   '@codemirror/lang-json@6.0.1':
     resolution: {integrity: sha512-+T1flHdgpqDDlJZ2Lkil/rLiRy684WMLc74xUnjJH48GQdfJo/pudlTRreZmKwzP8/tGdKf83wlbAdOCzlJOGQ==}
+
+  '@codemirror/lang-markdown@6.3.0':
+    resolution: {integrity: sha512-lYrI8SdL/vhd0w0aHIEvIRLRecLF7MiiRfzXFZY94dFwHqC9HtgxgagJ8fyYNBldijGatf9wkms60d8SrAj6Nw==}
 
   '@codemirror/language@6.10.2':
     resolution: {integrity: sha512-kgbTYTo0Au6dCSc/TFy7fK3fpJmgHDv1sG1KNQKJXVi+xBTEeBPY/M30YXiU6mMXeH+YIDLsbrT4ZwNRdtF+SA==}
@@ -1854,9 +1860,6 @@ packages:
   '@lexical/clipboard@0.16.0':
     resolution: {integrity: sha512-eYMJ6jCXpWBVC05Mu9HLMysrBbfi++xFfsm+Yo7A6kYGrqYUhpXqjJkYnw1xdZYL3bV73Oe4ByVJuq42GU+Mqw==}
 
-  '@lexical/code@0.16.0':
-    resolution: {integrity: sha512-1EKCBSFV745UI2zn5v75sKcvVdmd+y2JtZhw8CItiQkRnBLv4l4d/RZYy+cKOuXJGsoBrKtxXn5sl7HebwQbPw==}
-
   '@lexical/html@0.16.0':
     resolution: {integrity: sha512-okxn3q/1qkUpCZNEFRI39XeJj4YRjb6prm3WqZgP4d39DI1W24feeTZJjYRCW+dc3NInwFaolU3pNA2MGkjRtg==}
 
@@ -1866,14 +1869,8 @@ packages:
   '@lexical/list@0.16.0':
     resolution: {integrity: sha512-nBx/DMM7nCgnOzo1JyNnVaIrk/Xi5wIPNi8jixrEV6w9Om2K6dHutn/79Xzp2dQlNGSLHEDjky6N2RyFgmXh0g==}
 
-  '@lexical/markdown@0.16.0':
-    resolution: {integrity: sha512-7HQLFrBbpY68mcq4A6C1qIGmjgA+fAByditi2WRe7tD2eoIKb/B5baQAnDKis0J+m5kTaCBmdlT6csSzyOPzeQ==}
-
   '@lexical/plain-text@0.16.0':
     resolution: {integrity: sha512-BK7/GSOZUHRJTbNPkpb9a/xN9z+FBCdunTsZhnOY8pQ7IKws3kuMO2Tk1zXfTd882ZNAxFdDKNdLYDSeufrKpw==}
-
-  '@lexical/rich-text@0.16.0':
-    resolution: {integrity: sha512-AGTD6yJZ+kj2TNah1r7/6vyufs6fZANeSvv9x5eG+WjV4uyUJYkd1qR8C5gFZHdkyr+bhAcsAXvS039VzAxRrQ==}
 
   '@lexical/selection@0.16.0':
     resolution: {integrity: sha512-trT9gQVJ2j6AwAe7tHJ30SRuxCpV6yR9LFtggxphHsXSvJYnoHC0CXh1TF2jHl8Gd5OsdWseexGLBE4Y0V3gwQ==}
@@ -1881,23 +1878,32 @@ packages:
   '@lexical/table@0.16.0':
     resolution: {integrity: sha512-A66K779kxdr0yH2RwT2itsMnkzyFLFNPXyiWGLobCH8ON4QPuBouZvjbRHBe8Pe64yJ0c1bRDxSbTqUi9Wt3Gg==}
 
-  '@lexical/text@0.16.0':
-    resolution: {integrity: sha512-9ilaOhuNIIGHKC8g8j3K/mEvJ09af9B6RKbm3GNoRcf/WNHD4dEFWNTEvgo/3zCzAS8EUBI6UINmfQQWlMjdIQ==}
-
   '@lexical/utils@0.16.0':
     resolution: {integrity: sha512-GWmFEmd7o3GHqJBaEwzuZQbfTNI3Gg8ReGuHMHABgrkhZ8j2NggoRBlxsQLG0f7BewfTMVwbye22yBPq78775w==}
 
   '@lezer/common@1.2.1':
     resolution: {integrity: sha512-yemX0ZD2xS/73llMZIK6KplkjIjf2EvAHcinDi/TfJ9hS25G0388+ClHt6/3but0oOxinTcQHJLDXh6w1crzFQ==}
 
+  '@lezer/css@1.1.9':
+    resolution: {integrity: sha512-TYwgljcDv+YrV0MZFFvYFQHCfGgbPMR6nuqLabBdmZoFH3EP1gvw8t0vae326Ne3PszQkbXfVBjCnf3ZVCr0bA==}
+
   '@lezer/highlight@1.2.0':
     resolution: {integrity: sha512-WrS5Mw51sGrpqjlh3d4/fOwpEV2Hd3YOkp9DBt4k8XZQcoTHZFB7sx030A6OcahF4J1nDQAa3jXlTVVYH50IFA==}
+
+  '@lezer/html@1.3.10':
+    resolution: {integrity: sha512-dqpT8nISx/p9Do3AchvYGV3qYc4/rKr3IBZxlHmpIKam56P47RSHkSF5f13Vu9hebS1jM0HmtJIwLbWz1VIY6w==}
+
+  '@lezer/javascript@1.4.18':
+    resolution: {integrity: sha512-Y8BeHOt4LtcxJgXwadtfSeWPrh0XzklcCHnCVT+vOsxqH4gWmunP2ykX+VVOlM/dusyVyiNfG3lv0f10UK+mgA==}
 
   '@lezer/json@1.0.2':
     resolution: {integrity: sha512-xHT2P4S5eeCYECyKNPhr4cbEL9tc8w83SPwRC373o9uEdrvGKTZoJVAGxpOsZckMlEh9W23Pc72ew918RWQOBQ==}
 
   '@lezer/lr@1.4.1':
     resolution: {integrity: sha512-CHsKq8DMKBf9b3yXPDIU4DbH+ZJd/sJdYOW2llbW/HudP5u0VS6Bfq1hLYfgU7uAYGFIyGGQIsSOXGPEErZiJw==}
+
+  '@lezer/markdown@1.3.1':
+    resolution: {integrity: sha512-DGlzU/i8DC8k0uz1F+jeePrkATl0jWakauTzftMQOcbaMkHbNSRki/4E2tOzJWsVpoKYhe7iTJ03aepdwVUXUA==}
 
   '@malept/cross-spawn-promise@1.1.1':
     resolution: {integrity: sha512-RTBGWL5FWQcg9orDOCcp4LvItNzUPcyEU9bwaeJX0rJ1IQxzucC48Y0/sQLp/g6t99IQgAlGIaesJS+gTn7tVQ==}
@@ -6166,10 +6172,6 @@ packages:
     resolution: {integrity: sha512-Pdlw/oPxN+aXdmM9R00JVC9WVFoCLTKJvDVLgmJ+qAffBMxsV85l/Lu7sNx4zSzPyoL2euImuEwHhOXdEgNFZQ==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
 
-  prismjs@1.29.0:
-    resolution: {integrity: sha512-Kx/1w86q/epKcmte75LNrEoT+lX8pBpavuAbvJWRXar7Hz8jrtF+e3vY751p0R8H9HdArwaCTNDDzHg/ScJK1Q==}
-    engines: {node: '>=6'}
-
   process-nextick-args@2.0.1:
     resolution: {integrity: sha512-3ouUOpQhtgrbOa17J7+uxOTpITYWaGP7/AhoR3+A+/1e9skrzelGi/dXzEYyvbxubEF6Wn2ypscTKiKJFFn1ag==}
 
@@ -8171,10 +8173,52 @@ snapshots:
       '@codemirror/view': 6.28.3
       '@lezer/common': 1.2.1
 
+  '@codemirror/lang-css@6.3.0(@codemirror/view@6.28.3)':
+    dependencies:
+      '@codemirror/autocomplete': 6.16.3(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.28.3)(@lezer/common@1.2.1)
+      '@codemirror/language': 6.10.2
+      '@codemirror/state': 6.4.1
+      '@lezer/common': 1.2.1
+      '@lezer/css': 1.1.9
+    transitivePeerDependencies:
+      - '@codemirror/view'
+
+  '@codemirror/lang-html@6.4.9':
+    dependencies:
+      '@codemirror/autocomplete': 6.16.3(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.28.3)(@lezer/common@1.2.1)
+      '@codemirror/lang-css': 6.3.0(@codemirror/view@6.28.3)
+      '@codemirror/lang-javascript': 6.2.2
+      '@codemirror/language': 6.10.2
+      '@codemirror/state': 6.4.1
+      '@codemirror/view': 6.28.3
+      '@lezer/common': 1.2.1
+      '@lezer/css': 1.1.9
+      '@lezer/html': 1.3.10
+
+  '@codemirror/lang-javascript@6.2.2':
+    dependencies:
+      '@codemirror/autocomplete': 6.16.3(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.28.3)(@lezer/common@1.2.1)
+      '@codemirror/language': 6.10.2
+      '@codemirror/lint': 6.8.1
+      '@codemirror/state': 6.4.1
+      '@codemirror/view': 6.28.3
+      '@lezer/common': 1.2.1
+      '@lezer/javascript': 1.4.18
+
   '@codemirror/lang-json@6.0.1':
     dependencies:
       '@codemirror/language': 6.10.2
       '@lezer/json': 1.0.2
+
+  '@codemirror/lang-markdown@6.3.0':
+    dependencies:
+      '@codemirror/autocomplete': 6.16.3(@codemirror/language@6.10.2)(@codemirror/state@6.4.1)(@codemirror/view@6.28.3)(@lezer/common@1.2.1)
+      '@codemirror/lang-html': 6.4.9
+      '@codemirror/language': 6.10.2
+      '@codemirror/state': 6.4.1
+      '@codemirror/view': 6.28.3
+      '@lezer/common': 1.2.1
+      '@lezer/markdown': 1.3.1
 
   '@codemirror/language@6.10.2':
     dependencies:
@@ -8749,12 +8793,6 @@ snapshots:
       '@lexical/utils': 0.16.0
       lexical: 0.16.0
 
-  '@lexical/code@0.16.0':
-    dependencies:
-      '@lexical/utils': 0.16.0
-      lexical: 0.16.0
-      prismjs: 1.29.0
-
   '@lexical/html@0.16.0':
     dependencies:
       '@lexical/selection': 0.16.0
@@ -8771,24 +8809,7 @@ snapshots:
       '@lexical/utils': 0.16.0
       lexical: 0.16.0
 
-  '@lexical/markdown@0.16.0':
-    dependencies:
-      '@lexical/code': 0.16.0
-      '@lexical/link': 0.16.0
-      '@lexical/list': 0.16.0
-      '@lexical/rich-text': 0.16.0
-      '@lexical/text': 0.16.0
-      '@lexical/utils': 0.16.0
-      lexical: 0.16.0
-
   '@lexical/plain-text@0.16.0':
-    dependencies:
-      '@lexical/clipboard': 0.16.0
-      '@lexical/selection': 0.16.0
-      '@lexical/utils': 0.16.0
-      lexical: 0.16.0
-
-  '@lexical/rich-text@0.16.0':
     dependencies:
       '@lexical/clipboard': 0.16.0
       '@lexical/selection': 0.16.0
@@ -8804,10 +8825,6 @@ snapshots:
       '@lexical/utils': 0.16.0
       lexical: 0.16.0
 
-  '@lexical/text@0.16.0':
-    dependencies:
-      lexical: 0.16.0
-
   '@lexical/utils@0.16.0':
     dependencies:
       '@lexical/list': 0.16.0
@@ -8817,9 +8834,27 @@ snapshots:
 
   '@lezer/common@1.2.1': {}
 
+  '@lezer/css@1.1.9':
+    dependencies:
+      '@lezer/common': 1.2.1
+      '@lezer/highlight': 1.2.0
+      '@lezer/lr': 1.4.1
+
   '@lezer/highlight@1.2.0':
     dependencies:
       '@lezer/common': 1.2.1
+
+  '@lezer/html@1.3.10':
+    dependencies:
+      '@lezer/common': 1.2.1
+      '@lezer/highlight': 1.2.0
+      '@lezer/lr': 1.4.1
+
+  '@lezer/javascript@1.4.18':
+    dependencies:
+      '@lezer/common': 1.2.1
+      '@lezer/highlight': 1.2.0
+      '@lezer/lr': 1.4.1
 
   '@lezer/json@1.0.2':
     dependencies:
@@ -8830,6 +8865,11 @@ snapshots:
   '@lezer/lr@1.4.1':
     dependencies:
       '@lezer/common': 1.2.1
+
+  '@lezer/markdown@1.3.1':
+    dependencies:
+      '@lezer/common': 1.2.1
+      '@lezer/highlight': 1.2.0
 
   '@malept/cross-spawn-promise@1.1.1':
     dependencies:
@@ -14055,8 +14095,6 @@ snapshots:
       '@jest/schemas': 29.6.3
       ansi-styles: 5.2.0
       react-is: 18.3.1
-
-  prismjs@1.29.0: {}
 
   process-nextick-args@2.0.1: {}
 

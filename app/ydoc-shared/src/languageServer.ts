@@ -26,7 +26,8 @@ import type {
   VisualizationConfiguration,
 } from './languageServerTypes'
 import { Err, Ok, type Result } from './util/data/result'
-import { AbortScope, exponentialBackoff, ReconnectingWebSocketTransport } from './util/net'
+import type { ReconnectingWebSocketTransport } from './util/net'
+import { AbortScope, exponentialBackoff } from './util/net'
 import type { Uuid } from './yjsModel'
 
 const debugLog = debug('ydoc-shared:languageServer')

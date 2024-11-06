@@ -1,32 +1,41 @@
 import { normalizeQualifiedName, qnFromSegments } from '@/util/qualifiedName'
-import {
-  Ast,
-  BodyBlock,
+import type {
   Expression,
-  Function,
-  Ident,
   IdentifierOrOperatorIdentifier,
   Mutable,
+  MutableExpression,
+  MutableStatement,
+  Owned,
+  QualifiedName,
+  Statement,
+} from 'ydoc-shared/ast'
+import {
+  App,
+  Ast,
+  BodyBlock,
+  FunctionDef,
+  Group,
+  Ident,
   MutableAst,
   MutableBodyBlock,
-  MutableExpression,
-  MutableFunction,
+  MutableFunctionDef,
   MutableIdent,
   MutableModule,
   MutablePropertyAccess,
-  MutableStatement,
   NegationApp,
   NumericLiteral,
   OprApp,
-  Owned,
   PropertyAccess,
-  QualifiedName,
-  Statement,
   Token,
+  Wildcard,
+  abstract,
   isTokenId,
   parseExpression,
-  print,
+  rawParseModule,
+  setExternalIds,
 } from 'ydoc-shared/ast'
+import { spanMapToIdMap, spanMapToSpanGetter } from 'ydoc-shared/ast/idMap'
+import { IdMap } from 'ydoc-shared/yjsModel'
 
 export * from 'ydoc-shared/ast'
 
@@ -39,7 +48,7 @@ export function deserializeExpression(serialized: string): Owned<MutableExpressi
 
 /** Returns a serialized representation of the expression. */
 export function serializeExpression(ast: Expression): string {
-  return print(ast).code
+  return ast.code()
 }
 
 export type TokenTree = (TokenTree | string)[]
@@ -76,7 +85,7 @@ export function tokenTreeWithIds(root: Ast): TokenTree {
 export function moduleMethodNames(topLevel: BodyBlock): Set<string> {
   const result = new Set<string>()
   for (const statement of topLevel.statements()) {
-    if (statement instanceof Function) result.add(statement.name.code())
+    if (statement instanceof FunctionDef) result.add(statement.name.code())
   }
   return result
 }
@@ -84,26 +93,26 @@ export function moduleMethodNames(topLevel: BodyBlock): Set<string> {
 export function findModuleMethod(
   topLevel: MutableBodyBlock,
   name: string,
-): { statement: MutableFunction; index: number } | undefined
+): { statement: MutableFunctionDef; index: number } | undefined
 export function findModuleMethod(
   topLevel: BodyBlock,
   name: string,
-): { statement: Function; index: number } | undefined
+): { statement: FunctionDef; index: number } | undefined
 /** Find the definition of the function with the specified name in the given block. */
 export function findModuleMethod(
   topLevel: BodyBlock,
   name: string,
-): { statement: Function; index: number } | undefined {
+): { statement: FunctionDef; index: number } | undefined {
   // FIXME: We should use alias analysis to handle shadowing correctly.
   const isFunctionWithName = (statement: Statement, name: string) =>
-    statement instanceof Function && statement.name.code() === name
+    statement instanceof FunctionDef && statement.name.code() === name
   const index = topLevel.lines.findIndex(
     (line) => line.statement && isFunctionWithName(line.statement.node, name),
   )
   if (index === -1) return undefined
-  const statement = topLevel.lines[index]!.statement!.node as Function
+  const statement = topLevel.lines[index]!.statement!.node as FunctionDef
   return {
-    /** The `Function` definition. */
+    /** The function definition. */
     statement,
     /** The index into the block's `lines` where the definition was found. */
     index,
@@ -269,6 +278,79 @@ export function copyIntoNewModule<T extends Ast>(ast: T): Owned<Mutable<T>> {
 /** Safely cast a mutable or owned value to its base type. */
 export function dropMutability<T extends Ast>(value: Owned<Mutable<T>>): T {
   return value as unknown as T
+}
+
+function unwrapGroups(ast: Ast) {
+  while (ast instanceof Group && ast.expression) ast = ast.expression
+  return ast
+}
+
+/**
+ * Tries to recognize inputs that are semantically-equivalent to a sequence of `App`s, and returns the arguments
+ * identified and LHS of the analyzable chain.
+ *
+ * In particular, this function currently recognizes syntax used in visualization-preprocessor expressions.
+ */
+export function analyzeAppLike(ast: Ast): { func: Ast; args: Ast[] } {
+  const deferredOperands = new Array<Ast>()
+  while (
+    ast instanceof OprApp &&
+    ast.operator.ok &&
+    ast.operator.value.code() === '<|' &&
+    ast.lhs &&
+    ast.rhs
+  ) {
+    deferredOperands.push(unwrapGroups(ast.rhs))
+    ast = unwrapGroups(ast.lhs)
+  }
+  deferredOperands.reverse()
+  const args = new Array<Ast>()
+  while (ast instanceof App) {
+    const deferredOperand = ast.argument instanceof Wildcard ? deferredOperands.pop() : undefined
+    args.push(deferredOperand ?? unwrapGroups(ast.argument))
+    ast = ast.function
+  }
+  args.reverse()
+  return { func: ast, args }
+}
+
+/**
+ * Unroll the provided chain of `PropertyAccess` nodes, returning the first non-access as `subject` and the accesses
+ * from left-to-right.
+ */
+export function accessChain(ast: Expression): {
+  subject: Expression
+  accessChain: PropertyAccess[]
+} {
+  const accessChain = new Array<PropertyAccess>()
+  while (ast instanceof PropertyAccess && ast.lhs) {
+    accessChain.push(ast)
+    ast = ast.lhs
+  }
+  accessChain.reverse()
+  return { subject: ast, accessChain }
+}
+
+/**
+ * Parse the input, and apply the given `IdMap`. Return the parsed tree, the updated `IdMap`, the span map, and a
+ *  mapping to the `RawAst` representation.
+ */
+export function parseUpdatingIdMap(
+  code: string,
+  idMap?: IdMap | undefined,
+  inModule?: MutableModule,
+) {
+  const rawRoot = rawParseModule(code)
+  const module = inModule ?? MutableModule.Transient()
+  const { root, spans, toRaw } = module.transact(() => {
+    const { root, spans, toRaw } = abstract(module, rawRoot, code)
+    root.module.setRoot(root)
+    if (idMap) setExternalIds(root.module, spans, idMap)
+    return { root, spans, toRaw }
+  })
+  const getSpan = spanMapToSpanGetter(spans)
+  const idMapOut = spanMapToIdMap(spans)
+  return { root, idMap: idMapOut, getSpan, toRaw }
 }
 
 declare const tokenKey: unique symbol

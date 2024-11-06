@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { NodeCreationOptions } from '@/components/GraphEditor/nodeCreation'
+import type { NodeCreationOptions } from '@/components/GraphEditor/nodeCreation'
 import LoadingVisualization from '@/components/visualizations/LoadingVisualization.vue'
-import { ToolbarItem } from '@/components/visualizations/toolbar'
+import type { ToolbarItem } from '@/components/visualizations/toolbar'
 import { provideVisualizationConfig } from '@/providers/visualizationConfig'
-import { Vec2 } from '@/util/data/vec2'
-import { ToValue } from '@/util/reactivity'
+import type { Vec2 } from '@/util/data/vec2'
+import type { ToValue } from '@/util/reactivity'
 
 const { visualization, data, size, nodeType } = defineProps<{
   visualization?: string | object

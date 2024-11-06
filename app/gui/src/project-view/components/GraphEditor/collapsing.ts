@@ -1,8 +1,10 @@
-import { GraphDb, NodeId, nodeIdFromOuterAst } from '@/stores/graph/graphDatabase'
+import type { GraphDb, NodeId } from '@/stores/graph/graphDatabase'
+import { nodeIdFromOuterAst } from '@/stores/graph/graphDatabase'
 import { assert } from '@/util/assert'
 import { Ast } from '@/util/ast'
-import { Identifier, isIdentifier, moduleMethodNames } from '@/util/ast/abstract'
-import { Err, Ok, Result, unwrap } from '@/util/data/result'
+import type { Identifier } from '@/util/ast/abstract'
+import { isIdentifier, moduleMethodNames } from '@/util/ast/abstract'
+import { Err, Ok, unwrap, type Result } from '@/util/data/result'
 import { tryIdentifier } from '@/util/qualifiedName'
 import * as set from 'lib0/set'
 
@@ -222,7 +224,7 @@ export function performCollapseImpl(
   const collapsedBody = Ast.BodyBlock.new(extractedLines, edit)
   const outputAst = Ast.Ident.new(edit, outputIdentifier)
   collapsedBody.push(outputAst)
-  const collapsedFunction = Ast.Function.new(collapsedName, info.args, collapsedBody, {
+  const collapsedFunction = Ast.FunctionDef.new(collapsedName, info.args, collapsedBody, {
     edit,
     documentation: 'ICON group',
   })

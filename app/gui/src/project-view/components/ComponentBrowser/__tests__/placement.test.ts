@@ -7,11 +7,10 @@ import {
   type Environment,
   type InputNodeEnvironment,
 } from '@/components/ComponentBrowser/placement'
-import * as iterable from '@/util/data/iterable'
-import { chain, map, range } from '@/util/data/iterable'
 import { Rect } from '@/util/data/rect'
 import { Vec2 } from '@/util/data/vec2'
 import { fc, test as fcTest } from '@fast-check/vitest'
+import * as iter from 'enso-common/src/utilities/data/iter'
 import { describe, expect, test } from 'vitest'
 
 // Vue playground to visually inspect failing fuzz cases:
@@ -42,7 +41,7 @@ describe('Non dictated placement', () => {
     return {
       screenBounds,
       nodeRects,
-      selectedNodeRects: iterable.empty(),
+      selectedNodeRects: iter.empty(),
     }
   }
 
@@ -84,53 +83,53 @@ describe('Non dictated placement', () => {
     // === Multiple node tests ===
     {
       desc: 'Multiple nodes',
-      nodes: map(range(0, 1001, 20), rectAtX(1050)),
+      nodes: iter.map(iter.range(0, 1001, 20), rectAtX(1050)),
       pos: new Vec2(1090, 1044),
     },
     {
       desc: 'Multiple nodes with gap',
-      nodes: map(range(1000, -1, -20), rectAtX(1050)),
+      nodes: iter.map(iter.range(1000, -1, -20), rectAtX(1050)),
       pos: new Vec2(1090, 1044),
     },
     {
       desc: 'Multiple nodes with gap 2',
-      nodes: chain(
-        map(range(500, 901, 20), rectAtX(1050)),
-        map(range(1000, 1501, 20), rectAtX(1050)),
+      nodes: iter.chain(
+        iter.map(iter.range(500, 901, 20), rectAtX(1050)),
+        iter.map(iter.range(1000, 1501, 20), rectAtX(1050)),
       ),
       pos: new Vec2(1090, 944),
     },
     {
       desc: 'Multiple nodes with gap (just big enough)',
-      nodes: map(range(690, 1500, 88), rectAtX(1050)),
+      nodes: iter.map(iter.range(690, 1500, 88), rectAtX(1050)),
       pos: new Vec2(1090, 734),
     },
     {
       desc: 'Multiple nodes with gap (slightly too small)',
-      nodes: map(range(500, 849, 87), rectAtX(1050)),
+      nodes: iter.map(iter.range(500, 849, 87), rectAtX(1050)),
       pos: new Vec2(1090, 892),
     },
     {
       desc: 'Multiple nodes with smallest gap',
-      nodes: chain(
-        map(range(500, 901, 20), rectAtX(1050)),
-        map(range(988, 1489, 20), rectAtX(1050)),
+      nodes: iter.chain(
+        iter.map(iter.range(500, 901, 20), rectAtX(1050)),
+        iter.map(iter.range(988, 1489, 20), rectAtX(1050)),
       ),
       pos: new Vec2(1090, 944),
     },
     {
       desc: 'Multiple nodes with smallest gap (reverse)',
-      nodes: chain(
-        map(range(1488, 987, -20), rectAtX(1050)),
-        map(range(900, 499, -20), rectAtX(1050)),
+      nodes: iter.chain(
+        iter.map(iter.range(1488, 987, -20), rectAtX(1050)),
+        iter.map(iter.range(900, 499, -20), rectAtX(1050)),
       ),
       pos: new Vec2(1090, 944),
     },
     {
       desc: 'Multiple nodes with gap that is too small',
-      nodes: chain(
-        map(range(500, 901, 20), rectAtX(1050)),
-        map(range(987, 1488, 20), rectAtX(1050)),
+      nodes: iter.chain(
+        iter.map(iter.range(500, 901, 20), rectAtX(1050)),
+        iter.map(iter.range(987, 1488, 20), rectAtX(1050)),
       ),
       // This gap is 1px smaller than the previous test - so, 1px too small.
       // This position is offscreen (y >= 1000), so we pan so that the new node is centered (1531 - 690).
@@ -139,9 +138,9 @@ describe('Non dictated placement', () => {
     },
     {
       desc: 'Multiple nodes with gap that is too small (each range reversed)',
-      nodes: chain(
-        map(range(900, 499, -20), rectAtX(1050)),
-        map(range(1487, 986, -20), rectAtX(1050)),
+      nodes: iter.chain(
+        iter.map(iter.range(900, 499, -20), rectAtX(1050)),
+        iter.map(iter.range(1487, 986, -20), rectAtX(1050)),
       ),
       pos: new Vec2(1090, 1531),
       pan: new Vec2(0, 841),
@@ -259,64 +258,64 @@ describe('Previous node dictated placement', () => {
     // === Multiple node tests ===
     {
       desc: 'Multiple nodes',
-      nodes: map(range(1000, 2001, 100), rectAtY(734)),
+      nodes: iter.map(iter.range(1000, 2001, 100), rectAtY(734)),
       pos: new Vec2(2124, 734),
       pan: new Vec2(1034, 44),
     },
     {
       desc: 'Multiple nodes (reverse)',
-      nodes: map(range(2000, 999, -100), rectAtY(734)),
+      nodes: iter.map(iter.range(2000, 999, -100), rectAtY(734)),
       pos: new Vec2(2124, 734),
       pan: new Vec2(1034, 44),
     },
     {
       desc: 'Multiple nodes with gap',
-      nodes: chain(
-        map(range(1000, 1401, 100), rectAtY(734)),
-        map(range(1700, 2001, 100), rectAtY(734)),
+      nodes: iter.chain(
+        iter.map(iter.range(1000, 1401, 100), rectAtY(734)),
+        iter.map(iter.range(1700, 2001, 100), rectAtY(734)),
       ),
       pos: new Vec2(1524, 734),
     },
     {
       desc: 'Multiple nodes with gap (just big enough)',
-      nodes: map(range(1050, 2000, 248), rectAtY(734)),
+      nodes: iter.map(iter.range(1050, 2000, 248), rectAtY(734)),
       pos: new Vec2(1174, 734),
     },
     {
       desc: 'Multiple nodes with gap (slightly too small)',
-      nodes: map(range(1050, 1792, 247), rectAtY(734)),
+      nodes: iter.map(iter.range(1050, 1792, 247), rectAtY(734)),
       pos: new Vec2(1915, 734),
     },
     {
       desc: 'Multiple nodes with smallest gap',
-      nodes: chain(
-        map(range(1000, 1401, 100), rectAtY(734)),
-        map(range(1648, 1949, 100), rectAtY(734)),
+      nodes: iter.chain(
+        iter.map(iter.range(1000, 1401, 100), rectAtY(734)),
+        iter.map(iter.range(1648, 1949, 100), rectAtY(734)),
       ),
       pos: new Vec2(1524, 734),
     },
     {
       desc: 'Multiple nodes with smallest gap (reverse)',
-      nodes: chain(
-        map(range(1948, 1647, -100), rectAtY(734)),
-        map(range(1400, 999, -100), rectAtY(734)),
+      nodes: iter.chain(
+        iter.map(iter.range(1948, 1647, -100), rectAtY(734)),
+        iter.map(iter.range(1400, 999, -100), rectAtY(734)),
       ),
       pos: new Vec2(1524, 734),
     },
     {
       desc: 'Multiple nodes with gap that is too small',
-      nodes: chain(
-        map(range(1000, 1401, 100), rectAtY(734)),
-        map(range(1647, 1948, 100), rectAtY(734)),
+      nodes: iter.chain(
+        iter.map(iter.range(1000, 1401, 100), rectAtY(734)),
+        iter.map(iter.range(1647, 1948, 100), rectAtY(734)),
       ),
       pos: new Vec2(2071, 734),
       pan: new Vec2(981, 44),
     },
     {
       desc: 'Multiple nodes with gap that is too small (each range reversed)',
-      nodes: chain(
-        map(range(1400, 999, -100), rectAtY(734)),
-        map(range(1947, 1646, -100), rectAtY(734)),
+      nodes: iter.chain(
+        iter.map(iter.range(1400, 999, -100), rectAtY(734)),
+        iter.map(iter.range(1947, 1646, -100), rectAtY(734)),
       ),
       pos: new Vec2(2071, 734),
       pan: new Vec2(981, 44),

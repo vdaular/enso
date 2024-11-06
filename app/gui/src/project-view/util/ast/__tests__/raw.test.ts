@@ -1,9 +1,9 @@
 import { RawAst, rawParseModule, readAstOrTokenSpan, walkRecursive } from '@/util/ast/raw'
+import * as iter from 'enso-common/src/utilities/data/iter'
 import { assert, expect, test } from 'vitest'
 import { Token, Tree } from 'ydoc-shared/ast/generated/ast'
 import type { LazyObject } from 'ydoc-shared/ast/parserSupport'
 import { assertDefined } from 'ydoc-shared/util/assert'
-import { tryGetSoleValue } from 'ydoc-shared/util/data/iterable'
 
 /**
  * Read a single line of code
@@ -12,7 +12,7 @@ import { tryGetSoleValue } from 'ydoc-shared/util/data/iterable'
  */
 function rawParseLine(code: string): RawAst.Tree {
   const block = rawParseModule(code)
-  const soleExpression = tryGetSoleValue(block.statements)?.expression
+  const soleExpression = iter.tryGetSoleValue(block.statements)?.expression
   assertDefined(soleExpression)
   return soleExpression
 }

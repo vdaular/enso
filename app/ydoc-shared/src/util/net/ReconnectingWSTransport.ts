@@ -7,7 +7,8 @@
 import { WebSocketTransport } from '@open-rpc/client-js'
 import WS from 'isomorphic-ws'
 import { WebSocket } from 'partysocket'
-import ReconnectingWebSocket, { Options, type WebSocketEventMap } from 'partysocket/ws'
+import type { Options } from 'partysocket/ws'
+import ReconnectingWebSocket, { type WebSocketEventMap } from 'partysocket/ws'
 
 export { ReconnectingWebSocket }
 

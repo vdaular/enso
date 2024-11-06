@@ -85,7 +85,7 @@
   /* Resize handle override for the visualization container. */
   --visualization-resize-handle-inside: 3px;
   --visualization-resize-handle-outside: 3px;
-  --right-dock-default-width: 40%;
+  --right-dock-default-width: 40vw;
   --code-editor-default-height: 30%;
   --scrollbar-scrollable-opacity: 100%;
 }

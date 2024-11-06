@@ -1,7 +1,7 @@
-import { URLString } from '@/util/data/urlString'
-import { Icon } from '@/util/iconName'
-import { ToValue } from '@/util/reactivity'
-import { Ref } from 'vue'
+import type { URLString } from '@/util/data/urlString'
+import type { Icon } from '@/util/iconName'
+import type { ToValue } from '@/util/reactivity'
+import type { Ref } from 'vue'
 
 export interface Button {
   icon: Icon | URLString

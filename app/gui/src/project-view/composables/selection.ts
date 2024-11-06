@@ -3,15 +3,15 @@ import { selectionMouseBindings } from '@/bindings'
 import { useEvent } from '@/composables/events'
 import type { PortId } from '@/providers/portInfo.ts'
 import { type NodeId } from '@/stores/graph'
-import { filter, filterDefined, map } from '@/util/data/iterable'
 import type { Rect } from '@/util/data/rect'
 import { intersectionSize } from '@/util/data/set'
 import { Vec2 } from '@/util/data/vec2'
 import { dataAttribute, elementHierarchy } from '@/util/dom'
+import * as iter from 'enso-common/src/utilities/data/iter'
 import * as set from 'lib0/set'
 import { computed, ref, shallowReactive, shallowRef } from 'vue'
 import { Err, Ok, type Result } from 'ydoc-shared/util/data/result'
-import { NavigatorComposable } from './navigator'
+import type { NavigatorComposable } from './navigator'
 
 interface BaseSelectionOptions<T> {
   margin?: number
@@ -85,11 +85,13 @@ function useSelectionImpl<T, PackedT>(
   // Selection, including elements that do not (currently) pass `isValid`.
   const rawSelected = shallowReactive(new Set<PackedT>())
 
-  const unpackedRawSelected = computed(() => set.from(filterDefined(map(rawSelected, unpack))))
-  const selected = computed(() => set.from(filter(unpackedRawSelected.value, isValid)))
+  const unpackedRawSelected = computed(() =>
+    set.from(iter.filterDefined(iter.map(rawSelected, unpack))),
+  )
+  const selected = computed(() => set.from(iter.filter(unpackedRawSelected.value, isValid)))
   const isChanging = computed(() => anchor.value != null)
   const committedSelection = computed(() =>
-    isChanging.value ? set.from(filter(initiallySelected, isValid)) : selected.value,
+    isChanging.value ? set.from(iter.filter(initiallySelected, isValid)) : selected.value,
   )
 
   function readInitiallySelected() {

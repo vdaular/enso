@@ -1,25 +1,25 @@
 import LoadingErrorVisualization from '@/components/visualizations/LoadingErrorVisualization.vue'
 import LoadingVisualization from '@/components/visualizations/LoadingVisualization.vue'
-import { ToolbarItem } from '@/components/visualizations/toolbar'
+import type { ToolbarItem } from '@/components/visualizations/toolbar'
 import { useProjectStore } from '@/stores/project'
 import type { NodeVisualizationConfiguration } from '@/stores/project/executionContext'
 import {
   DEFAULT_VISUALIZATION_CONFIGURATION,
   DEFAULT_VISUALIZATION_IDENTIFIER,
   useVisualizationStore,
-  VisualizationDataSource,
+  type VisualizationDataSource,
 } from '@/stores/visualization'
 import type { Visualization } from '@/stores/visualization/runtimeTypes'
 import { Ast } from '@/util/ast'
 import { toError } from '@/util/data/error'
-import { ToValue } from '@/util/reactivity'
+import type { ToValue } from '@/util/reactivity'
 import { computedAsync } from '@vueuse/core'
 import {
   computed,
   onErrorCaptured,
   ref,
   shallowRef,
-  ShallowRef,
+  type ShallowRef,
   toValue,
   watch,
   watchEffect,

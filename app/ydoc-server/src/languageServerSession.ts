@@ -635,7 +635,7 @@ class ModulePersistence extends ObservableV2<{ removed: () => void }> {
       const astRoot = syncModule.root()
       if (!astRoot) return
       if ((code !== this.syncedCode || idMapJson !== this.syncedIdMap) && idMapJson) {
-        const spans = parsedSpans ?? Ast.print(astRoot).info
+        const spans = parsedSpans ?? Ast.printWithSpans(astRoot).info
         if (idMapJson !== this.syncedIdMap && parsedIdMap === undefined) {
           const idMap = deserializeIdMap(idMapJson)
           const idsAssigned = Ast.setExternalIds(syncModule, spans, idMap)

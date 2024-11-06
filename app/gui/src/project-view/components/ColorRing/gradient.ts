@@ -1,5 +1,5 @@
 import { ensoColor, formatCssColor, normalizeHue } from '@/util/colors'
-import { Resumable } from 'ydoc-shared/util/data/iterable'
+import * as iter from 'enso-common/src/utilities/data/iter'
 
 export interface FixedRange {
   start: number
@@ -98,7 +98,7 @@ export function gradientPoints(
 ): GradientPoint[] {
   const points = new Array<GradientPoint>()
   const interpolationPoint = (angle: number) => ({ hue: angle, angle })
-  const fixedRangeIter = new Resumable(inputRanges)
+  const fixedRangeIter = new iter.Resumable(inputRanges)
   const min = Math.max(3, Math.round(minStops ?? 0))
   for (let i = 0; i < min; i++) {
     const angle = i / (min - 1)

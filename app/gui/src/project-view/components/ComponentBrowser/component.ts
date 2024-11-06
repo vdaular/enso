@@ -10,7 +10,8 @@ import { isSome } from '@/util/data/opt'
 import { Range } from '@/util/data/range'
 import { displayedIconOf } from '@/util/getIconName'
 import type { Icon } from '@/util/iconName'
-import { qnLastSegmentIndex, QualifiedName, tryQualifiedName } from '@/util/qualifiedName'
+import type { QualifiedName } from '@/util/qualifiedName'
+import { qnLastSegmentIndex, tryQualifiedName } from '@/util/qualifiedName'
 import { unwrap } from 'ydoc-shared/util/data/result'
 
 interface ComponentLabelInfo {

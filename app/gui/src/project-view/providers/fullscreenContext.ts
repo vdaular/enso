@@ -1,5 +1,5 @@
 import { createContextStore } from '@/providers'
-import { Ref } from 'vue'
+import type { Ref } from 'vue'
 
 export { provideFn as provideFullscreenContext, injectFn as useFullscreenContext }
 const { provideFn, injectFn } = createContextStore(

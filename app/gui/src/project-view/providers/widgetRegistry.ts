@@ -4,8 +4,7 @@ import type { WidgetConfiguration } from '@/providers/widgetRegistry/configurati
 import type { GraphDb } from '@/stores/graph/graphDatabase'
 import type { Typename } from '@/stores/suggestionDatabase/entry'
 import { Ast } from '@/util/ast'
-import { MutableModule } from '@/util/ast/abstract'
-import { ViteHotContext } from 'vite/types/hot.js'
+import type { ViteHotContext } from 'vite/types/hot.js'
 import { computed, shallowReactive, type Component, type PropType } from 'vue'
 import type { WidgetEditHandlerParent } from './widgetRegistry/editHandler'
 
@@ -169,7 +168,7 @@ export interface WidgetProps<T> {
  * is committed in {@link NodeWidgetTree}.
  */
 export interface WidgetUpdate {
-  edit?: MutableModule | undefined
+  edit?: Ast.MutableModule | undefined
   portUpdate?: { origin: PortId } & (
     | { value: Ast.Owned<Ast.MutableExpression> | string | undefined }
     | { metadataKey: string; metadata: unknown }

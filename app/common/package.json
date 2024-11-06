@@ -18,6 +18,8 @@
     "./src/utilities/data/dateTime": "./src/utilities/data/dateTime.ts",
     "./src/utilities/data/newtype": "./src/utilities/data/newtype.ts",
     "./src/utilities/data/object": "./src/utilities/data/object.ts",
+    "./src/utilities/data/string": "./src/utilities/data/string.ts",
+    "./src/utilities/data/iter": "./src/utilities/data/iter.ts",
     "./src/utilities/style/tabBar": "./src/utilities/style/tabBar.ts",
     "./src/utilities/uniqueString": "./src/utilities/uniqueString.ts",
     "./src/text": "./src/text/index.ts",
@@ -37,6 +39,7 @@
     "@tanstack/query-persist-client-core": "^5.54.0",
     "@tanstack/vue-query": ">= 5.54.0 < 5.56.0",
     "idb-keyval": "^6.2.1",
+    "lib0": "^0.2.85",
     "react": "^18.3.1",
     "vitest": "^1.3.1",
     "vue": "^3.5.2"

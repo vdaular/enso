@@ -9,13 +9,13 @@ import {
   walkRecursive,
 } from '@/util/ast/raw'
 import type { Opt } from '@/util/data/opt'
+import * as iter from 'enso-common/src/utilities/data/iter'
 import * as encoding from 'lib0/encoding'
 import * as sha256 from 'lib0/hash/sha256'
 import * as map from 'lib0/map'
 import { markRaw } from 'vue'
 import * as Ast from 'ydoc-shared/ast/generated/ast'
 import { Token, Tree } from 'ydoc-shared/ast/generated/ast'
-import { tryGetSoleValue } from 'ydoc-shared/util/data/iterable'
 import type { ExternalId, IdMap, SourceRange } from 'ydoc-shared/yjsModel'
 
 export { AstExtended as RawAstExtended }
@@ -63,7 +63,7 @@ class AstExtended<T extends Tree | Token = Tree | Token, HasIdMap extends boolea
     const block = AstExtended.parse(code)
     assert(block.isTree(Tree.Type.BodyBlock))
     return block.map((block) => {
-      const soleStatement = tryGetSoleValue(block.statements)
+      const soleStatement = iter.tryGetSoleValue(block.statements)
       assertDefined(soleStatement?.expression)
       return soleStatement.expression
     })

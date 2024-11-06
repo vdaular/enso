@@ -3,9 +3,8 @@ import ColorRing from '@/components/ColorRing.vue'
 import { injectNodeColors } from '@/providers/graphNodeColors'
 import { injectGraphSelection } from '@/providers/graphSelection'
 import { useGraphStore, type NodeId } from '@/stores/graph'
-import { filterDefined } from '@/util/data/iterable'
+import * as iter from 'enso-common/src/utilities/data/iter'
 import { ref } from 'vue'
-import { tryGetSoleValue } from 'ydoc-shared/util/data/iterable'
 
 const emit = defineEmits<{
   close: []
@@ -16,9 +15,9 @@ const selection = injectGraphSelection()
 const graphStore = useGraphStore()
 
 const displayedColors = new Set<string>(
-  filterDefined(Array.from(selection.selected, (node) => getNodeColor(node))),
+  iter.filterDefined(iter.map(selection.selected, getNodeColor)),
 )
-const currentColor = ref<string | undefined>(tryGetSoleValue(displayedColors.values()))
+const currentColor = ref<string | undefined>(iter.tryGetSoleValue(displayedColors.values()))
 
 const editedNodeInitialColors = new Map<NodeId, string | undefined>()
 

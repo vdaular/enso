@@ -1,5 +1,5 @@
 import { createContextStore } from '@/providers'
-import { last } from '@/util/data/iterable'
+import * as iter from 'enso-common/src/utilities/data/iter'
 import {
   computed,
   onUnmounted,
@@ -21,14 +21,14 @@ const { provideFn, injectFn } = createContextStore('tooltip registry', () => {
   const hoveredElements = shallowReactive<Map<HTMLElement, EntriesSet>>(new Map())
 
   const lastHoveredElement = computed(() => {
-    return last(hoveredElements.keys())
+    return iter.last(hoveredElements.keys())
   })
 
   return {
     lastHoveredElement,
     getElementEntry(el: HTMLElement | undefined): TooltipEntry | undefined {
       const set = el && hoveredElements.get(el)
-      return set ? last(set) : undefined
+      return set ? iter.last(set) : undefined
     },
     registerTooltip(slot: Ref<Slot | undefined>) {
       const entry: TooltipEntry = {

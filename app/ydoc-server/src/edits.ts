@@ -5,7 +5,7 @@
 
 import diff from 'fast-diff'
 import type { ModuleUpdate } from 'ydoc-shared/ast'
-import { MutableModule, print, spanMapToIdMap } from 'ydoc-shared/ast'
+import { MutableModule, printWithSpans, spanMapToIdMap } from 'ydoc-shared/ast'
 import { EnsoFileParts } from 'ydoc-shared/ensoFile'
 import { TextEdit } from 'ydoc-shared/languageServerTypes'
 import { assert } from 'ydoc-shared/util/assert'
@@ -69,7 +69,7 @@ export function applyDocumentUpdates(
   const root = syncModule.root()
   assert(root != null)
   if (codeChanged || idsChanged || synced.idMapJson == null) {
-    const { code, info } = print(root)
+    const { code, info } = printWithSpans(root)
     if (codeChanged) newCode = code
     newIdMap = spanMapToIdMap(info)
   }

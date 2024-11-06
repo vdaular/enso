@@ -1,9 +1,11 @@
-import { print, type AstId, type Module, type ModuleUpdate } from '.'
 import { assertDefined } from '../util/assert'
 import type { SourceRangeEdit } from '../util/data/text'
 import { offsetEdit, textChangeToEdits } from '../util/data/text'
 import type { Origin, SourceRange } from '../yjsModel'
 import { rangeEquals, sourceRangeFromKey } from '../yjsModel'
+import type { Module, ModuleUpdate } from './mutableModule'
+import { printWithSpans } from './print'
+import type { AstId } from './tree'
 
 /**
  * Provides a view of the text representation of a module,
@@ -42,7 +44,7 @@ export class SourceDocument {
     const root = module.root()
     if (!root) return
     const subtreeTextEdits = new Array<SourceRangeEdit>()
-    const printed = print(root)
+    const printed = printWithSpans(root)
     for (const [key, nodes] of printed.info.nodes) {
       const range = sourceRangeFromKey(key)
       for (const node of nodes) {

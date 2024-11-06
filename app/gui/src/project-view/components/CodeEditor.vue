@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import type { ChangeSet, Diagnostic, Highlighter } from '@/components/CodeEditor/codemirror'
+import EditorRoot from '@/components/EditorRoot.vue'
 import { useGraphStore, type NodeId } from '@/stores/graph'
 import { useProjectStore } from '@/stores/project'
 import { useSuggestionDbStore } from '@/stores/suggestionDatabase'
 import { useAutoBlur } from '@/util/autoBlur'
-import { chain } from '@/util/data/iterable'
 import { unwrap } from '@/util/data/result'
 import { qnJoin, tryQualifiedName } from '@/util/qualifiedName'
 import { EditorSelection } from '@codemirror/state'
+import * as iter from 'enso-common/src/utilities/data/iter'
 import { createDebouncer } from 'lib0/eventloop'
+import type { ComponentInstance } from 'vue'
 import { computed, onMounted, onUnmounted, ref, shallowRef, watch, watchEffect } from 'vue'
 import { MutableModule } from 'ydoc-shared/ast'
 import { textChangeToEdits, type SourceRangeEdit } from 'ydoc-shared/util/data/text'
@@ -40,7 +42,8 @@ const {
 const projectStore = useProjectStore()
 const graphStore = useGraphStore()
 const suggestionDbStore = useSuggestionDbStore()
-const rootElement = ref<HTMLElement>()
+const editorRoot = ref<ComponentInstance<typeof EditorRoot>>()
+const rootElement = computed(() => editorRoot.value?.rootElement)
 useAutoBlur(rootElement)
 
 const executionContextDiagnostics = shallowRef<Diagnostic[]>([])
@@ -63,7 +66,7 @@ const expressionUpdatesDiagnostics = computed(() => {
   const panics = updates.type.reverseLookup('Panic')
   const errors = updates.type.reverseLookup('DataflowError')
   const diagnostics: Diagnostic[] = []
-  for (const externalId of chain(panics, errors)) {
+  for (const externalId of iter.chain(panics, errors)) {
     const update = updates.get(externalId)
     if (!update) continue
     const astId = graphStore.db.idFromExternal(externalId)
@@ -322,25 +325,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <div
-    ref="rootElement"
-    class="CodeEditor"
-    @keydown.arrow-left.stop
-    @keydown.arrow-right.stop
-    @keydown.arrow-up.stop
-    @keydown.arrow-down.stop
-    @keydown.enter.stop
-    @keydown.backspace.stop
-    @keydown.delete.stop
-    @wheel.stop.passive
-    @contextmenu.stop
-  ></div>
+  <EditorRoot ref="editorRoot" class="CodeEditor" />
 </template>
 
 <style scoped>
 .CodeEditor {
-  width: 100%;
-  height: 100%;
   font-family: var(--font-mono);
   backdrop-filter: var(--blur-app-bg);
   background-color: rgba(255, 255, 255, 0.9);
@@ -348,13 +337,13 @@ onMounted(() => {
   border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
-:deep(.ͼ1 .cm-scroller) {
+:deep(.cm-scroller) {
   font-family: var(--font-mono);
   /* Prevent touchpad back gesture, which can be triggered while panning. */
   overscroll-behavior: none;
 }
 
-.CodeEditor :deep(.cm-editor) {
+:deep(.cm-editor) {
   position: relative;
   width: 100%;
   height: 100%;
@@ -366,11 +355,11 @@ onMounted(() => {
   transition: outline 0.1s ease-in-out;
 }
 
-.CodeEditor :deep(.cm-focused) {
+:deep(.cm-focused) {
   outline: 1px solid rgba(0, 0, 0, 0.5);
 }
 
-.CodeEditor :deep(.cm-tooltip-hover) {
+:deep(.cm-tooltip-hover) {
   padding: 4px;
   border-radius: 4px;
   border: 1px solid rgba(0, 0, 0, 0.4);
@@ -384,7 +373,7 @@ onMounted(() => {
   }
 }
 
-.CodeEditor :deep(.cm-gutters) {
+:deep(.cm-gutters) {
   border-radius: 3px 0 0 3px;
   min-width: 32px;
 }

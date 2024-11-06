@@ -26,7 +26,7 @@ test.each([
 // This is a special case because when a block is empty, adding a line requires adding *two* linebreaks.
 test('Adding node to empty block', () => {
   const module = Ast.MutableModule.Transient()
-  const func = Ast.Function.new(identifier('f')!, [], Ast.BodyBlock.new([], module), {
+  const func = Ast.FunctionDef.new(identifier('f')!, [], Ast.BodyBlock.new([], module), {
     edit: module,
   })
   const rootBlock = Ast.BodyBlock.new([], module)

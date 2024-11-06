@@ -1,6 +1,6 @@
 import { assertDefined, assertEqual } from '@/util/assert'
 import type { NonEmptyArray } from '@/util/data/array'
-import { mapIterator } from 'lib0/iterator'
+import * as iter from 'enso-common/src/utilities/data/iter'
 
 /**
  * Map that supports Object-based keys.
@@ -85,9 +85,7 @@ export class MappedSet<T extends object> {
     private readonly valueMapper: (key: T) => any,
     elements: Iterable<T> = [],
   ) {
-    this.set = new Map(
-      mapIterator(elements[Symbol.iterator](), (elem) => [valueMapper(elem), elem]),
-    )
+    this.set = new Map(iter.map(elements, (elem) => [valueMapper(elem), elem]))
   }
 
   /** Add the given value to the set. */

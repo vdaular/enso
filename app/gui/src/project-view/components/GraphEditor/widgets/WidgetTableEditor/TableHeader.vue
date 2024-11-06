@@ -1,6 +1,7 @@
 <script lang="ts">
 import SvgButton from '@/components/SvgButton.vue'
-import { provideTooltipRegistry, TooltipRegistry } from '@/providers/tooltipState'
+import type { TooltipRegistry } from '@/providers/tooltipState'
+import { provideTooltipRegistry } from '@/providers/tooltipState'
 import type { IHeaderParams } from 'ag-grid-community'
 import { computed, ref, watch } from 'vue'
 

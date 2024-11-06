@@ -1,30 +1,6 @@
 // Declaration-merging is used to implement mixin types in this file.
 /* eslint-disable @typescript-eslint/no-unsafe-declaration-merging */
 import * as Y from 'yjs'
-import {
-  Identifier,
-  IdentifierOrOperatorIdentifier,
-  IdentifierOrOperatorIdentifierToken,
-  IdentifierToken,
-  Module,
-  MutableModule,
-  NodeChild,
-  Owned,
-  ROOT_ID,
-  RawNodeChild,
-  SpanMap,
-  SyncTokenId,
-  Token,
-  TypeOrConstructorIdentifier,
-  asOwned,
-  escapeTextLiteral,
-  isIdentifier,
-  isToken,
-  isTokenChild,
-  isTokenId,
-  newExternalId,
-  parentId,
-} from '.'
 import { assert, assertDefined, assertEqual, bail } from '../util/assert'
 import type { Result } from '../util/data/result'
 import { Err, Ok } from '../util/data/result'
@@ -32,24 +8,104 @@ import type { SourceRangeEdit } from '../util/data/text'
 import { allKeys } from '../util/types'
 import type { ExternalId, VisualizationMetadata } from '../yjsModel'
 import { visMetadataEquals } from '../yjsModel'
+import { functionDocsToConcrete } from './documentation'
 import { is_numeric_literal } from './ffi'
-import * as RawAst from './generated/ast'
+import type { SpanMap } from './idMap'
+import { newExternalId } from './idMap'
+import type { Module } from './mutableModule'
+import { MutableModule, ROOT_ID } from './mutableModule'
+import { parseExpression, parseStatement } from './parse'
+import type { RawConcreteChild } from './print'
 import {
-  applyTextEditsToAst,
-  parseExpression,
-  parseStatement,
-  print,
+  ensureSpaced,
+  ensureSpacedOnlyIf,
+  ensureUnspaced,
+  firstChild,
+  preferSpaced,
+  preferSpacedIf,
+  preferUnspaced,
   printAst,
-  syncToCode,
-} from './parse'
+  printWithSpans,
+  spaced,
+  unspaced,
+  withWhitespace,
+} from './print'
+import { applyTextEditsToAst, syncToCode } from './syncToCode'
+import { escapeTextLiteral } from './text'
+import type {
+  Identifier,
+  IdentifierOrOperatorIdentifier,
+  IdentifierOrOperatorIdentifierToken,
+  IdentifierToken,
+  SyncTokenId,
+  TypeOrConstructorIdentifier,
+} from './token'
+import { Token, TokenType, isIdentifier, isToken, isTokenChild, isTokenId } from './token'
 
-export type DeepReadonly<T> = T
+// This is used to ensure immutability of data owned by Yjs, which is important and is difficult to enforce without this
+// type-level help. When constructing a new value for a field, it is tempting to `get` the old value, mutate it, and
+// `set` the new value. Even in this case, when the data seems about to be overwritten, it must not be mutated because
+// Yjs *shares data between documents*. Thus, a mutating update is likely to "work" as far as the edited module is
+// concerned, but cause internal inconsistency in the base module.
+export type DeepReadonly<T> =
+  T extends Builtin ? T
+  : T extends FixedMap<infer V> ? FixedMapView<V>
+  : T extends Map<infer K, infer V> ? ReadonlyMap<DeepReadonly<K>, DeepReadonly<V>>
+  : T extends ReadonlyMap<infer K, infer V> ? ReadonlyMap<DeepReadonly<K>, DeepReadonly<V>>
+  : T extends WeakMap<infer K, infer V> ? WeakMap<DeepReadonly<K>, DeepReadonly<V>>
+  : T extends Set<infer U> ? ReadonlySet<DeepReadonly<U>>
+  : T extends ReadonlySet<infer U> ? ReadonlySet<DeepReadonly<U>>
+  : T extends WeakSet<infer U> ? WeakSet<DeepReadonly<U>>
+  : T extends Promise<infer U> ? Promise<DeepReadonly<U>>
+  : T extends object ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
+  : Readonly<T>
+type Primitive = string | number | boolean | bigint | symbol | undefined | null
+type AnyFunction = () => void
+type Builtin = Primitive | AnyFunction | Date | Error | RegExp
+// Note that typescript doesn't consider this assignable to `DeepReadonly<T>`, so the intersection type can be useful.
+type DeepReadonlyExceptY<T> =
+  T extends Builtin ? T
+  : // Allow mutation
+  T extends Y.Map<unknown> ? T
+  : T extends Y.Text ? T
+  : // Same as DeepReadonly
+  T extends FixedMap<unknown> ? T
+  : T extends Map<infer K, infer V> ? ReadonlyMap<DeepReadonly<K>, DeepReadonlyExceptY<V>>
+  : T extends ReadonlyMap<infer K, infer V> ? ReadonlyMap<DeepReadonly<K>, DeepReadonlyExceptY<V>>
+  : T extends WeakMap<infer K, infer V> ? WeakMap<DeepReadonly<K>, DeepReadonlyExceptY<V>>
+  : T extends Set<infer U> ? ReadonlySet<DeepReadonly<U>>
+  : T extends ReadonlySet<infer U> ? ReadonlySet<DeepReadonly<U>>
+  : T extends WeakSet<infer U> ? WeakSet<DeepReadonly<U>>
+  : T extends Promise<infer U> ? Promise<DeepReadonly<U>>
+  : T extends object ? { readonly [K in keyof T]: DeepReadonlyExceptY<T[K]> }
+  : Readonly<T>
 
 declare const brandAstId: unique symbol
 export type AstId = string & { [brandAstId]: never }
 
-export type ConcreteChild<T> = { whitespace: string; node: T }
-export type RawConcreteChild = ConcreteChild<AstId> | ConcreteChild<SyncTokenId>
+declare const brandOwned: unique symbol
+/**
+ * Used to mark references required to be unique.
+ *
+ *  Note that the typesystem cannot stop you from copying an `Owned`,
+ *  but that is an easy mistake to see (because it occurs locally).
+ *
+ *  We can at least require *obtaining* an `Owned`,
+ *  which statically prevents the otherwise most likely usage errors when rearranging ASTs.
+ */
+export type Owned<T = MutableAst> = T & { [brandOwned]: never }
+/** @internal */
+export function asOwned<T>(t: T): Owned<T> {
+  return t as Owned<T>
+}
+
+export type NodeChild<T> = { whitespace: string | undefined; node: T }
+export type RawNodeChild = NodeChild<AstId> | NodeChild<SyncTokenId>
+
+/** @internal */
+export function parentId(ast: Ast): AstId | undefined {
+  return ast.fields.get('parent')
+}
 
 /** @internal */
 export interface MetadataFields {
@@ -133,18 +189,18 @@ export abstract class Ast {
     return this.isAllowedInStatementContext()
   }
 
-  /** TODO: Add docs */
+  /** Returns a view of the metadata applicable to a graph node (e.g. its position) associated with this AST object. */
   get nodeMetadata(): NodeMetadata {
     const metadata = this.fields.get('metadata')
     return metadata as FixedMapView<NodeMetadataFields & MetadataFields>
   }
 
-  /** Get metadata of all widgets assigned to this node. */
-  widgetsMetadata(): FixedMapView<Record<string, unknown>> {
+  /** Get metadata of all widgets assigned to this node. WARNING: The returned value must not be mutated. */
+  widgetsMetadata(): ReadonlyMap<string, DeepReadonly<unknown>> {
     return this.fields.get('metadata').get('widget')
   }
 
-  /** Get metadata of given widget assigned to this node. */
+  /** Get metadata of given widget assigned to this node. WARNING: The returned value must not be mutated. */
   widgetMetadata(widgetKey: string): DeepReadonly<unknown> | undefined {
     return this.fields.get('metadata').get('widget').get(widgetKey)
   }
@@ -166,7 +222,7 @@ export abstract class Ast {
 
   /** Return source code representing this node. */
   code(): string {
-    return print(this).code
+    return printWithSpans(this).code
   }
 
   /** TODO: Add docs */
@@ -244,13 +300,13 @@ export abstract class MutableAst extends Ast {
     return this.fields.get('metadata').get('widget')
   }
 
-  /** TODO: Add docs */
+  /** Returns a writable view of the {@link nodeMetadata}. */
   mutableNodeMetadata(): MutableNodeMetadata {
     const metadata = this.fields.get('metadata')
     return metadata as FixedMap<NodeMetadataFields & MetadataFields>
   }
 
-  /** TODO: Add docs */
+  /** Overwrites the provided fields of the {@link nodeMetadata}. */
   setNodeMetadata(nodeMeta: NodeMetadataFields) {
     const metadata = this.fields.get('metadata') as unknown as Map<string, unknown>
     for (const [key, value] of Object.entries(nodeMeta)) {
@@ -424,7 +480,12 @@ type FieldData<T extends TreeRefs = RawRefs> =
 
 // Logically `FieldData<T>[]` could be a type of `FieldData`, but the type needs to be non-recursive so that it can be
 // used with `DeepReadonly`.
-type NonArrayFieldData<T extends TreeRefs> = T['ast'] | T['token'] | undefined | StructuralField<T>
+type NonArrayFieldData<T extends TreeRefs> =
+  | T['ast']
+  | T['token']
+  | undefined
+  | StructuralField<T>
+  | string
 
 /** Objects that do not directly contain `AstId`s or `SyncTokenId`s, but may have `NodeChild` fields. */
 type StructuralField<T extends TreeRefs = RawRefs> =
@@ -441,6 +502,7 @@ type StructuralField<T extends TreeRefs = RawRefs> =
   | AnnotationLine<T>
   | DocComment<T>
   | DocLine<T>
+  | Y.Text
 
 /** Type whose fields are all suitable for storage as `Ast` fields. */
 interface FieldObject<T extends TreeRefs> {
@@ -460,6 +522,7 @@ function idRewriter(
 ): (field: DeepReadonly<FieldData>) => FieldData | undefined {
   return (field: DeepReadonly<FieldData>) => {
     if (typeof field !== 'object') return
+    assert(field !== null)
     if (!('node' in field)) return
     if (isTokenId(field.node)) return
     const newId = f(field.node)
@@ -490,9 +553,20 @@ export function rewriteRefs(ast: MutableAst, f: (id: AstId) => AstId | undefined
  */
 export function syncFields(ast1: MutableAst, ast2: Ast, f: (id: AstId) => AstId | undefined) {
   for (const [key, value] of fieldDataEntries(ast2.fields)) {
+    if (value instanceof Y.Text) {
+      const ast1Value = ast1.fields.get(key as any)
+      assert(ast1Value instanceof Y.Text)
+      syncYText(ast1Value, value)
+      continue
+    }
     const newValue = mapRefs(value, idRewriter(f))
     if (!fieldEqual(ast1.fields.get(key as any), newValue)) ast1.fields.set(key as any, newValue)
   }
+}
+
+function syncYText(target: Y.Text, source: Y.Text) {
+  target.delete(0, target.length)
+  target.insert(0, source.toJSON())
 }
 
 /** TODO: Add docs */
@@ -511,6 +585,8 @@ function rewriteFieldRefs<T extends TreeRefs, U extends TreeRefs>(
   const newValue = f(field)
   if (newValue) return newValue
   if (typeof field !== 'object') return
+  if (field === null) return
+  if (field instanceof Y.Text) return
   // `Array.isArray` doesn't work with `DeepReadonly`, but we just need a narrowing that distinguishes it from all
   // `StructuralField` types.
   if ('forEach' in field) {
@@ -805,61 +881,6 @@ export class App extends BaseExpression {
     if (useParens) yield preferUnspaced(parens.close)
   }
 }
-interface OptionalWhitespace {
-  whitespace?: string | undefined
-}
-interface WithWhitespace extends OptionalWhitespace {
-  whitespace: string
-}
-function withWhitespace<T>(node: T, whitespace: string): T & WithWhitespace {
-  return { ...node, whitespace }
-}
-function ensureSpacedOnlyIf<T extends OptionalWhitespace>(
-  child: T,
-  condition: boolean,
-  verbatim: boolean | undefined,
-): T & WithWhitespace {
-  return condition ? ensureSpaced(child, verbatim) : ensureUnspaced(child, verbatim)
-}
-
-function isConcrete<T extends OptionalWhitespace>(child: T): child is T & WithWhitespace {
-  return child.whitespace !== undefined
-}
-function tryAsConcrete<T extends OptionalWhitespace>(child: T): (T & WithWhitespace) | undefined {
-  return isConcrete(child) ? child : undefined
-}
-function ensureSpaced<T extends OptionalWhitespace>(
-  child: T,
-  verbatim: boolean | undefined,
-): T & WithWhitespace {
-  const concreteInput = tryAsConcrete(child)
-  if (verbatim && concreteInput) return concreteInput
-  return concreteInput?.whitespace ? concreteInput : { ...child, whitespace: ' ' }
-}
-function ensureUnspaced<T extends OptionalWhitespace>(
-  child: T,
-  verbatim: boolean | undefined,
-): T & WithWhitespace {
-  const concreteInput = tryAsConcrete(child)
-  if (verbatim && concreteInput) return concreteInput
-  return concreteInput?.whitespace === '' ? concreteInput : { ...child, whitespace: '' }
-}
-function firstChild<T extends OptionalWhitespace>(child: T): T & WithWhitespace {
-  const concreteInput = tryAsConcrete(child)
-  return concreteInput?.whitespace === '' ? concreteInput : { ...child, whitespace: '' }
-}
-function preferSpacedIf<T extends OptionalWhitespace>(
-  child: T,
-  condition: boolean,
-): T & WithWhitespace {
-  return condition ? preferSpaced(child) : preferUnspaced(child)
-}
-function preferUnspaced<T extends OptionalWhitespace>(child: T): T & WithWhitespace {
-  return tryAsConcrete(child) ?? { ...child, whitespace: '' }
-}
-function preferSpaced<T extends OptionalWhitespace>(child: T): T & WithWhitespace {
-  return tryAsConcrete(child) ?? { ...child, whitespace: ' ' }
-}
 /** TODO: Add docs */
 export class MutableApp extends App implements MutableExpression {
   declare readonly module: MutableModule
@@ -999,7 +1020,7 @@ export class AutoscopedIdentifier extends BaseExpression {
   ): Owned<MutableAutoscopedIdentifier> {
     const module_ = module || MutableModule.Transient()
     const operator = Token.new('..')
-    const ident = Token.new(identifier, RawAst.Token.Type.Ident)
+    const ident = Token.new(identifier, TokenType.Ident)
     return this.concrete(module_, unspaced(operator), unspaced(ident))
   }
 
@@ -1016,7 +1037,7 @@ export class MutableAutoscopedIdentifier extends AutoscopedIdentifier implements
   declare readonly fields: FixedMap<AstFields & AutoscopedIdentifierFields>
 
   setIdentifier(value: TypeOrConstructorIdentifier) {
-    const token = Token.new(value, RawAst.Token.Type.Ident)
+    const token = Token.new(value, TokenType.Ident)
     this.fields.set('identifier', unspaced(token))
   }
 }
@@ -1058,7 +1079,7 @@ export class NegationApp extends BaseExpression {
 
   /** TODO: Add docs */
   static new(module: MutableModule, argument: Owned<MutableExpression>) {
-    const minus = Token.new('-', RawAst.Token.Type.Operator)
+    const minus = Token.new('-', TokenType.Operator)
     return this.concrete(module, unspaced(minus), unspaced(argument))
   }
 
@@ -1136,7 +1157,7 @@ export class OprApp extends BaseExpression {
     rhs: Owned<MutableExpression> | undefined,
   ) {
     const operatorToken =
-      operator instanceof Token ? operator : Token.new(operator, RawAst.Token.Type.Operator)
+      operator instanceof Token ? operator : Token.new(operator, TokenType.Operator)
     return OprApp.concrete(module, unspaced(lhs), [autospaced(operatorToken)], autospaced(rhs))
   }
 
@@ -1228,7 +1249,7 @@ export class PropertyAccess extends BaseExpression {
     rhs: IdentLike,
     style?: { spaced?: boolean },
   ) {
-    const dot = Token.new('.', RawAst.Token.Type.Operator)
+    const dot = Token.new('.', TokenType.Operator)
     const whitespace = style?.spaced ? ' ' : ''
     return this.concrete(
       module,
@@ -1328,23 +1349,6 @@ export interface MutablePropertyAccess extends PropertyAccess, MutableExpression
 }
 applyMixins(MutablePropertyAccess, [MutableAst])
 
-/**
- * Unroll the provided chain of `PropertyAccess` nodes, returning the first non-access as `subject` and the accesses
- * from left-to-right.
- */
-export function accessChain(ast: Expression): {
-  subject: Expression
-  accessChain: PropertyAccess[]
-} {
-  const accessChain = new Array<PropertyAccess>()
-  while (ast instanceof PropertyAccess && ast.lhs) {
-    accessChain.push(ast)
-    ast = ast.lhs
-  }
-  accessChain.reverse()
-  return { subject: ast, accessChain }
-}
-
 interface GenericFields {
   children: RawNodeChild[]
 }
@@ -1412,7 +1416,7 @@ function multiSegmentAppSegment<T extends MutableExpression>(
   body: Owned<T> | undefined,
 ): MultiSegmentAppSegment<OwnedRefs> | undefined {
   return {
-    header: autospaced(Token.new(header, RawAst.Token.Type.Ident)),
+    header: autospaced(Token.new(header, TokenType.Ident)),
     body: spaced(body ? (body as any) : undefined),
   }
 }
@@ -1609,29 +1613,29 @@ interface TreeRefs {
 type RefMap<T extends TreeRefs, U extends TreeRefs> = (
   field: FieldData<T>,
 ) => FieldData<U> | undefined
-type RawRefs = {
+interface RawRefs extends TreeRefs {
   token: NodeChild<SyncTokenId>
   ast: NodeChild<AstId>
   expression: NodeChild<AstId>
   statement: NodeChild<AstId>
 }
-export type OwnedRefs = {
-  token: NodeChild<Token>
-  ast: NodeChild<Owned>
-  expression: NodeChild<Owned<MutableExpression>>
-  statement: NodeChild<Owned<MutableStatement>>
-}
-type ConcreteRefs = {
+export interface ConcreteRefs extends TreeRefs {
   token: NodeChild<Token>
   ast: NodeChild<Ast>
   expression: NodeChild<Expression>
   statement: NodeChild<Statement>
 }
-type MutableRefs = {
+interface MutableRefs extends ConcreteRefs {
   token: NodeChild<Token>
   ast: NodeChild<MutableAst>
   expression: NodeChild<MutableExpression>
   statement: NodeChild<MutableStatement>
+}
+export interface OwnedRefs extends MutableRefs {
+  token: NodeChild<Token>
+  ast: NodeChild<Owned>
+  expression: NodeChild<Owned<MutableExpression>>
+  statement: NodeChild<Owned<MutableStatement>>
 }
 function ownedToRaw(module: MutableModule, parentId: AstId): RefMap<OwnedRefs, RawRefs> {
   return (child: FieldData<OwnedRefs>) => {
@@ -1678,7 +1682,7 @@ function textElementValue(element: TextElement<ConcreteRefs>): string {
     case 'token': {
       if (element.interpreted != null) return element.interpreted
       // The logical newline is not necessarily the same as the concrete token, e.g. the token could be a CRLF.
-      if (element.token.node.tokenType_ === RawAst.Token.Type.Newline) return '\n'
+      if (element.token.node.tokenType_ === TokenType.Newline) return '\n'
       // The token is an invalid escape-sequence or a text-section; return it verbatim.
       return element.token.node.code()
     }
@@ -1704,7 +1708,7 @@ function uninterpolatedText(elements: DeepReadonly<TextElement[]>, module: Modul
   return elements.reduce((s, e) => s + rawTextElementValue(e, module), '')
 }
 
-function fieldRawChildren(field: FieldData) {
+function fieldRawChildren(field: DeepReadonly<FieldData>) {
   const children = new Array<RawNodeChild>()
   rewriteFieldRefs(field, (subfield: FieldData) => {
     if (typeof subfield === 'object' && 'node' in subfield) children.push(subfield)
@@ -1783,10 +1787,8 @@ export class TextLiteral extends BaseExpression {
     for (const raw of rawChildren) {
       const tokenType = isToken(raw.node) ? raw.node.tokenType_ : null
       const specialToken =
-        tokenType === RawAst.Token.Type.Newline ? 'newline'
-        : (
-          tokenType === RawAst.Token.Type.OpenSymbol || tokenType === RawAst.Token.Type.CloseSymbol
-        ) ?
+        tokenType === TokenType.Newline ? 'newline'
+        : tokenType === TokenType.OpenSymbol || tokenType === TokenType.CloseSymbol ?
           'splice-delimiter'
         : null
       if (specialToken === 'newline') {
@@ -1956,15 +1958,18 @@ export class ExpressionStatement extends BaseStatement {
     : ensureUnspaced(expression, verbatim)
   }
 }
-function* docLineToConcrete(docLine: DocLine, indent: string): IterableIterator<RawConcreteChild> {
+function* docLineToConcrete(
+  docLine: DeepReadonly<DocLine>,
+  indent: string,
+): IterableIterator<RawConcreteChild> {
   yield firstChild(docLine.docs.open)
   let prevType = undefined
   let extraIndent = ''
   for (const { token } of docLine.docs.elements) {
-    if (token.node.tokenType_ === RawAst.Token.Type.Newline) {
+    if (token.node.tokenType_ === TokenType.Newline) {
       yield ensureUnspaced(token, false)
     } else {
-      if (prevType === RawAst.Token.Type.Newline) {
+      if (prevType === TokenType.Newline) {
         yield { whitespace: indent + extraIndent, node: token.node }
       } else {
         if (prevType === undefined) {
@@ -1978,7 +1983,10 @@ function* docLineToConcrete(docLine: DocLine, indent: string): IterableIterator<
   }
   for (const newline of docLine.newlines) yield preferUnspaced(newline)
 }
-function docLineToText(docLine: DocLine | undefined, module: Module): string | undefined {
+function docLineToText(
+  docLine: DeepReadonly<DocLine> | undefined,
+  module: Module,
+): string | undefined {
   if (docLine == null) return
   const raw = uninterpolatedText(docLine.docs.elements, module)
   return raw.startsWith(' ') ? raw.slice(1) : raw
@@ -2020,11 +2028,11 @@ function textToUninterpolatedElements(text: string): TextToken<OwnedRefs>[] {
     if (i)
       elements.push({
         type: 'token',
-        token: unspaced(Token.new('\n', RawAst.Token.Type.Newline)),
+        token: unspaced(Token.new('\n', TokenType.Newline)),
       })
     elements.push({
       type: 'token',
-      token: autospaced(Token.new(line, RawAst.Token.Type.TextSection)),
+      token: autospaced(Token.new(line, TokenType.TextSection)),
     })
   })
   return elements
@@ -2033,10 +2041,10 @@ function textToUninterpolatedElements(text: string): TextToken<OwnedRefs>[] {
 function elementsToDocLine(elements: TextToken<OwnedRefs>[]): DocLine<OwnedRefs> {
   return {
     docs: {
-      open: unspaced(Token.new('##', RawAst.Token.Type.TextStart)),
+      open: unspaced(Token.new('##', TokenType.TextStart)),
       elements,
     },
-    newlines: [unspaced(Token.new('\n', RawAst.Token.Type.Newline))],
+    newlines: [unspaced(Token.new('\n', TokenType.Newline))],
   }
 }
 
@@ -2151,8 +2159,8 @@ export class Group extends BaseExpression {
 
   /** TODO: Add docs */
   static new(module: MutableModule, expression: Owned<MutableExpression>) {
-    const open = unspaced(Token.new('(', RawAst.Token.Type.OpenSymbol))
-    const close = unspaced(Token.new(')', RawAst.Token.Type.CloseSymbol))
+    const open = unspaced(Token.new('(', TokenType.OpenSymbol))
+    const close = unspaced(Token.new(')', TokenType.CloseSymbol))
     return this.concrete(module, open, unspaced(expression), close)
   }
 
@@ -2298,8 +2306,10 @@ interface SignatureLine<T extends TreeRefs = RawRefs> {
   newlines: T['token'][]
 }
 
-export interface FunctionFields<T extends TreeRefs = RawRefs> {
+export interface FunctionDefFields<T extends TreeRefs = RawRefs> {
   docLine: DocLine<T> | undefined
+  docLineMarkdownHash: string | undefined
+  docMarkdown: Y.Text
   annotationLines: AnnotationLine<T>[]
   signatureLine: SignatureLine<T> | undefined
   private_: T['token'] | undefined
@@ -2309,19 +2319,26 @@ export interface FunctionFields<T extends TreeRefs = RawRefs> {
   body: T['ast'] | undefined
 }
 /** TODO: Add docs */
-export class Function extends BaseStatement {
-  declare fields: FixedMapView<AstFields & FunctionFields>
+export class FunctionDef extends BaseStatement {
+  declare fields: FixedMapView<AstFields & FunctionDefFields>
   /** TODO: Add docs */
-  constructor(module: Module, fields: FixedMapView<AstFields & FunctionFields>) {
+  constructor(module: Module, fields: FixedMapView<AstFields & FunctionDefFields>) {
     super(module, fields)
   }
 
   /** TODO: Add docs */
-  static tryParse(source: string, module?: MutableModule): Owned<MutableFunction> | undefined {
+  static tryParse(source: string, module?: MutableModule): Owned<MutableFunctionDef> | undefined {
     const parsed = parseStatement(source, module)
-    if (parsed instanceof MutableFunction) return parsed
+    if (parsed instanceof MutableFunctionDef) return parsed
   }
 
+  /**
+   * Returns the Markdown model of the documentation. The returned object may be used to edit the documentation
+   * directly, without creating an edit module to explicitly commit it.
+   */
+  mutableDocumentationMarkdown(): Y.Text {
+    return (this.fields as FixedMap<AstFields & FunctionDefFields>).get('docMarkdown')
+  }
   /** TODO: Add docs */
   get name(): Expression {
     return this.module.get(this.fields.get('name').node) as Expression
@@ -2340,12 +2357,18 @@ export class Function extends BaseStatement {
   /** TODO: Add docs */
   static concrete(
     module: MutableModule,
-    fields: Partial<FunctionFields<OwnedRefs>> & { name: object } & { equals: object },
+    fields: Partial<FunctionDefFields<OwnedRefs>> & {
+      name: object
+      equals: object
+      docMarkdown: object
+    },
   ) {
-    const base = module.baseObject('Function')
+    const base = module.baseObject('FunctionDef')
     const id_ = base.get('id')
     const rawFields = composeFieldData(base, {
       docLine: fields.docLine && mapRefs(fields.docLine, ownedToRaw(module, id_)),
+      docLineMarkdownHash: fields.docLineMarkdownHash,
+      docMarkdown: fields.docMarkdown,
       annotationLines: (fields.annotationLines ?? []).map(anno =>
         mapRefs(anno, ownedToRaw(module, id_)),
       ),
@@ -2358,7 +2381,7 @@ export class Function extends BaseStatement {
       equals: fields.equals,
       body: concreteChild(module, fields.body, id_),
     })
-    return asOwned(new MutableFunction(module, rawFields))
+    return asOwned(new MutableFunctionDef(module, rawFields))
   }
 
   /** TODO: Add docs */
@@ -2370,26 +2393,25 @@ export class Function extends BaseStatement {
       documentation?: string
       edit?: MutableModule
     } = {},
-  ): Owned<MutableFunction> {
+  ): Owned<MutableFunctionDef> {
     const module = options.edit ?? MutableModule.Transient()
     const argumentDefinitions = args.map(arg =>
       typeof arg === 'string' || isToken(arg) ?
         {
-          pattern: spaced(Ident.new(module, arg)),
+          pattern: autospaced(Ident.new(module, arg)),
         }
       : arg,
     )
-    return MutableFunction.concrete(module, {
-      docLine:
-        options.documentation != null ?
-          elementsToDocLine(textToUninterpolatedElements(options.documentation))
-        : undefined,
+    return MutableFunctionDef.concrete(module, {
+      docLine: undefined,
+      docLineMarkdownHash: undefined,
+      docMarkdown: new Y.Text(options.documentation ?? ''),
       // Note that a function name may not be an operator if the function is not in the body of a type definition, but
       // we can't easily enforce that because we don't currently make a syntactic distinction between top-level
       // functions and type methods.
-      name: unspaced(Ident.newAllowingOperators(module, name)),
+      name: autospaced(Ident.newAllowingOperators(module, name)),
       argumentDefinitions,
-      equals: spaced(makeEquals()),
+      equals: autospaced(makeEquals()),
       body: autospaced(body),
     })
   }
@@ -2408,6 +2430,8 @@ export class Function extends BaseStatement {
   *concreteChildren({ indent, verbatim }: PrintContext): IterableIterator<RawConcreteChild> {
     const {
       docLine,
+      docLineMarkdownHash,
+      docMarkdown,
       annotationLines,
       signatureLine,
       private_,
@@ -2429,8 +2453,9 @@ export class Function extends BaseStatement {
         return preferUnspaced(nodeChild)
       }
     }
-    if (docLine) {
-      yield* docLineToConcrete(docLine, indent || '')
+    const docs = functionDocsToConcrete(docMarkdown.toJSON(), docLineMarkdownHash, docLine, indent)
+    if (docs) {
+      yield* docs
       prevIsNewline = true
     }
     for (const anno of annotationLines) {
@@ -2452,40 +2477,7 @@ export class Function extends BaseStatement {
     }
     if (private_) yield maybeIndented(private_)
     yield maybeIndented(name)
-    for (const def of argumentDefinitions) {
-      const { open, open2, suspension, pattern, type, close2, defaultValue, close } = def
-      if (open) yield ensureSpaced(open, verbatim)
-      const spacedInsideParen1 = open && ((open2 ?? suspension ?? pattern).whitespace ?? '') !== ''
-      if (open2) yield ensureSpacedOnlyIf(open2, spacedInsideParen1 ?? true, verbatim)
-      const spacedInsideParen2 = open2 && ((suspension ?? pattern).whitespace ?? '') !== ''
-      if (suspension) {
-        yield ensureSpacedOnlyIf(
-          suspension,
-          spacedInsideParen2 ?? spacedInsideParen1 ?? true,
-          verbatim,
-        )
-        yield ensureUnspaced(pattern, verbatim)
-      } else {
-        yield ensureSpacedOnlyIf(
-          pattern,
-          spacedInsideParen2 ?? spacedInsideParen1 ?? true,
-          verbatim,
-        )
-      }
-      if (type) {
-        const spaced = (type.operator.whitespace ?? type.type.whitespace ?? ' ') !== ''
-        yield ensureSpacedOnlyIf(type.operator, spaced, verbatim)
-        yield ensureSpacedOnlyIf(type.type, spaced, verbatim)
-      }
-      if (defaultValue) {
-        const spaced =
-          (defaultValue.equals.whitespace ?? defaultValue.expression.whitespace ?? ' ') !== ''
-        yield ensureSpacedOnlyIf(defaultValue.equals, spaced, verbatim)
-        yield ensureSpacedOnlyIf(defaultValue.expression, spaced, verbatim)
-      }
-      if (close2) yield ensureSpacedOnlyIf(close2, spacedInsideParen2 ?? false, verbatim)
-      if (close) yield ensureSpacedOnlyIf(close, spacedInsideParen1 ?? false, verbatim)
-    }
+    for (const def of argumentDefinitions) yield* argumentDefinitionToConcrete(def, verbatim)
     yield { whitespace: equals.whitespace ?? ' ', node: this.module.getToken(equals.node) }
     if (body)
       yield preferSpacedIf(
@@ -2499,10 +2491,36 @@ export class Function extends BaseStatement {
     return docLineToText(this.fields.get('docLine'), this.module)
   }
 }
+function* argumentDefinitionToConcrete(def: DeepReadonly<ArgumentDefinition>, verbatim: boolean) {
+  const { open, open2, suspension, pattern, type, close2, defaultValue, close } = def
+  if (open) yield ensureSpaced(open, verbatim)
+  const spacedInsideParen1 = open && ((open2 ?? suspension ?? pattern).whitespace ?? '') !== ''
+  if (open2) yield ensureSpacedOnlyIf(open2, spacedInsideParen1 ?? true, verbatim)
+  const spacedInsideParen2 = open2 && ((suspension ?? pattern).whitespace ?? '') !== ''
+  if (suspension) {
+    yield ensureSpacedOnlyIf(suspension, spacedInsideParen2 ?? spacedInsideParen1 ?? true, verbatim)
+    yield ensureUnspaced(pattern, verbatim)
+  } else {
+    yield ensureSpacedOnlyIf(pattern, spacedInsideParen2 ?? spacedInsideParen1 ?? true, verbatim)
+  }
+  if (type) {
+    const spaced = (type.operator.whitespace ?? type.type.whitespace ?? ' ') !== ''
+    yield ensureSpacedOnlyIf(type.operator, spaced, verbatim)
+    yield ensureSpacedOnlyIf(type.type, spaced, verbatim)
+  }
+  if (defaultValue) {
+    const spaced =
+      (defaultValue.equals.whitespace ?? defaultValue.expression.whitespace ?? ' ') !== ''
+    yield ensureSpacedOnlyIf(defaultValue.equals, spaced, verbatim)
+    yield ensureSpacedOnlyIf(defaultValue.expression, spaced, verbatim)
+  }
+  if (close2) yield ensureSpacedOnlyIf(close2, spacedInsideParen2 ?? false, verbatim)
+  if (close) yield ensureSpacedOnlyIf(close, spacedInsideParen1 ?? false, verbatim)
+}
 /** TODO: Add docs */
-export class MutableFunction extends Function implements MutableStatement {
+export class MutableFunctionDef extends FunctionDef implements MutableStatement {
   declare readonly module: MutableModule
-  declare readonly fields: FixedMap<AstFields & FunctionFields>
+  declare readonly fields: FixedMap<AstFields & FunctionDefFields>
 
   setDocumentationText(text: string | undefined) {
     this.fields.set('docLine', docLineFromText(text, this))
@@ -2530,11 +2548,11 @@ export class MutableFunction extends Function implements MutableStatement {
     return newBody
   }
 }
-export interface MutableFunction extends Function, MutableStatement {
+export interface MutableFunctionDef extends FunctionDef, MutableStatement {
   get name(): MutableExpression
   get body(): MutableExpression | MutableBodyBlock | undefined
 }
-applyMixins(MutableFunction, [MutableAst])
+applyMixins(MutableFunctionDef, [MutableAst])
 
 interface PrintContext {
   verbatim: boolean
@@ -2701,16 +2719,6 @@ export class BodyBlock extends BaseExpression {
       }
     }
   }
-
-  /** TODO: Add docs */
-  override printSubtree(
-    info: SpanMap,
-    offset: number,
-    parentIndent: string | null,
-    verbatim?: boolean,
-  ): string {
-    return super.printSubtree(info, offset, parentIndent, verbatim)
-  }
 }
 /** TODO: Add docs */
 export class MutableBodyBlock extends BodyBlock implements MutableExpression {
@@ -2749,7 +2757,7 @@ export class MutableBodyBlock extends BodyBlock implements MutableExpression {
   insert(index: number, ...statements: (Owned<MutableStatement> | undefined)[]) {
     const before = this.fields.get('lines').slice(0, index)
     const insertions = statements.map(statement => ({
-      newline: unspaced(Token.new('\n', RawAst.Token.Type.Newline)),
+      newline: unspaced(Token.new('\n', TokenType.Newline)),
       statement: statement && unspaced(this.claimChild(statement)),
     }))
     const after = this.fields.get('lines').slice(index)
@@ -2760,7 +2768,7 @@ export class MutableBodyBlock extends BodyBlock implements MutableExpression {
     const oldLines = this.fields.get('lines')
     const statement = toStatement(statementOrExpression, this.module)
     const newLine = {
-      newline: unspaced(Token.new('\n', RawAst.Token.Type.Newline)),
+      newline: unspaced(Token.new('\n', TokenType.Newline)),
       statement: unspaced(this.claimChild(statement)),
     }
     this.fields.set('lines', [...oldLines, newLine])
@@ -2828,7 +2836,7 @@ function ownedLineFromRaw(raw: RawBlockLine, module: MutableModule): OwnedBlockL
 
 function lineToRaw(line: OwnedBlockLine, module: MutableModule, block: AstId): RawBlockLine {
   return {
-    newline: line.newline ?? unspaced(Token.new('\n', RawAst.Token.Type.Newline)),
+    newline: line.newline ?? unspaced(Token.new('\n', TokenType.Newline)),
     statement:
       line.statement ?
         {
@@ -2940,7 +2948,7 @@ export class Wildcard extends BaseExpression {
 
   /** TODO: Add docs */
   static new(module?: MutableModule) {
-    const token = Token.new('_', RawAst.Token.Type.Wildcard)
+    const token = Token.new('_', TokenType.Wildcard)
     return this.concrete(module ?? MutableModule.Transient(), unspaced(token))
   }
 
@@ -2965,7 +2973,7 @@ type AbstractVectorElement<T extends TreeRefs> = {
 function delimitVectorElement(element: AbstractVectorElement<OwnedRefs>): VectorElement<OwnedRefs> {
   return {
     ...element,
-    delimiter: element.delimiter ?? unspaced(Token.new(',', RawAst.Token.Type.Operator)),
+    delimiter: element.delimiter ?? unspaced(Token.new(',', TokenType.Operator)),
   }
 }
 type VectorElement<T extends TreeRefs> = { delimiter: T['token']; value: T['ast'] | undefined }
@@ -2998,9 +3006,9 @@ export class Vector extends BaseExpression {
     const base = module.baseObject('Vector')
     const id_ = base.get('id')
     const fields = composeFieldData(base, {
-      open: open ?? unspaced(Token.new('[', RawAst.Token.Type.OpenSymbol)),
+      open: open ?? unspaced(Token.new('[', TokenType.OpenSymbol)),
       elements: elements.map(delimitVectorElement).map(e => mapRefs(e, ownedToRaw(module, id_))),
-      close: close ?? unspaced(Token.new(']', RawAst.Token.Type.CloseSymbol)),
+      close: close ?? unspaced(Token.new(']', TokenType.CloseSymbol)),
     })
     return asOwned(new MutableVector(module, fields))
   }
@@ -3133,7 +3141,7 @@ export class MutableVector extends Vector implements MutableExpression {
    * @param fromIndex index of moved element.
    * @param toIndex new index of moved element.
    *
-   * If any index is outside array index range, it's interpreted same as in {@link Array.splice}.
+   * If any index is outside array index range, it's interpreted same as in {@link Array.prototype.splice|}.
    */
   move(fromIndex: number, toIndex: number) {
     const elements = [...this.fields.get('elements')]
@@ -3156,7 +3164,7 @@ export class MutableVector extends Vector implements MutableExpression {
         element.value && predicate(this.module.get(element.value.node) as MutableExpression),
     )
     if (firstSpacing != null && filtered[0]?.value != null) {
-      filtered[0].value.whitespace = firstSpacing
+      filtered[0] = { ...filtered[0], value: { ...filtered[0].value, whitespace: firstSpacing } }
     }
     this.fields.set('elements', filtered)
   }
@@ -3185,7 +3193,7 @@ export type Mutable<T extends Ast = Ast> =
   : T extends Assignment ? MutableAssignment
   : T extends BodyBlock ? MutableBodyBlock
   : T extends ExpressionStatement ? MutableExpressionStatement
-  : T extends Function ? MutableFunction
+  : T extends FunctionDef ? MutableFunctionDef
   : T extends Generic ? MutableGeneric
   : T extends Group ? MutableGroup
   : T extends Ident ? MutableIdent
@@ -3216,8 +3224,8 @@ export function materializeMutable(module: MutableModule, fields: FixedMap<AstFi
       return new MutableBodyBlock(module, fieldsForType)
     case 'ExpressionStatement':
       return new MutableExpressionStatement(module, fieldsForType)
-    case 'Function':
-      return new MutableFunction(module, fieldsForType)
+    case 'FunctionDef':
+      return new MutableFunctionDef(module, fieldsForType)
     case 'Generic':
       return new MutableGeneric(module, fieldsForType)
     case 'Group':
@@ -3263,8 +3271,8 @@ export function materialize(module: Module, fields: FixedMapView<AstFields>): As
       return new BodyBlock(module, fields_)
     case 'ExpressionStatement':
       return new ExpressionStatement(module, fields_)
-    case 'Function':
-      return new Function(module, fields_)
+    case 'FunctionDef':
+      return new FunctionDef(module, fields_)
     case 'Generic':
       return new Generic(module, fields_)
     case 'Group':
@@ -3310,6 +3318,9 @@ export interface FixedMapView<Fields> {
 }
 
 export interface FixedMap<Fields> extends FixedMapView<Fields> {
+  get<Key extends string & keyof Fields>(
+    key: Key,
+  ): DeepReadonlyExceptY<Fields[Key]> & DeepReadonly<Fields[Key]>
   set<Key extends string & keyof Fields>(key: Key, value: Fields[Key]): void
 }
 
@@ -3402,7 +3413,7 @@ function toIdentStrict(ident: StrictIdentLike | undefined): IdentifierToken | un
   return (
     ident ?
       isToken(ident) ? ident
-      : (Token.new(ident, RawAst.Token.Type.Ident) as IdentifierToken)
+      : (Token.new(ident, TokenType.Ident) as IdentifierToken)
     : undefined
   )
 }
@@ -3414,13 +3425,13 @@ function toIdent(ident: IdentLike | undefined): IdentifierOrOperatorIdentifierTo
   return (
     ident ?
       isToken(ident) ? ident
-      : (Token.new(ident, RawAst.Token.Type.Ident) as IdentifierOrOperatorIdentifierToken)
+      : (Token.new(ident, TokenType.Ident) as IdentifierOrOperatorIdentifierToken)
     : undefined
   )
 }
 
 function makeEquals(): Token {
-  return Token.new('=', RawAst.Token.Type.Operator)
+  return Token.new('=', TokenType.Operator)
 }
 
 function nameSpecification(
@@ -3447,31 +3458,15 @@ function setNode<
 >(map: FixedMap<Fields>, key: Key, node: AstId | undefined): void {
   // The signature correctly only allows this function to be called if `Fields[Key] instanceof NodeChild<SyncId>`,
   // but it doesn't prove that property to TSC, so we have to cast here.
-  const old = map.get(key as string & keyof Fields) as DeepReadonly<NodeChild<AstId>>
+  const old = map.get(key as string & keyof Fields) as any
   const updated = old ? { ...old, node } : autospaced(node)
   map.set(key, updated as Fields[Key])
 }
 
-function spaced<T extends object | string>(node: T): NodeChild<T>
-function spaced<T extends object | string>(node: T | undefined): NodeChild<T> | undefined
-function spaced<T extends object | string>(node: T | undefined): NodeChild<T> | undefined {
-  if (node === undefined) return node
-  return { whitespace: ' ', node }
-}
-
-function unspaced<T extends object | string>(node: T): NodeChild<T>
-function unspaced<T extends object | string>(node: T | undefined): NodeChild<T> | undefined
-function unspaced<T extends object | string>(node: T | undefined): NodeChild<T> | undefined {
-  if (node === undefined) return node
-  return { whitespace: '', node }
-}
-
-export function autospaced<T extends object | string>(node: T): NodeChild<T>
-export function autospaced<T extends object | string>(node: T | undefined): NodeChild<T> | undefined
+function autospaced<T extends object | string>(node: T): NodeChild<T>
+function autospaced<T extends object | string>(node: T | undefined): NodeChild<T> | undefined
 /** TODO: Add docs */
-export function autospaced<T extends object | string>(
-  node: T | undefined,
-): NodeChild<T> | undefined {
+function autospaced<T extends object | string>(node: T | undefined): NodeChild<T> | undefined {
   if (node === undefined) return node
   return { whitespace: undefined, node }
 }

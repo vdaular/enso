@@ -1,15 +1,9 @@
 import { documentationEditorBindings } from '@/bindings'
-import { IMAGE } from '@/components/MarkdownEditor/ImagePlugin'
-import { $isImageNode } from '@/components/MarkdownEditor/ImagePlugin/imageNode'
-import type { LexicalMarkdownPlugin } from '@/components/MarkdownEditor/markdown'
 import type { LexicalPlugin } from '@/components/lexical'
-import { $createLinkNode, $isLinkNode, AutoLinkNode, LinkNode } from '@lexical/link'
-import type { Transformer } from '@lexical/markdown'
+import { AutoLinkNode, LinkNode } from '@lexical/link'
 import { $getNearestNodeOfType } from '@lexical/utils'
 import {
-  $createTextNode,
   $getSelection,
-  $isTextNode,
   CLICK_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_LOW,
@@ -27,51 +21,6 @@ const EMAIL_REGEX =
 
 export const __TEST = { URL_REGEX, EMAIL_REGEX }
 
-const LINK: Transformer = {
-  dependencies: [LinkNode],
-  export: (node, exportChildren, exportFormat) => {
-    if (!$isLinkNode(node)) {
-      return null
-    }
-    const title = node.getTitle()
-    const linkContent =
-      title ?
-        `[${node.getTextContent()}](${node.getURL()} "${title}")`
-      : `[${node.getTextContent()}](${node.getURL()})`
-    const firstChild = node.getFirstChild()
-    // Add text styles only if link has single text node inside. If it's more
-    // then one we ignore it as markdown does not support nested styles for links
-    if (node.getChildrenSize() === 1 && $isTextNode(firstChild)) {
-      return exportFormat(firstChild, linkContent)
-    } else if (node.getChildrenSize() === 1 && $isImageNode(firstChild)) {
-      // Images sometimes happen to be inside links (when importing nodes from HTML).
-      // The link is not important for us (this type of layout is not supported in markdown),
-      // but we want to display the image.
-      return IMAGE.export(firstChild, exportChildren, exportFormat)
-    } else {
-      return linkContent
-    }
-  },
-  importRegExp: /(?:\[([^[]+)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))/,
-  regExp: /(?:\[([^[]+)\])(?:\((?:([^()\s]+)(?:\s"((?:[^"]*\\")*[^"]*)"\s*)?)\))$/,
-  replace: (textNode, match) => {
-    const [, linkText, linkUrl, linkTitle] = match
-    if (linkText && linkUrl) {
-      const linkNode = $createLinkNode(linkUrl, {
-        title: linkTitle ?? null,
-        rel: 'nofollow',
-        target: '_blank',
-      })
-      const linkTextNode = $createTextNode(linkText)
-      linkTextNode.setFormat(textNode.getFormat())
-      linkNode.append(linkTextNode)
-      textNode.replace(linkNode)
-    }
-  },
-  trigger: ')',
-  type: 'text-match',
-}
-
 /** TODO: Add docs */
 export function $getSelectedLinkNode() {
   const selection = $getSelection()
@@ -87,17 +36,6 @@ export function $getSelectedLinkNode() {
   }
 }
 
-const linkClickHandler = documentationEditorBindings.handler({
-  openLink() {
-    const link = $getSelectedLinkNode()
-    if (link instanceof LinkNode) {
-      window.open(link.getURL(), '_blank')?.focus()
-      return true
-    }
-    return false
-  },
-})
-
 const autoLinkClickHandler = documentationEditorBindings.handler({
   openLink() {
     const link = $getSelectedLinkNode()
@@ -108,18 +46,6 @@ const autoLinkClickHandler = documentationEditorBindings.handler({
     return false
   },
 })
-
-export const linkPlugin: LexicalMarkdownPlugin = {
-  nodes: [LinkNode],
-  transformers: [LINK],
-  register(editor: LexicalEditor): void {
-    editor.registerCommand(
-      CLICK_COMMAND,
-      (event) => linkClickHandler(event),
-      COMMAND_PRIORITY_CRITICAL,
-    )
-  },
-}
 
 export const autoLinkPlugin: LexicalPlugin = {
   nodes: [AutoLinkNode],

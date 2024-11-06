@@ -1,7 +1,7 @@
 import type { PortId } from '@/providers/portInfo'
 import type { ConnectedEdge } from '@/stores/graph/index'
-import { filterDefined } from '@/util/data/iterable'
 import { Vec2 } from '@/util/data/vec2'
+import * as iter from 'enso-common/src/utilities/data/iter'
 import { computed, ref, watch, type WatchSource } from 'vue'
 import type { AstId } from 'ydoc-shared/ast'
 
@@ -99,7 +99,7 @@ export function useUnconnectedEdges() {
   const unconnectedEdges = computed<Set<UnconnectedEdge>>(
     () =>
       new Set(
-        filterDefined([mouseEditedEdge.value, cbEditedEdge.value, outputSuggestedEdge.value]),
+        iter.filterDefined([mouseEditedEdge.value, cbEditedEdge.value, outputSuggestedEdge.value]),
       ),
   )
 

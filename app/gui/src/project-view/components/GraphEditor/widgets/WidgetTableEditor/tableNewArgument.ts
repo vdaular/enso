@@ -1,18 +1,18 @@
 import { commonContextMenuActions, type MenuItem } from '@/components/shared/AgGridTableView.vue'
 import type { WidgetInput, WidgetUpdate } from '@/providers/widgetRegistry'
-import { requiredImportsByFQN, type RequiredImport } from '@/stores/graph/imports'
+import { type RequiredImport, requiredImportsByFQN } from '@/stores/graph/imports'
 import type { SuggestionDb } from '@/stores/suggestionDatabase'
 import { assert } from '@/util/assert'
 import { Ast } from '@/util/ast'
 import { tryEnsoToNumber, tryNumberToEnso } from '@/util/ast/abstract'
 import { findIndexOpt } from '@/util/data/array'
-import * as iterable from '@/util/data/iterable'
-import { Err, Ok, transposeResult, unwrapOrWithLog, type Result } from '@/util/data/result'
+import { Err, Ok, type Result, transposeResult, unwrapOrWithLog } from '@/util/data/result'
 import { qnLastSegment, type QualifiedName } from '@/util/qualifiedName'
 import type { ToValue } from '@/util/reactivity'
 import type { ColDef } from 'ag-grid-enterprise'
+import * as iter from 'enso-common/src/utilities/data/iter'
 import { computed, toValue } from 'vue'
-import { ColumnSpecificHeaderParams } from './TableHeader.vue'
+import type { ColumnSpecificHeaderParams } from './TableHeader.vue'
 
 /** Id of a fake column with "Add new column" option. */
 export const NEW_COLUMN_ID = 'NewColumn'
@@ -437,7 +437,7 @@ export function useTableNewArgument(
     }
     const edit = graph.startEdit()
     const columns = edit.getVersion(columnsAst.value.value)
-    const fromIndex = iterable.find(columns.enumerate(), ([, ast]) => ast?.id === colId)?.[0]
+    const fromIndex = iter.find(columns.enumerate(), ([, ast]) => ast?.id === colId)?.[0]
     if (fromIndex != null) {
       columns.move(fromIndex, toIndex - 1)
       onUpdate({ edit })

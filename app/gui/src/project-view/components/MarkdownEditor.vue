@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { UrlTransformer } from '@/components/MarkdownEditor/imageUrlTransformer'
 import { defineAsyncComponent } from 'vue'
+import * as Y from 'yjs'
 
-const text = defineModel<string>({ required: true })
 const props = defineProps<{
+  yText: Y.Text
   transformImageUrl?: UrlTransformer
   toolbarContainer: HTMLElement | undefined
 }>()
@@ -15,6 +16,6 @@ const LazyMarkdownEditor = defineAsyncComponent(
 
 <template>
   <Suspense>
-    <LazyMarkdownEditor v-model="text" v-bind="props" />
+    <LazyMarkdownEditor v-bind="props" />
   </Suspense>
 </template>

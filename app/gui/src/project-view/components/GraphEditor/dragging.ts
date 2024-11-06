@@ -6,7 +6,7 @@ import type { Opt } from '@/util/data/opt'
 import { Rect } from '@/util/data/rect'
 import { Vec2 } from '@/util/data/vec2'
 import theme from '@/util/theme.json'
-import { iteratorFilter } from 'lib0/iterator'
+import * as iter from 'enso-common/src/utilities/data/iter'
 import { computed, markRaw, ref, watchEffect, type ComputedRef, type WatchStopHandle } from 'vue'
 
 const DRAG_SNAP_THRESHOLD = 16
@@ -21,7 +21,7 @@ interface PartialVec2 {
  * Snap Grid for dragged nodes.
  *
  * Created from existing nodes' rects, it allows "snapping" dragged nodes to another nodes on
- * the scene, so the user could easily and nicely ailgn their nodes.
+ * the scene, so the user could easily and nicely align their nodes.
  *
  * The nodes will be snapped to align with every edge of any other node, and also at place above
  * and below node leaving default vertical gap (same as when adding new node).
@@ -199,7 +199,7 @@ export function useDragging() {
 
     private createSnapGrid() {
       const nonDraggedRects = computed(() => {
-        const nonDraggedNodes = iteratorFilter(
+        const nonDraggedNodes = iter.filter(
           graphStore.db.nodeIds(),
           (id) => !this.draggedNodes.has(id),
         )

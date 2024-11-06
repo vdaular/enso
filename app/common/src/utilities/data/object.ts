@@ -162,3 +162,24 @@ export type ExtractKeys<T, U> = {
 
 /** An instance method of the given type. */
 export type MethodOf<T> = (this: T, ...args: never) => unknown
+
+// ===================
+// === useObjectId ===
+// ===================
+
+/** Composable providing support for managing object identities. */
+export function useObjectId() {
+  let lastId = 0
+  const idNumbers = new WeakMap<object, number>()
+  /** @returns A value that can be used to compare object identity. */
+  function objectId(o: object): number {
+    const id = idNumbers.get(o)
+    if (id == null) {
+      lastId += 1
+      idNumbers.set(o, lastId)
+      return lastId
+    }
+    return id
+  }
+  return { objectId }
+}

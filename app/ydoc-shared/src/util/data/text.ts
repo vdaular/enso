@@ -1,6 +1,6 @@
+import * as iter from 'enso-common/src/utilities/data/iter'
 import diff from 'fast-diff'
 import { rangeEncloses, rangeLength, type SourceRange } from '../../yjsModel'
-import { Resumable } from './iterable'
 
 export type SourceRangeEdit = { range: SourceRange; insert: string }
 
@@ -70,8 +70,8 @@ export function offsetEdit(textEdit: SourceRangeEdit, offset: number): SourceRan
 export function applyTextEditsToSpans(textEdits: SourceRangeEdit[], spansBefore: SourceRange[]) {
   // Gather start and end points.
   const numerically = (a: number, b: number) => a - b
-  const starts = new Resumable(spansBefore.map(([start, _end]) => start).sort(numerically))
-  const ends = new Resumable(spansBefore.map(([_start, end]) => end).sort(numerically))
+  const starts = new iter.Resumable(spansBefore.map(([start, _end]) => start).sort(numerically))
+  const ends = new iter.Resumable(spansBefore.map(([_start, end]) => end).sort(numerically))
 
   // Construct translations from old locations to new locations for all start and end points.
   const startMap = new Map<number, number>()

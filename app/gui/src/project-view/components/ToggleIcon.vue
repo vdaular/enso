@@ -8,7 +8,7 @@
 
 import MenuButton from '@/components/MenuButton.vue'
 import SvgIcon from '@/components/SvgIcon.vue'
-import { URLString } from '@/util/data/urlString'
+import type { URLString } from '@/util/data/urlString'
 import type { Icon } from '@/util/iconName'
 
 const toggledOn = defineModel<boolean>({ default: false })

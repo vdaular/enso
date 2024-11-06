@@ -34,6 +34,7 @@
     }
   },
   "dependencies": {
+    "enso-common": "workspace:*",
     "@noble/hashes": "^1.4.0",
     "@open-rpc/client-js": "^1.8.1",
     "@types/debug": "^4.1.12",

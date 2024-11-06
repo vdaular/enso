@@ -1,4 +1,30 @@
-/** @file Functions for manipulating {@link Iterable}s. */
+/** @file Utilities for manipulating {@link Iterator}s and {@link Iterable}s. */
+
+import { iteratorFilter, mapIterator } from 'lib0/iterator'
+
+/** Similar to {@link Array.prototype.reduce|}, but consumes elements from any iterable. */
+export function reduce<T, A>(
+  iterable: Iterable<T>,
+  f: (accumulator: A, element: T) => A,
+  initialAccumulator: A,
+): A {
+  const iterator = iterable[Symbol.iterator]()
+  let accumulator = initialAccumulator
+  let result = iterator.next()
+  while (!result.done) {
+    accumulator = f(accumulator, result.value)
+    result = iterator.next()
+  }
+  return accumulator
+}
+
+/**
+ * Iterates the provided iterable, returning the number of elements it yielded. Note that if the input is an iterator,
+ * it will be consumed.
+ */
+export function count(it: Iterable<unknown>): number {
+  return reduce(it, a => a + 1, 0)
+}
 
 /** An iterable with zero elements. */
 export function* empty(): Generator<never> {}
@@ -26,22 +52,17 @@ export function* range(start: number, stop: number, step = start <= stop ? 1 : -
   }
 }
 
-/**
- * Return an {@link Iterable} that `yield`s values that are the result of calling the given
- * function on the next value of the given source iterable.
- */
-export function* map<T, U>(iter: Iterable<T>, map: (value: T) => U): IterableIterator<U> {
-  for (const value of iter) {
-    yield map(value)
-  }
+/** @returns An iterator that yields the results of applying the given function to each value of the given iterable. */
+export function map<T, U>(it: Iterable<T>, f: (value: T) => U): IterableIterator<U> {
+  return mapIterator(it[Symbol.iterator](), f)
 }
 
 /**
  * Return an {@link Iterable} that `yield`s only the values from the given source iterable
  * that pass the given predicate.
  */
-export function* filter<T>(iter: Iterable<T>, include: (value: T) => boolean): IterableIterator<T> {
-  for (const value of iter) if (include(value)) yield value
+export function filter<T>(iter: Iterable<T>, include: (value: T) => boolean): IterableIterator<T> {
+  return iteratorFilter(iter[Symbol.iterator](), include)
 }
 
 /**
@@ -140,4 +161,46 @@ export class Resumable<T> {
       this.current = this.iterator.next()
     }
   }
+}
+
+/** Returns an iterator that yields the values of the provided iterator that are not strictly-equal to `undefined`. */
+export function* filterDefined<T>(iterable: Iterable<T | undefined>): IterableIterator<T> {
+  for (const value of iterable) {
+    if (value !== undefined) yield value
+  }
+}
+
+/**
+ * Returns whether the predicate returned `true` for all values yielded by the provided iterator. Short-circuiting.
+ * Returns `true` if the iterator doesn't yield any values.
+ */
+export function every<T>(iter: Iterable<T>, f: (value: T) => boolean): boolean {
+  for (const value of iter) if (!f(value)) return false
+  return true
+}
+
+/** Return the first element returned by the iterable which meets the condition. */
+export function find<T>(iter: Iterable<T>, f: (value: T) => boolean): T | undefined {
+  for (const value of iter) {
+    if (f(value)) return value
+  }
+  return undefined
+}
+
+/** Returns the first element yielded by the iterable. */
+export function first<T>(iterable: Iterable<T>): T | undefined {
+  const iterator = iterable[Symbol.iterator]()
+  const result = iterator.next()
+  return result.done ? undefined : result.value
+}
+
+/**
+ * Return last element returned by the iterable.
+ * NOTE: Linear complexity. This function always visits the whole iterable. Using this with an
+ * infinite generator will cause an infinite loop.
+ */
+export function last<T>(iter: Iterable<T>): T | undefined {
+  let last
+  for (const el of iter) last = el
+  return last
 }

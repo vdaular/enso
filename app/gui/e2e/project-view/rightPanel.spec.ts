@@ -1,6 +1,6 @@
 import { expect, test } from 'playwright/test'
 import * as actions from './actions'
-import { mockMethodCallInfo } from './expressionUpdates'
+import { mockCollapsedFunctionInfo, mockMethodCallInfo } from './expressionUpdates'
 import { CONTROL_KEY } from './keyboard'
 import * as locate from './locate'
 
@@ -13,7 +13,7 @@ test('Main method documentation', async ({ page }) => {
   await expect(locate.rightDock(page)).toBeVisible()
 
   // Right-dock displays main method documentation.
-  await expect(locate.lexicalContent(locate.rightDock(page))).toHaveText('The main method')
+  await expect(locate.editorRoot(locate.rightDock(page))).toHaveText('The main method')
 
   // Documentation hotkey closes right-dock.p
   await page.keyboard.press(`${CONTROL_KEY}+D`)
@@ -69,4 +69,21 @@ test('Component help', async ({ page }) => {
   })
   await locate.graphNodeByBinding(page, 'data').click()
   await expect(locate.rightDock(page)).toHaveText(/Reads a file into Enso/)
+})
+
+test('Documentation reflects entered function', async ({ page }) => {
+  await actions.goToGraph(page)
+
+  // Open the panel
+  await expect(locate.rightDock(page)).toBeHidden()
+  await page.keyboard.press(`${CONTROL_KEY}+D`)
+  await expect(locate.rightDock(page)).toBeVisible()
+
+  // Enter the collapsed function
+  await mockCollapsedFunctionInfo(page, 'final', 'func1')
+  await locate.graphNodeByBinding(page, 'final').dblclick()
+  await expect(locate.navBreadcrumb(page)).toHaveText(['Mock Project', 'func1'])
+
+  // Editor should contain collapsed function's docs
+  await expect(locate.editorRoot(locate.rightDock(page))).toHaveText('A collapsed function')
 })
