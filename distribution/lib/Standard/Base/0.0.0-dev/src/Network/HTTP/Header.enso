@@ -30,7 +30,7 @@ type Header
        `Header` values.
     unify_vector : Vector (Header | Pair Text Text | Vector) -> Vector Header
     unify_vector headers:Vector =
-        headers . map on_problems=No_Wrap h-> case h of
+        headers . map on_problems=No_Wrap.Value h-> case h of
             _ : Vector -> Header.new (h.at 0) (h.at 1)
             _ : Pair -> Header.new (h.at 0) (h.at 1)
             _ : Function -> h:Header

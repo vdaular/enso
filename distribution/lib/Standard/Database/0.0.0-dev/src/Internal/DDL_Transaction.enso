@@ -71,7 +71,7 @@ run_transaction_with_tables connection (tables : Vector Transactional_Table_Desc
 ## PRIVATE
 private create_tables_inside_transaction connection (tables : Vector Transactional_Table_Description) (callback : Vector DB_Table -> Any) -> Any =
     connection.jdbc_connection.run_within_transaction <|
-        created = tables.map on_problems=No_Wrap t-> t.create connection
+        created = tables.map on_problems=No_Wrap.Value t-> t.create connection
         created.if_not_error <|
             result = callback created
 
@@ -89,7 +89,7 @@ private create_tables_outside_transaction connection (tables : Vector Transactio
         Panic.throw caught_panic
 
     Panic.catch Any handler=handle_panic <|
-        created = tables.map on_problems=No_Wrap t->
+        created = tables.map on_problems=No_Wrap.Value t->
             table = t.create connection
             # We only register a table for cleanup if it was successfully created.
             table.if_not_error <|

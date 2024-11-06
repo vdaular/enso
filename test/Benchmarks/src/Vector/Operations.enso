@@ -86,4 +86,5 @@ collect_benches = Bench.build builder->
             State.run Number 0 <| random_vec.each stateful_fun
 
 
-main = collect_benches . run_main
+main filter=Nothing =
+    collect_benches . run_main filter

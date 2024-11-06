@@ -165,7 +165,7 @@ type HTTP
                     # Create Unified Header list
                     boundary_header_list = if resolved_body.boundary.is_nothing then [] else [Header.multipart_form_data resolved_body.boundary]
                     all_headers = headers + boundary_header_list
-                    mapped_headers = all_headers.map on_problems=No_Wrap .to_java_pair
+                    mapped_headers = all_headers.map on_problems=No_Wrap.Value .to_java_pair
 
                     response = Response.Value (EnsoSecretHelper.makeRequest (self.make_client self resolved_body.hash) builder req.uri.to_java_representation mapped_headers (cache_policy.should_use_cache req))
                     if error_on_failure_code.not || response.code.is_success then response else

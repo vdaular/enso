@@ -173,7 +173,7 @@ type JS_Object
         mapper = ObjectMapper.new
         new_object = mapper.createObjectNode
         keys = Vector.build builder->
-            pairs.map on_problems=No_Wrap pair->
+            pairs.map on_problems=No_Wrap.Value pair->
                 case pair.first of
                     text : Text ->
                         ## Ensure that any dataflow errors that could be stored in `pair.second` are propagated.

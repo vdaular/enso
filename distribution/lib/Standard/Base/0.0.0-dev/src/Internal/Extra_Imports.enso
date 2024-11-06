@@ -22,6 +22,7 @@ polyglot java import java.time.LocalDate
 polyglot java import java.time.LocalDateTime
 polyglot java import java.util.function.Function
 polyglot java import java.lang.Exception as JException
+polyglot java import java.lang.RuntimeException as JRuntimeException
 polyglot java import java.lang.Thread
 polyglot java import java.lang.Thread.State
 polyglot java import java.lang.Float
@@ -39,3 +40,4 @@ CaseFoldedString=JCaseFoldedString
 Text_Utils=JText_Utils
 BreakIterator=JBreakIterator
 Exception=JException
+RuntimeException=JRuntimeException

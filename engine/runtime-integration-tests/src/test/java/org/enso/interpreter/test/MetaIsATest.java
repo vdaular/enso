@@ -9,6 +9,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.enso.interpreter.runtime.data.Type;
 import org.enso.interpreter.test.ValuesGenerator.Language;
 import org.enso.test.utils.ContextUtils;
 import org.graalvm.polyglot.Context;
@@ -257,6 +258,11 @@ public class MetaIsATest {
     var f = new StringBuilder();
     for (var v : generator().allTypes()) {
       if (v.equals(generator().typeAny())) {
+        continue;
+      }
+      var unwrappedV = ContextUtils.unwrapValue(ctx, v);
+      if (unwrappedV instanceof Type type && type.isEigenType()) {
+        // Skip singleton types
         continue;
       }
       var r = isACheck.execute(v, v);

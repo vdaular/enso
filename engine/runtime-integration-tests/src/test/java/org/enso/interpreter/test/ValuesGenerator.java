@@ -47,6 +47,11 @@ public final class ValuesGenerator {
     this.languages = languages;
   }
 
+  /**
+   * @param type Either an atom or a type.
+   * @param check An executable that checks if the value is of the given type. Takes a single
+   *     parameter.
+   */
   private record ValueInfo(Value type, Value check) {}
 
   public static ValuesGenerator create(Context ctx, Language... langs) {
@@ -61,6 +66,13 @@ public final class ValuesGenerator {
     return v(key, prelude, typeOrValue, key != null ? typeOrValue : null);
   }
 
+  /**
+   * @param key Used as a key in {@link #values}. If the key is already there, nothing is created.
+   *     Nullable.
+   * @param prelude Additional code inserted before {@code typeOrValue} expression, like imports.
+   * @param typeOrValue An expression that results in an atom or a type.
+   * @param typeCheck If not null, this is used as a type name and the value is checked against it.
+   */
   private ValueInfo v(String key, String prelude, String typeOrValue, String typeCheck) {
     if (key == null) {
       key = typeOrValue;
@@ -299,6 +311,23 @@ public final class ValuesGenerator {
     return v("typeVector", """
     import Standard.Base.Data.Vector.Vector
     """, "Vector")
+        .type();
+  }
+
+  public Value typeNoWrap() {
+    return v("typeNoWrap", """
+    import Standard.Base.Data.Vector.No_Wrap
+    """, "No_Wrap")
+        .type();
+  }
+
+  public Value typeProblemBehavior() {
+    return v(
+            "typeProblemBehavior",
+            """
+    import Standard.Base.Errors.Problem_Behavior.Problem_Behavior
+    """,
+            "Problem_Behavior")
         .type();
   }
 
@@ -823,8 +852,25 @@ public final class ValuesGenerator {
       collect.add(typeNothing());
     }
 
-    if (languages.contains(Language.JAVA)) {}
+    return collect;
+  }
 
+  public List<Value> problemBehaviors() {
+    var collect = new ArrayList<Value>();
+    if (languages.contains(Language.ENSO)) {
+      var prelude = "import Standard.Base.Errors.Problem_Behavior.Problem_Behavior";
+      collect.add(v(null, prelude, "Problem_Behavior.Report_Error").type());
+      collect.add(v(null, prelude, "Problem_Behavior.Ignore").type());
+    }
+    return collect;
+  }
+
+  public List<Value> noWrap() {
+    var collect = new ArrayList<Value>();
+    if (languages.contains(Language.ENSO)) {
+      var prelude = "import Standard.Base.Data.Vector.No_Wrap";
+      collect.add(v(null, prelude, "No_Wrap.Value").type());
+    }
     return collect;
   }
 

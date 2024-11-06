@@ -389,7 +389,7 @@ type_spec suite_builder name alter = suite_builder.group name group_builder->
 
     group_builder.specify "should allow map on_problems=No_Wrap, returning a new vector" <|
         vec = alter [1, 2, 3, 4]
-        mapped = vec.map on_problems=No_Wrap x-> x * x
+        mapped = vec.map on_problems=No_Wrap.Value x-> x * x
         vec.to_text.should_equal "[1, 2, 3, 4]"
         mapped.to_text.should_equal "[1, 4, 9, 16]"
 
@@ -801,11 +801,11 @@ type_spec suite_builder name alter = suite_builder.group name group_builder->
         alter [] . zip [4, 5, 6] (+) . should_equal []
 
     group_builder.specify "should zip elements with zip on_problems=No_Wrap" <|
-        alter [1, 2, 3] . zip on_problems=No_Wrap [] (+) . should_equal []
-        alter [1, 2, 3] . zip on_problems=No_Wrap [4] (+) . should_equal [5]
-        alter [1, 2, 3] . zip on_problems=No_Wrap [4, 5, 6] (+) . should_equal [5, 7, 9]
-        alter [1, 2, 3] . zip on_problems=No_Wrap [4, 5, 6, 7] (+) . should_equal [5, 7, 9]
-        alter [] . zip on_problems=No_Wrap [4, 5, 6] (+) . should_equal []
+        alter [1, 2, 3] . zip on_problems=No_Wrap.Value [] (+) . should_equal []
+        alter [1, 2, 3] . zip on_problems=No_Wrap.Value [4] (+) . should_equal [5]
+        alter [1, 2, 3] . zip on_problems=No_Wrap.Value [4, 5, 6] (+) . should_equal [5, 7, 9]
+        alter [1, 2, 3] . zip on_problems=No_Wrap.Value [4, 5, 6, 7] (+) . should_equal [5, 7, 9]
+        alter [] . zip on_problems=No_Wrap.Value [4, 5, 6] (+) . should_equal []
 
     group_builder.specify "should flat_map elements" <|
         alter [1, 2, 3] . flat_map (_ -> []) . should_equal []
@@ -815,11 +815,11 @@ type_spec suite_builder name alter = suite_builder.group name group_builder->
         alter [0, 0, 0] . flat_map (i -> [i]) . should_equal [0, 0, 0]
 
     group_builder.specify "should flat_map elements with flat_map on_problems=No_Wrap" <|
-        alter [1, 2, 3] . flat_map on_problems=No_Wrap (_ -> []) . should_equal []
-        alter [1, 2, 3] . flat_map on_problems=No_Wrap (_ -> [0, 1]) . should_equal [0, 1, 0, 1, 0, 1]
-        alter [1, 2, 3] . flat_map on_problems=No_Wrap (_ -> [0, [1]]) . should_equal [0, [1], 0, [1], 0, [1]]
-        alter [0, 1, 0] . flat_map on_problems=No_Wrap (i -> if i == 1 then [1, 1] else [i]) . should_equal [0, 1, 1, 0]
-        alter [0, 0, 0] . flat_map on_problems=No_Wrap (i -> [i]) . should_equal [0, 0, 0]
+        alter [1, 2, 3] . flat_map on_problems=No_Wrap.Value (_ -> []) . should_equal []
+        alter [1, 2, 3] . flat_map on_problems=No_Wrap.Value (_ -> [0, 1]) . should_equal [0, 1, 0, 1, 0, 1]
+        alter [1, 2, 3] . flat_map on_problems=No_Wrap.Value (_ -> [0, [1]]) . should_equal [0, [1], 0, [1], 0, [1]]
+        alter [0, 1, 0] . flat_map on_problems=No_Wrap.Value (i -> if i == 1 then [1, 1] else [i]) . should_equal [0, 1, 1, 0]
+        alter [0, 0, 0] . flat_map on_problems=No_Wrap.Value (i -> [i]) . should_equal [0, 0, 0]
 
     group_builder.specify "should allow inserting elements" <|
         alter [2, 3] . insert . should_equal [2, 3, Nothing]
@@ -910,11 +910,11 @@ type_spec suite_builder name alter = suite_builder.group name group_builder->
         alter [10, 20, 30, 40] . map map_fun . should_fail_with (Map_Error.Error 2 (My_Error.Error 30)) unwrap_errors=False
 
     group_builder.specify "an error thrown inside map on_problems=No_Wrap should be caught as a My_Error" <|
-        alter [10, 20, 30, 40] . map on_problems=No_Wrap map_fun . should_fail_with My_Error
+        alter [10, 20, 30, 40] . map on_problems=No_Wrap.Value map_fun . should_fail_with My_Error
 
     group_builder.specify "an error thrown inside map_with_index on_problems=No_Wrap should be caught as a My_Error" <|
         map_with_index_fun _ a = if a == 30 then Error.throw (My_Error.Error a) else a+1
-        alter [10, 20, 30, 40] . map_with_index on_problems=No_Wrap map_with_index_fun . should_fail_with My_Error
+        alter [10, 20, 30, 40] . map_with_index on_problems=No_Wrap.Value map_with_index_fun . should_fail_with My_Error
 
     group_builder.specify "an error thrown inside map and caught (without error parameter) should be caught as a Map_Error" <|
         alter [10, 20, 30, 40] . map map_fun . catch . should_equal (Map_Error.Error 2 (My_Error.Error 30))
@@ -972,16 +972,16 @@ type_spec suite_builder name alter = suite_builder.group name group_builder->
         Warning.get_all result wrap_errors=True . map .value . should_equal expected_warnings
 
     group_builder.specify "map on_problems=No_Wrap does not do error wrapping" <|
-        alter [10, 20, 30, 40] . map on_problems=No_Wrap map_fun . catch . should_equal (My_Error.Error 30)
+        alter [10, 20, 30, 40] . map on_problems=No_Wrap.Value map_fun . catch . should_equal (My_Error.Error 30)
 
     group_builder.specify "zip on_problems=No_Wrap does not do error wrapping" <|
         zip_fun a _ = if a == 30 then Error.throw (My_Error.Error a) else a+1
         arr = alter [10, 20, 30, 40]
-        arr . zip on_problems=No_Wrap arr zip_fun . catch . should_equal (My_Error.Error 30)
+        arr . zip on_problems=No_Wrap.Value arr zip_fun . catch . should_equal (My_Error.Error 30)
 
     group_builder.specify "flat_map on_problems=No_Wrap does not do error wrapping" <|
         vec = alter [1, 2, 0, 3]
-        vec.flat_map on_problems=No_Wrap (n-> Error.throw (My_Error.Error n)) . catch . should_equal (My_Error.Error 1)
+        vec.flat_map on_problems=No_Wrap.Value (n-> Error.throw (My_Error.Error n)) . catch . should_equal (My_Error.Error 1)
 
     group_builder.specify "can transpose a vector of vectors" <|
         mat = alter [alter [0, 1, 2], alter [3, 4, 5], alter [6, 7, 8]]
