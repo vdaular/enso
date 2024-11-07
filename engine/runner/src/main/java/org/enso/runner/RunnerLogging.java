@@ -4,6 +4,7 @@ import java.net.URI;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.enso.distribution.DistributionManager;
 import org.enso.logger.masking.Masking;
 import org.enso.logging.config.LoggerSetup;
 import org.slf4j.Logger;
@@ -14,6 +15,8 @@ final class RunnerLogging {
   private RunnerLogging() {}
 
   private static final Logger logger = LoggerFactory.getLogger(RunnerLogging.class);
+  private static final DistributionManager distributionManager =
+      new DistributionManager(new RunnerEnvironment());
 
   /**
    * Sets up the runner's logging service.
@@ -49,7 +52,6 @@ final class RunnerLogging {
         var success = future.get();
         if (success) {
           logger.trace("Connected to logging service at [{}]", connectionUri);
-          return;
         } else {
           throw new RuntimeException("Failed to connect to logging service");
         }
@@ -57,9 +59,31 @@ final class RunnerLogging {
         System.err.println(
             "Failed to connect to the logging service server, " + "falling back to local logging.");
       }
-    }
-    if (!setupConsoleAppender(logLevel, executorService, loggerSetup)) {
-      System.err.println("Failed to initialize logging infrastructure");
+    } else {
+      var future =
+          executorService.submit(
+              () ->
+                  loggerSetup.setup(
+                      logLevel,
+                      distributionManager.detectPaths().logs(),
+                      "enso-cli",
+                      loggerSetup.getConfig()));
+      try {
+        var success = future.get();
+        if (!success) {
+          System.err.println("Failed to initialize logging from the configuration");
+        } else {
+          return;
+        }
+      } catch (InterruptedException | ExecutionException e) {
+        System.err.println(
+            "Failed to initialize logging from the configuration due to internal exception: "
+                + e.getMessage());
+      }
+      System.err.println("Attempting to fallback logging to console only");
+      if (!setupConsoleAppender(logLevel, executorService, loggerSetup)) {
+        System.err.println("Failed to initialize logging infrastructure");
+      }
     }
   }
 
