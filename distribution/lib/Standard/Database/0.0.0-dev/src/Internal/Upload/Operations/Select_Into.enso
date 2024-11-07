@@ -9,7 +9,7 @@ import project.Internal.DDL_Transaction
 from project.Errors import SQL_Error, Table_Already_Exists
 from project.Internal.Upload.Helpers.Constants import dry_run_row_limit
 from project.Internal.Upload.Helpers.Error_Helpers import handle_upload_errors
-from project.Internal.Upload.Operations.Internal_Core import internal_upload_table, resolve_temp_table_name
+from project.Internal.Upload.Operations.Upload_Table import create_table_upload_operation, resolve_temp_table_name
 
 ## PRIVATE
 select_into_table_implementation source_table connection table_name primary_key temporary on_problems:Problem_Behavior =
@@ -45,6 +45,6 @@ select_into_table_implementation source_table connection table_name primary_key 
 
 ## PRIVATE
 upload_table_in_transaction source_table connection table_name primary_key temporary on_problems row_limit =
-    upload_operation = internal_upload_table source_table connection table_name primary_key=primary_key temporary=temporary on_problems=on_problems row_limit=row_limit
+    upload_operation = create_table_upload_operation source_table connection table_name primary_key=primary_key temporary=temporary on_problems=on_problems row_limit=row_limit
     DDL_Transaction.run_transaction_with_tables connection [upload_operation.table_description] _->
         upload_operation.perform_upload

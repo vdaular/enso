@@ -6,7 +6,7 @@ import Standard.Base.Runtime.Context
 
 import project.SQL_Query.SQL_Query
 from project.Errors import SQL_Error, Table_Already_Exists
-from project.Internal.Upload.Operations.Internal_Core import internal_create_table_structure, resolve_temp_table_name
+from project.Internal.Upload.Operations.Upload_Table import create_table_structure, resolve_temp_table_name
 
 ## PRIVATE
    Creates a new database table with the provided structure and returns the name
@@ -42,7 +42,7 @@ create_table_implementation connection table_name structure primary_key temporar
                            will never return a name of a table that exists but
                            was created outside of a dry run.
                         connection.drop_table effective_table_name if_exists=True
-                    internal_create_table_structure connection effective_table_name structure primary_key effective_temporary on_problems
+                    create_table_structure connection effective_table_name structure primary_key effective_temporary on_problems
                 case created_table_name.is_error of
                     False ->
                         if dry_run.not then connection.query (SQL_Query.Table_Name created_table_name) else
