@@ -270,11 +270,11 @@ type Dialect
         Unimplemented.throw "This is an interface only."
 
     ## PRIVATE
-       Generates a column for the given expression for use in the SELECT clause. 
+       Generates a expression for use in the SELECT OR WHERE clause. 
        Used for databases where the expression syntax is different in the SELECT clause 
        to the syntax in the WHERE clause
-    generate_column_for_select self base_gen expr:(SQL_Expression | Order_Descriptor | Query) name:Text -> SQL_Builder =
-        _ = [base_gen, expr, name]
+    generate_expression self base_gen expr:(SQL_Expression | Order_Descriptor | Query) for_select:Boolean -> SQL_Builder =
+        _ = [base_gen, expr, for_select]
         Unimplemented.throw "This is an interface only."
 
     ## PRIVATE

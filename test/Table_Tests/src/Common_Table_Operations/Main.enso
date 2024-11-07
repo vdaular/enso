@@ -107,9 +107,6 @@ type Test_Selection
        - supports_unicode_normalization: Specifies if the backend compares
          strings taking Unicode Normalization into account, i.e. whether
          's\u0301' is considered equal to 'ś'.
-       - is_nan_and_nothing_distinct: Specifies if the backend is able to
-         distinguish between a decimal NaN value and a missing value (Enso's
-         Nothing, or SQL's NULL). If `False`, NaN is treated as a NULL.
        - is_nan_comparable: Specifies if NaN value is
          treated as greater than all numbers. If `False`, `NaN` is expected to
          yield False to both < and > comparisons.
@@ -157,7 +154,7 @@ type Test_Selection
        - supports_date_time_without_timezone: Specifies if the backend supports
          date/time operations without a timezone (true for most Database backends).
          Defaults to `.is_integer`.
-    Config natural_ordering=False case_insensitive_ordering=True order_by_unicode_normalization_by_default=False case_insensitive_ascii_only=False allows_mixed_type_comparisons=True supports_unicode_normalization=False is_nan_and_nothing_distinct=True is_nan_comparable=False distinct_returns_first_row_from_group_if_ordered=True date_time=True text_length_limited_columns=False fixed_length_text_columns=False length_restricted_text_columns=True removes_trailing_whitespace_casting_from_char_to_varchar=False char_max_size_after_substring:Char_Max_Size_After_Substring_Behavior=..Kept different_size_integer_types=True supports_8bit_integer=False supports_decimal_type=False supports_time_duration=False supports_nanoseconds_in_time=False supports_mixed_columns=False supported_replace_params=Nothing run_advanced_edge_case_tests_by_default=True supports_date_time_without_timezone=False
+    Config natural_ordering=False case_insensitive_ordering=True order_by_unicode_normalization_by_default=False case_insensitive_ascii_only=False allows_mixed_type_comparisons=True supports_unicode_normalization=False is_nan_comparable=False distinct_returns_first_row_from_group_if_ordered=True date_time=True text_length_limited_columns=False fixed_length_text_columns=False length_restricted_text_columns=True removes_trailing_whitespace_casting_from_char_to_varchar=False char_max_size_after_substring:Char_Max_Size_After_Substring_Behavior=..Kept different_size_integer_types=True supports_8bit_integer=False supports_decimal_type=False supports_time_duration=False supports_nanoseconds_in_time=False supports_mixed_columns=False supported_replace_params=Nothing run_advanced_edge_case_tests_by_default=True supports_date_time_without_timezone=False
 
     ## Specifies if the advanced edge case tests shall be run.
 

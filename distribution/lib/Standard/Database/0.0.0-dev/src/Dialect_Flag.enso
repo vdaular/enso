@@ -23,3 +23,9 @@ type Dialect_Flag
        match column names in a case insensitive way, so that "Foo" and "foo" will refer to the
        same column.
     Supports_Case_Sensitive_Columns
+    ## PRIVATE
+       Specifies if the backend supports the `Infinity` value for floating point columns.
+    Supports_Infinity
+    ## PRIVATE
+       Specifies text comparisons are case sensitive by default.
+    Case_Sensitive_Text_Comparison

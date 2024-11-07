@@ -509,10 +509,9 @@ snowflake_specific_spec suite_builder default_connection db_name setup =
             do_round -1.2222222222222235 15 use_bankers=True . should_equal -1.222222222222224
 
         group_builder.specify "Can handle NaN/Infinity" <|
-            nan_result = if setup.test_selection.is_nan_and_nothing_distinct then Number.nan else Nothing
             ops = [.round, .truncate, .ceil, .floor]
             ops.each op->
-                do_op Number.nan op . should_equal nan_result
+                do_op Number.nan op . should_equal Number.nan
                 do_op Number.positive_infinity op . should_equal Number.positive_infinity
                 do_op Number.negative_infinity op . should_equal Number.negative_infinity
 

@@ -21,7 +21,6 @@ add_specs suite_builder setup =
 
 add_missing_value_specs suite_builder setup =
     prefix = setup.prefix
-    test_selection = setup.test_selection
     table_builder = build_sorted_table setup
 
     t0 = Lazy_Ref.Value <|
@@ -100,7 +99,7 @@ add_missing_value_specs suite_builder setup =
             r2.columns.map .name . should_equal ["c"]
             r2.at "c" . to_vector . should_equal [10, 20, 30, 40]
 
-        if test_selection.is_nan_and_nothing_distinct then
+        if setup.flagged ..Supports_Separate_NaN then
             group_builder.specify "should not treat NaNs as blank by default" <|
                 r1 = t3.get.filter_blank_rows when=Blank_Selector.Any_Cell
                 # We cannot use `Vector.==` because `NaN != NaN`.
@@ -149,7 +148,7 @@ add_missing_value_specs suite_builder setup =
                 r6.columns.map .name . should_equal ["g", "h"]
                 r6.at "h" . to_vector . to_text . should_equal "[NaN, Nothing, NaN, Nothing]"
 
-        if test_selection.is_nan_and_nothing_distinct.not then
+        if setup.flagged ..Supports_Separate_NaN . not then
             group_builder.specify "this backend treats NaN as Nothing" <|
                 t3.get.at "X" . to_vector . should_equal [2.0, 1.5, Nothing, Nothing]
                 t3.get.at "X" . is_nan . to_vector . should_fail_with Unsupported_Database_Operation

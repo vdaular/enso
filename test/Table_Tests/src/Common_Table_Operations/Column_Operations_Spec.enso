@@ -918,7 +918,7 @@ add_column_operation_specs suite_builder setup =
             (y ^ "a").should_fail_with Invalid_Value_Type
             (y ^ 42).should_fail_with Invalid_Value_Type
 
-        case setup.test_selection.is_nan_and_nothing_distinct of
+        case setup.flagged ..Supports_Separate_NaN of
             True ->
                 table = Lazy_Ref.Value <|
                     build_sorted_table [["X", [1.5, 3.0, Number.positive_infinity, Number.negative_infinity, Number.nan, Nothing]], ["Y", [1, 2, 3, 4, 5, Nothing]], ["Z", ["1", "2", "3", "4", "5", Nothing]]]

@@ -1129,22 +1129,21 @@ type DB_Table
        Create a constant column from a value.
     make_constant_column : Any -> DB_Column ! Illegal_Argument
     make_constant_column self value =
-        Feature.Column_Operations.if_supported_else_throw self.connection.dialect "make_constant_column" <|
-            if Table_Helpers.is_column value then Error.throw (Illegal_Argument.Error "A constant value may only be created from a scalar, not a DB_Column") else
-                type_mapping = self.connection.dialect.get_type_mapping
-                argument_value_type = Value_Type_Helpers.find_argument_type value
-                sql_type = case argument_value_type of
-                    Nothing -> SQL_Type.null
-                    _ -> type_mapping.value_type_to_sql argument_value_type Problem_Behavior.Ignore
-                expr = SQL_Expression.Constant value
-                new_type_ref = SQL_Type_Reference.from_constant sql_type
-                base_column = Internal_Column.Value value.pretty new_type_ref expr
-                needs_cast = argument_value_type.is_nothing.not && self.connection.dialect.needs_literal_table_cast argument_value_type
-                result_internal_column = if needs_cast.not then base_column else
-                    infer_type_from_database new_expression =
-                        SQL_Type_Reference.new self.connection self.context new_expression
-                    self.connection.dialect.make_cast base_column sql_type infer_type_from_database
-                self.make_column result_internal_column
+        if Table_Helpers.is_column value then Error.throw (Illegal_Argument.Error "A constant value may only be created from a scalar, not a DB_Column") else
+            type_mapping = self.connection.dialect.get_type_mapping
+            argument_value_type = Value_Type_Helpers.find_argument_type value
+            sql_type = case argument_value_type of
+                Nothing -> SQL_Type.null
+                _ -> type_mapping.value_type_to_sql argument_value_type Problem_Behavior.Ignore
+            expr = SQL_Expression.Constant value
+            new_type_ref = SQL_Type_Reference.from_constant sql_type
+            base_column = Internal_Column.Value value.pretty new_type_ref expr
+            needs_cast = argument_value_type.is_nothing.not && self.connection.dialect.needs_literal_table_cast argument_value_type
+            result_internal_column = if needs_cast.not then base_column else
+                infer_type_from_database new_expression =
+                    SQL_Type_Reference.new self.connection self.context new_expression
+                self.connection.dialect.make_cast base_column sql_type infer_type_from_database
+            self.make_column result_internal_column
 
     ## PRIVATE
        Create a unique temporary column name.

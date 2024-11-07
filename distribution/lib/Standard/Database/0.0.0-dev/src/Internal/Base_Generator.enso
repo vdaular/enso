@@ -81,11 +81,7 @@ type SQL_Generator
         SQL_Expression.Operation kind arguments metadata ->
             op = dialect.dialect_operations.operations_dict.get kind (Error.throw <| Unsupported_Database_Operation.Error kind)
             parsed_args = arguments.map (self.generate_expression dialect)
-            result = op parsed_args
-            # If the function expects more arguments, we pass the metadata as the last argument.
-            case result of
-                _ : Function -> result metadata
-                _ -> result
+            self.apply_op_generator_with_metadata op parsed_args metadata
         SQL_Expression.Let _ binder bindee body ->
             wrapped_binder = dialect.wrap_identifier binder
             bindee_exp = SQL_Builder.code "SELECT " ++ (self.generate_expression dialect bindee).paren ++ " AS " ++ "x"
@@ -105,6 +101,14 @@ type SQL_Generator
                     self.generate_expression dialect standalone_expression
         query : Query -> self.generate_sub_query dialect query
         descriptor : Order_Descriptor -> self.generate_order dialect descriptor
+
+    ## PRIVATE
+    apply_op_generator_with_metadata self op arguments metadata =
+        result = op arguments
+        # If the function expects more arguments, we pass the metadata as the last argument.
+        case result of
+            _ : Function -> result metadata
+            _ -> result
 
     ## PRIVATE
 
@@ -167,10 +171,6 @@ type SQL_Generator
         base_expression ++ collation ++ order_suffix ++ nulls_suffix
 
     ## PRIVATE
-    default_generate_column self dialect expr:(SQL_Expression | Order_Descriptor | Query) name:Text -> SQL_Builder =
-        self.generate_expression dialect expr ++ alias dialect name
-
-    ## PRIVATE
         Generates SQL code corresponding to a SELECT statement.
 
         Arguments:
@@ -178,11 +178,12 @@ type SQL_Generator
         - ctx: A description of the SELECT clause.
     generate_select_query_sql : Dialect -> Vector (Pair Text SQL_Expression) -> Context -> SQL_Builder
     generate_select_query_sql self dialect columns ctx =
-        gen_exprs exprs = exprs.map (self.generate_expression dialect)
+        gen_exprs exprs = exprs.map (expr-> dialect.generate_expression self expr for_select=False)
+        gen_column pair = (dialect.generate_expression self expr=pair.second for_select=True) ++ alias dialect pair.first
 
         generated_columns = case columns of
             Nothing -> SQL_Builder.code "*"
-            _ -> SQL_Builder.join ", " (columns.map (c-> dialect.generate_column_for_select self expr=c.second name=c.first))
+            _ -> SQL_Builder.join ", " (columns.map gen_column)
 
         from_part = self.generate_from_part dialect ctx.from_spec
         where_part = (SQL_Builder.join " AND " (gen_exprs ctx.where_filters)) . prefix_if_present " WHERE "

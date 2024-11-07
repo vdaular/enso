@@ -192,6 +192,8 @@ type Redshift_Dialect
             ## TODO: Check if Redshift supports WITH clauses in nested queries
             Dialect_Flag.Supports_Nested_With_Clause -> True
             Dialect_Flag.Supports_Case_Sensitive_Columns -> True
+            Dialect_Flag.Supports_Infinity -> True
+            Dialect_Flag.Case_Sensitive_Text_Comparison -> True
 
     ## PRIVATE
        The default table types to use when listing tables.
@@ -225,8 +227,9 @@ type Redshift_Dialect
         False
 
     ## PRIVATE
-    generate_column_for_select self base_gen expr:(SQL_Expression | Order_Descriptor | Query) name:Text -> SQL_Builder =
-        base_gen.default_generate_column self expr name
+    generate_expression self base_gen expr:(SQL_Expression | Order_Descriptor | Query) for_select:Boolean -> SQL_Builder =
+        _ = for_select
+        base_gen.generate_expression self expr
 
     ## PRIVATE
     ensure_query_has_no_holes : JDBC_Connection -> Text -> Nothing ! Illegal_Argument

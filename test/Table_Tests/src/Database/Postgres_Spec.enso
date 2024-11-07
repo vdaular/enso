@@ -682,10 +682,9 @@ postgres_specific_spec suite_builder create_connection_fn db_name setup =
 
         ## input/output
         group_builder.specify "Can handle NaN/Infinity" <|
-            nan_result = if setup.test_selection.is_nan_and_nothing_distinct then Number.nan else Nothing
             ops = [.round, .truncate, .ceil, .floor]
             ops.each op->
-                do_op data Number.nan op . should_equal nan_result
+                do_op data Number.nan op . should_equal Number.nan
                 do_op data Number.positive_infinity op . should_equal Number.positive_infinity
                 do_op data Number.negative_infinity op . should_equal Number.negative_infinity
 
