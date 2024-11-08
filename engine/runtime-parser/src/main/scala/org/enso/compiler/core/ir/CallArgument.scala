@@ -72,7 +72,7 @@ object CallArgument {
         name != this.name
         || value != this.value
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {

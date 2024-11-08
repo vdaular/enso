@@ -35,7 +35,7 @@ sealed case class Empty(
   ): Empty = {
     if (
       location != this.location
-      || passData != this.passData
+      || (passData ne this.passData)
       || diagnostics != this.diagnostics
       || id != this.id
     ) {

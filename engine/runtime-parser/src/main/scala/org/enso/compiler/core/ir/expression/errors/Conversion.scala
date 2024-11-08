@@ -55,7 +55,7 @@ sealed case class Conversion(
     if (
       storedIr != this.storedIr
       || reason != this.reason
-      || passData != this.passData
+      || (passData ne this.passData)
       || diagnostics != this.diagnostics
       || id != this.id
     ) {

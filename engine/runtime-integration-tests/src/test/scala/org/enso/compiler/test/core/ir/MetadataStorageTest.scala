@@ -159,7 +159,7 @@ class MetadataStorageTest extends CompilerTest {
       meta1.update(TestPass1, meta)
       meta2.update(TestPass1, meta)
 
-      meta1 shouldNot equal(meta2)
+      meta1 shouldEqual meta2
     }
 
     def newMetadataStorage(init: Seq[MetadataPair[_]]): MetadataStorage = {
@@ -201,8 +201,8 @@ class MetadataStorageTest extends CompilerTest {
         )
       )
 
-      meta.duplicate shouldNot equal(meta)
-      meta.duplicate shouldNot equal(expected)
+      meta.duplicate shouldEqual meta
+      meta.duplicate shouldEqual expected
     }
 
     "enforce safe construction" in {

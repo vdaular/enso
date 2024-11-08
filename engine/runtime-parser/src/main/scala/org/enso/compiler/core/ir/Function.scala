@@ -117,7 +117,7 @@ object Function {
         || body != this.body
         || location != this.location
         || canBeTCO != this.canBeTCO
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -283,7 +283,7 @@ object Function {
         || isPrivate != this.isPrivate
         || location != this.location
         || canBeTCO != this.canBeTCO
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {

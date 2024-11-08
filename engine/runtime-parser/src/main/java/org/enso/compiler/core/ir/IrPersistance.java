@@ -3,7 +3,6 @@ package org.enso.compiler.core.ir;
 import java.io.IOException;
 import java.util.AbstractList;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import org.enso.compiler.core.ir.expression.Application;
@@ -442,33 +441,6 @@ public final class IrPersistance {
         arr[i] = in.readReference(Object.class);
       }
       return new IrLazySeq(arr, size);
-    }
-  }
-
-  @ServiceProvider(service = Persistance.class)
-  public static final class PersistMetadataStorage extends Persistance<MetadataStorage> {
-    public PersistMetadataStorage() {
-      super(MetadataStorage.class, false, 389);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    protected void writeObject(MetadataStorage obj, Output out) throws IOException {
-      var map = new LinkedHashMap<ProcessingPass, ProcessingPass.Metadata>();
-      obj.map(
-          (processingPass, data) -> {
-            map.put(processingPass, data);
-            return null;
-          });
-      out.writeInline(java.util.Map.class, map);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    protected MetadataStorage readObject(Input in) throws IOException, ClassNotFoundException {
-      var map = in.readInline(java.util.Map.class);
-      var storage = new MetadataStorage(map);
-      return storage;
     }
   }
 

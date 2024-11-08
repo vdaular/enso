@@ -54,7 +54,7 @@ object Type {
         args != this.args
         || result != this.result
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -171,7 +171,7 @@ object Type {
         || signature != this.signature
         || comment != this.comment
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -287,7 +287,7 @@ object Type {
         typed != this.typed
         || context != this.context
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -399,7 +399,7 @@ object Type {
         typed != this.typed
         || error != this.error
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {

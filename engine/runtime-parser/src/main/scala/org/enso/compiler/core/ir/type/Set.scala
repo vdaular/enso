@@ -74,7 +74,7 @@ object Set {
         || memberType != this.memberType
         || value != this.value
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -202,7 +202,7 @@ object Set {
         left != this.left
         || right != this.right
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -315,7 +315,7 @@ object Set {
         left != this.left
         || right != this.right
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -428,7 +428,7 @@ object Set {
         left != this.left
         || right != this.right
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -535,7 +535,7 @@ object Set {
       if (
         operands != this.operands
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -642,7 +642,7 @@ object Set {
         left != this.left
         || right != this.right
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {

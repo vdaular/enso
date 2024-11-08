@@ -73,7 +73,7 @@ object Case {
         || branches != this.branches
         || isNested != this.isNested
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -200,7 +200,7 @@ object Case {
         || expression != this.expression
         || terminalBranch != this.terminalBranch
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {

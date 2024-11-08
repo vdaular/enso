@@ -90,7 +90,7 @@ object Expression {
         || returnValue != this.returnValue
         || suspended != this.suspended
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -231,7 +231,7 @@ object Expression {
         name != this.name
         || expression != this.expression
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {

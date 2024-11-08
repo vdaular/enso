@@ -86,7 +86,7 @@ object Application {
         || arguments != this.arguments
         || hasDefaultsSuspended != this.hasDefaultsSuspended
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -203,7 +203,7 @@ object Application {
       if (
         target != this.target
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -327,7 +327,7 @@ object Application {
       if (
         expression != this.expression
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -430,7 +430,7 @@ object Application {
       if (
         items != this.items
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {

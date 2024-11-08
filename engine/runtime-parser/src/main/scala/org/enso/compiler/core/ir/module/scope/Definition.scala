@@ -78,7 +78,7 @@ object Definition {
         || params != this.params
         || members != this.members
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -206,7 +206,7 @@ object Definition {
         || annotations != this.annotations
         || isPrivate != this.isPrivate
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -338,7 +338,7 @@ object Definition {
         || arguments != this.arguments
         || body != this.body
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {

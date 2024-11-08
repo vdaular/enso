@@ -71,7 +71,7 @@ sealed case class Resolution(
     if (
       originalName != this.originalName
       || reason != this.reason
-      || passData != this.passData
+      || (passData ne this.passData)
       || diagnostics != this.diagnostics
       || id != this.id
     ) {

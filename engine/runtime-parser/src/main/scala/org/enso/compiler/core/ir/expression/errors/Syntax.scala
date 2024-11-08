@@ -63,7 +63,7 @@ sealed case class Syntax(
     if (
       at != this.at
       || reason != this.reason
-      || passData != this.passData
+      || (passData ne this.passData)
       || diagnostics != this.diagnostics
       || id != this.id
     ) {

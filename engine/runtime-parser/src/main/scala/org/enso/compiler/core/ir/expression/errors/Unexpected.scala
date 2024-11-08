@@ -77,7 +77,7 @@ object Unexpected {
     ): TypeSignature = {
       if (
         ir != this.ir
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {

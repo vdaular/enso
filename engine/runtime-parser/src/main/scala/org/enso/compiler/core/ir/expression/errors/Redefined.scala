@@ -66,7 +66,7 @@ object Redefined {
     ): SelfArg = {
       if (
         location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -161,7 +161,7 @@ object Redefined {
         targetType != this.targetType
         || sourceType != this.sourceType
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -291,7 +291,7 @@ object Redefined {
         typeName != this.typeName
         || methodName != this.methodName
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -421,7 +421,7 @@ object Redefined {
         atomName != this.atomName
         || methodName != this.methodName
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -544,7 +544,7 @@ object Redefined {
       if (
         typeName != this.typeName
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -650,7 +650,7 @@ object Redefined {
       if (
         name != this.name
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -751,7 +751,7 @@ object Redefined {
     ): Binding = {
       if (
         invalidBinding != this.invalidBinding
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {

@@ -419,9 +419,9 @@ public class IrPersistanceTest {
     var loc = new IdentifiedLocation(new Location(5, 19), null);
     var in = new Name.Literal("anyName", true, loc, Option.empty(), new MetadataStorage());
 
-    var out = serde(Name.Literal.class, in, 39);
-    assertEquals("They are structurally equal", 0, IR.STRUCTURE_COMPARATOR.compare(in, out));
-    assertNotEquals("But not .equals (currently)", in, out);
+    var out = serde(Name.Literal.class, in, -1);
+    assertEquals("They are structurally equal", in, out);
+    assertNotSame("But not ==", in, out);
   }
 
   private static <T> T serde(Class<T> clazz, T l, int expectedSize) throws IOException {

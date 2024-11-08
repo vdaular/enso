@@ -67,7 +67,7 @@ sealed case class Pattern(
     if (
       originalPattern != this.originalPattern
       || reason != this.reason
-      || passData != this.passData
+      || (passData ne this.passData)
       || diagnostics != this.diagnostics
       || id != this.id
     ) {

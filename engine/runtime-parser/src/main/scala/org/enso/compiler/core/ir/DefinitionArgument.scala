@@ -123,7 +123,7 @@ object DefinitionArgument {
         || defaultValue != this.defaultValue
         || suspended != this.suspended
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {

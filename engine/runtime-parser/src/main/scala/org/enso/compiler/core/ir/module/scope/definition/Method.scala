@@ -115,7 +115,7 @@ object Method {
         || isPrivate != this.isPrivate
         || isStaticWrapperForInstanceMethod != this.isStaticWrapperForInstanceMethod
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -321,7 +321,7 @@ object Method {
         || isPrivate != this.isPrivate
         || body != this.body
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -493,7 +493,7 @@ object Method {
         || sourceTypeName != this.sourceTypeName
         || body != this.body
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {

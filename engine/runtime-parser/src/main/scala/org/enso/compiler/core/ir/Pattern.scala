@@ -66,7 +66,7 @@ object Pattern {
       if (
         name != this.name
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -169,7 +169,7 @@ object Pattern {
         constructor != this.constructor
         || fields != this.fields
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -324,7 +324,7 @@ object Pattern {
       if (
         literal != this.literal
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -429,7 +429,7 @@ object Pattern {
         name != this.name
         || tpe != this.tpe
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -549,7 +549,7 @@ object Pattern {
       if (
         doc != this.doc
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {

@@ -67,7 +67,7 @@ object Section {
         arg != this.arg
         || operator != this.operator
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -174,7 +174,7 @@ object Section {
       if (
         operator != this.operator
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
@@ -277,7 +277,7 @@ object Section {
         operator != this.operator
         || arg != this.arg
         || location != this.location
-        || passData != this.passData
+        || (passData ne this.passData)
         || diagnostics != this.diagnostics
         || id != this.id
       ) {

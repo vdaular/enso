@@ -62,7 +62,7 @@ sealed case class ImportExport(
     if (
       ir != this.ir
       || reason != this.reason
-      || passData != this.passData
+      || (passData ne this.passData)
       || diagnostics != this.diagnostics
       || id != this.id
     ) {
