@@ -1,0 +1,30 @@
+private
+
+from Standard.Base import all
+import Standard.Base.Data.Read.Many_Files_List.Many_Files_List
+import Standard.Base.Errors.Illegal_Argument.Illegal_Argument
+
+import project.Column.Column
+import project.Errors.Invalid_Value_Type
+import project.Table.Table
+import project.Value_Type.Value_Type
+
+find_files_list_in_table (that : Table) -> Many_Files_List =
+    found_column = if that.column_count == 1 then that.at 0 else
+        path_columns = that.select_columns "path" case_sensitivity=..Insensitive on_problems=..Report_Error
+        not_found = path_columns.is_error || (path_columns.column_count == 0)
+        if not_found then Error.throw (Illegal_Argument.Error "To use a Table as file list, it must be a single column or contain a `path` column (case insensitive).") else
+            if path_columns.column_count > 1 then Error.throw (Illegal_Argument.Error "Multiple 'paths' column candidates found: "+path_columns.column_names.to_display_text+".") else
+                path_columns.at 0
+    ensure_column_type_valid_to_be_files_list found_column <|
+        Many_Files_List.Value that found_column.to_vector
+
+ensure_column_type_valid_to_be_files_list (column : Column) ~action =
+    is_expected_type = case column.value_type of
+        # Columns containing File objects will be Mixed
+        Value_Type.Mixed -> True
+        # Columns containing paths as Text will be Char
+        Value_Type.Char _ _ -> True
+        _ -> False
+    if is_expected_type then action else
+        Error.throw (Invalid_Value_Type.Column "Text or Mixed" column.value_type column.name)

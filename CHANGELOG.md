@@ -49,11 +49,14 @@
   programmatically.][11255]
 - [DB_Table may be saved as a Data Link.][11371]
 - [Support for dates before 1900 in Excel and signed AWS requests.][11373]
+- [Added `Data.read_many` that allows to read a list of files in a single
+  operation.][11490]
 
 [11235]: https://github.com/enso-org/enso/pull/11235
 [11255]: https://github.com/enso-org/enso/pull/11255
 [11371]: https://github.com/enso-org/enso/pull/11371
 [11373]: https://github.com/enso-org/enso/pull/11373
+[11490]: https://github.com/enso-org/enso/pull/11490
 
 #### Enso Language & Runtime
 

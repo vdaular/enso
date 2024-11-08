@@ -1,6 +1,7 @@
 from Standard.Base import all
 import Standard.Base.Data.Array_Proxy.Array_Proxy
 import Standard.Base.Data.Filter_Condition as Filter_Condition_Module
+import Standard.Base.Data.Read.Many_Files_List.Many_Files_List
 import Standard.Base.Data.Time.Errors.Date_Time_Format_Parse_Error
 import Standard.Base.Data.Vector.No_Wrap
 import Standard.Base.Errors.Common.Additional_Warnings
@@ -47,6 +48,7 @@ import project.Internal.Lookup_Helpers
 import project.Internal.Lookup_Helpers.Lookup_Column
 import project.Internal.Parse_Values_Helper
 import project.Internal.Problem_Builder.Problem_Builder
+import project.Internal.Read_Many_Helpers
 import project.Internal.Replace_Helpers
 import project.Internal.Split_Tokenize
 import project.Internal.Table_Helpers
@@ -3881,3 +3883,7 @@ make_fill_nothing_default_widget table cache=Nothing =
 ## PRIVATE
    Helper method for internal use to make a Table from a Java Table.
 from_java_table java_table = Table.Value java_table
+
+## PRIVATE
+Many_Files_List.from (that : Table) =
+    Read_Many_Helpers.find_files_list_in_table that

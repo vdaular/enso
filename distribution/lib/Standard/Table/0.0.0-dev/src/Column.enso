@@ -1,5 +1,6 @@
 from Standard.Base import all
 import Standard.Base.Data.Array_Proxy.Array_Proxy
+import Standard.Base.Data.Read.Many_Files_List.Many_Files_List
 import Standard.Base.Data.Vector.No_Wrap
 import Standard.Base.Errors.Common.Arithmetic_Error
 import Standard.Base.Errors.Common.Incomparable_Values
@@ -22,6 +23,7 @@ import project.Internal.Column_Ops
 import project.Internal.Date_Time_Helpers
 import project.Internal.Java_Problems
 import project.Internal.Parse_Values_Helper
+import project.Internal.Read_Many_Helpers
 import project.Internal.Storage
 import project.Internal.Value_Type_Helpers
 import project.Internal.Widget_Helpers
@@ -2927,3 +2929,8 @@ apply_unary_map column:Column new_name:Text function expected_result_type:Value_
     Java_Problems.with_map_operation_problem_aggregator column.name Problem_Behavior.Report_Warning java_problem_aggregator->
         map_column = UnaryOperation.mapFunction column.java_column function nothing_unchanged storage_type new_name java_problem_aggregator
         Column.Value map_column
+
+## PRIVATE
+Many_Files_List.from (that : Column) =
+    Read_Many_Helpers.ensure_column_type_valid_to_be_files_list that <|
+        Many_Files_List.Value that that.to_vector

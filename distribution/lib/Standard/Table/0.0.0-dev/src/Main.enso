@@ -55,4 +55,3 @@ export project.Table.Table
 export project.Value_Type.Auto
 export project.Value_Type.Bits
 export project.Value_Type.Value_Type
-

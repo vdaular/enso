@@ -1,0 +1,86 @@
+from Standard.Base import all
+import Standard.Base.Errors.Illegal_Argument.Illegal_Argument
+
+from Standard.Table import all
+from Standard.Table.Errors import Invalid_Value_Type
+from Standard.Database import all
+
+from Standard.Test import all
+
+from project.Util import all
+
+main filter=Nothing =
+    suite = Test.build suite_builder->
+        add_specs suite_builder
+    suite.run_with_filter filter
+
+type Lazy_Ref
+    Value ~get
+
+add_specs suite_builder =
+    suite_builder.group "Data.read_many" group_builder->
+        # One File and one Text path
+        files_vector = [enso_project.data / "empty.txt", (enso_project.data / "sample.tsv") . path]
+        sample_table = Lazy_Ref.Value <|
+            (enso_project.data / "sample.tsv") . read
+        check_loaded_vector v =
+            v.should_be_a Vector
+            v.length . should_equal 2
+            v.at 0 . should_equal ""
+            v.at 1 . should_equal sample_table.get
+        group_builder.specify "should read files listed in a Column" <|
+            column = Column.from_vector "Col" files_vector
+            ## TODO for next PR:
+               test that if `return` is not specified, it will return as a Table when a Column is provided
+            r1 = Data.read_many column return=..Vector
+            check_loaded_vector r1
+            Problems.assume_no_problems r1
+
+        group_builder.specify "should read files listed in a single column Table" <|
+            table1 = Table.new [["Some column", files_vector]]
+            r1 = Data.read_many table1 return=..Vector
+            # TODO like above
+            check_loaded_vector r1
+
+        group_builder.specify "should read files listed in a Table with `path` column" <|
+            table2 = Table.new [["X", [1, 2]], ["path", files_vector]]
+            r2 = Data.read_many table2 return=..Vector
+            # TODO like above
+            check_loaded_vector r2
+            Problems.assume_no_problems r2
+
+            # Test that this is really case insensitive
+            table3 = Table.new [["X", [1, 2]], ["pAtH", files_vector]]
+            r3 = Data.read_many table3 return=..Vector
+            check_loaded_vector r3
+            Problems.assume_no_problems r3
+
+        group_builder.specify "will fail if no `path` column can be found or its ambiguous" <|
+            table1 = Table.new [["X", [1, 2]], ["Y", files_vector]]
+            r1 = Data.read_many table1 return=..Vector
+            r1.should_fail_with Illegal_Argument
+
+            table2 = Table.new [["X", [1, 2]], ["path", files_vector], ["Path", [3, 4]]]
+            r2 = Data.read_many table2 return=..Vector
+            r2.should_fail_with Illegal_Argument
+
+        group_builder.specify "fails if a DB Table or Column is provided, telling to materialize first to in-memory" <|
+            connection = Database.connect SQLite.In_Memory
+            paths_vector = files_vector.map x-> case x of
+                f : File -> f.path
+                p : Text -> p
+
+            table = (Table.new [["path", paths_vector]]).select_into_database_table connection "test_table" temporary=True
+            r = Data.read_many table return=..Vector
+            r.should_fail_with Illegal_Argument
+
+            col = table.at "path"
+            r2 = Data.read_many col return=..Vector
+            r2.should_fail_with Illegal_Argument
+
+        group_builder.specify "fails if a column of invalid type is provided" <|
+            table = Table.new [["path", [1, 2]], ["X", [33, 44]]]
+
+            Data.read_many table . should_fail_with Invalid_Value_Type
+            Data.read_many (table.at "path") . should_fail_with Invalid_Value_Type
+            Data.read_many (table.select_columns ["X"]) . should_fail_with Invalid_Value_Type

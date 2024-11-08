@@ -200,6 +200,12 @@ add_specs suite_builder =
             r = Data.read (URI.from url_get)
             r.should_be_a JS_Object
 
+        group_builder.specify "can use URI or Text URLs in Data.read_many" <|
+            r = Data.read_many [URI.from url_get, url_get]
+            r.should_be_a Vector
+            r.at 0 . should_be_a JS_Object
+            r.at 1 . should_be_a JS_Object
+
         group_builder.specify "works if HTTP is uppercase" <| Test.with_retries <|
             r = Data.fetch (url_get.replace "http" "HTTP")
             r.should_be_a JS_Object

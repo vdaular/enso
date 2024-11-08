@@ -1,4 +1,5 @@
 from Standard.Base import all
+import Standard.Base.Data.Read.Many_Files_List.Many_Files_List
 import Standard.Base.Errors.Common.Index_Out_Of_Bounds
 import Standard.Base.Errors.Illegal_Argument.Illegal_Argument
 import Standard.Base.Errors.Illegal_State.Illegal_State
@@ -2168,3 +2169,8 @@ Vector.from (that:DB_Column) =
 
 ## PRIVATE
 Cleansable_Text.from (that:DB_Column) = Cleansable_Text.Value (pattern->replace_with-> (that.text_replace (regex pattern) replace_with).rename that.name)
+
+## PRIVATE
+Many_Files_List.from (that : DB_Column) =
+    _ = that
+    Error.throw (Illegal_Argument.Error "`read_many` cannot be used with Database columns. Materialize the column into memory using `.read` first.")
