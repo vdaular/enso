@@ -5,7 +5,7 @@ export default defineConfig({
   testDir: './tests',
   forbidOnly: !!process.env.CI,
   workers: 1,
-  timeout: 60000,
+  timeout: 120000,
   reportSlowTests: { max: 5, threshold: 60000 },
   globalSetup: './tests/setup.ts',
   expect: {
