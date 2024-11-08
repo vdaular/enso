@@ -239,6 +239,7 @@ type SQLServer_Dialect
             Feature.Select_Columns -> True
             Feature.Sort -> True
             Feature.Filter -> True
+            Feature.Join -> True
             _ -> False
 
     ## PRIVATE
@@ -357,16 +358,17 @@ private _generate_expression dialect base_gen expr expression_kind:Expression_Ki
     SQL_Expression.Operation op_kind arguments metadata ->
         op = dialect.dialect_operations.operations_dict.get op_kind (Error.throw <| Unsupported_Database_Operation.Error op_kind)
         expected_kind = _op_expected_kind op_kind
-        parsed_args_and_null_checks = arguments.map (c -> _generate_expression dialect base_gen c expected_kind)
+        materialize_child_null_check = _op_needs_to_materialize_null_checks op_kind
+        parsed_args_and_null_checks = arguments.map (c -> _generate_expression dialect base_gen c expected_kind materialize_child_null_check)
         parsed_args = parsed_args_and_null_checks.map .first
         null_checks = parsed_args_and_null_checks.map .second  . flatten
 
         ## In the case that we actually want to check for null then we need to generate the null
-            check sql for all the columns that have been used up to this point and that 
-            becomes the expression.
+           check sql for all the columns that have been used up to this point and that 
+           becomes the expression.
         expr_result = if op_kind == "IS_NULL" then _generate_is_null_expr null_checks else
             base_gen.apply_op_generator_with_metadata op parsed_args metadata
-        null_checks_result = if op_kind == "IS_NULL" then [] else null_checks
+        null_checks_result = if op_kind == "IS_NULL" || materialize_child_null_check then [] else null_checks
         has_kind = _op_return_kind op_kind
         converted_expr = _align_type expr_result has_kind expression_kind
         final_expr = if materialize_null_check then _generate_null_check_sql_builder null_checks_result converted_expr else 
@@ -405,6 +407,9 @@ private _op_expected_kind op -> Expression_Kind =
 private _op_return_kind op -> Expression_Kind = 
     return_bool_ops = ["NOT", "BETWEEN", ">=", ">", "<=", "<", "!=", "==", "IN", "IS_NULL", "LIKE", "STARTS_WITH", "ENDS_WITH", "CONTAINS", "EQUALS_IGNORE_CASE", "IS_EMPTY"]
     if return_bool_ops.contains op then Expression_Kind.Boolean_Condition else Expression_Kind.Value
+
+private _op_needs_to_materialize_null_checks op -> Boolean =
+    ["FILL_NULL", "COALESCE"].contains op
 
 ## PRIVATE
 make_dialect_operations =

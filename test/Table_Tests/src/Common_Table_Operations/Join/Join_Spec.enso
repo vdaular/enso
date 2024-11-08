@@ -134,7 +134,7 @@ add_join_specs suite_builder setup =
         group_builder.specify "should correctly handle duplicated rows in Equals" <|
             t1 = table_builder [["X", [1, 2, 2, 3]]]
             t2 = table_builder [["X", [1, 2, 2, 4]]]
-            r1 = t1.join t2 join_kind=Join_Kind.Full on="X" . sort "X"
+            r1 = t1.join t2 join_kind=Join_Kind.Full on="X" |> materialize |> _.sort "X"
             within_table r1 <|
                 # Both 2's from t1 match with _both_ ones from t2 _each_, so in total we get 4 `2` pairs:
                 r1.at "X" . to_vector . should_equal [Nothing, 1, 2, 2, 2, 2, 3]
@@ -144,11 +144,17 @@ add_join_specs suite_builder setup =
             t1 = table_builder [["X", ["a", "B"]], ["Y", [1, 2]]]
             t2 = table_builder [["X", ["A", "a", "b"]], ["Z", [1, 2, 3]]]
 
-            r1 = t1.join t2 join_kind=Join_Kind.Inner
+            r1 = t1.join t2 join_kind=Join_Kind.Inner |> materialize |> _.sort "Z"
             expect_column_names ["X", "Y", "Z"] r1
-            r1 . at "X" . to_vector . should_equal ["a"]
-            r1 . at "Y" . to_vector . should_equal [1]
-            r1 . at "Z" . to_vector . should_equal [2]
+            case setup.flagged ..Case_Sensitive_Text_Comparison of
+                True ->
+                    r1 . at "X" . to_vector . should_equal ["a"]
+                    r1 . at "Y" . to_vector . should_equal [1]
+                    r1 . at "Z" . to_vector . should_equal [2]
+                False ->
+                    r1 . at "X" . to_vector . should_equal ["a", "a", "B"]
+                    r1 . at "Y" . to_vector . should_equal [1, 1, 2]
+                    r1 . at "Z" . to_vector . should_equal [1, 2, 3]
 
             r2 = t1.join t2 join_kind=Join_Kind.Inner on=(Join_Condition.Equals_Ignore_Case "X") |> materialize |> _.sort ["Z"]
             expect_column_names ["X", "Y", "Right X", "Z"] r2
@@ -162,7 +168,7 @@ add_join_specs suite_builder setup =
                 t1 = table_builder [["X", ['s\u0301', 'S\u0301']], ["Y", [1, 2]]]
                 t2 = table_builder [["X", ['s', 'S', 'ś']], ["Z", [1, 2, 3]]]
 
-                r1 = t1.join t2 join_kind=Join_Kind.Inner
+                r1 = t1.join t2 join_kind=Join_Kind.Inner |> materialize |> _.sort "Z"
                 expect_column_names ["X", "Y", "Z"] r1
                 r1 . at "X" . to_vector . should_equal ['ś']
                 r1 . at "Y" . to_vector . should_equal [1]
@@ -180,7 +186,7 @@ add_join_specs suite_builder setup =
             t1 = table_builder [["X", [1, 2]], ["Y", [10, 20]]]
             t2 = table_builder [["X", [2.0, 2.1, 0.0]], ["Z", [1, 2, 3]]]
 
-            r1 = t1.join t2 join_kind=Join_Kind.Inner
+            r1 = t1.join t2 join_kind=Join_Kind.Inner |> materialize |> _.sort "Z"
             expect_column_names ["X", "Y", "Z"] r1
             r1 . at "X" . to_vector . should_equal [2]
             r1 . at "Y" . to_vector . should_equal [20]
@@ -272,7 +278,7 @@ add_join_specs suite_builder setup =
             # 7. duplicated rows on both sides
             t1 = table_builder [["X", [10, 20, 20]]]
             t2 = table_builder [["low", [15, 15]], ["high", [30, 30]]]
-            r1 = t1.join t2 join_kind=Join_Kind.Right_Outer on=(Join_Condition.Between "X" "low" "high")
+            r1 = t1.join t2 join_kind=Join_Kind.Right_Outer on=(Join_Condition.Between "X" "low" "high") |> materialize
             within_table r1 <|
                 r1.at "X" . to_vector . should_equal [20, 20, 20, 20]
                 r1.at "low" . to_vector . should_equal [15, 15, 15, 15]
@@ -497,9 +503,15 @@ add_join_specs suite_builder setup =
 
             r1 = t1.join t2 join_kind=Join_Kind.Inner |> materialize |> _.sort ["Y"]
             expect_column_names ["X", "Y", "Z"] r1
-            r1.at "X" . to_vector . should_equal ["a", "b"]
-            r1.at "Y" . to_vector . should_equal [2, 5]
-            r1.at "Z" . to_vector . should_equal [10, 50]
+            case setup.flagged ..Case_Sensitive_Text_Comparison of
+                True ->
+                    r1.at "X" . to_vector . should_equal ["a", "b"]
+                    r1.at "Y" . to_vector . should_equal [2, 5]
+                    r1.at "Z" . to_vector . should_equal [10, 50]
+                False ->
+                    r1.at "X" . to_vector . should_equal ["A", "a", "b"]
+                    r1.at "Y" . to_vector . should_equal [0, 2, 5]
+                    r1.at "Z" . to_vector . should_equal [10, 10, 50]
 
         group_builder.specify "should correctly handle nulls in equality conditions in outer joins" <|
             t1 = table_builder [["X", ["A", Nothing, "a", Nothing, "ą", "b"]], ["Y", [0, 1, 2, 3, 4, 5]]]
@@ -509,7 +521,9 @@ add_join_specs suite_builder setup =
             expect_column_names ["X", "Y", "Right X", "Z"] r2
             vs2 = r2 . rows . map .to_vector
             within_table r2 <|
-                vs2.at 0 . to_vector . should_equal ["A", 0, Nothing, Nothing]
+                case setup.flagged ..Case_Sensitive_Text_Comparison of
+                    True -> vs2.at 0 . to_vector . should_equal ["A", 0, Nothing, Nothing]
+                    False -> vs2.at 0 . to_vector . should_equal ["A", 0, 'a', 10]
                 vs2.at 1 . to_vector . should_equal [Nothing, 1, Nothing, Nothing]
                 vs2.at 2 . to_vector . should_equal ["a", 2, "a", 10]
                 vs2.at 3 . to_vector . should_equal [Nothing, 3, Nothing, Nothing]
@@ -520,11 +534,19 @@ add_join_specs suite_builder setup =
             expect_column_names ["X", "Y", "Right X", "Z"] r3
             vs3 = r3 . rows . map .to_vector
             within_table r3 <|
-                vs3.at 0 . to_vector . should_equal ["a", 2, "a", 10]
-                vs3.at 1 . to_vector . should_equal [Nothing, Nothing, Nothing, 20]
-                vs3.at 2 . to_vector . should_equal [Nothing, Nothing, Nothing, 30]
-                vs3.at 3 . to_vector . should_equal ["b", 5, "b", 50]
-
+                case setup.flagged ..Case_Sensitive_Text_Comparison of
+                    True -> 
+                        vs3.at 0 . to_vector . should_equal ["a", 2, "a", 10]
+                        vs3.at 1 . to_vector . should_equal [Nothing, Nothing, Nothing, 20]
+                        vs3.at 2 . to_vector . should_equal [Nothing, Nothing, Nothing, 30]
+                        vs3.at 3 . to_vector . should_equal ["b", 5, "b", 50]
+                    False ->
+                        vs3.at 0 . to_vector . should_equal ["A", 0, "a", 10]
+                        vs3.at 1 . to_vector . should_equal ["a", 2, "a", 10]
+                        vs3.at 2 . to_vector . should_equal [Nothing, Nothing, Nothing, 20]
+                        vs3.at 3 . to_vector . should_equal [Nothing, Nothing, Nothing, 30]
+                        vs3.at 4 . to_vector . should_equal ["b", 5, "b", 50]
+                
         group_builder.specify "should correctly handle nulls in case-insensitive equality conditions" <|
             t1 = table_builder [["X", ["A", Nothing, "a", Nothing, "ą", "b"]], ["Y", [0, 1, 2, 3, 4, 5]]]
             t2 = table_builder [["X", ["a", Nothing, Nothing, "b"]], ["Z", [10, 20, 30, 50]]]
