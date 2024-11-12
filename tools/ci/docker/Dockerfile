@@ -23,34 +23,37 @@ RUN useradd -u 2000 -c 'Enso Developer' -U -m ensodev
 # Currently, only the /volumes/workspace/project_root needs to be initialized with the project structure when the project is created.
 # All other directories are created on-demand.
 
-ADD bin /opt/enso/bin
-ADD component /opt/enso/component
-ADD lib /opt/enso/lib
-ADD editions /opt/enso/editions
-
-RUN mkdir /opt/enso/work
-RUN mkdir /opt/enso/logs
-RUN mkdir /opt/enso/profiling
-
 ENV ENSO_DATA_DIRECTORY=/volumes/workspace/data_root
 ENV ENSO_CONFIG_DIRECTORY=/volumes/workspace/config
 ENV ENSO_RUNTIME_DIRECTORY=/opt/enso/work
 ENV ENSO_LOG_DIRECTORY=/opt/enso/logs
 ENV ENSO_HOME=/volumes/workspace/home
 
-RUN chown -hR ensodev:ensodev /opt/enso
-RUN chmod -R u=rX,g=rX /opt/enso
-RUN chmod a+x /opt/enso/bin/*
-RUN chmod a+rw /opt/enso/work
-RUN chmod a+rw /opt/enso/logs
-RUN chmod a+rw /opt/enso/profiling
+COPY --chown=ensodev:ensodev --chmod=555 bin /opt/enso/bin
+COPY --chown=ensodev:ensodev --chmod=555 --from=docker-tools docker-entrypoint.sh /opt/enso/bin/
+COPY --chown=ensodev:ensodev --chmod=554 component /opt/enso/component
+COPY --chown=ensodev:ensodev --chmod=554 lib /opt/enso/lib
+COPY --chown=ensodev:ensodev --chmod=554 editions /opt/enso/editions
+
+# When the non-octal COPY --chmod support `moby/buildkit#5380` is stabilized,
+# it will be possible to use the following syntax. It allows to set more precise
+# chmod modifiers, i.e. the `X` attribute here does not mark files executable
+# while keeping the executable flag for directories.
+#COPY --chown=ensodev:ensodev --chmod=a=rx bin /opt/enso/bin
+#COPY --chown=ensodev:ensodev --chmod=a=rx --from=docker-tools docker-entrypoint.sh /opt/enso/bin/
+#COPY --chown=ensodev:ensodev --chmod=u=rX,g=rX component /opt/enso/component
+#COPY --chown=ensodev:ensodev --chmod=u=rX,g=rX lib /opt/enso/lib
+#COPY --chown=ensodev:ensodev --chmod=u=rX,g=rX editions /opt/enso/editions
 
 RUN mkdir -p /volumes
 RUN chown -hR ensodev:ensodev /volumes
 RUN chmod -R u=rwX,g=rwX /volumes
-COPY --from=docker-tools docker-entrypoint.sh /opt/enso/bin/
 
 USER ensodev:ensodev
+
+RUN mkdir -m 777 /opt/enso/work
+RUN mkdir -m 777 /opt/enso/logs
+RUN mkdir -m 777 /opt/enso/profiling
 
 WORKDIR /opt/enso
 

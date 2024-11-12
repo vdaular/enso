@@ -11,18 +11,23 @@ from a desired _edition_. The root directory of the docker build context can be
 provided in the `docker build` command:
 
 ```bash
-docker build -t <my-custom-name> -f tools/ci/docker/Dockerfile --build-context docker-tools=tools/ci/docker built-distribution/enso-engine-$VERSION-linux-amd64/enso-$VERSION
+docker build \
+  -t runtime:latest \
+  -f tools/ci/docker/Dockerfile \
+  --build-context docker-tools=tools/ci/docker \
+  built-distribution/enso-engine-0.0.0-dev-linux-amd64/enso-0.0.0-dev
 ```
-
-where for a locally built distribution on Linux it would be `VERSION=0.0.0-dev`.
 
 ## Running
 
-To start Language Server with a default configuration simply run the built image
-with the chosen name:
+To start Language Server with a default configuration, run the built image and
+mount the project directory:
 
 ```bash
-docker run -t <my-custom-name>
+docker run -it --rm \
+  --network=host \
+  --mount type=bind,src=~/Documents/enso-projects/NewProject,dst=/volumes/workspace/project_root \
+  runtime:latest
 ```
 
 # Ydoc NodeJS Docker
