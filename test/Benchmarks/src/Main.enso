@@ -31,6 +31,7 @@ import project.Text.Build
 import project.Text.Compare
 import project.Text.Contains
 import project.Text.Pretty
+import project.Text.Regex_Bench
 import project.Text.Reverse
 import project.Time.Work_Days
 import project.Time.Format
@@ -79,6 +80,7 @@ all_benchmarks =
         builder.append Compare.collect_benches
         builder.append Contains.collect_benches
         builder.append Pretty.collect_benches
+        builder.append Regex_Bench.collect_benches
         builder.append Reverse.collect_benches
 
         # Time
