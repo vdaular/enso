@@ -180,6 +180,17 @@ add_column_operation_specs suite_builder setup =
             3.1 . round 16 . should_fail_with Illegal_Argument
             3.1 . round -16 . should_fail_with Illegal_Argument
 
+        group_builder.specify "Non-builtin integer column rounding" <|
+            cases = [[0, 0, 0], [3, 0, 3], [-3, 0, -3], [3, 1, 3], [-3, 1, -3]]
+                + [[11, -1, 10], [24, -1, 20], [-10, -1, -10], [-11, -1, -10]]
+            bankers_cases = [[0.235, 2, 0.24], [0.225, 2, 0.22], [-0.235, 2, -0.24]]
+                + [[-0.225, 2, -0.22], [12300, -2, 12300], [12301, -2, 12300]]
+                + [[-12300, -2, -12300], [-12301, -2, -12300]]
+            cases_transposed = cases.transpose
+            bankers_cases_transposed = bankers_cases.transpose
+            round_batch (cases_transposed.at 0) (cases_transposed.at 1) False . should_equal (cases_transposed.at 2)
+            round_batch (bankers_cases_transposed.at 0) (bankers_cases_transposed.at 1) True . should_equal (bankers_cases_transposed.at 2)
+
     build_sorted_table table_structure table_builder=setup.table_builder =
         # Workaround for https://github.com/enso-org/enso/issues/10321
         if setup.prefix.contains "Snowflake" . not then table_builder table_structure else
