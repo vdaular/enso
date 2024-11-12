@@ -3,7 +3,7 @@
  * These are from variables defined at build time, environment variables,
  * monkeypatching on `window` and generated code.
  */
-import * as buildJson from './../../build.json' assert { type: 'json' }
+import * as buildJson from './../../build.json' with { type: 'json' }
 
 // =============
 // === Types ===

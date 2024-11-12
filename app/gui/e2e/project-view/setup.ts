@@ -1,6 +1,6 @@
 import { Server } from '@open-rpc/server-js'
 import * as random from 'lib0/random'
-import pmSpec from './pm-openrpc.json' assert { type: 'json' }
+import pmSpec from './pm-openrpc.json' with { type: 'json' }
 import {
   methods as pmMethods,
   projects,

@@ -28,7 +28,7 @@ import { uuidToBits } from 'ydoc-shared/uuid'
 import * as Y from 'yjs'
 import { mockFsDirectoryHandle, type FileTree } from '../util/convert/fsAccess'
 import { mockDataWSHandler as originalMockDataWSHandler } from './dataServer'
-import mockDb from './mockSuggestions.json' assert { type: 'json' }
+import mockDb from './mockSuggestions.json' with { type: 'json' }
 
 const mockProjectId = random.uuidv4() as Uuid
 const standardBase = 'Standard.Base' as QualifiedName

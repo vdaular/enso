@@ -36,6 +36,6 @@ export const VERSION = {
 // === Options ===
 // ===============
 
-import CONFIG from './config.json' assert { type: 'json' }
+import CONFIG from './config.json' with { type: 'json' }
 
 export const OPTIONS = linkedDist.config.options.merge(linkedDist.config.objectToGroup(CONFIG))

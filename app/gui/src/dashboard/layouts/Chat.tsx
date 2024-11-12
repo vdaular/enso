@@ -3,7 +3,7 @@ import * as React from 'react'
 
 import * as reactDom from 'react-dom'
 
-import * as chat from 'enso-chat/chat'
+import * as chat from '#/services/Chat'
 
 import CloseLargeIcon from '#/assets/close_large.svg'
 import DefaultUserIcon from '#/assets/default_user.svg'
@@ -480,6 +480,7 @@ export default function Chat(props: ChatProps) {
       element.scrollTop = element.scrollHeight - element.clientHeight
     }
     // Auto-scroll MUST only happen when the message list changes.
+    // eslint-disable-next-line react-compiler/react-compiler
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages])
 

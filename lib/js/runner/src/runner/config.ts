@@ -1,6 +1,6 @@
 /** @file Configuration options for the application. */
 
-import * as jsonCfg from './config.json' assert { type: 'json' }
+import * as jsonCfg from './config.json' with { type: 'json' }
 import { logger } from './log'
 
 export const DEFAULT_ENTRY_POINT = 'ide'

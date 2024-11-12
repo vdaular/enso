@@ -13,7 +13,7 @@ import type * as vite from 'vite'
 
 import * as projectManagement from '@/projectManagement'
 import * as common from 'enso-common'
-import GLOBAL_CONFIG from 'enso-common/src/config.json' assert { type: 'json' }
+import GLOBAL_CONFIG from 'enso-common/src/config.json' with { type: 'json' }
 import * as ydocServer from 'ydoc-server'
 
 import * as contentConfig from '@/contentConfig'

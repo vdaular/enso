@@ -1,5 +1,5 @@
 /** @file Configuration options for an application. */
-import CONFIG from '@/config.json' assert { type: 'json' }
+import CONFIG from '@/config.json' with { type: 'json' }
 
 export type ApplicationConfig = typeof baseConfig
 export type ApplicationConfigValue = ConfigValue<typeof baseConfig>
