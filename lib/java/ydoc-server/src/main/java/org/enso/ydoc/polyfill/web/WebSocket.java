@@ -3,9 +3,11 @@ package org.enso.ydoc.polyfill.web;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.webclient.websocket.WsClient;
 import io.helidon.webclient.websocket.WsClientProtocolConfig;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.websocket.WsRouting;
 import io.helidon.websocket.WsListener;
 import io.helidon.websocket.WsSession;
@@ -130,7 +132,7 @@ final class WebSocket implements Polyfill, ProxyExecutable {
         var port = arguments[2].asInt();
         var handleConnect = arguments[3];
 
-        var routing =
+        var webSocketRouting =
             WsRouting.builder()
                 .endpoint(
                     "*",
@@ -150,7 +152,14 @@ final class WebSocket implements Polyfill, ProxyExecutable {
                       return connection;
                     });
 
-        yield WebServer.builder().host(host).port(port).addRouting(routing).build();
+        var httpRouting = HttpRouting.builder().route(Method.GET, "_health", () -> "OK");
+
+        yield WebServer.builder()
+            .host(host)
+            .port(port)
+            .addRouting(webSocketRouting)
+            .addRouting(httpRouting)
+            .build();
       }
 
       case WEB_SOCKET_SERVER_START -> {

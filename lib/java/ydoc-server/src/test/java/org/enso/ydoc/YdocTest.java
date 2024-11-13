@@ -3,6 +3,9 @@ package org.enso.ydoc;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.http.Status;
+import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.websocket.WsClient;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.websocket.WsRouting;
@@ -35,6 +38,7 @@ public class YdocTest {
 
   private static final int WEB_SERVER_PORT = 44556;
   private static final String YDOC_URL = "ws://localhost:1234/project/";
+  private static final String HEALTHCHECK_URL = "http://localhost:1234/_health";
   private static final String WEB_SERVER_URL = "ws://127.0.0.1:" + WEB_SERVER_PORT;
 
   private static final Logger log = LoggerFactory.getLogger(YdocTest.class);
@@ -94,6 +98,10 @@ public class YdocTest {
 
     var ok2 = queue.take();
     Assert.assertTrue(ok2.debugDataHex(), BufferDataUtil.isOk(ok2));
+
+    WebClient http = WebClient.create();
+    HttpClientResponse healthcheckResponse = http.get(HEALTHCHECK_URL).request();
+    Assert.assertEquals(Status.OK_200, healthcheckResponse.status());
   }
 
   private static final class BufferDataUtil {
