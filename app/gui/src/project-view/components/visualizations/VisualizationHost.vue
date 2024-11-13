@@ -6,13 +6,18 @@ import { provideVisualizationConfig } from '@/providers/visualizationConfig'
 import type { Vec2 } from '@/util/data/vec2'
 import type { ToValue } from '@/util/reactivity'
 
-const { visualization, data, size, nodeType } = defineProps<{
-  visualization?: string | object
-  data?: any
-  size: Vec2
-  nodeType?: string | undefined
-  overflow?: boolean
-  toolbarOverflow?: boolean
+// A single prop `params` is important to mitigate a bug in Vue that causes
+// inconsistent state when multiple props are present on the custom elements component.
+// TODO[ib]: Add a link to the issue.
+const props = defineProps<{
+  params: {
+    visualization?: string | object
+    data?: any
+    size: Vec2
+    nodeType?: string | undefined
+    overflow?: boolean
+    toolbarOverflow?: boolean
+  }
 }>()
 
 const emit = defineEmits<{
@@ -32,10 +37,10 @@ const emit = defineEmits<{
 
 provideVisualizationConfig({
   get size() {
-    return size
+    return props.params.size
   },
   get nodeType() {
-    return nodeType
+    return props.params.nodeType
   },
   setPreprocessor: (
     visualizationModule: string,
@@ -52,7 +57,11 @@ provideVisualizationConfig({
 <template>
   <Suspense>
     <template #fallback><LoadingVisualization /></template>
-    <component :is="visualization" v-if="visualization && data" :data="data" />
+    <component
+      :is="props.params.visualization"
+      v-if="props.params.visualization && props.params.data"
+      :data="props.params.data"
+    />
     <LoadingVisualization v-else />
   </Suspense>
 </template>

@@ -4,6 +4,7 @@ import { Awareness } from '@/stores/awareness'
 import { ComputedValueRegistry } from '@/stores/project/computedValueRegistry'
 import {
   ExecutionContext,
+  visualizationConfigPreprocessorEqual,
   type NodeVisualizationConfiguration,
 } from '@/stores/project/executionContext'
 import { VisualizationDataRegistry } from '@/stores/project/visualizationDataRegistry'
@@ -237,11 +238,17 @@ export const { provideFn: provideProjectStore, injectFn: useProjectStore } = cre
     })
 
     function useVisualizationData(configuration: WatchSource<Opt<NodeVisualizationConfiguration>>) {
-      const id = random.uuidv4() as Uuid
+      const newId = () => random.uuidv4() as Uuid
+      const visId = ref(newId())
+      // Regenerate the visualization ID when the preprocessor changes.
+      watch(configuration, (a, b) => {
+        if (a != null && b != null && !visualizationConfigPreprocessorEqual(a, b))
+          visId.value = newId()
+      })
 
       watch(
-        configuration,
-        (config, _, onCleanup) => {
+        [configuration, visId],
+        ([config, id], _, onCleanup) => {
           executionContext.setVisualization(id, config)
           onCleanup(() => executionContext.setVisualization(id, null))
         },
@@ -250,7 +257,9 @@ export const { provideFn: provideProjectStore, injectFn: useProjectStore } = cre
         { immediate: true, flush: 'post' },
       )
 
-      return computed(() => parseVisualizationData(visualizationDataRegistry.getRawData(id)))
+      return computed(() =>
+        parseVisualizationData(visualizationDataRegistry.getRawData(visId.value)),
+      )
     }
 
     const dataflowErrors = new ReactiveMapping(computedValueRegistry.db, (id, info) => {

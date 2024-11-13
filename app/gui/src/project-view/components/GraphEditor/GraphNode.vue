@@ -405,6 +405,10 @@ watchEffect(() => {
     emit('update:rect', nodeOuterRect.value)
   }
 })
+
+const dataSource = computed(
+  () => ({ type: 'node', nodeId: props.node.rootExpr.externalId }) as const,
+)
 </script>
 
 <template>
@@ -489,7 +493,7 @@ watchEffect(() => {
       :nodePosition="nodePosition"
       :isCircularMenuVisible="menuVisible"
       :currentType="props.node.vis?.identifier"
-      :dataSource="{ type: 'node', nodeId: props.node.rootExpr.externalId }"
+      :dataSource="dataSource"
       :typename="expressionInfo?.typename"
       :width="visualizationWidth"
       :height="visualizationHeight"

@@ -183,6 +183,15 @@ watch(
   () => isFullscreen,
   (f) => f && nextTick(() => panelElement.value?.focus()),
 )
+
+const visParams = computed(() => {
+  return {
+    visualization: effectiveVisualization.value,
+    data: effectiveVisualizationData.value,
+    size: contentElementSize.value,
+    nodeType: props.typename,
+  }
+})
 </script>
 
 <script lang="ts">
@@ -239,10 +248,7 @@ customElements.define(ensoVisualizationHost, defineCustomElement(VisualizationHo
         >
           <component
             :is="ensoVisualizationHost"
-            :visualization="effectiveVisualization"
-            :data="effectiveVisualizationData"
-            :size="contentElementSize"
-            :nodeType="typename"
+            :params="visParams"
             @updatePreprocessor="
               updatePreprocessor($event.detail[0], $event.detail[1], ...$event.detail.slice(2))
             "

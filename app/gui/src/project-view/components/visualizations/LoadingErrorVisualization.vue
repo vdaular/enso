@@ -4,11 +4,7 @@ export const inputType = 'Any'
 </script>
 
 <script setup lang="ts">
-import { watchEffect } from 'vue'
-
 const props = defineProps<{ data: { name: string; error: Error } }>()
-
-watchEffect(() => console.error(props.data.error))
 </script>
 
 <template>
