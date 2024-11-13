@@ -2,7 +2,8 @@ package org.enso.languageserver.boot.resource;
 
 import java.util.concurrent.Executor;
 import org.enso.languageserver.boot.ComponentSupervisor;
-// import org.enso.ydoc.Ydoc;
+import org.enso.languageserver.boot.config.ApplicationConfig;
+import org.enso.ydoc.Ydoc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +25,7 @@ public final class YdocInitialization extends LockedInitialization {
             ? false
             : Boolean.parseBoolean(System.getenv(ENABLED_YDOC));
     if (ydocEnabled) {
-      /*logger.debug("Starting Ydoc server...");
+      logger.debug("Starting Ydoc server...");
       var applicationConfig = ApplicationConfig.load();
       var ydoc =
           Ydoc.builder()
@@ -37,8 +38,7 @@ public final class YdocInitialization extends LockedInitialization {
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
-      logger.debug("Started Ydoc server");*/
-      logger.debug("Limitation: Ydoc server must be started independently from Language Server");
+      logger.debug("Started Ydoc server");
     } else {
       logger.debug("Reverting to Node.js Ydoc");
     }
