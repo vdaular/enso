@@ -27,6 +27,7 @@ import { injectKeyboard } from '@/providers/keyboard'
 import { useGraphStore, type Node } from '@/stores/graph'
 import { asNodeId } from '@/stores/graph/graphDatabase'
 import { useProjectStore } from '@/stores/project'
+import { useNodeExecution } from '@/stores/project/nodeExecution'
 import { suggestionDocumentationUrl } from '@/stores/suggestionDatabase/entry'
 import { Ast } from '@/util/ast'
 import type { AstId } from '@/util/ast/abstract'
@@ -79,6 +80,7 @@ const nodeSelection = injectGraphSelection(true)
 const projectStore = useProjectStore()
 const graph = useGraphStore()
 const navigator = injectGraphNavigator(true)
+const nodeExecution = useNodeExecution()
 
 const nodeId = computed(() => asNodeId(props.node.rootExpr.externalId))
 const potentialSelfArgumentId = computed(() => props.node.primarySubject)
@@ -409,6 +411,21 @@ watchEffect(() => {
 const dataSource = computed(
   () => ({ type: 'node', nodeId: props.node.rootExpr.externalId }) as const,
 )
+
+// === Recompute node expression ===
+
+// The node is considered to be recomputing for at least this time.
+const MINIMAL_EXECUTION_TIMEOUT_MS = 500
+const recomputationTimeout = ref(false)
+const actualRecomputationStatus = nodeExecution.isBeingRecomputed(nodeId.value)
+const isBeingRecomputed = computed(
+  () => recomputationTimeout.value || actualRecomputationStatus.value,
+)
+function recomputeOnce() {
+  nodeExecution.recomputeOnce(nodeId.value, 'Live')
+  recomputationTimeout.value = true
+  setTimeout(() => (recomputationTimeout.value = false), MINIMAL_EXECUTION_TIMEOUT_MS)
+}
 </script>
 
 <template>
@@ -474,6 +491,7 @@ const dataSource = computed(
       :documentationUrl="documentationUrl"
       :isRemovable="props.node.type === 'component'"
       :isEnterable="graph.nodeCanBeEntered(nodeId)"
+      :isBeingRecomputed="isBeingRecomputed"
       @enterNode="emit('enterNode')"
       @startEditing="startEditingNode"
       @startEditingComment="editingComment = true"
@@ -485,6 +503,7 @@ const dataSource = computed(
       @createNewNode="setSelected(), emit('createNodes', [{ commit: false, content: undefined }])"
       @toggleDocPanel="emit('toggleDocPanel')"
       @click.capture="setSelected"
+      @recompute="recomputeOnce"
     />
     <GraphVisualization
       v-if="isVisualizationVisible"

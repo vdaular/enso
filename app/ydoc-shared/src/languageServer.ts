@@ -413,11 +413,16 @@ export class LanguageServer extends ObservableV2<Notifications & TransportEvents
     contextId: ContextId,
     invalidatedExpressions?: 'all' | string[],
     executionEnvironment?: ExecutionEnvironment,
+    expressionConfigs?: {
+      expressionId: ExpressionId
+      executionEnvironment?: ExecutionEnvironment
+    }[],
   ): Promise<LsRpcResult<void>> {
     return this.request('executionContext/recompute', {
       contextId,
       invalidatedExpressions,
       executionEnvironment,
+      expressionConfigs,
     })
   }
 

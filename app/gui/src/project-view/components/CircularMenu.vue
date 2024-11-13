@@ -15,6 +15,7 @@ const props = defineProps<{
   isEnterable: boolean
   matchableNodeColors: Set<string>
   documentationUrl: string | undefined
+  isBeingRecomputed: boolean
 }>()
 const emit = defineEmits<{
   'update:isVisualizationEnabled': [isVisualizationEnabled: boolean]
@@ -25,6 +26,7 @@ const emit = defineEmits<{
   delete: []
   createNewNode: []
   toggleDocPanel: []
+  recompute: []
 }>()
 
 const isDropdownOpened = ref(false)
@@ -91,6 +93,14 @@ function readableBinding(binding: keyof (typeof graphBindings)['bindings']) {
           <MenuButton @click.stop="closeDropdown(), emit('startEditingComment')">
             <SvgIcon name="comment" class="rowIcon" />
             <span>Add Comment</span>
+          </MenuButton>
+          <MenuButton
+            data-testid="recompute"
+            :disabled="props.isBeingRecomputed"
+            @click.stop="closeDropdown(), emit('recompute')"
+          >
+            <SvgIcon name="workflow_play" class="rowIcon" />
+            <span>Write</span>
           </MenuButton>
           <MenuButton @click.stop="closeDropdown(), (showColorPicker = true)">
             <SvgIcon name="paint_palette" class="rowIcon" />

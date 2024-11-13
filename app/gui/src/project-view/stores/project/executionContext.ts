@@ -264,16 +264,25 @@ export class ExecutionContext extends ObservableV2<ExecutionContextNotification>
     this.sync()
   }
 
-  /** TODO: Add docs */
+  /** See {@link LanguageServer.recomputeExecutionContext}. */
   recompute(
-    expressionIds: 'all' | ExternalId[] = 'all',
+    invalidatedIds?: 'all' | ExternalId[],
     executionEnvironment?: ExecutionEnvironment,
+    expressionConfigs?: {
+      expressionId: ExpressionId
+      executionEnvironment?: ExecutionEnvironment
+    }[],
   ) {
     this.queue.pushTask(async (state) => {
       if (state.status !== 'created') {
         this.sync()
       }
-      await this.lsRpc.recomputeExecutionContext(this.id, expressionIds, executionEnvironment)
+      await this.lsRpc.recomputeExecutionContext(
+        this.id,
+        invalidatedIds,
+        executionEnvironment,
+        expressionConfigs,
+      )
       return state
     })
   }
