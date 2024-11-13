@@ -18,7 +18,7 @@ import { useProjectStore } from '@/stores/project'
 import { useSuggestionDbStore } from '@/stores/suggestionDatabase'
 import { type Typename } from '@/stores/suggestionDatabase/entry'
 import type { VisualizationDataSource } from '@/stores/visualization'
-import { cancelOnClick, isNodeOutside, targetIsOutside } from '@/util/autoBlur'
+import { isNodeOutside, targetIsOutside } from '@/util/autoBlur'
 import { tryGetIndex } from '@/util/data/array'
 import type { Opt } from '@/util/data/opt'
 import { Rect } from '@/util/data/rect'
@@ -77,17 +77,29 @@ const clickOutsideAssociatedElements = (e: PointerEvent) => {
       false
     : props.associatedElements.every((element) => targetIsOutside(e, element))
 }
-const cbOpen: Interaction = cancelOnClick(clickOutsideAssociatedElements, {
-  cancel: () => emit('canceled'),
+const cbOpen: Interaction = {
+  pointerdown: (e: PointerEvent) => {
+    if (clickOutsideAssociatedElements(e)) {
+      if (props.usage.type === 'editNode') {
+        acceptInput()
+      } else {
+        emit('canceled')
+      }
+    }
+    return false
+  },
+  cancel: () => {
+    emit('canceled')
+  },
   end: () => {
-    // In AI prompt mode likely the input is not a valid mode.
-    if (input.mode.mode !== 'aiPrompt') {
-      acceptInput()
-    } else {
+    // In AI prompt mode, the input is likely not a valid expression.
+    if (input.mode.mode === 'aiPrompt') {
       emit('canceled')
+    } else {
+      acceptInput()
     }
   },
-})
+}
 
 function scaleValues<T extends Record<any, number>>(
   values: T,
