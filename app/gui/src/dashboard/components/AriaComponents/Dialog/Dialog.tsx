@@ -12,6 +12,9 @@ import * as suspense from '#/components/Suspense'
 
 import * as mergeRefs from '#/utilities/mergeRefs'
 
+import { useDimensions } from '#/hooks/dimensionsHooks'
+import type { Spring } from '#/utilities/motion'
+import { motion } from '#/utilities/motion'
 import type { VariantProps } from '#/utilities/tailwindVariants'
 import { tv } from '#/utilities/tailwindVariants'
 import * as dialogProvider from './DialogProvider'
@@ -20,13 +23,9 @@ import type * as types from './types'
 import * as utlities from './utilities'
 import { DIALOG_BACKGROUND } from './variants'
 
-// =================
-// === Constants ===
-// =================
-/** Props for the {@link Dialog} component. */
-export interface DialogProps
-  extends types.DialogProps,
-    Omit<VariantProps<typeof DIALOG_STYLES>, 'scrolledToTop'> {}
+// This is a JSX component, even though it does not contain function syntax.
+// eslint-disable-next-line no-restricted-syntax
+const MotionDialog = motion(aria.Dialog)
 
 const OVERLAY_STYLES = tv({
   base: 'fixed inset-0 isolate flex items-center justify-center bg-primary/20 z-tooltip',
@@ -54,7 +53,7 @@ const MODAL_STYLES = tv({
 
 const DIALOG_STYLES = tv({
   base: DIALOG_BACKGROUND({
-    className: 'w-full max-w-full flex flex-col text-left align-middle shadow-xl',
+    className: 'w-full max-w-full flex flex-col text-left align-middle shadow-xl overflow-clip',
   }),
   variants: {
     type: {
@@ -124,6 +123,7 @@ const DIALOG_STYLES = tv({
     closeButton: 'col-start-1 col-end-1 mr-auto',
     heading: 'col-start-2 col-end-2 my-0 text-center',
     content: 'relative flex-auto overflow-y-auto max-h-[inherit]',
+    measuredContent: 'flex flex-col max-h-[90vh]',
   },
   compoundVariants: [
     { type: 'modal', size: 'small', class: 'max-w-sm' },
@@ -144,9 +144,23 @@ const DIALOG_STYLES = tv({
   },
 })
 
+const RESIZE_TRANSITION_STYLES: Spring = {
+  type: 'spring',
+  // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+  stiffness: 300,
+  // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+  damping: 25,
+  mass: 1,
+}
+
 // ==============
 // === Dialog ===
 // ==============
+
+/** Props for the {@link Dialog} component. */
+export interface DialogProps
+  extends types.DialogProps,
+    Omit<VariantProps<typeof DIALOG_STYLES>, 'scrolledToTop'> {}
 
 /**
  * A dialog is an overlay shown above other content in an application.
@@ -187,8 +201,10 @@ export function Dialog(props: DialogProps) {
   }
 
   const dialogId = aria.useId()
+  const dialogLayoutId = `dialog-${dialogId}`
   const titleId = `${dialogId}-title`
 
+  const [contentDimensionsRef, { width: dialogWidth, height: dialogHeight }] = useDimensions()
   const dialogRef = React.useRef<HTMLDivElement>(null)
   const overlayState = React.useRef<aria.OverlayTriggerState | null>(null)
   const root = portal.useStrictPortalContext()
@@ -250,7 +266,11 @@ export function Dialog(props: DialogProps) {
               id={dialogId}
               type={TYPE_TO_DIALOG_TYPE[type]}
             >
-              <aria.Dialog
+              <MotionDialog
+                layout
+                layoutId={dialogLayoutId}
+                animate={{ width: dialogWidth, height: dialogHeight }}
+                transition={RESIZE_TRANSITION_STYLES}
                 id={dialogId}
                 ref={mergeRefs.mergeRefs(dialogRef, (element) => {
                   if (element) {
@@ -268,8 +288,8 @@ export function Dialog(props: DialogProps) {
                 aria-labelledby={titleId}
                 {...ariaDialogProps}
               >
-                {(opts) => {
-                  return (
+                {(opts) => (
+                  <div className={styles.measuredContent()} ref={contentDimensionsRef}>
                     <dialogProvider.DialogProvider value={{ close: opts.close, dialogId }}>
                       {(closeButton !== 'none' || title != null) && (
                         <aria.Header className={styles.header({ scrolledToTop: isScrolledToTop })}>
@@ -313,9 +333,9 @@ export function Dialog(props: DialogProps) {
                         </errorBoundary.ErrorBoundary>
                       </div>
                     </dialogProvider.DialogProvider>
-                  )
-                }}
-              </aria.Dialog>
+                  </div>
+                )}
+              </MotionDialog>
             </dialogStackProvider.DialogStackRegistrar>
           </aria.Modal>
         )

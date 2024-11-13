@@ -106,7 +106,7 @@ export function useDimensions({
               (entries) => {
                 if (entries[0]) {
                   measure()
-                  updateChildPosition() // entries[0].boundingClientRect)
+                  updateChildPosition()
                 }
               },
               // eslint-disable-next-line @typescript-eslint/no-magic-numbers
