@@ -19,8 +19,8 @@ public final class MemoryAppender extends Appender {
   }
 
   public static MemoryAppender parse(Config config) {
-    String fowardTo = config.hasPath(forwardToKey) ? config.getString(forwardToKey) : "console";
-    return new MemoryAppender(fowardTo);
+    String forwardTo = config.hasPath(forwardToKey) ? config.getString(forwardToKey) : "";
+    return new MemoryAppender(forwardTo);
   }
 
   @Override
@@ -47,6 +47,15 @@ public final class MemoryAppender extends Appender {
   @Override
   public String getName() {
     return appenderName;
+  }
+
+  @Override
+  public String toString() {
+    if (this.forwardTo != null && !this.forwardTo.equals("")) {
+      return "MemoryAppender[forwardTo=" + forwardTo + "]";
+    } else {
+      return "MemoryAppender[forwardTo=<disabled>]";
+    }
   }
 
   private static final String forwardToKey = "forward-to";

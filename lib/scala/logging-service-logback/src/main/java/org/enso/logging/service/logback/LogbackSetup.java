@@ -256,11 +256,10 @@ public final class LogbackSetup extends LoggerSetup {
       default:
         target = null;
     }
-    if (target == null) {
-      throw new RuntimeException("unsupported appender " + appenderConfig.getTarget());
+    if (target != null) {
+      target.setContext(env.ctx);
+      target.start();
     }
-    target.setContext(env.ctx);
-    target.start();
     var memoryAppender = new MemoryAppender(target);
     env.finalizeAppender(memoryAppender);
     return true;

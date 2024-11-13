@@ -1098,11 +1098,14 @@ lazy val `logging-service-logback` = project
       "org.slf4j"        % "slf4j-api"               % slf4jVersion,
       "org.netbeans.api" % "org-openide-util-lookup" % netbeansApiVersion % "provided"
     ),
+    Compile / javaModuleName := "org.enso.logging.service.logback",
     Compile / shouldCompileModuleInfoManually := true,
     Compile / internalModuleDependencies := Seq(
       (`logging-service` / Compile / exportedModule).value,
       (`logging-config` / Compile / exportedModule).value
     ),
+    Test / shouldCompileModuleInfoManually := true,
+    Test / javaModuleName := "org.enso.logging.service.logback.test.provider",
     Test / moduleDependencies ++= scalaLibrary,
     Test / internalModuleDependencies := Seq(
       (Compile / exportedModule).value
@@ -2914,6 +2917,8 @@ lazy val `runtime-integration-tests` =
         //(`ydoc-server` / javaModuleName).value,
         (`runtime-instrument-common` / javaModuleName).value,
         (`text-buffer` / javaModuleName).value,
+        (`logging-service-logback` / Test / javaModuleName).value,
+        "ch.qos.logback.classic",
         "truffle.tck.tests"
       ),
       Test / addReads := {
@@ -2930,7 +2935,10 @@ lazy val `runtime-integration-tests` =
             (`text-buffer` / javaModuleName).value,
             (`semver` / javaModuleName).value,
             "truffle.tck.tests",
-            "org.openide.util.lookup.RELEASE180"
+            "org.openide.util.lookup.RELEASE180",
+            "ch.qos.logback.classic",
+            (`logging-service-logback` / Compile / javaModuleName).value,
+            (`logging-service-logback` / Test / javaModuleName).value
           ),
           testInstrumentsModName -> Seq(runtimeModName)
         )
