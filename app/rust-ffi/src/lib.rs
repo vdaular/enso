@@ -48,7 +48,11 @@ pub fn is_numeric_literal(code: &str) -> bool {
     let parsed = PARSER.with(|parser| parser.parse_block(code));
     let enso_parser::syntax::tree::Variant::BodyBlock(body) = parsed.variant else { return false };
     let [stmt] = &body.statements[..] else { return false };
-    stmt.expression.as_ref().map_or(false, |expr| match &expr.variant {
+    let Some(stmt) = &stmt.expression else { return false };
+    let enso_parser::syntax::tree::Variant::ExpressionStatement(stmt) = &stmt.variant else {
+        return false;
+    };
+    match &stmt.expression.variant {
         enso_parser::syntax::tree::Variant::Number(_) => true,
         enso_parser::syntax::tree::Variant::UnaryOprApp(app) =>
             app.opr.code == "-"
@@ -56,10 +60,27 @@ pub fn is_numeric_literal(code: &str) -> bool {
                     matches!(rhs.variant, enso_parser::syntax::tree::Variant::Number(_))
                 }),
         _ => false,
-    })
+    }
 }
 
 #[wasm_bindgen(start)]
 fn main() {
     console_error_panic_hook::set_once();
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_ident_or_operator() {
+        assert!(is_numeric_literal("1234"));
+        assert!(is_numeric_literal("-1234"));
+        assert!(!is_numeric_literal(""));
+        assert!(!is_numeric_literal("-"));
+        assert!(!is_numeric_literal("1-234"));
+        assert!(!is_numeric_literal("1234!"));
+        assert!(!is_numeric_literal("1234e5"));
+    }
 }
