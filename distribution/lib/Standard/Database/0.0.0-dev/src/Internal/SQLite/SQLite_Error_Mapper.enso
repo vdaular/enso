@@ -18,7 +18,9 @@ type SQLite_Error_Mapper
     ## PRIVATE
        SQLite does not mind SQLite NULL primary keys.
     is_null_primary_key_violation : SQL_Error -> Boolean
-    is_null_primary_key_violation _ = False
+    is_null_primary_key_violation error =
+        _ = error
+        False
 
     ## PRIVATE
     is_table_already_exists_error : SQL_Error -> Boolean

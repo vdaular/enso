@@ -845,10 +845,9 @@ type Date
 
     ## PRIVATE
        Gets the default drop down option for Date.
-    default_widget : Boolean -> Widget
-    default_widget (include_today:Boolean=False) =
+    default_widget (include_today:Boolean=False) display:Display=..When_Modified -> Widget =
         options = [Option "<Fixed Date>" "Date.new"] + (if include_today then [Option "<Today>" "Date.today"] else [])
-        Widget.Single_Choice values=options display=Display.When_Modified
+        Widget.Single_Choice values=options display=display
 
 ## PRIVATE
 week_days_between start end =

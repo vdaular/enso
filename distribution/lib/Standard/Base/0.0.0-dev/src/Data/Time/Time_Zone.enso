@@ -203,10 +203,9 @@ type Time_Zone
 
     ## PRIVATE
        Gets the default drop down option for Time_Zone.
-    default_widget : Widget
-    default_widget =
+    default_widget display:Display=..When_Modified -> Widget =
         options = [Option "System" "Time_Zone.system", Option "Local" "Time_Zone.local", Option "UTC" "Time_Zone.utc", Option "Named" "(Time_Zone.parse 'UTC')", Option "custom" "(Time_Zone.new 1 0 0)"]
-        Widget.Single_Choice values=options display=Display.When_Modified
+        Widget.Single_Choice values=options display=display
 
     ## ICON time
        Gets a list of all the time zone names that are predefined.

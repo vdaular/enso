@@ -17,6 +17,7 @@ import Standard.Database.Connection.Connection.Connection
 import Standard.Database.DB_Column.DB_Column
 import Standard.Database.DB_Table.DB_Table
 import Standard.Database.Dialect
+import Standard.Database.Dialect_Flag.Dialect_Flag
 import Standard.Database.Feature.Feature
 import Standard.Database.Internal.Aggregate_Helper
 import Standard.Database.Internal.Aggregate_Helper.Aggregate_With_Helper_Expressions
@@ -39,7 +40,6 @@ import Standard.Database.Internal.Replace_Params.Replace_Params
 import Standard.Database.Internal.SQL_Type_Mapping.SQL_Type_Mapping
 import Standard.Database.Internal.SQL_Type_Reference.SQL_Type_Reference
 import Standard.Database.Internal.Statement_Setter.Statement_Setter
-import Standard.Database.Dialect_Flag.Dialect_Flag
 import Standard.Database.SQL.SQL_Builder
 import Standard.Database.SQL.SQL_Fragment
 import Standard.Database.SQL_Statement.SQL_Statement

@@ -252,7 +252,7 @@ type Enso_File
        Arguments:
        - name: The name of the label to create.
        - color: The color of the label to create.
-    create_label : Text -> Text -> Nothing
+    create_label : Text -> Color -> Nothing
     create_label (name : Text) (color : Color) -> Nothing =
         # TODO once cloud also checks for tag existance, if the Write context is enabled we could avoid this check as cloud will do it anyway - then we'll have only one request instead of 2 each time
         # Cloud ticket: https://github.com/enso-org/cloud-v2/issues/1544

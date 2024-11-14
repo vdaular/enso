@@ -94,9 +94,8 @@ type Index_Sub_Range
         [o1, o2, o4, o5, o6, o7, o3]
 
     ## PRIVATE
-    default_widget : (Integer|Nothing) -> Widget
-    default_widget count:(Integer|Nothing)=Nothing =
-        Single_Choice display=Display.Always (Index_Sub_Range.default_options count)
+    default_widget count:(Integer|Nothing)=Nothing display:Display=..Always -> Widget =
+        Single_Choice display=display (Index_Sub_Range.default_options count)
 
 ## PRIVATE
    Resolves a vector of ranges or indices into a vector of ranges that fit

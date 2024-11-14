@@ -15,10 +15,9 @@ from project.Metadata.Choice import Option
 
 ## PRIVATE
    Creates a Single_Choice Widget for text or secret value.
-make_text_secret_selector : Widget
-make_text_secret_selector =
+make_text_secret_selector display:Display=..When_Modified -> Widget =
     fqn = Meta.get_qualified_type_name Enso_Secret
-    make_single_choice [['<Text Value>', '""'], ['<Secret Value>', fqn+".get"]]
+    make_single_choice [['<Text Value>', '""'], ['<Secret Value>', fqn+".get"]] display=display
 
 ## PRIVATE
    Creates a Regex / Text Widget for search and replace.

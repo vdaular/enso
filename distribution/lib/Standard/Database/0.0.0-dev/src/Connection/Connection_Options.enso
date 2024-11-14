@@ -1,4 +1,5 @@
 from Standard.Base import all
+import Standard.Base.Metadata.Display
 import Standard.Base.Metadata.Widget
 from Standard.Base.Metadata.Choice import Option
 from Standard.Base.Metadata.Widget import Single_Choice, Text_Input, Vector_Editor
@@ -20,13 +21,12 @@ type Connection_Options
 
     ## PRIVATE
        Widget to design connection options.
-    default_widget : Widget
-    default_widget =
+    default_widget display:Display=..Always -> Widget =
         fqn = Meta.get_qualified_type_name Pair . take (..Before_Last '.')
         default = 'pair "key" "value"'
         pair = Option "Pair" fqn+".pair" [["first", Text_Input], ["second", make_text_secret_selector]]
         item_editor = Single_Choice display=..Always values=[pair]
-        Vector_Editor item_editor=item_editor display=..Always item_default=default
+        Vector_Editor item_editor=item_editor display=display item_default=default
 
 ## PRIVATE
 Connection_Options.from (that:Vector) = Connection_Options.Value that

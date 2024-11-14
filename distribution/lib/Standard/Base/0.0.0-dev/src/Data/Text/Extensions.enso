@@ -335,7 +335,7 @@ Text.find_all self pattern:Text|Regex=".*" case_sensitivity:Case_Sensitivity=..S
              # Evaluates to true
              "CONTACT@enso.org".match regex Case_Sensitivity.Insensitive
 Text.match : Text|Regex -> Case_Sensitivity -> Boolean ! Regex_Syntax_Error | Illegal_Argument
-Text.match self pattern:Text|Regex=".*" case_sensitivity:Case_Sensitivity=..Sensitive -> Boolean =
+Text.match self pattern:Text|Regex=".*" case_sensitivity:Case_Sensitivity=..Sensitive -> Boolean ! Regex_Syntax_Error | Illegal_Argument =
     case_insensitive = case_sensitivity.is_case_insensitive_in_memory
     compiled_pattern = Regex.compile pattern case_insensitive=case_insensitive
     compiled_pattern.matches self

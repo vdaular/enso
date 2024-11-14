@@ -460,8 +460,8 @@ type Locale
 
     ## PRIVATE
        Gets the default drop down option for Locale.
-    default_widget : Widget
-    default_widget = Widget.Single_Choice values=Locale.widget_options display=Display.When_Modified
+    default_widget display:Display=..When_Modified -> Widget =
+        Widget.Single_Choice values=Locale.widget_options display=display
 
     ## PRIVATE
     predefined_locale_fields : Vector Text

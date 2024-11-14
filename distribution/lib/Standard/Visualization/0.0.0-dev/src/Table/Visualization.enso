@@ -59,7 +59,7 @@ prepare_visualization y max_rows=1000 =
    Column Limit
 max_columns = 250
 
-##PRIVATE
+## PRIVATE
 whitespace_count : Column -> Integer | Nothing
 whitespace_count col =
     find_whitespace col = 

@@ -14,8 +14,8 @@ from project.Data.Boolean import Boolean, False, True
 polyglot java import java.lang.ArithmeticException
 polyglot java import java.lang.ClassCastException
 polyglot java import java.lang.OutOfMemoryError
-polyglot java import org.enso.base.CompareException
 polyglot java import org.enso.base.cache.ResponseTooLargeException
+polyglot java import org.enso.base.CompareException
 
 ## An error indicating that no value was found.
 type Not_Found

@@ -125,7 +125,7 @@ type Faker
        Arguments
        - bit_length: specifies the range of values to select from. The values
          will be between -2^bit_length and 2^bit_length.
-    large_integer : Integer -> Integer -> Integer
+    large_integer : Integer -> Integer
     large_integer self bit_length =
         BigInteger.new bit_length 0 self.generator
 
@@ -141,7 +141,7 @@ type Faker
        Arguments
        - bit_length: specifies the range of values to select from. The values
          will be between -2^bit_length and 2^bit_length.
-    decimal : Integer -> Integer -> Integer
+    decimal : Integer -> Integer
     decimal self bit_length =
         (self.large_integer bit_length) + self.float
 

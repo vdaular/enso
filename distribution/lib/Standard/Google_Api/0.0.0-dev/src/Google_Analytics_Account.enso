@@ -1,5 +1,5 @@
 from Standard.Base import all
-from Standard.Base.Metadata import make_single_choice, Widget
+from Standard.Base.Metadata import Display, make_single_choice, Widget
 from Standard.Base.Metadata.Choice import Option
 from Standard.Base.Metadata.Widget import Text_Input, Vector_Editor
 
@@ -58,6 +58,7 @@ type Google_Analytics_Account
 
 ## Filter for Google Analytics accounts.
 type Google_Analytics_Account_Filter
+    ## Filter to all accounts.
     All_Accounts
 
     ## Filter to a single account
@@ -69,26 +70,25 @@ type Google_Analytics_Account_Filter
     Accounts accounts:Vector
 
     ## PRIVATE
-    default_widget : Any -> Any -> Widget
-    default_widget self_arg cache =
+    default_widget self_arg cache display:Display=..Always -> Widget =
         _ = self_arg
         default = [Option "<All>" "..All_Accounts", Option "<Account>" "..Account", Option "<Multiple Accounts>" "..Accounts"]
         Panic.catch Any handler=_->(make_single_choice default) <|
             credentials = cache.if_not_nothing <| cache "credentials"
             options = Google_Analytics.list_accounts credentials=(credentials.if_nothing Google_Credential.Default) limit=(..First 10) . map p->(Option (p.name + " (" + p.id + ")") "..Account "+p.id.pretty)
-            make_single_choice default+options display=..Always
+            make_single_choice default+options display=display
 
-   ## PRIVATE
-   private as_java self -> Array | Nothing = case self of
-       Google_Analytics_Account_Filter.All_Accounts -> Nothing
-       Google_Analytics_Account_Filter.Account acc -> case acc of
-           _ : Google_Analytics_Account -> [acc.java_record].to_array
-           _ : Text -> [_create_analytics_account_from_text acc].to_array
-       Google_Analytics_Account_Filter.Accounts accounts ->
-           vec = accounts.map acc-> case acc of
-               _ : Google_Analytics_Account -> acc.java_record
-               _ : Text -> _create_analytics_account_from_text acc
-           vec.to_array
+    ## PRIVATE
+    private as_java self -> Array | Nothing = case self of
+        Google_Analytics_Account_Filter.All_Accounts -> Nothing
+        Google_Analytics_Account_Filter.Account acc -> case acc of
+            _ : Google_Analytics_Account -> [acc.java_record].to_array
+            _ : Text -> [_create_analytics_account_from_text acc].to_array
+        Google_Analytics_Account_Filter.Accounts accounts ->
+            vec = accounts.map acc-> case acc of
+                _ : Google_Analytics_Account -> acc.java_record
+                _ : Text -> _create_analytics_account_from_text acc
+            vec.to_array
 
 ## PRIVATE
    Creates a Google Analytics account from a text ID.

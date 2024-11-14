@@ -518,10 +518,9 @@ type Time_Of_Day
 
     ## PRIVATE
        Gets the default drop down option for Time_Of_Day.
-    default_widget : Boolean -> Widget
-    default_widget (include_now:Boolean=False) =
+    default_widget (include_now:Boolean=False) display:Display=..When_Modified -> Widget =
         options = [Option "<Fixed Time>" "Time_Of_Day.new"] + (if include_now then [Option "<Now>" "Time_Of_Day.now"] else [])
-        Widget.Single_Choice values=options display=Display.When_Modified
+        Widget.Single_Choice values=options display=display
 
 ## PRIVATE
 Time_Of_Day.from (that:JS_Object) =

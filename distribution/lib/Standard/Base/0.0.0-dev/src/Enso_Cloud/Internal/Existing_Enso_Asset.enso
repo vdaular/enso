@@ -25,7 +25,7 @@ import project.Runtime.Context
 from project.Data.Boolean import Boolean, False, True
 from project.Data.Text.Extensions import all
 from project.Enso_Cloud.Data_Link_Helpers import data_link_extension
-from project.Enso_Cloud.Public_Utils import get_required_field, get_optional_field
+from project.Enso_Cloud.Public_Utils import get_optional_field, get_required_field
 
 ## PRIVATE
    Currently, most of the Cloud API relies on asset IDs and not paths.

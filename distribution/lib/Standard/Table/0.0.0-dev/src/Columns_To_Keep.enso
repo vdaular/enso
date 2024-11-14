@@ -1,5 +1,5 @@
 from Standard.Base import Text, Vector
-from Standard.Base.Metadata import make_single_choice, Widget
+from Standard.Base.Metadata import Display, make_single_choice, Widget
 
 ## Specifies which columns to keep in a union operation.
 type Columns_To_Keep
@@ -30,6 +30,6 @@ type Columns_To_Keep
        The default widget for `Columns_To_Keep`.
        It does not display the internal `In_Any_Warn_On_Missing` variant, since
        that variant is only meant to be used as the default value.
-    default_widget -> Widget =
-        make_single_choice <|
+    default_widget display:Display=..When_Modified -> Widget =
+        make_single_choice display=display <|
             ["In_Any", "In_All", "In_List"].map c-> [c, ".."+c]

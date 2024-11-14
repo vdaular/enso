@@ -5,18 +5,19 @@ from Standard.Base.Metadata import make_single_choice, Widget
 from Standard.Base.Metadata.Choice import Option
 from Standard.Base.Metadata.Widget import Single_Choice, Text_Input, Vector_Editor
 
-from Standard.Table import Data_Formatter, Table
 import Standard.Table.Rows_To_Read.Rows_To_Read
+from Standard.Table import Data_Formatter, Table
 from Standard.Table.Table import from_java_table
 
-import project.Google_Credential.Google_Credential
 import project.Google_Analytics_Account.Google_Analytics_Account
 import project.Google_Analytics_Account.Google_Analytics_Account_Filter
 import project.Google_Analytics_Field.Google_Analytics_Field
 import project.Google_Analytics_Property.Google_Analytics_Property
+import project.Google_Credential.Google_Credential
 
 polyglot java import org.enso.google.GoogleAnalyticsReader
 
+## Type providing API access to Google Analytics.
 type Google_Analytics
     ## GROUP Standard.Base.Input
        ICON data_input

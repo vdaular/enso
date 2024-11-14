@@ -128,7 +128,7 @@ get_object bucket key credentials:AWS_Credential=AWS_Credential.Default delimite
    - If the object does not exist, an `S3_Key_Not_Found` error is thrown.
 @credentials AWS_Credential.default_widget
 head : Text -> Text -> AWS_Credential -> Dictionary Text Any ! S3_Error
-head (bucket : Text = Missing_Argument.throw "bucket") key:Text="" credentials:AWS_Credential=AWS_Credential.Default =
+head (bucket : Text = Missing_Argument.throw "bucket") key:Text="" credentials:AWS_Credential=..Default =
     response = raw_head bucket key credentials
     pairs = response.sdkFields.map f-> [f.memberName, f.getValueOrDefault response]
     Dictionary.from_vector pairs

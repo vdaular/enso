@@ -145,10 +145,9 @@ type File_Format
         format_types.flat_map .get_name_patterns . flat_map .patterns . distinct
 
     ## PRIVATE
-    default_widget : Widget
-    default_widget =
+    default_widget display:Display=..When_Modified -> Widget =
         options = ([Auto_Detect]+format_types).flat_map .get_dropdown_options
-        Single_Choice display=Display.Always values=options
+        Single_Choice display=display values=options
 
     ## PRIVATE
        Builds a widget intended to be used for `name_filter` of `File.list` and
