@@ -63,6 +63,7 @@ public final class EnsoActionProvider implements ActionProvider {
 
     @Override
     public void invokeAction(String action, Lookup lkp) throws IllegalArgumentException {
+        var enableDebug = COMMAND_DEBUG_SINGLE.equals(action) || COMMAND_DEBUG.equals(action);
         var process = ActionProgress.start(lkp);
         var params = ExplicitProcessParameters.buildExplicitParameters(lkp);
         var fo = lkp.lookup(FileObject.class);
@@ -89,7 +90,7 @@ public final class EnsoActionProvider implements ActionProvider {
 
                 var b = ProcessBuilder.getLocal();
                 b.setExecutable(file.getPath());
-                b.setArguments(prepareArguments(script));
+                b.setArguments(prepareArguments(script, enableDebug));
                 b.setWorkingDirectory(script.getParent());
                 b.setRedirectErrorStream(true);
 
@@ -135,7 +136,7 @@ public final class EnsoActionProvider implements ActionProvider {
             } else {
                 descriptor = descriptor.controllable(true);
             }
-            var launch = COMMAND_DEBUG_SINGLE.equals(action) || COMMAND_DEBUG.equals(action) ?
+            var launch = enableDebug ?
                 new DebugAndLaunch(fo, builder, params) : builder;
             var service = ExecutionService.newService(launch, descriptor, script.getName());
             service.run();
@@ -199,8 +200,11 @@ public final class EnsoActionProvider implements ActionProvider {
     }
 
 
-    private static List<String> prepareArguments(File script) {
+    private static List<String> prepareArguments(File script, boolean enableJvm) {
         var list = new ArrayList<String>();
+        if (enableJvm) {
+            list.add("--jvm");
+        }
         list.add("--run");
         list.add(script.getPath());
         return list;
