@@ -46,7 +46,7 @@ object Ydoc {
     ydocServerResourceManaged: File,
     streams: TaskStreams
   ): Seq[File] = {
-    val store = streams.cacheStoreFactory.make("ydoc-server-cache")
+    val store = streams.cacheStoreFactory.make("ydoc-server-npm-compile-cache")
     val generator = Tracked.inputChanged[Seq[File], Seq[File]](store) {
       case (changed, _) =>
         val resourceYdocServerJs =
@@ -55,7 +55,12 @@ object Ydoc {
         if (changed) {
           val command = s"$pnpmCommand -r compile"
           streams.log.info(command)
-          command ! streams.log
+          val exitCode = command ! streams.log
+
+          if (exitCode != 0) {
+            throw new CommandFailed(command, exitCode)
+          }
+
           val generatedYdocServerJs =
             base / "app" / "ydoc-server-polyglot" / "dist" / "main.cjs"
           IO.copyFile(generatedYdocServerJs, resourceYdocServerJs)
@@ -64,18 +69,16 @@ object Ydoc {
         Seq(resourceYdocServerJs)
     }
 
-    val ydocServerPolyglot = base / "app" / "ydoc-server-polyglot"
-    val ydocServerPolyglotSrc =
-      ydocServerPolyglot * ("*.mjs" | "*.json") +++ (ydocServerPolyglot / "src") ** "*.ts"
-    val ydocShared = base / "app" / "ydoc-shared"
-    val ydocSharedSrc =
-      ydocShared * ("*.ts" || "*.json") +++
-      (ydocShared / "src") ** "*.ts" +++
-      (ydocShared / "parser-codegen") ** "*.ts"
-    val sharedSrc  = (base / "app" / "gui2" / "shared") ** "*.ts"
-    val inputFiles = ydocServerPolyglotSrc +++ sharedSrc
+    val sourceFiles: PathFinder =
+      (base / "app") ** ("*.js" | "*.ts" | "*.json" | "*.rs" | "*.toml")
+    val nodeModulesFiles =
+      (base / "app") ** "node_modules" ** "*"
+    val ideDesktopFiles =
+      (base / "app") ** "ide-desktop" ** "*"
 
-    generator(inputFiles.get)
+    val inputFiles = sourceFiles --- nodeModulesFiles --- ideDesktopFiles
+
+    generator(inputFiles.get())
   }
 
   private def runNpmInstallCached(base: File, streams: TaskStreams): Unit = {
@@ -86,12 +89,23 @@ object Ydoc {
         if (changed || !nodeModules.isDirectory) {
           val command = s"$pnpmCommand i --frozen-lockfile"
           streams.log.info(command)
-          command ! streams.log
+          val exitCode = command ! streams.log
+          if (exitCode != 0) {
+            throw new CommandFailed(command, exitCode)
+          }
         }
     }
 
-    val inputFile = base / "package-lock.json"
+    val inputFile = base / "pnpm-lock.json"
 
     generator(inputFile)
+  }
+
+  final private class CommandFailed(command: String, exitCode: Int)
+      extends FeedbackProvidedException {
+
+    override def toString: String = {
+      s"Command [$command] failed with exit code [$exitCode]"
+    }
   }
 }
