@@ -14,6 +14,7 @@ import type {
   SortChangedEvent,
 } from 'ag-grid-enterprise'
 import { computed, onMounted, ref, shallowRef, watchEffect, type Ref } from 'vue'
+import { TableVisualisationTooltip } from './TableVisualisationTooltip'
 
 export const name = 'Table'
 export const icon = 'table'
@@ -125,9 +126,7 @@ const defaultColDef: Ref<ColDef> = ref({
   filter: true,
   resizable: true,
   minWidth: 25,
-  cellRenderer: (params: ICellRendererParams) => {
-    return params.node.rowPinned === 'top' ? customCellRenderer(params) : cellRenderer(params)
-  },
+  cellRenderer: cellRenderer,
   cellClass: cellClass,
   contextMenuItems: [commonContextMenuActions.copy, 'copyWithHeaders', 'separator', 'export'],
 } satisfies ColDef)
@@ -149,47 +148,6 @@ const selectableRowLimits = computed(() => {
     defaults.push(rowLimit.value)
   }
   return defaults
-})
-
-const pinnedTopRowData = computed(() => {
-  if (typeof props.data === 'object' && 'data_quality_pairs' in props.data) {
-    const data_ = props.data
-    const headers = data_.header
-    const numberOfNothing = data_.data_quality_pairs!.number_of_nothing
-    const numberOfWhitespace = data_.data_quality_pairs!.number_of_whitespace
-    const total = data_.all_rows_count as number
-    if (headers?.length) {
-      const pairs: Record<string, string> = headers.reduce(
-        (obj: any, key: string, index: number) => {
-          obj[key] = {
-            numberOfNothing: numberOfNothing[index],
-            numberOfWhitespace: numberOfWhitespace[index],
-            total,
-          }
-          return obj
-        },
-        {},
-      )
-      return [{ [INDEX_FIELD_NAME]: 'Data Quality', ...pairs }]
-    }
-    return [
-      {
-        [INDEX_FIELD_NAME]: 'Data Quality',
-        Value: {
-          numberOfNothing: numberOfNothing[0] ?? null,
-          numberOfWhitespace: numberOfWhitespace[0] ?? null,
-          total,
-        },
-      },
-    ]
-  }
-  return []
-})
-
-const pinnedRowHeight = computed(() => {
-  const valueTypes =
-    typeof props.data === 'object' && 'value_type' in props.data ? props.data.value_type : []
-  return valueTypes.some((t) => t.constructor === 'Char' || t.constructor === 'Mixed') ? 2 : 1
 })
 
 const newNodeSelectorValues = computed(() => {
@@ -334,39 +292,6 @@ function cellClass(params: CellClassParams) {
   return null
 }
 
-const createVisual = (value: number) => {
-  let color
-  if (value < 33) {
-    color = 'green'
-  } else if (value < 66) {
-    color = 'orange'
-  } else {
-    color = 'red'
-  }
-  return `
-    <div style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${color}; margin-left: 5px;"></div>
-  `
-}
-
-const customCellRenderer = (params: ICellRendererParams) => {
-  if (params.node.rowPinned === 'top') {
-    const nothingPerecent = (params.value.numberOfNothing / params.value.total) * 100
-    const wsPerecent = (params.value.numberOfWhitespace / params.value.total) * 100
-    const nothingVisibility = params.value.numberOfNothing === null ? 'hidden' : 'visible'
-    const whitespaceVisibility = params.value.numberOfWhitespace === null ? 'hidden' : 'visible'
-
-    return `<div>
-    <div style="visibility:${nothingVisibility};">
-      Nulls/Nothing: ${nothingPerecent.toFixed(2)}% ${createVisual(nothingPerecent)}
-    </div>
-    <div style="visibility:${whitespaceVisibility};">
-      Trailing/Leading Whitespace: ${wsPerecent.toFixed(2)}% ${createVisual(wsPerecent)}
-    </div>
-    </div>`
-  }
-  return null
-}
-
 function cellRenderer(params: ICellRendererParams) {
   // Convert's the value into a display string.
   if (params.value === null) return '<span style="color:grey; font-style: italic;">Nothing</span>'
@@ -391,34 +316,67 @@ function addRowIndex(data: object[]): object[] {
   return data.map((row, i) => ({ [INDEX_FIELD_NAME]: i, ...row }))
 }
 
-function toField(name: string, valueType?: ValueType | null | undefined): ColDef {
-  const valType = valueType ? valueType.constructor : null
-  const displayValue = valueType ? valueType.display_text : null
-  let icon
-  switch (valType) {
+function getValueTypeIcon(valueType: string) {
+  switch (valueType) {
     case 'Char':
-      icon = 'text3'
-      break
+      return 'text3'
     case 'Boolean':
-      icon = 'check'
-      break
+      return 'check'
     case 'Integer':
     case 'Float':
     case 'Decimal':
     case 'Byte':
-      icon = 'math'
-      break
+      return 'math'
     case 'Date':
     case 'Date_Time':
-      icon = 'calendar'
-      break
+      return 'calendar'
     case 'Time':
-      icon = 'time'
-      break
+      return 'time'
     case 'Mixed':
-      icon = 'mixed'
+      return 'mixed'
   }
-  const svgTemplate = `<svg viewBox="0 0 16 16" width="16" height="16"> <use xlink:href="${icons}#${icon}"/> </svg>`
+}
+
+/**
+ * Generates the column definition for the table vizulization, including displaying the data value type and
+ * data quality indicators.
+ * @param name - The name which will be displayed in the table header and used to idenfiy the column.
+ * @param [options.index] - The index of column the corresponds to the data in the `dataQuality` arrays
+ * (`number_of_nothing` and `number_of_whitespace`). This identifies the correct indicators for each column
+ * to be displayed in the toolip. If absent the data quality metrics will not be shown.
+ * @param [options.valueType] - The data type of the column, displayed as an icon
+ * and in text within the tooltip. If absent the value type icon and text will not be shown.
+ */
+function toField(
+  name: string,
+  options: { index?: number; valueType?: ValueType | null | undefined } = {},
+): ColDef {
+  const { index, valueType } = options
+
+  const displayValue = valueType ? valueType.display_text : null
+  const icon = valueType ? getValueTypeIcon(valueType.constructor) : null
+
+  const dataQuality =
+    typeof props.data === 'object' && 'data_quality_pairs' in props.data ?
+      props.data.data_quality_pairs
+      // eslint-disable-next-line camelcase
+    : { number_of_nothing: [], number_of_whitespace: [] }
+
+  const nothingIsNonZero =
+    index != null && dataQuality?.number_of_nothing ?
+      (dataQuality.number_of_nothing[index] ?? 0) > 0
+    : false
+
+  const whitespaceIsNonZero =
+    index != null && dataQuality?.number_of_nothing ?
+      (dataQuality.number_of_whitespace[index] ?? 0) > 0
+    : false
+
+  const showDataQuality = nothingIsNonZero || whitespaceIsNonZero
+
+  const getSvgTemplate = (icon: string) =>
+    `<svg viewBox="0 0 16 16" width="16" height="16"> <use xlink:href="${icons}#${icon}"/> </svg>`
+  const svgTemplateWarning = showDataQuality ? getSvgTemplate('warning') : ''
   const menu = `<span ref="eMenu" class="ag-header-icon ag-header-cell-menu-button"> </span>`
   const sort = `
       <span ref="eFilter" class="ag-header-icon ag-header-label-icon ag-filter-icon" aria-hidden="true"></span>
@@ -427,23 +385,33 @@ function toField(name: string, valueType?: ValueType | null | undefined): ColDef
       <span ref="eSortDesc" class="ag-header-icon ag-sort-descending-icon" aria-hidden="true"></span>
       <span ref="eSortNone" class="ag-header-icon ag-sort-none-icon" aria-hidden="true"></span>
     `
+
+  const styles = 'display:flex; flex-direction:row; justify-content:space-between; width:inherit;'
   const template =
     icon ?
-      `<span style='display:flex; flex-direction:row; justify-content:space-between; width:inherit;'><span ref="eLabel" class="ag-header-cell-label" role="presentation" style='display:flex; flex-direction:row; justify-content:space-between; width:inherit;'> ${name} </span>  ${menu} ${sort} ${svgTemplate}</span>`
-    : `<span ref="eLabel" style='display:flex; flex-direction:row; justify-content:space-between; width:inherit;'>${name} ${menu} ${sort}</span>`
+      `<span style='${styles}'><span ref="eLabel" class="ag-header-cell-label" role="presentation" style='${styles}'> ${name} </span>${menu} ${sort} ${getSvgTemplate(icon)} ${svgTemplateWarning}</span>`
+    : `<span style='${styles}' ref="eLabel">${name} ${menu} ${sort} ${svgTemplateWarning}</span>`
+
   return {
     field: name,
     headerComponentParams: {
       template,
       setAriaSort: () => {},
     },
+    tooltipComponent: TableVisualisationTooltip,
     headerTooltip: displayValue ? displayValue : '',
+    tooltipComponentParams: {
+      numberOfNothing: index != null ? dataQuality.number_of_nothing[index] : null,
+      numberOfWhitespace: index != null ? dataQuality.number_of_whitespace[index] : null,
+      total: typeof props.data === 'object' ? props.data.all_rows_count : 0,
+      showDataQuality,
+    },
   }
 }
 
-function toRowField(name: string, valueType?: ValueType | null | undefined) {
+function toRowField(name: string, index: number, valueType?: ValueType | null | undefined) {
   return {
-    ...toField(name, valueType),
+    ...toField(name, { index, valueType }),
     cellDataType: false,
   }
 }
@@ -546,7 +514,7 @@ watchEffect(() => {
     const keys = new Set<string>()
     for (const val of data_.json) {
       if (val != null) {
-        Object.keys(val).forEach((k) => {
+        Object.keys(val).forEach((k, i) => {
           if (!keys.has(k)) {
             keys.add(k)
             columnDefs.value.push(toField(k))
@@ -583,9 +551,9 @@ watchEffect(() => {
           return toLinkField(v, data_.get_child_node_action, data_.link_value_type)
         }
         if (config.nodeType === ROW_NODE_TYPE) {
-          return toRowField(v, valueType)
+          return toRowField(v, i, valueType)
         }
-        return toField(v, valueType)
+        return toField(v, { index: i, valueType })
       }) ?? []
 
     columnDefs.value =
@@ -726,8 +694,6 @@ config.setToolbar(
         :rowData="rowData"
         :defaultColDef="defaultColDef"
         :textFormatOption="textFormatterSelected"
-        :pinnedTopRowData="pinnedTopRowData"
-        :pinnedRowHeightMultiplier="pinnedRowHeight"
         @sortOrFilterUpdated="(e) => checkSortAndFilter(e)"
       />
     </Suspense>
@@ -774,5 +740,12 @@ config.setToolbar(
 .button-wrappers {
   display: flex;
   flex-direction: row;
+}
+
+.ag-header-cell .myclass {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: inherit;
 }
 </style>
