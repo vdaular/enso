@@ -1,10 +1,10 @@
 from Standard.Base import all
 import Standard.Base.Data.Array_Proxy.Array_Proxy
+import Standard.Base.Errors.Common.Floating_Point_Equality
 import Standard.Base.Errors.Illegal_State.Illegal_State
 
 import project.Column.Column
 import project.Value_Type.Value_Type
-from project.Errors import Floating_Point_Equality
 
 ## PRIVATE
    An Enso implementation mirroring `UnorderedMultiValueKey` from the Java

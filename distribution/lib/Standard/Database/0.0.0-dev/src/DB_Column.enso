@@ -1,6 +1,7 @@
 from Standard.Base import all
 import Standard.Base.Data.Read.Many_Files_List.Many_Files_List
 import Standard.Base.Errors.Common.Index_Out_Of_Bounds
+import Standard.Base.Errors.Common.Floating_Point_Equality
 import Standard.Base.Errors.Illegal_Argument.Illegal_Argument
 import Standard.Base.Errors.Illegal_State.Illegal_State
 import Standard.Base.Internal.Rounding_Helpers
@@ -15,7 +16,7 @@ import Standard.Table.Internal.Widget_Helpers
 import Standard.Table.Rows_To_Read.Rows_To_Read
 from Standard.Table import Auto, Column, Data_Formatter, Previous_Value, Sort_Column, Table, Value_Type
 from Standard.Table.Column import default_date_period
-from Standard.Table.Errors import Conversion_Failure, Floating_Point_Equality, Inexact_Type_Coercion, Invalid_Value_Type
+from Standard.Table.Errors import Conversion_Failure, Inexact_Type_Coercion, Invalid_Value_Type
 from Standard.Table.Internal.Cast_Helpers import check_cast_compatibility
 
 import project.Connection.Connection.Connection

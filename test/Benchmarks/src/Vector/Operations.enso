@@ -14,8 +14,8 @@ options = Bench.options . set_warmup (Bench.phase_conf 5 5) . set_measure (Bench
 
 collect_benches = Bench.build builder->
     vector_size = 1000000
-    random_vec = Utils.make_random_vec vector_size
-    random_vec_2 = Utils.make_random_vec 100000
+    random_vec = Utils.make_random_float_vec vector_size
+    random_vec_2 = Utils.make_random_float_vec 100000
     random_gen = Java_Random.new 123456
     stateful_fun x =
        s = State.get Number

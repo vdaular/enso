@@ -1,14 +1,14 @@
 from Standard.Base import all
-import Standard.Base.Errors.Common.No_Such_Method
 import Standard.Base.Errors.Deprecated.Deprecated
 import Standard.Base.Errors.Illegal_Argument.Illegal_Argument
+from Standard.Base.Errors.Common import Floating_Point_Equality, No_Such_Method
 
 import Standard.Table.Internal.Aggregate_Column_Helper
 import Standard.Table.Internal.Aggregate_Column_Helper.Internal_Order_By_Column_Reference
 import Standard.Table.Internal.Problem_Builder.Problem_Builder
 from Standard.Table import Aggregate_Column
 from Standard.Table.Aggregate_Column.Aggregate_Column import all
-from Standard.Table.Errors import Floating_Point_Equality, No_Output_Columns
+from Standard.Table.Errors import No_Output_Columns
 
 import project.DB_Table.DB_Table
 import project.Dialect.Dialect

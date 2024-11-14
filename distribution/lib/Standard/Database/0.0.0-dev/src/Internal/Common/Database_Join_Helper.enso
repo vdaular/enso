@@ -1,10 +1,10 @@
 from Standard.Base import all
 import Standard.Base.Errors.Illegal_State.Illegal_State
+from Standard.Base.Errors.Common import Floating_Point_Equality
 
 import Standard.Table.Internal.Join_Helpers
 import Standard.Table.Internal.Unique_Name_Strategy.Unique_Name_Strategy
 from Standard.Table import Join_Kind
-from Standard.Table.Errors import Floating_Point_Equality
 
 import project.Connection.Connection.Connection
 import project.DB_Table.DB_Table

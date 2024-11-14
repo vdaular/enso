@@ -142,7 +142,7 @@ distinct vector on =
                 key = on item
                 if (existing.get key False) then existing else
                     builder.append item
-                    existing.insert key True
+                    existing.insert key True no_warning=True
 
 duplicates vector on = Vector.build builder->
     counts = vector.fold Dictionary.empty current-> item->

@@ -1,4 +1,5 @@
 import project.Any.Any
+import project.Data.Numbers.Float
 import project.Data.Numbers.Integer
 import project.Data.Pair.Pair
 import project.Data.Text.Text
@@ -11,8 +12,10 @@ import project.Meta
 import project.Metadata.Widget
 import project.Nothing.Nothing
 import project.Panic.Panic
+import project.Warning.Warning
 from project.Data.Boolean import Boolean, False, True
 from project.Data.Text.Extensions import all
+from project.Errors.Common import Floating_Point_Equality
 from project.Metadata.Choice import Option
 from project.Metadata.Widget import Single_Choice, Vector_Editor
 from project.Widget_Helpers import make_all_selector
@@ -155,6 +158,10 @@ type Dictionary key value
        - key: The key to insert the value for.
        - value: The value to associate with the `key`.
 
+       ! Error Conditions
+         - If a floating-point value is used as a key, a
+           `Floating_Point_Equality` warning is attached.
+
        > Example
          Insert the value "seven" into the dictionary for the key 7.
 
@@ -163,9 +170,14 @@ type Dictionary key value
              example_insert = Examples.dictionary.insert 7 "seven"
     @key (make_all_selector ..Always)
     @value (make_all_selector ..Always)
-    insert : Any -> Any -> Dictionary
-    insert self key=(Missing_Argument.throw "key") value=(Missing_Argument.throw "value") =
-        self.insert_builtin key value
+    insert : Any -> Any -> Boolean -> Dictionary
+    insert self key=(Missing_Argument.throw "key") value=(Missing_Argument.throw "value") no_warning:Boolean=False =
+        new_dict = self.insert_builtin key value
+        case key of
+            _ : Float ->
+                if no_warning then new_dict else
+                    Warning.attach (Floating_Point_Equality.Used_As_Dictionary_Key key) new_dict
+            _ -> new_dict
 
     ## GROUP Selections
        ICON table_clean

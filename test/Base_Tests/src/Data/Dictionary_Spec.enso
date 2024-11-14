@@ -1,6 +1,7 @@
 from Standard.Base import all
 import Standard.Base.Errors.Illegal_Argument.Illegal_Argument
 import Standard.Base.Errors.No_Such_Key.No_Such_Key
+from Standard.Base.Errors.Common import Floating_Point_Equality
 
 from Standard.Test import all
 
@@ -268,6 +269,16 @@ add_specs suite_builder =
             m.at 100 . should_equal 2
             m.at 200 . should_equal 3
             m.at Nothing . should_equal 1
+
+        group_builder.specify "should attach a warning when a Float is used as a key" <|
+            m = Dictionary.empty . insert 1.2 3
+            m.at 1.2 . should_equal 3
+            Problems.expect_only_warning Floating_Point_Equality m
+
+        group_builder.specify "should attach a warning when a Float is used as a key (using from_vector)" <|
+            m = Dictionary.from_vector [[2, 3], [1.2, 3], [4, 5]]
+            m.at 1.2 . should_equal 3
+            Problems.expect_only_warning Floating_Point_Equality m
 
     suite_builder.group "Polyglot keys and values" group_builder->
         group_builder.specify "should support polyglot keys" pending=pending_js_missing <|
