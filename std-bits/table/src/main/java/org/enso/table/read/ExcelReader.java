@@ -279,7 +279,7 @@ public class ExcelReader {
     }
   }
 
-  private static Table readRange(
+  public static Table readRange(
       Workbook workbook,
       ExcelRange excelRange,
       ExcelHeaders.HeaderBehavior headers,

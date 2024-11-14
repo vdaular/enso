@@ -58,6 +58,32 @@ spec_fmt suite_builder header file read_method sheet_count=5 =
             t.columns.map .name . should_equal ['Item', 'Price', 'Quantity', 'Price 1']
             t.at 'Price 1' . to_vector . should_equal [20, 40, 0, 60, 0, 10]
 
+        group_builder.specify "should allow reading with limited rows and skipping rows from workbook" <|
+            wb = read_method file
+            t = wb.read 1 headers=..No_Headers
+            t.column_names.should_equal ['A', 'B', 'C']
+
+            t_1 = wb.read 1 headers=..No_Headers limit=3
+            t_1.column_names . should_equal t.column_names
+            t_1.row_count . should_equal 3
+            t_1.at 'A' . to_vector . should_equal  ['Name', 'blouse', 't-shirt']
+            t_1.at 'B' . to_vector . should_equal  ['Quantity', 10, 20]
+            t_1.at 'C' . to_vector . should_equal  ['Price', 22.3, 32]
+
+            t_2 = wb.read 1 headers=..No_Headers skip_rows=3
+            t_2.column_names . should_equal t.column_names
+            t_2.row_count . should_equal 4
+            t_2.at 'A' . to_vector . should_equal ['trousers', 'shoes', 'skirt', 'dress']
+            t_2.at 'B' . to_vector . should_equal [Nothing, 30, Nothing, 5]
+            t_2.at 'C' . to_vector . should_equal [43.2, 54, 31, Nothing]
+
+            t_3 = wb.read 1 headers=..No_Headers limit=2 skip_rows=3
+            t_3.column_names . should_equal t.column_names
+            t_3.row_count . should_equal 2
+            t_3.at 'A' . to_vector . should_equal ['trousers', 'shoes']
+            t_3.at 'B' . to_vector . should_equal [Nothing, 30]
+            t_3.at 'C' . to_vector . should_equal [43.2, 54]
+
         group_builder.specify "should allow reading with cell range specified" <|
             t_1 = read_method file (..Range "Simple!B:C")
             t_1.columns.map .name . should_equal ['Quantity', 'Price']

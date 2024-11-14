@@ -221,16 +221,20 @@ type Excel_Workbook
          `Detect_Headers`).
        - limit: the maximum number of rows to read.
          If set to `Nothing`, all rows will be returned.
-    @query (self-> Single_Choice display=Display.Always values=(self.tables.at "Name" . to_vector . map t-> Option t t.pretty))
+    @query self-> _query_widget self
     @limit Rows_To_Read.default_widget
-    read : Text | Excel_Range -> Headers -> Rows_To_Read -> Problem_Behavior -> Table
-    read self (query : Text | Excel_Range) (headers : Headers = Headers.Detect_Headers) (limit : Rows_To_Read = ..All_Rows) (on_problems:Problem_Behavior=..Report_Warning) =
+    read : Text | Excel_Range | Integer -> Headers -> Rows_To_Read -> Integer -> Problem_Behavior -> Table
+    read self (query : Text | Excel_Range | Integer) (headers : Headers = ..Detect_Headers) (limit : Rows_To_Read = ..All_Rows) (skip_rows:Integer=0) (on_problems:Problem_Behavior=..Report_Warning) =
         java_headers = Excel_Reader.make_java_headers headers
         java_limit = limit.rows_to_read
         java_table = Java_Problems.with_problem_aggregator on_problems java_problem_aggregator->
             self.with_java_workbook java_workbook-> case query of
-                _ : Excel_Range -> ExcelReader.readRange java_workbook query.java_range java_headers 0 java_limit java_problem_aggregator
-                _ : Text -> ExcelReader.readRangeByName java_workbook query java_headers 0 java_limit java_problem_aggregator
+                _ : Excel_Range -> ExcelReader.readRange java_workbook query.java_range java_headers skip_rows java_limit java_problem_aggregator
+                _ : Text -> ExcelReader.readRangeByName java_workbook query java_headers skip_rows java_limit java_problem_aggregator
+                _ : Integer ->
+                    names = self.sheet_names
+                    if (query < 1 || query >= names.length) then Error.throw (Illegal_Argument.Error "Worksheet index out of range (1 - "+names.length.to_text+").") else
+                        ExcelReader.readRangeByName java_workbook (names.at (query - 1)) java_headers skip_rows java_limit java_problem_aggregator
         limit.attach_warning (Table.Value java_table)
 
     ## PRIVATE
@@ -378,3 +382,10 @@ type Return_As
 
     ## All sheets are merged into a single table. A union operation is performed.
     Merged_Table (columns_to_keep : Columns_To_Keep = Columns_To_Keep.In_Any) (match : Match_Columns = Match_Columns.By_Name)
+
+## PRIVATE
+   Creates a query widget for the `read` method.
+private _query_widget wb:Excel_Workbook display:Display=..Always -> Widget =
+    default_address = "'" + wb.sheet_names.first.replace "'" "''" + "'!A1:E5"
+    options = [Option "<By Index>" "1", Option "<Range>" "Excel_Range.from_address "+default_address.pretty] + (wb.tables.at "Name" . to_vector . map t-> Option t t.pretty)
+    Single_Choice display=display values=options
