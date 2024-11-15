@@ -45,6 +45,7 @@ export interface UseStepperStateResult {
   readonly percentComplete: number
   readonly nextStep: () => void
   readonly previousStep: () => void
+  readonly resetStepper: () => void
 }
 
 /**
@@ -66,6 +67,10 @@ export function useStepperState(props: StepperStateProps): UseStepperStateResult
 
   const onStepChangeStableCallback = eventCallbackHooks.useEventCallback(onStepChange)
   const onCompletedStableCallback = eventCallbackHooks.useEventCallback(onCompleted)
+
+  const resetStepper = eventCallbackHooks.useEventCallback(() => {
+    privateSetCurrentStep(() => ({ current: defaultStep, direction: 'initial' }))
+  })
 
   const setCurrentStep = eventCallbackHooks.useEventCallback(
     (step: number | ((current: number) => number)) => {
@@ -128,5 +133,6 @@ export function useStepperState(props: StepperStateProps): UseStepperStateResult
     percentComplete,
     nextStep,
     previousStep,
+    resetStepper,
   } satisfies UseStepperStateResult
 }

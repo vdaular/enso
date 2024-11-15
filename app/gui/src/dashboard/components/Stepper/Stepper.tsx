@@ -28,7 +28,7 @@ export interface StepperProps {
     | ((props: BaseRenderProps) => string | null | undefined)
     | null
     | undefined
-  readonly renderStep: (props: RenderStepProps) => React.ReactNode
+  readonly renderStep?: ((props: RenderStepProps) => React.ReactNode) | null
   readonly style?:
     | React.CSSProperties
     | ((props: BaseRenderProps) => React.CSSProperties | undefined)
@@ -101,29 +101,37 @@ export function Stepper(props: StepperProps) {
       <stepperProvider.StepperProvider
         value={{ totalSteps, currentStep, goToStep, nextStep, previousStep, state }}
       >
-        <div className={styles.steps()}>
-          {Array.from({ length: totalSteps }).map((_, index) => {
-            const renderStepProps = {
-              index,
-              currentStep,
-              totalSteps,
-              isFirst: index === 0,
-              isLast: index === totalSteps - 1,
-              nextStep,
-              previousStep,
-              goToStep,
-              isCompleted: index < currentStep,
-              isCurrent: index === currentStep,
-              isDisabled: index > currentStep,
-            } satisfies RenderStepProps
+        {renderStep == null ? null : (
+          <div className={styles.steps()}>
+            {Array.from({ length: totalSteps }).map((_, index) => {
+              const renderStepProps = {
+                index,
+                currentStep,
+                totalSteps,
+                isFirst: index === 0,
+                isLast: index === totalSteps - 1,
+                nextStep,
+                previousStep,
+                goToStep,
+                isCompleted: index < currentStep,
+                isCurrent: index === currentStep,
+                isDisabled: index > currentStep,
+              } satisfies RenderStepProps
 
-            return (
-              <div key={index} className={styles.step({})}>
-                {renderStep(renderStepProps)}
-              </div>
-            )
-          })}
-        </div>
+              const nextRenderStep = renderStep(renderStepProps)
+
+              if (nextRenderStep == null) {
+                return null
+              }
+
+              return (
+                <div key={index} className={styles.step({})}>
+                  {nextRenderStep}
+                </div>
+              )
+            })}
+          </div>
+        )}
 
         <div className={styles.content()}>
           <AnimatePresence initial={false} mode="sync" custom={direction}>

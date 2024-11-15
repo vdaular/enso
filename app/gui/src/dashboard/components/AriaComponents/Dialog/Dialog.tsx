@@ -17,6 +17,7 @@ import type { Spring } from '#/utilities/motion'
 import { motion } from '#/utilities/motion'
 import type { VariantProps } from '#/utilities/tailwindVariants'
 import { tv } from '#/utilities/tailwindVariants'
+import { Close } from './Close'
 import * as dialogProvider from './DialogProvider'
 import * as dialogStackProvider from './DialogStackProvider'
 import type * as types from './types'
@@ -109,11 +110,11 @@ const DIALOG_STYLES = tv({
     padding: {
       none: { content: 'p-0' },
       small: { content: 'px-1 pt-3.5 pb-3.5' },
-      medium: { content: 'px-3.5 pt-3.5 pb-3.5' },
-      large: { content: 'px-8 pt-3.5 pb-5' },
-      xlarge: { content: 'p-12 pt-3.5 pb-8' },
-      xxlarge: { content: 'p-16 pt-3.5 pb-12' },
-      xxxlarge: { content: 'p-20 pt-3.5 pb-16' },
+      medium: { content: 'px-4 pt-3 pb-4' },
+      large: { content: 'px-8 pt-5 pb-5' },
+      xlarge: { content: 'p-12 pt-6 pb-8' },
+      xxlarge: { content: 'p-16 pt-8 pb-12' },
+      xxxlarge: { content: 'p-20 pt-10 pb-16' },
     },
     scrolledToTop: { true: { header: 'border-transparent' } },
   },
@@ -140,7 +141,7 @@ const DIALOG_STYLES = tv({
     hideCloseButton: false,
     size: 'medium',
     padding: 'medium',
-    rounded: 'xxlarge',
+    rounded: 'xxxlarge',
   },
 })
 
@@ -351,3 +352,5 @@ const TYPE_TO_DIALOG_TYPE: Record<
   modal: 'dialog',
   fullscreen: 'dialog-fullscreen',
 }
+
+Dialog.Close = Close

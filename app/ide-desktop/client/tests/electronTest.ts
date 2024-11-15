@@ -1,11 +1,13 @@
 /** @file Commonly used functions for electron tests */
 
 import { _electron, expect, type Page, test } from '@playwright/test'
+import { TEXTS } from 'enso-common/src/text'
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import pathModule from 'node:path'
 
 const LOADING_TIMEOUT = 10000
+const TEXT = TEXTS.english
 
 /**
  * Tests run on electron executable.
@@ -45,19 +47,20 @@ export async function loginAsTestUser(page: Page) {
       'Cannot log in; `ENSO_TEST_USER` and `ENSO_TEST_USER_PASSWORD` env variables are not provided',
     )
   }
-  await page.getByRole('textbox', { name: 'email' }).click()
-  await page.keyboard.insertText(process.env.ENSO_TEST_USER)
-  await page.keyboard.press('Tab')
-  await page.keyboard.insertText(process.env.ENSO_TEST_USER_PASSWORD)
-  await page.keyboard.press('Enter')
+  await page.getByRole('textbox', { name: 'email' }).fill(process.env.ENSO_TEST_USER)
+  await page.getByRole('textbox', { name: 'password' }).fill(process.env.ENSO_TEST_USER_PASSWORD)
+  await page.getByTestId('form-submit-button').click()
 
-  // Accept terms screen
-  await expect(page.getByText('I agree')).toHaveCount(2)
-  await expect(page.getByRole('button')).toHaveCount(1)
-  for (const checkbox of await page.getByText('I agree').all()) {
-    await checkbox.click()
-  }
-  await page.getByRole('button').click()
+  await page
+    .getByRole('group', { name: TEXT.licenseAgreementCheckbox })
+    .getByText(TEXT.licenseAgreementCheckbox)
+    .click()
+  await page
+    .getByRole('group', { name: TEXT.privacyPolicyCheckbox })
+    .getByText(TEXT.privacyPolicyCheckbox)
+    .click()
+
+  await page.getByTestId('form-submit-button').click()
 }
 
 /**
