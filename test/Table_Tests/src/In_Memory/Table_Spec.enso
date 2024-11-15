@@ -7,7 +7,7 @@ import Standard.Base.Errors.Common.Type_Error
 import Standard.Base.Errors.Illegal_Argument.Illegal_Argument
 import Standard.Base.Runtime.Debug
 
-from Standard.Table import Table, Column, Sort_Column, Aggregate_Column, Blank_Selector, Value_Type
+from Standard.Table import Table, Column, Sort_Column, Aggregate_Column, Blank_Selector, Value_Type, Auto
 from Standard.Table.Errors import Invalid_Column_Names, Duplicate_Output_Column_Names, No_Input_Columns_Selected, Missing_Input_Columns, No_Such_Column, Invalid_Value_Type, Row_Count_Mismatch
 
 import Standard.Visualization
@@ -89,6 +89,44 @@ add_specs suite_builder =
             r2.row_count . should_equal 0
             r2.at "foo" . to_vector . should_equal []
             r2.at "bar" . to_vector . should_equal []
+
+        group_builder.specify "should allow inputting a table without types" <|
+            r = Table.input [["foo", [1, 2, 3]], ["bar", [False, True, False]]]
+            r.column_names . should_equal ["foo", "bar"]
+            r.columns.map .value_type . should_equal [Value_Type.Integer, Value_Type.Boolean]
+
+            r_2 = Table.input [["foo", ["1", "2", "3"]], ["bar", ["False", "True", "false"]]]
+            r_2.column_names . should_equal ["foo", "bar"]
+            r_2.columns.map .value_type . should_equal [Value_Type.Integer, Value_Type.Boolean]
+
+            r_3 = Table.input [["foo", ["1.0", "2.0", "3.0"]], ["bar", [False, True, False]]]
+            r_3.column_names . should_equal ["foo", "bar"]
+            r_3.columns.map .value_type . should_equal [Value_Type.Float, Value_Type.Boolean]
+
+            r_4 = Table.input [["foo", ["1", "2", "3"]], ["bar", [Date.new 2023 1 4, Nothing, Date.new 2024 10 2]], ["baz", ["1.0", "2.0", "3.0"]]]
+            r_4.column_names . should_equal ["foo", "bar", "baz"]
+            r_4.columns.map .value_type . should_equal [Value_Type.Integer, Value_Type.Date, Value_Type.Float]
+
+            r_5 = Table.input [["foo", ["2023-01-04", "2024-10-02"]], ["bar", ["1.0", "2.0"]], ["baz", ["12:34:56", "23:45"]]]
+            r_5.column_names . should_equal ["foo", "bar", "baz"]
+            r_5.columns.map .value_type . should_equal [Value_Type.Date, Value_Type.Float, Value_Type.Time]
+
+        group_builder.specify "should allow inputting a table with types" <|
+            r = Table.input [["foo", [1, 2, 3], Value_Type.Float], ["bar", [False, True, False]]]
+            r.column_names . should_equal ["foo", "bar"]
+            r.columns.map .value_type . should_equal [Value_Type.Float, Value_Type.Boolean]
+
+            r_2 = Table.input [["foo", ["1", "2", "3"], Value_Type.Float], ["bar", ["False", "True", "false"], Value_Type.Char]]
+            r_2.column_names . should_equal ["foo", "bar"]
+            r_2.columns.map .value_type . should_equal [Value_Type.Float, Value_Type.Char]
+
+            r_3 = Table.input [["foo", ["1.0", "2.0", "3.0"], Value_Type.Integer], ["bar", ["False", "True", "False"], Auto]]
+            r_3.column_names . should_equal ["foo", "bar"]
+            r_3.columns.map .value_type . should_equal [Value_Type.Integer, Value_Type.Boolean]
+
+            r_4 = Table.input [["foo", ["2023-01-04", "2024-10-02"], Value_Type.Date], ["bar", ["1.0", "2.0"], Value_Type.Char], ["baz", ["12:34:56", "23:45"]]]
+            r_4.column_names . should_equal ["foo", "bar", "baz"]
+            r_4.columns.map .value_type . should_equal [Value_Type.Date, Value_Type.Char, Value_Type.Time]
 
         group_builder.specify "should allow creating Enso code from a Table" <|
             r = Table.new [["foo", [1, 2, 3]], ["bar", [False, True, False]]]

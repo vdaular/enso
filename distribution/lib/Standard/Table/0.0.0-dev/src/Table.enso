@@ -192,6 +192,48 @@ type Table
         columns = header.map_with_index i-> name-> [name, rows.map (_.at i)]
         Table.new columns
 
+    ## GROUP Standard.Base.Constants
+       ICON table_edit
+       Creates a new table from a set of columns parsing the resulting table.
+
+       Arguments:
+       - columns: A set of either Column objects or set of name, data and
+         optionally type to construct a column from from. If the data is passed
+         as Vector Text then it will be parsed into the specified type (defaults
+         to auto detect).
+
+       Returns:
+       - A Table of all of the input data.
+
+       ! Error Conditions
+
+         - If the vector is improperly defined, an error is returned.
+         - If there are no columns, an error is returned.
+         - If column names are not distinct, an error is returned.
+         - If any columns have an inconsistent number of records, an error is returned.
+
+        ? Unique Names
+        Column names must be unique. If a column name is repeated, an error is
+        thrown.
+
+        ? Consistent Row Count
+        All columns must have the same number of rows. If a column has a
+        different number of entries, an error is thrown.
+    input : Vector (Vector | Column) -> Table
+    input columns =
+        throw_bad_column = Error.throw (Illegal_Argument.Error "Each column must be represented as a Vector of column name (Text), data (vector like elements) and optionally a type (Value_Type), or an existing column.")
+        resolved_columns = columns.map c-> case c of
+            _ : Column -> c
+            _ : Vector -> if c.length < 2 || (c.first . is_a Text).not then throw_bad_column else
+                raw_column = Column.from_vector c.first (c.at 1)
+                target_type = c.get 2 Auto
+                if target_type != Auto && (target_type.is_a Value_Type).not then throw_bad_column else
+                    case raw_column.value_type.is_text of
+                        True -> if target_type != Auto && target_type.is_text then raw_column.cast target_type else raw_column.parse target_type
+                        False -> if target_type == Auto then raw_column else raw_column.cast target_type
+            _ -> throw_bad_column
+        resolved_columns.if_not_error <| Table.new resolved_columns
+
     ## PRIVATE
 
        A table.

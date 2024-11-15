@@ -54,12 +54,15 @@
 - [Support for dates before 1900 in Excel and signed AWS requests.][11373]
 - [Added `Data.read_many` that allows to read a list of files in a single
   operation.][11490]
+- [Added `Table.input` allowing creation of typed tables from vectors of data,
+  including auto parsing text columns.][11562]
 
 [11235]: https://github.com/enso-org/enso/pull/11235
 [11255]: https://github.com/enso-org/enso/pull/11255
 [11371]: https://github.com/enso-org/enso/pull/11371
 [11373]: https://github.com/enso-org/enso/pull/11373
 [11490]: https://github.com/enso-org/enso/pull/11490
+[11562]: https://github.com/enso-org/enso/pull/11562
 
 #### Enso Language & Runtime
 
