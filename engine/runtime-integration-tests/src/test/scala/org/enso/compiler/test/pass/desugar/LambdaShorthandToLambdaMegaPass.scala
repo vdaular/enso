@@ -189,8 +189,8 @@ case object LambdaShorthandToLambdaMegaPass extends IRPass {
           args
             .zip(argIsUnderscore)
             .map(updateShorthandArg(_, freshNameSupply))
-            .map { case s @ CallArgument.Specified(_, value, _, _) =>
-              s.copy(value = desugarExpression(value, freshNameSupply))
+            .map { case s: CallArgument.Specified =>
+              s.copy(value = desugarExpression(s.value, freshNameSupply))
             }
 
         // Generate a definition arg instance for each shorthand arg
@@ -306,8 +306,8 @@ case object LambdaShorthandToLambdaMegaPass extends IRPass {
   private def determineLambdaShorthand(
     args: List[CallArgument]
   ): List[Boolean] = {
-    args.map { case CallArgument.Specified(_, value, _, _) =>
-      value match {
+    args.map { arg =>
+      arg.value match {
         case _: Name.Blank => true
         case _             => false
       }
@@ -330,14 +330,14 @@ case object LambdaShorthandToLambdaMegaPass extends IRPass {
     val isShorthand = argAndIsShorthand._2
 
     arg match {
-      case s @ CallArgument.Specified(_, value, _, _) =>
+      case s: CallArgument.Specified =>
         if (isShorthand) {
           val newName = freshNameSupply
             .newName()
             .copy(
-              location    = value.location,
-              passData    = value.passData,
-              diagnostics = value.diagnostics
+              location    = s.value.location,
+              passData    = s.value.passData,
+              diagnostics = s.value.diagnostics
             )
 
           s.copy(value = newName)
@@ -359,11 +359,11 @@ case object LambdaShorthandToLambdaMegaPass extends IRPass {
   ): Option[DefinitionArgument] = {
     if (isShorthand) {
       arg match {
-        case specified @ CallArgument.Specified(_, value, _, passData) =>
+        case specified: CallArgument.Specified =>
           // Note [Safe Casting to Name.Literal]
           val defArgName =
             Name.Literal(
-              value.asInstanceOf[Name.Literal].name,
+              specified.value.asInstanceOf[Name.Literal].name,
               isMethod = false,
               null
             )
@@ -375,7 +375,7 @@ case object LambdaShorthandToLambdaMegaPass extends IRPass {
               None,
               suspended = false,
               null,
-              passData.duplicate,
+              specified.passData.duplicate,
               specified.diagnosticsCopy
             )
           )

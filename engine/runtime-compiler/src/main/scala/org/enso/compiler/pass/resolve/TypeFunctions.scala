@@ -219,9 +219,9 @@ case object TypeFunctions extends IRPass {
     */
   private def resolveCallArgument(arg: CallArgument): CallArgument = {
     arg match {
-      case spec @ CallArgument.Specified(_, value, _, _) =>
+      case spec: CallArgument.Specified =>
         spec.copy(
-          value = resolveExpression(value)
+          value = resolveExpression(spec.value)
         )
     }
   }
@@ -241,8 +241,8 @@ case object TypeFunctions extends IRPass {
     */
   private def isValidCallArg(arg: CallArgument): Boolean = {
     arg match {
-      case CallArgument.Specified(name, _, _, _) =>
-        name.isEmpty
+      case specified: CallArgument.Specified =>
+        specified.name.isEmpty
     }
   }
 }

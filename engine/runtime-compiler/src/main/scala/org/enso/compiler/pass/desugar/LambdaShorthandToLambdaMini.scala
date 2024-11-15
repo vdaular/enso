@@ -34,8 +34,8 @@ class LambdaShorthandToLambdaMini(
     parent match {
       case Application.Prefix(fn, args, _, _, _) =>
         val hasBlankArg = args.exists {
-          case CallArgument.Specified(_, _: Name.Blank, _, _) => true
-          case _                                              => false
+          case CallArgument.Specified(_, _: Name.Blank, _, _, _) => true
+          case _                                                 => false
         }
         val hasBlankFn = fn.isInstanceOf[Name.Blank]
         hasBlankArg || hasBlankFn
@@ -222,8 +222,8 @@ class LambdaShorthandToLambdaMini(
   private def determineLambdaShorthand(
     args: List[CallArgument]
   ): List[Boolean] = {
-    args.map { case CallArgument.Specified(_, value, _, _) =>
-      value match {
+    args.map { arg =>
+      arg.value match {
         case _: Name.Blank => true
         case _             => false
       }
@@ -245,14 +245,14 @@ class LambdaShorthandToLambdaMini(
     val isShorthand = argAndIsShorthand._2
 
     arg match {
-      case s @ CallArgument.Specified(_, value, _, _) =>
+      case s: CallArgument.Specified =>
         if (isShorthand) {
           val newName = freshNameSupply
             .newName()
             .copy(
-              location    = value.location,
-              passData    = value.passData,
-              diagnostics = value.diagnostics
+              location    = s.value.location,
+              passData    = s.value.passData,
+              diagnostics = s.value.diagnostics
             )
 
           s.copy(value = newName)
@@ -274,11 +274,11 @@ class LambdaShorthandToLambdaMini(
   ): Option[DefinitionArgument] = {
     if (isShorthand) {
       arg match {
-        case specified @ CallArgument.Specified(_, value, _, passData) =>
+        case specified: CallArgument.Specified =>
           // Note [Safe Casting to Name.Literal]
           val defArgName =
             Name.Literal(
-              value.asInstanceOf[Name.Literal].name,
+              specified.value.asInstanceOf[Name.Literal].name,
               isMethod = false,
               null
             )
@@ -290,7 +290,7 @@ class LambdaShorthandToLambdaMini(
               None,
               suspended = false,
               null,
-              passData.duplicate,
+              specified.passData.duplicate,
               specified.diagnosticsCopy
             )
           )

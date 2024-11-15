@@ -3191,14 +3191,6 @@ Current limitations of the method renaming are:
   ```rust
   Main.function1 x = x
   ```
-- Method calls where the self type is not specified will not be renamed, i.e.
-
-  ```rust
-  function1 x = x
-
-  main =
-      operator1 = function1 42
-  ```
 
 #### Parameters
 

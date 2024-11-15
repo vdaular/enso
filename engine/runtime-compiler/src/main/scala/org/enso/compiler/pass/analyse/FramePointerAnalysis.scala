@@ -242,12 +242,13 @@ case object FramePointerAnalysis extends IRPass {
     arguments: List[CallArgument],
     graph: Graph
   ): Unit = {
-    arguments.foreach { case arg @ CallArgument.Specified(name, value, _, _) =>
-      maybeAttachFramePointer(arg, graph)
-      name.foreach(maybeAttachFramePointer(_, graph))
-      processExpression(value, graph, false)
-      maybAttachFrameVariableNames(value)
-      maybAttachFrameVariableNames(arg)
+    arguments.foreach {
+      case arg @ CallArgument.Specified(name, value, _, _, _) =>
+        maybeAttachFramePointer(arg, graph)
+        name.foreach(maybeAttachFramePointer(_, graph))
+        processExpression(value, graph, false)
+        maybAttachFrameVariableNames(value)
+        maybAttachFrameVariableNames(arg)
     }
   }
 

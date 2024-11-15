@@ -26,7 +26,7 @@ class GatherDiagnosticsTest extends CompilerTest {
     val plusApp = Application.Prefix(
       plusOp,
       List(
-        CallArgument.Specified(None, error1, identifiedLocation = null)
+        CallArgument.Specified(None, error1, false, identifiedLocation = null)
       ),
       hasDefaultsSuspended = false,
       identifiedLocation   = null
@@ -121,11 +121,11 @@ class GatherDiagnosticsTest extends CompilerTest {
       )
 
       val result = GatherDiagnostics.runModule(module, buildModuleContext())
-      val gatheredErrros = result
+      val gatheredErros = result
         .unsafeGetMetadata(GatherDiagnostics, "Impossible")
         .diagnostics
 
-      gatheredErrros.toSet shouldEqual Set(error1, error2, error3)
+      gatheredErros.toSet shouldEqual Set(error1, error2, error3)
     }
 
     "work with annotations" in {

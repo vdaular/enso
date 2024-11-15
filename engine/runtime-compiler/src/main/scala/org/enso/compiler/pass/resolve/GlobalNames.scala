@@ -221,8 +221,12 @@ case object GlobalNames extends IRPass {
                       val app = Application.Prefix(
                         fun,
                         List(
-                          CallArgument
-                            .Specified(None, self, identifiedLocation = null)
+                          CallArgument.Specified(
+                            None,
+                            self,
+                            true,
+                            identifiedLocation = null
+                          )
                         ),
                         hasDefaultsSuspended = false,
                         lit.identifiedLocation
@@ -345,7 +349,7 @@ case object GlobalNames extends IRPass {
             )
           )
         val selfArg =
-          CallArgument.Specified(None, self, identifiedLocation = null)
+          CallArgument.Specified(None, self, true, identifiedLocation = null)
         processedFun.passData.remove(this) // Necessary for IrToTruffle
         app.copy(function = processedFun, arguments = selfArg :: processedArgs)
       case _ =>

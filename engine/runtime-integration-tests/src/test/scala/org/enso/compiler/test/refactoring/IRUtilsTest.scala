@@ -170,7 +170,34 @@ class IRUtilsTest extends AnyWordSpecLike with Matchers with OptionValues {
       }
     }
 
-    "find usages of a static call in lambda" in {
+    "find usages of unqualified method call in main body" in {
+      val uuid1 = new UUID(0, 1)
+      val code =
+        s"""function1 = ""
+           |
+           |main =
+           |    operator1 = Test.function1
+           |    operator2 = function1
+           |    operator3 = operator2.function1
+           |
+           |
+           |#### METADATA ####
+           |[[{"index": {"value": 0}, "size": {"value": 9}}, "$uuid1"]]
+           |[]
+           |""".stripMargin
+
+      val module    = code.preprocessModule()
+      val function1 = IRUtils.findByExternalId(module, uuid1).get
+      val usages    = findUsagesOfModuleMethod(moduleName, module, function1)
+
+      usages.value.size shouldEqual 2
+      usages.value.foreach {
+        case _: Name.Literal => succeed
+        case ir              => fail(s"Not a literal: $ir")
+      }
+    }
+
+    "find usages of a qualified static call in lambda" in {
       val uuid1 = new UUID(0, 1)
       val code =
         s"""function1 x = x
@@ -178,6 +205,32 @@ class IRUtilsTest extends AnyWordSpecLike with Matchers with OptionValues {
            |main =
            |    operator1 = 41
            |    operator2 = Test.function1 (x -> Test.function1 x)
+           |    operator2
+           |
+           |
+           |#### METADATA ####
+           |[[{"index": {"value": 0}, "size": {"value": 9}}, "$uuid1"]]
+           |[]
+           |""".stripMargin
+
+      val module    = code.preprocessModule()
+      val function1 = IRUtils.findByExternalId(module, uuid1).get
+      val usages    = findUsagesOfModuleMethod(moduleName, module, function1)
+
+      usages.value.size shouldEqual 2
+      usages.value.foreach {
+        case _: Name.Literal => succeed
+        case ir              => fail(s"Not a literal: $ir")
+      }
+    }
+
+    "find usages of unqualified static call in lambda" in {
+      val uuid1 = new UUID(0, 1)
+      val code =
+        s"""function1 x = x
+           |
+           |main =
+           |    operator2 = function1 (x -> function1 x)
            |    operator2
            |
            |
@@ -235,7 +288,8 @@ class IRUtilsTest extends AnyWordSpecLike with Matchers with OptionValues {
            |main =
            |    operator1 = 41
            |    operator2 = Test.function1 operator1
-           |    operator3 = A.function1
+           |    operator3 = function1 operator1
+           |    operator4 = A.function1
            |
            |
            |#### METADATA ####
@@ -247,7 +301,7 @@ class IRUtilsTest extends AnyWordSpecLike with Matchers with OptionValues {
       val operator1 = IRUtils.findByExternalId(module, uuid1).get
       val usages    = findUsagesOfModuleMethod(moduleName, module, operator1)
 
-      usages.value.size shouldEqual 1
+      usages.value.size shouldEqual 2
       usages.value.foreach {
         case _: Name.Literal => succeed
         case ir              => fail(s"Not a literal: $ir")
