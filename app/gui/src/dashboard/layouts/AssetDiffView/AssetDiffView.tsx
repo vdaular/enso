@@ -1,13 +1,11 @@
 /** @file Diff view comparing `Main.enso` of two versions for a specific project. */
-import * as monacoReact from '@monaco-editor/react'
+import { DiffEditor } from '@monaco-editor/react'
+import { useSuspenseQueries } from '@tanstack/react-query'
 
-import * as textProvider from '#/providers/TextProvider'
-
-import Spinner, * as spinnerModule from '#/components/Spinner'
-
+import { Spinner } from '#/components/Spinner'
+import { versionContentQueryOptions } from '#/layouts/AssetDiffView/useFetchVersionContent'
 import type * as backendService from '#/services/Backend'
 import type Backend from '#/services/Backend'
-import { useFetchVersionContent } from './useFetchVersionContent'
 
 // =====================
 // === AssetDiffView ===
@@ -15,8 +13,8 @@ import { useFetchVersionContent } from './useFetchVersionContent'
 
 /** Props for an {@link AssetDiffView}. */
 export interface AssetDiffViewProps {
-  readonly versionId: string
-  readonly latestVersionId: string
+  readonly versionId: backendService.S3ObjectVersionId
+  readonly latestVersionId: backendService.S3ObjectVersionId
   readonly project: backendService.ProjectAsset
   readonly backend: Backend
 }
@@ -24,49 +22,46 @@ export interface AssetDiffViewProps {
 /** Diff view comparing `Main.enso` of two versions for a specific project. */
 export function AssetDiffView(props: AssetDiffViewProps) {
   const { versionId, project, backend, latestVersionId } = props
-  const { getText } = textProvider.useText()
 
-  const versionContent = useFetchVersionContent({
-    versionId,
-    project,
-    backend,
-  })
-  const headContent = useFetchVersionContent({
-    versionId: latestVersionId,
-    project,
-    backend,
+  const [versionContent, headContent] = useSuspenseQueries({
+    queries: [
+      versionContentQueryOptions({
+        versionId,
+        projectId: project.id,
+        backend,
+      }),
+      versionContentQueryOptions({
+        versionId: latestVersionId,
+        projectId: project.id,
+        backend,
+      }),
+    ],
   })
 
   const loader = (
     <div className="flex h-full w-full items-center justify-center">
-      <Spinner size={32} state={spinnerModule.SpinnerState.loadingMedium} />
+      <Spinner size={32} state="loading-medium" />
     </div>
   )
 
-  if (versionContent.isError || headContent.isError) {
-    return <div className="p-indent-8 text-center">{getText('loadFileError')}</div>
-  } else if (versionContent.isPending || headContent.isPending) {
-    return loader
-  } else {
-    return (
-      <monacoReact.DiffEditor
-        beforeMount={(monaco) => {
-          monaco.editor.defineTheme('myTheme', {
-            base: 'vs',
-            inherit: true,
-            rules: [],
-            // The name comes from a third-party API and cannot be changed.
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            colors: { 'editor.background': '#00000000' },
-          })
-        }}
-        original={versionContent.data}
-        modified={headContent.data}
-        language="enso"
-        options={{ readOnly: true }}
-        loading={loader}
-        theme={'myTheme'}
-      />
-    )
-  }
+  return (
+    <DiffEditor
+      beforeMount={(monaco) => {
+        monaco.editor.defineTheme('myTheme', {
+          base: 'vs',
+          inherit: true,
+          rules: [],
+          // The name comes from a third-party API and cannot be changed.
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          colors: { 'editor.background': '#00000000' },
+        })
+      }}
+      original={versionContent.data}
+      modified={headContent.data}
+      language="enso"
+      options={{ readOnly: true }}
+      loading={loader}
+      theme={'myTheme'}
+    />
+  )
 }

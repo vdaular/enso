@@ -5,17 +5,39 @@ import { Text } from '#/components/aria'
 import { Button } from '#/components/AriaComponents'
 import type { AssetColumnHeadingProps } from '#/components/dashboard/column'
 import { Column } from '#/components/dashboard/column/columnUtils'
+import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import { useText } from '#/providers/TextProvider'
 import { SortDirection, nextSortDirection } from '#/utilities/sorting'
-import { twMerge } from '#/utilities/tailwindMerge'
+import { twJoin } from '#/utilities/tailwindMerge'
 
 /** A heading for the "Modified" column. */
 export default function ModifiedColumnHeading(props: AssetColumnHeadingProps) {
-  const { state } = props
-  const { sortInfo, setSortInfo, hideColumn } = state
+  const { hideColumn, sortInfo, setSortInfo } = props
+
   const { getText } = useText()
+
   const isSortActive = sortInfo?.field === Column.modified
   const isDescending = sortInfo?.direction === SortDirection.descending
+
+  const hideThisColumn = useEventCallback(() => {
+    hideColumn(Column.modified)
+  })
+
+  const cycleSortDirection = useEventCallback(() => {
+    if (!sortInfo) {
+      setSortInfo({ field: Column.modified, direction: SortDirection.ascending })
+      return
+    }
+
+    const nextDirection =
+      isSortActive ? nextSortDirection(sortInfo.direction) : SortDirection.ascending
+
+    if (nextDirection == null) {
+      setSortInfo(null)
+    } else {
+      setSortInfo({ field: Column.modified, direction: nextDirection })
+    }
+  })
 
   return (
     <div
@@ -32,35 +54,19 @@ export default function ModifiedColumnHeading(props: AssetColumnHeadingProps) {
         icon={TimeIcon}
         aria-label={getText('modifiedColumnHide')}
         tooltip={false}
-        onPress={() => {
-          hideColumn(Column.modified)
-        }}
+        onPress={hideThisColumn}
       />
       <Button
         size="custom"
         variant="custom"
         className="flex grow justify-start gap-icon-with-text"
-        onPress={() => {
-          if (!sortInfo) {
-            setSortInfo({ field: Column.modified, direction: SortDirection.ascending })
-            return
-          }
-
-          const nextDirection =
-            isSortActive ? nextSortDirection(sortInfo.direction) : SortDirection.ascending
-
-          if (nextDirection == null) {
-            setSortInfo(null)
-          } else {
-            setSortInfo({ field: Column.modified, direction: nextDirection })
-          }
-        }}
+        onPress={cycleSortDirection}
       >
         <Text className="text-header">{getText('modifiedColumnName')}</Text>
         <img
           alt={isDescending ? getText('sortDescending') : getText('sortAscending')}
           src={SortAscendingIcon}
-          className={twMerge(
+          className={twJoin(
             'transition-all duration-arrow',
             isSortActive ? 'selectable active' : 'opacity-0 group-hover:selectable',
             isDescending && 'rotate-180',

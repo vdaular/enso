@@ -8,15 +8,7 @@ import { wasmLoader } from 'esbuild-plugin-wasm'
 import * as appConfig from 'enso-common/src/appConfig'
 import * as paths from './paths'
 
-// ====================
-// === Global setup ===
-// ====================
-
 await appConfig.readEnvironmentFromFile()
-
-// ================
-// === Bundling ===
-// ================
 
 /**
  * Get the bundler options using the environment.

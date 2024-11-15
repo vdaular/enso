@@ -61,14 +61,18 @@ export default function Labels(props: LabelsProps) {
   return (
     <FocusArea direction="vertical">
       {(innerProps) => (
-        <div data-testid="labels" className="flex flex-col items-start gap-4" {...innerProps}>
+        <div
+          data-testid="labels"
+          className="flex flex-1 flex-col items-start gap-4 overflow-auto"
+          {...innerProps}
+        >
           <ariaComponents.Text variant="subtitle" className="px-2 font-bold">
             {getText('labels')}
           </ariaComponents.Text>
           <div
             data-testid="labels-list"
             aria-label={getText('labelsListLabel')}
-            className="flex flex-col items-start gap-labels"
+            className="flex flex-1 flex-col items-start gap-labels overflow-auto"
           >
             {labels.map((label) => {
               const negated = currentNegativeLabels.some((term) =>

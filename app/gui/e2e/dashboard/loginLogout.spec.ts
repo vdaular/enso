@@ -7,12 +7,14 @@ import * as actions from './actions'
 // === Tests ===
 // =============
 
+// Reset storage state for this file to avoid being authenticated
+test.test.use({ storageState: { cookies: [], origins: [] } })
+
 test.test('login and logout', ({ page }) =>
   actions
     .mockAll({ page })
     .login()
     .do(async (thePage) => {
-      await actions.passAgreementsDialog({ page: thePage })
       await test.expect(actions.locateDriveView(thePage)).toBeVisible()
       await test.expect(actions.locateLoginButton(thePage)).not.toBeVisible()
     })

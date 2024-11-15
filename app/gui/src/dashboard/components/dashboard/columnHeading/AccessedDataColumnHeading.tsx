@@ -3,13 +3,17 @@ import AccessedDataIcon from '#/assets/accessed_data.svg'
 import { Button, Text } from '#/components/AriaComponents'
 import type { AssetColumnHeadingProps } from '#/components/dashboard/column'
 import { Column } from '#/components/dashboard/column/columnUtils'
+import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import { useText } from '#/providers/TextProvider'
 
 /** A heading for the "Accessed data" column. */
 export default function AccessedDataColumnHeading(props: AssetColumnHeadingProps) {
-  const { state } = props
-  const { hideColumn } = state
+  const { hideColumn } = props
   const { getText } = useText()
+
+  const hideThisColumn = useEventCallback(() => {
+    hideColumn(Column.accessedData)
+  })
 
   return (
     <div className="flex h-table-row w-full items-center gap-icon-with-text">
@@ -18,9 +22,7 @@ export default function AccessedDataColumnHeading(props: AssetColumnHeadingProps
         icon={AccessedDataIcon}
         aria-label={getText('accessedDataColumnHide')}
         tooltip={false}
-        onPress={() => {
-          hideColumn(Column.accessedData)
-        }}
+        onPress={hideThisColumn}
       />
       <Text className="text-sm font-semibold">{getText('accessedDataColumnName')}</Text>
     </div>

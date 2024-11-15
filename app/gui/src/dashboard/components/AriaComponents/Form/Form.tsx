@@ -100,8 +100,6 @@ export const Form = forwardRef(function Form<
     }),
   ) as Record<keyof FieldValues, string>
 
-  const values = components.useWatch({ control: innerForm.control })
-
   return (
     <form
       {...formProps}
@@ -115,9 +113,7 @@ export const Form = forwardRef(function Form<
     >
       <aria.FormValidationContext.Provider value={errors}>
         <components.FormProvider form={innerForm}>
-          {typeof children === 'function' ?
-            children({ ...innerForm, form: innerForm, values })
-          : children}
+          {typeof children === 'function' ? children({ ...innerForm, form: innerForm }) : children}
         </components.FormProvider>
       </aria.FormValidationContext.Provider>
     </form>
@@ -133,6 +129,7 @@ export const Form = forwardRef(function Form<
   Reset: typeof components.Reset
   Field: typeof components.Field
   FormError: typeof components.FormError
+  FieldValue: typeof components.FieldValue
   useFormSchema: typeof components.useFormSchema
   Controller: typeof components.Controller
   FIELD_STYLES: typeof components.FIELD_STYLES
@@ -151,6 +148,7 @@ Form.useFormSchema = components.useFormSchema
 Form.Submit = components.Submit
 Form.Reset = components.Reset
 Form.FormError = components.FormError
+Form.FieldValue = components.FieldValue
 Form.useFormContext = components.useFormContext
 Form.useOptionalFormContext = components.useOptionalFormContext
 Form.Field = components.Field

@@ -11,6 +11,7 @@ import * as common from 'enso-common'
 import { type Category, isCloudCategory } from '#/layouts/CategorySwitcher/Category'
 
 import { useEventCallback } from '#/hooks/eventCallbackHooks'
+import { BackendType } from '#/services/Backend'
 import type LocalBackend from '#/services/LocalBackend'
 import { ProjectManagerEvents } from '#/services/ProjectManager'
 import type RemoteBackend from '#/services/RemoteBackend'
@@ -127,6 +128,26 @@ export function useBackend(category: Category) {
       `This distribution of ${common.PRODUCT_NAME} does not support the Local Backend.`,
     )
     return localBackend
+  }
+}
+
+/**
+ * Get the backend for the given project type.
+ * @throws {Error} when a Local Backend is requested for a non-local project.
+ */
+export function useBackendForProjectType(projectType: BackendType) {
+  const remoteBackend = useRemoteBackend()
+  const localBackend = useLocalBackend()
+
+  switch (projectType) {
+    case BackendType.remote:
+      return remoteBackend
+    case BackendType.local:
+      invariant(
+        localBackend,
+        'Attempted to get a local backend for local project, but no local backend was provided.',
+      )
+      return localBackend
   }
 }
 

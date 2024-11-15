@@ -176,6 +176,13 @@ declare global {
     readonly fileBrowserApi?: FileBrowserApi
     readonly versionInfo?: VersionInfo
     toggleDevtools: () => void
+    /**
+     * If set to `true`, animations will be disabled.
+     * Used by playwright tests to speed up execution.
+     *
+     * ATM only affects the framer-motion animations.
+     */
+    readonly DISABLE_ANIMATIONS?: boolean
   }
 
   namespace NodeJS {

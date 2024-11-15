@@ -22,15 +22,12 @@ test.test('labels', async ({ page }) => {
   // "New Label" modal
   await locateNewLabelButton(page).click()
   await test.expect(locateNewLabelModal(page)).toBeVisible()
-  await page.press('body', 'Escape')
-  await test.expect(locateNewLabelModal(page)).not.toBeVisible()
-  await locateNewLabelButton(page).click()
 
   // "New Label" modal with name set
   await locateNewLabelModalNameInput(page).fill('New Label')
   await test.expect(locateNewLabelModal(page)).toHaveText(/^New Label/)
 
-  await page.press('body', 'Escape')
+  await page.press('html', 'Escape')
 
   // "New Label" modal with color set
   // The exact number is allowed to vary; but to click the fourth color, there must be at least

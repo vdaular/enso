@@ -14,7 +14,7 @@ import * as textProvider from '#/providers/TextProvider'
 
 import AssetListEventType from '#/events/AssetListEventType'
 
-import AssetPanel from '#/layouts/AssetPanel'
+import { AssetPanel } from '#/layouts/AssetPanel'
 import type * as assetsTable from '#/layouts/AssetsTable'
 import AssetsTable from '#/layouts/AssetsTable'
 import * as eventListProvider from '#/layouts/AssetsTable/EventListProvider'
@@ -120,7 +120,10 @@ export default function Drive(props: DriveProps) {
     (
       templateId: string | null = null,
       templateName: string | null = null,
-      onCreated?: (project: backendModule.CreatedProject) => void,
+      onCreated?: (
+        project: backendModule.CreatedProject,
+        parentId: backendModule.DirectoryId,
+      ) => void,
       onError?: () => void,
     ) => {
       dispatchAssetListEvent({

@@ -17,7 +17,6 @@ import {
 } from 'react'
 
 import {
-  queryOptions,
   useMutation,
   useQueries,
   useQuery,
@@ -27,6 +26,8 @@ import {
 import { toast } from 'react-toastify'
 import invariant from 'tiny-invariant'
 import * as z from 'zod'
+
+import { uniqueString } from 'enso-common/src/utilities/uniqueString'
 
 import DropFilesImage from '#/assets/drop_files.svg'
 import { FileTrigger, mergeProps } from '#/components/aria'
@@ -48,7 +49,7 @@ import { COLUMN_HEADING } from '#/components/dashboard/columnHeading'
 import Label from '#/components/dashboard/Label'
 import { ErrorDisplay } from '#/components/ErrorBoundary'
 import SelectionBrush from '#/components/SelectionBrush'
-import Spinner, { SpinnerState } from '#/components/Spinner'
+import { StatelessSpinner } from '#/components/StatelessSpinner'
 import FocusArea from '#/components/styled/FocusArea'
 import SvgMask from '#/components/SvgMask'
 import { ASSETS_MIME_TYPE } from '#/data/mimeTypes'
@@ -58,6 +59,7 @@ import AssetListEventType from '#/events/AssetListEventType'
 import { useAutoScroll } from '#/hooks/autoScrollHooks'
 import {
   backendMutationOptions,
+  listDirectoryQueryOptions,
   useBackendQuery,
   useUploadFileWithToastMutation,
 } from '#/hooks/backendHooks'
@@ -70,7 +72,6 @@ import * as eventListProvider from '#/layouts/AssetsTable/EventListProvider'
 import AssetsTableContextMenu from '#/layouts/AssetsTableContextMenu'
 import {
   canTransferBetweenCategories,
-  CATEGORY_TO_FILTER_BY,
   isLocalCategory,
   type Category,
 } from '#/layouts/CategorySwitcher/Category'
@@ -85,6 +86,7 @@ import {
 } from '#/providers/BackendProvider'
 import {
   useDriveStore,
+  useResetAssetPanelProps,
   useSetAssetPanelProps,
   useSetCanCreateAssets,
   useSetCanDownload,
@@ -110,6 +112,7 @@ import {
   assetIsProject,
   AssetType,
   BackendType,
+  createPlaceholderAssetId,
   createPlaceholderFileAsset,
   createPlaceholderProjectAsset,
   createRootDirectoryAsset,
@@ -164,7 +167,6 @@ import { SortDirection } from '#/utilities/sorting'
 import { regexEscape } from '#/utilities/string'
 import { twJoin, twMerge } from '#/utilities/tailwindMerge'
 import Visibility from '#/utilities/Visibility'
-import { uniqueString } from 'enso-common/src/utilities/uniqueString'
 
 // ============================
 // === Global configuration ===
@@ -364,6 +366,7 @@ export default function AssetsTable(props: AssetsTableProps) {
   const [enabledColumns, setEnabledColumns] = useState(DEFAULT_ENABLED_COLUMNS)
   const setIsAssetPanelTemporarilyVisible = useSetIsAssetPanelTemporarilyVisible()
   const setAssetPanelProps = useSetAssetPanelProps()
+  const resetAssetPanelProps = useResetAssetPanelProps()
 
   const hiddenColumns = getColumnList(user, backend.type, category).filter(
     (column) => !enabledColumns.has(column),
@@ -434,34 +437,14 @@ export default function AssetsTable(props: AssetsTableProps) {
 
   const directories = useQueries({
     // We query only expanded directories, as we don't want to load the data for directories that are not visible.
-    queries: useMemo(
-      () =>
-        expandedDirectoryIds.map((directoryId) =>
-          queryOptions({
-            queryKey: [
-              backend.type,
-              'listDirectory',
-              directoryId,
-              {
-                labels: null,
-                filterBy: CATEGORY_TO_FILTER_BY[category.type],
-                recentProjects: category.type === 'recent',
-              },
-            ] as const,
-            queryFn: async ({ queryKey: [, , parentId, params] }) => {
-              try {
-                return await backend.listDirectory({ ...params, parentId }, parentId)
-              } catch {
-                throw Object.assign(new Error(), { parentId })
-              }
-            },
-
-            enabled: !hidden,
-            meta: { persist: false },
-          }),
-        ),
-      [hidden, backend, category, expandedDirectoryIds],
-    ),
+    queries: expandedDirectoryIds.map((directoryId) => ({
+      ...listDirectoryQueryOptions({
+        backend,
+        parentId: directoryId,
+        category,
+      }),
+      enabled: !hidden,
+    })),
     combine: (results) => {
       const rootQuery = results[expandedDirectoryIds.indexOf(rootDirectory.id)]
 
@@ -470,6 +453,7 @@ export default function AssetsTable(props: AssetsTableProps) {
           isFetching: rootQuery?.isFetching ?? true,
           isLoading: rootQuery?.isLoading ?? true,
           isError: rootQuery?.isError ?? false,
+          error: rootQuery?.error,
           data: rootQuery?.data,
         },
         directories: new Map(
@@ -479,6 +463,7 @@ export default function AssetsTable(props: AssetsTableProps) {
               isFetching: res.isFetching,
               isLoading: res.isLoading,
               isError: res.isError,
+              error: res.error,
               data: res.data,
             },
           ]),
@@ -491,8 +476,11 @@ export default function AssetsTable(props: AssetsTableProps) {
   // This reduces the amount of rerenders by batching them together, so they happen less often.
   useQuery({
     queryKey: [backend.type, 'refetchListDirectory'],
-    queryFn: () =>
-      queryClient.refetchQueries({ queryKey: [backend.type, 'listDirectory'] }).then(() => null),
+    queryFn: () => {
+      return queryClient
+        .refetchQueries({ queryKey: [backend.type, 'listDirectory'] })
+        .then(() => null)
+    },
     refetchInterval:
       enableAssetsTableBackgroundRefresh ? assetsTableBackgroundRefreshInterval : false,
     refetchOnMount: 'always',
@@ -874,7 +862,7 @@ export default function AssetsTable(props: AssetsTableProps) {
             if (item != null && item.isType(AssetType.directory)) {
               setTargetDirectory(item)
             }
-            if (item && item.item.id !== driveStore.getState().assetPanelProps?.item?.id) {
+            if (item != null && item.item.id !== driveStore.getState().assetPanelProps.item?.id) {
               setAssetPanelProps({ backend, item: item.item, path: item.path })
               setIsAssetPanelTemporarilyVisible(false)
             }
@@ -1198,11 +1186,11 @@ export default function AssetsTable(props: AssetsTableProps) {
     () =>
       driveStore.subscribe(({ selectedKeys }) => {
         if (selectedKeys.size !== 1) {
-          setAssetPanelProps(null)
+          resetAssetPanelProps()
           setIsAssetPanelTemporarilyVisible(false)
         }
       }),
-    [driveStore, setAssetPanelProps, setIsAssetPanelTemporarilyVisible],
+    [driveStore, resetAssetPanelProps, setIsAssetPanelTemporarilyVisible],
   )
 
   const doToggleDirectoryExpansion = useEventCallback(
@@ -1246,8 +1234,8 @@ export default function AssetsTable(props: AssetsTableProps) {
 
   const doMove = useEventCallback(async (newParentId: DirectoryId | null, asset: AnyAsset) => {
     try {
-      if (asset.id === driveStore.getState().assetPanelProps?.item?.id) {
-        setAssetPanelProps(null)
+      if (asset.id === driveStore.getState().assetPanelProps.item?.id) {
+        resetAssetPanelProps()
       }
       await updateAssetMutation.mutateAsync([
         asset.id,
@@ -1260,8 +1248,8 @@ export default function AssetsTable(props: AssetsTableProps) {
   })
 
   const doDelete = useEventCallback(async (asset: AnyAsset, forever: boolean = false) => {
-    if (asset.id === driveStore.getState().assetPanelProps?.item?.id) {
-      setAssetPanelProps(null)
+    if (asset.id === driveStore.getState().assetPanelProps.item?.id) {
+      resetAssetPanelProps()
     }
     if (asset.type === AssetType.directory) {
       dispatchAssetListEvent({
@@ -1285,8 +1273,8 @@ export default function AssetsTable(props: AssetsTableProps) {
   })
 
   const doDeleteById = useEventCallback(async (assetId: AssetId, forever: boolean = false) => {
-    if (assetId === driveStore.getState().assetPanelProps?.item?.id) {
-      setAssetPanelProps(null)
+    if (assetId === driveStore.getState().assetPanelProps.item?.id) {
+      resetAssetPanelProps()
     }
     const asset = nodeMapRef.current.get(assetId)?.item
 
@@ -1295,7 +1283,6 @@ export default function AssetsTable(props: AssetsTableProps) {
     }
   })
 
-  const [spinnerState, setSpinnerState] = useState(SpinnerState.initial)
   const [keyboardSelectedIndex, setKeyboardSelectedIndex] = useState<number | null>(null)
   const mostRecentlySelectedIndexRef = useRef<number | null>(null)
   const selectionStartIndexRef = useRef<number | null>(null)
@@ -1540,22 +1527,6 @@ export default function AssetsTable(props: AssetsTableProps) {
     }
   })
 
-  /** All items must have the same type. */
-  const insertAssets = useEventCallback(
-    (assets: readonly AnyAsset[], parentId: DirectoryId | null) => {
-      const actualParentId = parentId ?? rootDirectoryId
-
-      const listDirectoryQuery = queryClient.getQueryCache().find<DirectoryQuery>({
-        queryKey: [backend.type, 'listDirectory', actualParentId],
-        exact: false,
-      })
-
-      if (listDirectoryQuery?.state.data) {
-        listDirectoryQuery.setData([...listDirectoryQuery.state.data, ...assets])
-      }
-    },
-  )
-
   const onAssetListEvent = useEventCallback((event: AssetListEvent) => {
     switch (event.type) {
       case AssetListEventType.newFolder: {
@@ -1590,7 +1561,6 @@ export default function AssetsTable(props: AssetsTableProps) {
         }
 
         doToggleDirectoryExpansion(event.parentId, event.parentKey, true)
-        insertAssets([placeholderItem], event.parentId)
 
         void createDirectoryMutation
           .mutateAsync([{ parentId: placeholderItem.parentId, title: placeholderItem.title }])
@@ -1604,7 +1574,7 @@ export default function AssetsTable(props: AssetsTableProps) {
       case AssetListEventType.newProject: {
         const parent = nodeMapRef.current.get(event.parentKey)
         const projectName = getNewProjectName(event.preferredName, event.parentId)
-        const dummyId = ProjectId(uniqueString())
+        const dummyId = createPlaceholderAssetId(AssetType.project)
         const path =
           backend instanceof LocalBackend ? backend.joinPath(event.parentId, projectName) : null
         const placeholderItem: ProjectAsset = {
@@ -1632,9 +1602,8 @@ export default function AssetsTable(props: AssetsTableProps) {
           parentsPath: '',
           virtualParentsPath: '',
         }
-        doToggleDirectoryExpansion(event.parentId, event.parentKey, true)
 
-        insertAssets([placeholderItem], event.parentId)
+        doToggleDirectoryExpansion(event.parentId, event.parentKey, true)
 
         void createProjectMutation
           .mutateAsync([
@@ -1654,7 +1623,8 @@ export default function AssetsTable(props: AssetsTableProps) {
             throw error
           })
           .then((createdProject) => {
-            event.onCreated?.(createdProject)
+            event.onCreated?.(createdProject, placeholderItem.parentId)
+
             doOpenProject({
               id: createdProject.projectId,
               type: backend.type,
@@ -1885,7 +1855,6 @@ export default function AssetsTable(props: AssetsTableProps) {
           virtualParentsPath: '',
         }
         doToggleDirectoryExpansion(event.parentId, event.parentKey, true)
-        insertAssets([placeholderItem], event.parentId)
 
         createDatalinkMutation.mutate([
           {
@@ -1922,7 +1891,6 @@ export default function AssetsTable(props: AssetsTableProps) {
         }
 
         doToggleDirectoryExpansion(event.parentId, event.parentKey, true)
-        insertAssets([placeholderItem], event.parentId)
 
         createSecretMutation.mutate([
           {
@@ -1970,8 +1938,6 @@ export default function AssetsTable(props: AssetsTableProps) {
           virtualParentsPath: '',
         }
 
-        insertAssets([placeholderItem], event.parentId)
-
         void duplicateProjectMutation
           .mutateAsync([event.original.id, event.versionId, placeholderItem.title])
           .catch((error) => {
@@ -2005,9 +1971,11 @@ export default function AssetsTable(props: AssetsTableProps) {
       }
       case AssetListEventType.delete: {
         const asset = nodeMapRef.current.get(event.key)?.item
+
         if (asset) {
           void doDelete(asset, false)
         }
+
         break
       }
       case AssetListEventType.emptyTrash: {
@@ -2036,6 +2004,7 @@ export default function AssetsTable(props: AssetsTableProps) {
       }
     }
   })
+
   eventListProvider.useAssetListEventListener((event) => {
     if (!isLoading) {
       onAssetListEvent(event)
@@ -2102,8 +2071,8 @@ export default function AssetsTable(props: AssetsTableProps) {
 
   const doRestore = useEventCallback(async (asset: AnyAsset) => {
     try {
-      if (asset.id === driveStore.getState().assetPanelProps?.item?.id) {
-        setAssetPanelProps(null)
+      if (asset.id === driveStore.getState().assetPanelProps.item?.id) {
+        resetAssetPanelProps()
       }
       await undoDeleteAssetMutation.mutateAsync([asset.id, asset.title])
     } catch (error) {
@@ -2259,25 +2228,6 @@ export default function AssetsTable(props: AssetsTableProps) {
       ),
     [setSelectedKeys, inputBindings, setMostRecentlySelectedIndex, driveStore],
   )
-
-  useEffect(() => {
-    if (isLoading) {
-      // Ensure the spinner stays in the "initial" state for at least one frame,
-      // to ensure the CSS animation begins at the initial state.
-      requestAnimationFrame(() => {
-        setSpinnerState(SpinnerState.loadingFast)
-      })
-    } else {
-      const queuedAssetEvents = queuedAssetListEventsRef.current
-      if (queuedAssetEvents.length !== 0) {
-        queuedAssetListEventsRef.current = []
-        for (const event of queuedAssetEvents) {
-          onAssetListEvent(event)
-        }
-      }
-      setSpinnerState(SpinnerState.initial)
-    }
-  }, [isLoading, onAssetListEvent])
 
   const calculateNewKeys = useEventCallback(
     (event: MouseEvent | ReactMouseEvent, keys: AssetId[], getRange: () => AssetId[]) => {
@@ -2446,6 +2396,7 @@ export default function AssetsTable(props: AssetsTableProps) {
           {nodes.map((node) => (
             <NameColumn
               key={node.key}
+              isPlaceholder={node.isPlaceholder()}
               isOpened={false}
               keyProp={node.key}
               item={node.item}
@@ -2586,7 +2537,12 @@ export default function AssetsTable(props: AssetsTableProps) {
         const Heading = COLUMN_HEADING[column]
         return (
           <th key={column} className={COLUMN_CSS_CLASS[column]}>
-            <Heading state={state} />
+            <Heading
+              sortInfo={state.sortInfo}
+              hideColumn={state.hideColumn}
+              setSortInfo={state.setSortInfo}
+              category={state.category}
+            />
           </th>
         )
       })}
@@ -2598,7 +2554,7 @@ export default function AssetsTable(props: AssetsTableProps) {
       <tr className="h-row">
         <td colSpan={columns.length} className="bg-transparent">
           <div className="grid w-container justify-around">
-            <Spinner size={LOADING_SPINNER_SIZE_PX} state={spinnerState} />
+            <StatelessSpinner size={LOADING_SPINNER_SIZE_PX} state="initial" />
           </div>
         </td>
       </tr>
@@ -2606,16 +2562,18 @@ export default function AssetsTable(props: AssetsTableProps) {
         return (
           <AssetRow
             key={item.key + item.path}
+            isPlaceholder={item.isPlaceholder()}
             isOpened={openedProjects.some(({ id }) => item.item.id === id)}
             visibility={visibilities.get(item.key)}
             columns={columns}
             id={item.item.id}
+            type={item.item.type}
             parentId={item.directoryId}
             path={item.path}
             initialAssetEvents={item.initialAssetEvents}
             depth={item.depth}
             state={state}
-            hidden={hidden || visibilities.get(item.key) === Visibility.hidden}
+            hidden={visibilities.get(item.key) === Visibility.hidden}
             isKeyboardSelected={
               keyboardSelectedIndex != null && item === visibleItems[keyboardSelectedIndex]
             }

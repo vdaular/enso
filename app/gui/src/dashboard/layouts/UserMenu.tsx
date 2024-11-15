@@ -13,10 +13,6 @@ import { Plan } from '#/services/Backend'
 import { download } from '#/utilities/download'
 import { getDownloadUrl } from '#/utilities/github'
 
-// ================
-// === UserMenu ===
-// ================
-
 /** Props for a {@link UserMenu}. */
 export interface UserMenuProps {
   /** If `true`, disables `data-testid` because it will not be visible. */
@@ -36,65 +32,67 @@ export default function UserMenu(props: UserMenuProps) {
   const { getText } = useText()
   const toastAndLog = useToastAndLog()
 
-  const aboutThisAppMenuEntry = (
-    <MenuEntry
-      action="aboutThisApp"
-      doAction={() => {
-        setModal(<AboutModal />)
-      }}
-    />
+  const entries = (
+    <>
+      {localBackend == null && (
+        <MenuEntry
+          action="downloadApp"
+          doAction={async () => {
+            unsetModal()
+            const downloadUrl = await getDownloadUrl()
+            if (downloadUrl == null) {
+              toastAndLog('noAppDownloadError')
+            } else {
+              download(downloadUrl)
+            }
+          }}
+        />
+      )}
+      <MenuEntry action="settings" doAction={goToSettingsPage} />
+      <MenuEntry
+        action="aboutThisApp"
+        doAction={() => {
+          setModal(<AboutModal />)
+        }}
+      />
+      <MenuEntry
+        action="signOut"
+        doAction={() => {
+          onSignOut()
+          // Wait until React has switched back to drive view, before signing out.
+          window.setTimeout(() => {
+            void signOut()
+          }, 0)
+        }}
+      />
+    </>
   )
 
-  return (
-    <Popover {...(!hidden ? { testId: 'user-menu' } : {})} size="xxsmall">
-      <div className="mb-2 flex items-center gap-icons overflow-hidden px-menu-entry transition-all duration-user-menu">
-        <div className="flex size-row-h shrink-0 items-center overflow-clip rounded-full">
-          <img
-            src={user.profilePicture ?? DefaultUserIcon}
-            className="pointer-events-none size-row-h"
-          />
-        </div>
-
-        <div className="flex min-w-0 flex-col">
-          <Text disableLineHeightCompensation variant="body" truncate="1" weight="semibold">
-            {user.name}
-          </Text>
-
-          <Text disableLineHeightCompensation>{getText(`${user.plan ?? Plan.free}`)}</Text>
-        </div>
-      </div>
-      <FocusArea direction="vertical">
-        {(innerProps) => (
-          <div className="flex flex-col overflow-hidden" {...innerProps}>
-            {localBackend == null && (
-              <MenuEntry
-                action="downloadApp"
-                doAction={async () => {
-                  unsetModal()
-                  const downloadUrl = await getDownloadUrl()
-                  if (downloadUrl == null) {
-                    toastAndLog('noAppDownloadError')
-                  } else {
-                    download(downloadUrl)
-                  }
-                }}
-              />
-            )}
-            <MenuEntry action="settings" doAction={goToSettingsPage} />
-            {aboutThisAppMenuEntry}
-            <MenuEntry
-              action="signOut"
-              doAction={() => {
-                onSignOut()
-                // Wait until React has switched back to drive view, before signing out.
-                window.setTimeout(() => {
-                  void signOut()
-                }, 0)
-              }}
+  return hidden ? entries : (
+      <Popover data-testid="user-menu" size="xxsmall">
+        <div className="mb-2 flex select-none items-center gap-icons overflow-hidden px-menu-entry transition-all duration-user-menu">
+          <div className="flex size-row-h shrink-0 items-center overflow-clip rounded-full">
+            <img
+              src={user.profilePicture ?? DefaultUserIcon}
+              className="pointer-events-none size-row-h"
             />
           </div>
-        )}
-      </FocusArea>
-    </Popover>
-  )
+
+          <div className="flex min-w-0 flex-col">
+            <Text disableLineHeightCompensation variant="body" truncate="1" weight="semibold">
+              {user.name}
+            </Text>
+
+            <Text disableLineHeightCompensation>{getText(`${user.plan ?? Plan.free}`)}</Text>
+          </div>
+        </div>
+        <FocusArea direction="vertical">
+          {(innerProps) => (
+            <div className="flex flex-col overflow-hidden" {...innerProps}>
+              {entries}
+            </div>
+          )}
+        </FocusArea>
+      </Popover>
+    )
 }

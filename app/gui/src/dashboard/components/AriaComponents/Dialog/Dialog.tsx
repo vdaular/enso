@@ -182,11 +182,13 @@ export function Dialog(props: DialogProps) {
     testId = 'dialog',
     size,
     rounded,
-    padding = type === 'modal' ? 'medium' : 'xlarge',
+    padding: paddingRaw,
     fitContent,
     variants = DIALOG_STYLES,
     ...ariaDialogProps
   } = props
+
+  const padding = paddingRaw ?? (type === 'modal' ? 'medium' : 'xlarge')
 
   const [isScrolledToTop, setIsScrolledToTop] = React.useState(true)
 

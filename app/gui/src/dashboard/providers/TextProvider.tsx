@@ -59,11 +59,12 @@ export default function TextProvider(props: TextProviderProps) {
   const [language, setLanguage] = React.useState(text.Language.english)
   const locale = text.LANGUAGE_TO_LOCALE[language]
 
-  return (
-    <TextContext.Provider value={{ language, setLanguage, locale }}>
-      {children}
-    </TextContext.Provider>
+  const contextValue = React.useMemo<TextContextType>(
+    () => ({ language, setLanguage, locale }),
+    [language, locale],
   )
+
+  return <TextContext.Provider value={contextValue}>{children}</TextContext.Provider>
 }
 
 /** Exposes a property to get localized text, and get and set the current language. */

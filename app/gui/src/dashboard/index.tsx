@@ -28,8 +28,11 @@ import { Suspense } from '#/components/Suspense'
 import UIProviders from '#/components/UIProviders'
 
 import HttpClient from '#/utilities/HttpClient'
+import { MotionGlobalConfig } from 'framer-motion'
 
 export type { GraphEditorRunner } from '#/layouts/Editor'
+
+MotionGlobalConfig.skipAnimations = window.DISABLE_ANIMATIONS ?? false
 
 // =================
 // === Constants ===

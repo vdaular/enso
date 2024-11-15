@@ -29,7 +29,6 @@ import * as backendModule from '#/services/Backend'
 import {
   AssetType,
   BackendType,
-  type AnyAsset,
   type AssetId,
   type DirectoryAsset,
   type DirectoryId,
@@ -38,7 +37,7 @@ import {
 } from '#/services/Backend'
 import { TEAMS_DIRECTORY_ID, USERS_DIRECTORY_ID } from '#/services/remoteBackendPaths'
 import { usePreventNavigation } from '#/utilities/preventNavigation'
-import { toRfc3339 } from 'enso-common/src/utilities/data/dateTime'
+import { toRfc3339 } from '../utilities/dateTime'
 
 // The number of bytes in 1 megabyte.
 const MB_BYTES = 1_000_000
@@ -283,6 +282,52 @@ export function useListUserGroupsWithUsers(
 }
 
 /**
+ *
+ */
+export interface ListDirectoryQueryOptions {
+  readonly backend: Backend
+  readonly parentId: DirectoryId
+  readonly category: Category
+}
+
+/**
+ * Builds a query options object to fetch the children of a directory.
+ */
+export function listDirectoryQueryOptions(options: ListDirectoryQueryOptions) {
+  const { backend, parentId, category } = options
+
+  return queryOptions({
+    queryKey: [
+      backend.type,
+      'listDirectory',
+      parentId,
+      {
+        labels: null,
+        filterBy: CATEGORY_TO_FILTER_BY[category.type],
+        recentProjects: category.type === 'recent',
+      },
+    ] as const,
+    queryFn: async () => {
+      try {
+        return await backend.listDirectory(
+          {
+            parentId,
+            filterBy: CATEGORY_TO_FILTER_BY[category.type],
+            labels: null,
+            recentProjects: category.type === 'recent',
+          },
+          parentId,
+        )
+      } catch {
+        throw Object.assign(new Error(), { parentId })
+      }
+    },
+
+    meta: { persist: false },
+  })
+}
+
+/**
  * Upload progress for {@link useUploadFileMutation}.
  */
 export interface UploadFileMutationProgress {
@@ -295,30 +340,26 @@ export interface UploadFileMutationProgress {
   readonly totalMb: number
 }
 
+/**
+ *
+ */
+export interface UseAssetOptions extends ListDirectoryQueryOptions {
+  readonly assetId: AssetId
+}
+
 /** Data for a specific asset. */
-export function useAssetPassiveListener(
-  backendType: BackendType,
-  assetId: AssetId | null | undefined,
-  parentId: DirectoryId | null | undefined,
-  category: Category,
-) {
-  const { data: asset } = useQuery<readonly AnyAsset[] | undefined, Error, AnyAsset | undefined>({
-    queryKey: [
-      backendType,
-      'listDirectory',
-      parentId,
-      {
-        labels: null,
-        filterBy: CATEGORY_TO_FILTER_BY[category.type],
-        recentProjects: category.type === 'recent',
-      },
-    ],
-    initialData: undefined,
-    select: (data) => data?.find((child) => child.id === assetId),
+export function useAsset(options: UseAssetOptions) {
+  const { parentId, assetId } = options
+
+  const { data: asset } = useQuery({
+    ...listDirectoryQueryOptions(options),
+    select: (data) => data.find((child) => child.id === assetId),
   })
-  if (asset || !assetId || !parentId) {
+
+  if (asset) {
     return asset
   }
+
   const shared = {
     parentId,
     projectState: null,
@@ -378,14 +419,14 @@ export function useAssetPassiveListener(
 }
 
 /** Data for a specific asset. */
-export function useAssetPassiveListenerStrict(
-  backendType: BackendType,
-  assetId: AssetId | null | undefined,
-  parentId: DirectoryId | null | undefined,
-  category: Category,
-) {
-  const asset = useAssetPassiveListener(backendType, assetId, parentId, category)
-  invariant(asset, 'Asset not found')
+export function useAssetStrict(options: UseAssetOptions) {
+  const asset = useAsset(options)
+
+  invariant(
+    asset,
+    `Expected asset to be defined, but got undefined, Asset ID: ${JSON.stringify(options.assetId)}`,
+  )
+
   return asset
 }
 

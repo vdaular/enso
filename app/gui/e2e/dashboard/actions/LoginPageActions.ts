@@ -30,7 +30,10 @@ export default class LoginPageActions extends BaseActions {
 
   /** Perform a successful login. */
   login(email = VALID_EMAIL, password = VALID_PASSWORD) {
-    return this.step('Login', () => this.loginInternal(email, password)).into(DrivePageActions)
+    return this.step('Login', async (page) => {
+      await this.loginInternal(email, password)
+      await passAgreementsDialog({ page })
+    }).into(DrivePageActions)
   }
 
   /** Perform a login as a new user (a user that does not yet have a username). */

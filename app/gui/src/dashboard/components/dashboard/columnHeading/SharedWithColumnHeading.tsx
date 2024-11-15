@@ -5,18 +5,21 @@ import type { AssetColumnHeadingProps } from '#/components/dashboard/column'
 import { Column } from '#/components/dashboard/column/columnUtils'
 import { PaywallDialogButton } from '#/components/Paywall'
 import { usePaywall } from '#/hooks/billing'
+import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import { useFullUserSession } from '#/providers/AuthProvider'
 import { useText } from '#/providers/TextProvider'
 
 /** A heading for the "Shared with" column. */
 export default function SharedWithColumnHeading(props: AssetColumnHeadingProps) {
-  const { state } = props
-  const { category, hideColumn } = state
+  const { hideColumn, category } = props
+
   const { getText } = useText()
-
   const { user } = useFullUserSession()
-
   const { isFeatureUnderPaywall } = usePaywall({ plan: user.plan })
+
+  const hideThisColumn = useEventCallback(() => {
+    hideColumn(Column.sharedWith)
+  })
 
   const isUnderPaywall = isFeatureUnderPaywall('share')
 
@@ -27,9 +30,7 @@ export default function SharedWithColumnHeading(props: AssetColumnHeadingProps) 
         icon={PeopleIcon}
         aria-label={getText('sharedWithColumnHide')}
         tooltip={false}
-        onPress={() => {
-          hideColumn(Column.sharedWith)
-        }}
+        onPress={hideThisColumn}
       />
 
       <div className="flex items-center gap-1">

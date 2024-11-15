@@ -23,7 +23,12 @@ import * as errorUtils from '#/utilities/error'
 /** Props for an {@link ErrorBoundary}. */
 export interface ErrorBoundaryProps
   extends Readonly<React.PropsWithChildren>,
-    Readonly<Pick<errorBoundary.ErrorBoundaryProps, 'FallbackComponent' | 'onError' | 'onReset'>> {}
+    Readonly<
+      Pick<
+        errorBoundary.ErrorBoundaryProps,
+        'FallbackComponent' | 'onError' | 'onReset' | 'resetKeys'
+      >
+    > {}
 
 /**
  * Catches errors in child components

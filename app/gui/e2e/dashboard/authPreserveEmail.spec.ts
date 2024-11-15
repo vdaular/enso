@@ -2,6 +2,9 @@
 import * as test from '@playwright/test'
 import { VALID_EMAIL, mockAll } from './actions'
 
+// Reset storage state for this file to avoid being authenticated
+test.test.use({ storageState: { cookies: [], origins: [] } })
+
 test.test('preserve email input when changing pages', ({ page }) =>
   mockAll({ page })
     .fillEmail(VALID_EMAIL)

@@ -7,6 +7,9 @@ import { INVALID_PASSWORD, mockAll, TEXT, VALID_EMAIL, VALID_PASSWORD } from './
 // === Tests ===
 // =============
 
+// Reset storage state for this file to avoid being authenticated
+test.test.use({ storageState: { cookies: [], origins: [] } })
+
 test.test('sign up without organization id', ({ page }) =>
   mockAll({ page })
     .goToPage.register()

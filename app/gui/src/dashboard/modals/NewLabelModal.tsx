@@ -77,7 +77,7 @@ export default function NewLabelModal(props: NewLabelModalProps) {
               {(innerProps) => (
                 <ColorPicker
                   aria-label={getText('color')}
-                  className="relative flex items-center"
+                  className="relative"
                   pickerClassName="grow"
                   setColor={(color) => {
                     form.setValue('color', color)

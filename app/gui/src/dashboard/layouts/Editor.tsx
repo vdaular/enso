@@ -18,6 +18,7 @@ import * as suspense from '#/components/Suspense'
 import type Backend from '#/services/Backend'
 import * as backendModule from '#/services/Backend'
 
+import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import * as twMerge from '#/utilities/tailwindMerge'
 
 // ====================
@@ -67,7 +68,6 @@ const IGNORE_PARAMS_REGEX = new RegExp(`^${appUtils.SEARCH_PARAMS_PREFIX}(.+)$`)
 
 /** Props for an {@link Editor}. */
 export interface EditorProps {
-  readonly isOpening: boolean
   readonly isOpeningFailed: boolean
   readonly openingError: Error | null
   readonly startProject: (project: LaunchedProject) => void
@@ -75,64 +75,64 @@ export interface EditorProps {
   readonly hidden: boolean
   readonly ydocUrl: string | null
   readonly appRunner: GraphEditorRunner | null
-  readonly renameProject: (newName: string) => void
+  readonly renameProject: (newName: string, projectId: backendModule.ProjectId) => void
   readonly projectId: backendModule.ProjectId
 }
 
 /** The container that launches the IDE. */
 export default function Editor(props: EditorProps) {
-  const { project, hidden, isOpening, startProject, isOpeningFailed, openingError } = props
+  const { project, hidden, startProject, isOpeningFailed, openingError } = props
 
-  const remoteBackend = backendProvider.useRemoteBackend()
-  const localBackend = backendProvider.useLocalBackend()
+  const backend = backendProvider.useBackendForProjectType(project.type)
 
   const projectStatusQuery = projectHooks.createGetProjectDetailsQuery({
-    type: project.type,
     assetId: project.id,
     parentId: project.parentId,
-    title: project.title,
-    remoteBackend,
-    localBackend,
+    backend,
   })
 
-  const projectQuery = reactQuery.useQuery({
-    ...projectStatusQuery,
-    networkMode: project.type === backendModule.BackendType.remote ? 'online' : 'always',
-  })
+  const projectQuery = reactQuery.useQuery(projectStatusQuery)
 
   const isProjectClosed = projectQuery.data?.state.type === backendModule.ProjectState.closed
-  const shouldRefetch = !projectQuery.isError && !projectQuery.isLoading
 
-  if (!isOpeningFailed && !isOpening && isProjectClosed && shouldRefetch) {
-    startProject(project)
-  }
+  React.useEffect(() => {
+    if (isProjectClosed) {
+      startProject(project)
+    }
+  }, [isProjectClosed, startProject, project])
 
-  return isOpeningFailed ?
+  if (isOpeningFailed) {
+    return (
       <errorBoundary.ErrorDisplay
         error={openingError}
         resetErrorBoundary={() => {
           startProject(project)
         }}
       />
-    : <div
-        className={twMerge.twJoin('contents', hidden && 'hidden')}
-        data-testvalue={project.id}
-        data-testid="editor"
-      >
-        {(() => {
-          if (projectQuery.isError) {
+    )
+  }
+
+  return (
+    <div
+      className={twMerge.twJoin('contents', hidden && 'hidden')}
+      data-testvalue={project.id}
+      data-testid="editor"
+    >
+      {(() => {
+        switch (true) {
+          case projectQuery.isError:
             return (
               <errorBoundary.ErrorDisplay
                 error={projectQuery.error}
                 resetErrorBoundary={() => projectQuery.refetch()}
               />
             )
-          } else if (
-            projectQuery.isLoading ||
-            projectQuery.data?.state.type !== backendModule.ProjectState.opened
-          ) {
+
+          case projectQuery.isLoading ||
+            projectQuery.data?.state.type !== backendModule.ProjectState.opened:
             return <suspense.Loader loaderProps={{ minHeight: 'full' }} />
-          } else {
+
+          default:
             return (
               <errorBoundary.ErrorBoundary>
                 <suspense.Suspense>
@@ -144,9 +144,10 @@ export default function Editor(props: EditorProps) {
                 </suspense.Suspense>
               </errorBoundary.ErrorBoundary>
             )
-          }
-        })()}
-      </div>
+        }
+      })()}
+    </div>
+  )
 }
 
 // ======================
@@ -184,6 +185,10 @@ function EditorInternal(props: EditorInternalProps) {
     }
   }, [hidden, gtagEvent])
 
+  const onRenameProject = useEventCallback((newName: string) => {
+    renameProject(newName, openedProject.projectId)
+  })
+
   const appProps = React.useMemo<GraphEditorProps>(() => {
     const jsonAddress = openedProject.jsonAddress
     const binaryAddress = openedProject.binaryAddress
@@ -206,7 +211,7 @@ function EditorInternal(props: EditorInternalProps) {
         hidden,
         ignoreParamsRegex: IGNORE_PARAMS_REGEX,
         logEvent,
-        renameProject,
+        renameProject: onRenameProject,
         projectBackend,
         remoteBackend,
       }
@@ -217,7 +222,7 @@ function EditorInternal(props: EditorInternalProps) {
     getText,
     hidden,
     logEvent,
-    renameProject,
+    onRenameProject,
     backendType,
     localBackend,
     remoteBackend,

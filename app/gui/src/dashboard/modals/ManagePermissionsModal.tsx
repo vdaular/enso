@@ -13,7 +13,7 @@ import PermissionSelector from '#/components/dashboard/PermissionSelector'
 import Modal from '#/components/Modal'
 import { PaywallAlert } from '#/components/Paywall'
 import FocusArea from '#/components/styled/FocusArea'
-import { backendMutationOptions, useAssetPassiveListenerStrict } from '#/hooks/backendHooks'
+import { backendMutationOptions, useAssetStrict } from '#/hooks/backendHooks'
 import { usePaywall } from '#/hooks/billing'
 import { useToastAndLog } from '#/hooks/toastAndLogHooks'
 import type { Category } from '#/layouts/CategorySwitcher/Category'
@@ -75,7 +75,12 @@ export default function ManagePermissionsModal<Asset extends AnyAsset = AnyAsset
   props: ManagePermissionsModalProps<Asset>,
 ) {
   const { backend, category, item: itemRaw, self, doRemoveSelf, eventTarget } = props
-  const item = useAssetPassiveListenerStrict(backend.type, itemRaw.id, itemRaw.parentId, category)
+  const item = useAssetStrict({
+    backend,
+    assetId: itemRaw.id,
+    parentId: itemRaw.parentId,
+    category,
+  })
   const remoteBackend = useRemoteBackend()
   const { user } = useFullUserSession()
   const { unsetModal } = useSetModal()

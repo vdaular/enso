@@ -145,11 +145,17 @@ export default function AssetContextMenu(props: AssetContextMenuProps) {
         }
       })
 
-  const { data } = reactQuery.useQuery(
-    asset.type === backendModule.AssetType.project ?
-      projectHooks.createGetProjectDetailsQuery.createPassiveListener(asset.id)
-    : { queryKey: ['__IGNORED__'] },
-  )
+  const { data } = reactQuery.useQuery({
+    ...projectHooks.createGetProjectDetailsQuery({
+      // This is safe because we disable the query when the asset is not a project.
+      // see `enabled` property below.
+      // eslint-disable-next-line no-restricted-syntax
+      assetId: asset.id as backendModule.ProjectId,
+      parentId: asset.parentId,
+      backend,
+    }),
+    enabled: asset.type === backendModule.AssetType.project,
+  })
 
   const isRunningProject =
     (asset.type === backendModule.AssetType.project &&

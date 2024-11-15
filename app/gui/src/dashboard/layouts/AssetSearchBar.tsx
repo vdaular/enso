@@ -25,6 +25,8 @@ import AssetQuery from '#/utilities/AssetQuery'
 import * as eventModule from '#/utilities/event'
 import * as string from '#/utilities/string'
 import * as tailwindMerge from '#/utilities/tailwindMerge'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useEventCallback } from '../hooks/eventCallbackHooks'
 
 // =============
 // === Types ===
@@ -126,7 +128,7 @@ export interface AssetSearchBarProps {
 }
 
 /** A search bar containing a text input, and a list of suggestions. */
-export default function AssetSearchBar(props: AssetSearchBarProps) {
+function AssetSearchBar(props: AssetSearchBarProps) {
   const { backend, isCloud, query, setQuery } = props
   const { getText } = textProvider.useText()
   const { modalRef } = modalProvider.useModalRef()
@@ -135,17 +137,19 @@ export default function AssetSearchBar(props: AssetSearchBarProps) {
   const rawSuggestions = useSuggestions()
   const [suggestions, setSuggestions] = React.useState(rawSuggestions)
   const suggestionsRef = React.useRef(rawSuggestions)
-  const [selectedIndices, setSelectedIndices] = React.useState<ReadonlySet<number>>(
-    new Set<number>(),
-  )
   const [selectedIndex, setSelectedIndex] = React.useState<number | null>(null)
-  const [areSuggestionsVisible, setAreSuggestionsVisible] = React.useState(false)
+  const [areSuggestionsVisible, privateSetAreSuggestionsVisible] = React.useState(false)
   const areSuggestionsVisibleRef = React.useRef(areSuggestionsVisible)
   const querySource = React.useRef(QuerySource.external)
   const rootRef = React.useRef<HTMLLabelElement | null>(null)
   const searchRef = React.useRef<HTMLInputElement | null>(null)
-  const labels = backendHooks.useBackendQuery(backend, 'listTags', []).data ?? []
-  areSuggestionsVisibleRef.current = areSuggestionsVisible
+
+  const setAreSuggestionsVisible = useEventCallback((value: boolean) => {
+    React.startTransition(() => {
+      privateSetAreSuggestionsVisible(value)
+      areSuggestionsVisibleRef.current = value
+    })
+  })
 
   React.useEffect(() => {
     if (querySource.current !== QuerySource.tabbing) {
@@ -266,7 +270,7 @@ export default function AssetSearchBar(props: AssetSearchBarProps) {
       root?.removeEventListener('keydown', onSearchKeyDown)
       document.removeEventListener('keydown', onKeyDown)
     }
-  }, [setQuery, modalRef])
+  }, [setQuery, modalRef, setAreSuggestionsVisible])
 
   // Reset `querySource` after all other effects have run.
   React.useEffect(() => {
@@ -282,191 +286,326 @@ export default function AssetSearchBar(props: AssetSearchBarProps) {
   return (
     <FocusArea direction="horizontal">
       {(innerProps) => (
-        <aria.Label
-          data-testid="asset-search-bar"
-          {...aria.mergeProps<aria.LabelProps & React.RefAttributes<HTMLLabelElement>>()(
-            innerProps,
-            {
-              className:
-                'z-1 group relative flex grow max-w-[60em] items-center gap-asset-search-bar rounded-full px-1.5 py-1 text-primary',
-              ref: rootRef,
-              onFocus: () => {
-                setAreSuggestionsVisible(true)
-              },
-              onBlur: (event) => {
-                if (!event.currentTarget.contains(event.relatedTarget)) {
-                  if (querySource.current === QuerySource.tabbing) {
-                    querySource.current = QuerySource.external
+        <div className="relative w-full max-w-[60em]">
+          <aria.Label
+            data-testid="asset-search-bar"
+            {...aria.mergeProps<aria.LabelProps & React.RefAttributes<HTMLLabelElement>>()(
+              innerProps,
+              {
+                className:
+                  'z-1 group flex grow items-center gap-asset-search-bar rounded-full px-1.5 py-1 text-primary border-0.5 border-primary/20',
+                ref: rootRef,
+                onFocus: () => {
+                  setAreSuggestionsVisible(true)
+                },
+                onBlur: (event) => {
+                  if (!event.currentTarget.contains(event.relatedTarget)) {
+                    if (querySource.current === QuerySource.tabbing) {
+                      querySource.current = QuerySource.external
+                    }
+                    setAreSuggestionsVisible(false)
                   }
-                  setAreSuggestionsVisible(false)
-                }
+                },
               },
-            },
-          )}
-        >
-          <div className="relative size-4 placeholder" />
-          <div
-            className={ariaComponents.DIALOG_BACKGROUND({
-              className: tailwindMerge.twMerge(
-                'absolute left-0 top-0 z-1 flex w-full flex-col overflow-hidden rounded-default border-0.5 border-primary/20 -outline-offset-1 outline-primary transition-colors',
-                areSuggestionsVisible ? '' : 'bg-transparent',
-              ),
-            })}
+            )}
           >
-            <div className="h-[32px]" />
+            <div className="relative size-4 placeholder" />
 
-            <div
-              className={tailwindMerge.twMerge(
-                'grid transition-grid-template-rows duration-200',
-                areSuggestionsVisible ? 'grid-rows-1fr' : 'grid-rows-0fr',
-              )}
-            >
-              <div className="overflow-y-auto overflow-x-hidden">
-                <div className="relative mt-3 flex flex-col gap-3">
-                  {/* Tags (`name:`, `modified:`, etc.) */}
-                  <Tags
-                    isCloud={isCloud}
-                    querySource={querySource}
-                    query={query}
-                    setQuery={setQuery}
-                  />
-                  {/* Asset labels */}
-                  {isCloud && labels.length !== 0 && (
-                    <div
-                      data-testid="asset-search-labels"
-                      className="pointer-events-auto flex gap-2 px-1.5"
-                    >
-                      {[...labels]
-                        .sort((a, b) => string.compareCaseInsensitive(a.value, b.value))
-                        .map((label) => {
-                          const negated = query.negativeLabels.some((term) =>
-                            array.shallowEqual(term, [label.value]),
-                          )
-                          return (
-                            <Label
-                              key={label.id}
-                              color={label.color}
-                              active={
-                                negated ||
-                                query.labels.some((term) => array.shallowEqual(term, [label.value]))
-                              }
-                              negated={negated}
-                              onPress={(event) => {
-                                querySource.current = QuerySource.internal
-                                setQuery((oldQuery) => {
-                                  const newQuery = oldQuery.withToggled(
-                                    'labels',
-                                    'negativeLabels',
-                                    label.value,
-                                    event.shiftKey,
-                                  )
-                                  baseQuery.current = newQuery
-                                  return newQuery
-                                })
-                              }}
-                            >
-                              {label.value}
-                            </Label>
-                          )
-                        })}
-                    </div>
-                  )}
-                  {/* Suggestions */}
-                  <div className="flex max-h-search-suggestions-list flex-col overflow-y-auto overflow-x-hidden pb-0.5 pl-0.5">
-                    {suggestions.map((suggestion, index) => (
-                      // This should not be a `<button>`, since `render()` may output a
-                      // tree containing a button.
-                      <aria.Button
-                        data-testid="asset-search-suggestion"
-                        key={index}
-                        ref={(el) => {
-                          if (index === selectedIndex) {
-                            el?.focus()
-                          }
-                        }}
-                        className={tailwindMerge.twMerge(
-                          'flex cursor-pointer rounded-l-default rounded-r-sm px-[7px] py-0.5 text-left transition-[background-color] hover:bg-primary/5',
-                          selectedIndices.has(index) && 'bg-primary/10',
-                          index === selectedIndex && 'bg-selected-frame',
-                        )}
-                        onPress={(event) => {
-                          querySource.current = QuerySource.internal
-                          setQuery(
-                            selectedIndices.has(index) ?
-                              suggestion.deleteFromQuery(event.shiftKey ? query : baseQuery.current)
-                            : suggestion.addToQuery(event.shiftKey ? query : baseQuery.current),
-                          )
-                          if (event.shiftKey) {
-                            setSelectedIndices(
-                              new Set(
-                                selectedIndices.has(index) ?
-                                  [...selectedIndices].filter((otherIndex) => otherIndex !== index)
-                                : [...selectedIndices, index],
-                              ),
-                            )
-                          } else {
-                            setAreSuggestionsVisible(false)
-                          }
-                        }}
-                      >
-                        <ariaComponents.Text variant="body" truncate="1" className="w-full">
-                          {suggestion.render()}
-                        </ariaComponents.Text>
-                      </aria.Button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <SvgMask
-            src={FindIcon}
-            className="absolute left-2 top-[50%] z-1 mt-[1px] -translate-y-1/2 text-primary/40"
-          />
-          <FocusRing placement="before">
-            <aria.SearchField
-              aria-label={getText('assetSearchFieldLabel')}
-              className="relative grow before:text before:absolute before:-inset-x-1 before:my-auto before:rounded-full before:transition-all"
-              value={query.query}
-              onKeyDown={(event) => {
-                event.continuePropagation()
-              }}
-            >
-              <aria.Input
-                type="search"
-                ref={searchRef}
-                size={1}
-                placeholder={
-                  isCloud ?
-                    detect.isOnMacOS() ?
-                      getText('remoteBackendSearchPlaceholderMacOs')
-                    : getText('remoteBackendSearchPlaceholder')
-                  : getText('localBackendSearchPlaceholder')
-                }
-                className="focus-child peer text relative z-1 w-full bg-transparent placeholder-primary/40"
-                onChange={(event) => {
-                  if (querySource.current !== QuerySource.internal) {
-                    querySource.current = QuerySource.typing
-                    setQuery(AssetQuery.fromString(event.target.value))
-                  }
-                }}
+            <AssetSearchBarPopover
+              areSuggestionsVisible={areSuggestionsVisible}
+              isCloud={isCloud}
+              querySource={querySource}
+              query={query}
+              setQuery={setQuery}
+              suggestions={suggestions}
+              selectedIndex={selectedIndex}
+              setAreSuggestionsVisible={setAreSuggestionsVisible}
+              baseQuery={baseQuery}
+              backend={backend}
+            />
+
+            <SvgMask
+              src={FindIcon}
+              className="absolute left-2 top-[50%] z-1 mt-[1px] -translate-y-1/2 text-primary/40"
+            />
+            <FocusRing placement="before">
+              <aria.SearchField
+                aria-label={getText('assetSearchFieldLabel')}
+                className="relative grow before:text before:absolute before:-inset-x-1 before:my-auto before:rounded-full before:transition-all"
+                value={query.query}
                 onKeyDown={(event) => {
-                  if (
-                    event.key === 'Enter' &&
-                    !event.shiftKey &&
-                    !event.altKey &&
-                    !event.metaKey &&
-                    !event.ctrlKey
-                  ) {
-                    // Clone the query to refresh results.
-                    setQuery(query.clone())
-                  }
+                  event.continuePropagation()
                 }}
-              />
-            </aria.SearchField>
-          </FocusRing>
-        </aria.Label>
+              >
+                <aria.Input
+                  type="search"
+                  ref={searchRef}
+                  size={1}
+                  placeholder={
+                    isCloud ?
+                      detect.isOnMacOS() ?
+                        getText('remoteBackendSearchPlaceholderMacOs')
+                      : getText('remoteBackendSearchPlaceholder')
+                    : getText('localBackendSearchPlaceholder')
+                  }
+                  className="focus-child peer text relative z-1 w-full bg-transparent placeholder-primary/40"
+                  onChange={(event) => {
+                    if (querySource.current !== QuerySource.internal) {
+                      querySource.current = QuerySource.typing
+                      setQuery(AssetQuery.fromString(event.target.value))
+                    }
+                  }}
+                  onKeyDown={(event) => {
+                    if (
+                      event.key === 'Enter' &&
+                      !event.shiftKey &&
+                      !event.altKey &&
+                      !event.metaKey &&
+                      !event.ctrlKey
+                    ) {
+                      // Clone the query to refresh results.
+                      setQuery(query.clone())
+                    }
+                  }}
+                />
+              </aria.SearchField>
+            </FocusRing>
+          </aria.Label>
+        </div>
       )}
     </FocusArea>
   )
 }
+
+/**
+ * Props for a {@link AssetSearchBarPopover}.
+ */
+interface AssetSearchBarPopoverProps {
+  readonly areSuggestionsVisible: boolean
+  readonly isCloud: boolean
+  readonly querySource: React.MutableRefObject<QuerySource>
+  readonly query: AssetQuery
+  readonly setQuery: React.Dispatch<React.SetStateAction<AssetQuery>>
+  readonly suggestions: readonly Suggestion[]
+  readonly selectedIndex: number | null
+  readonly setAreSuggestionsVisible: (value: boolean) => void
+  readonly baseQuery: React.MutableRefObject<AssetQuery>
+  readonly backend: Backend | null
+}
+
+/**
+ * Renders the popover containing suggestions.
+ */
+function AssetSearchBarPopover(props: AssetSearchBarPopoverProps) {
+  const {
+    areSuggestionsVisible,
+    isCloud,
+    querySource,
+    query,
+    setQuery,
+    suggestions,
+    selectedIndex,
+    setAreSuggestionsVisible,
+    baseQuery,
+    backend,
+  } = props
+
+  const [selectedIndices, setSelectedIndices] = React.useState<ReadonlySet<number>>(
+    new Set<number>(),
+  )
+
+  return (
+    <>
+      <AnimatePresence>
+        {areSuggestionsVisible && (
+          <motion.div
+            initial={{ gridTemplateRows: '0fr', opacity: 0 }}
+            animate={{ gridTemplateRows: '1fr', opacity: 1 }}
+            exit={{ gridTemplateRows: '0fr', opacity: 0 }}
+            className={ariaComponents.DIALOG_BACKGROUND({
+              className:
+                'absolute left-0 right-0 top-0 z-1 grid w-full overflow-hidden rounded-default border-0.5 border-primary/20 -outline-offset-1 outline-primary',
+            })}
+          >
+            <div className="overflow-hidden">
+              <div className="relative mt-3 flex flex-col gap-3 pt-8">
+                {/* Tags (`name:`, `modified:`, etc.) */}
+                <Tags
+                  isCloud={isCloud}
+                  querySource={querySource}
+                  query={query}
+                  setQuery={setQuery}
+                />
+                {/* Asset labels */}
+                <Labels
+                  isCloud={isCloud}
+                  query={query}
+                  setQuery={setQuery}
+                  querySource={querySource}
+                  baseQuery={baseQuery}
+                  backend={backend}
+                />
+                {/* Suggestions */}
+                <div className="flex max-h-search-suggestions-list flex-col overflow-y-auto overflow-x-hidden pb-0.5 pl-0.5">
+                  {suggestions.map((suggestion, index) => (
+                    <SuggestionRenderer
+                      key={index}
+                      index={index}
+                      selectedIndex={selectedIndex}
+                      selectedIndices={selectedIndices}
+                      querySource={querySource}
+                      setQuery={setQuery}
+                      suggestion={suggestion}
+                      setSelectedIndices={setSelectedIndices}
+                      setAreSuggestionsVisible={setAreSuggestionsVisible}
+                      query={query}
+                      baseQuery={baseQuery}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  )
+}
+
+/**
+ * Props for a {@link SuggestionRenderer}.
+ */
+interface SuggestionRendererProps {
+  readonly index: number
+  readonly suggestion: Suggestion
+  readonly query: AssetQuery
+  readonly baseQuery: React.MutableRefObject<AssetQuery>
+  readonly selectedIndex: number | null
+  readonly selectedIndices: ReadonlySet<number>
+  readonly setSelectedIndices: React.Dispatch<React.SetStateAction<ReadonlySet<number>>>
+  readonly querySource: React.MutableRefObject<QuerySource>
+  readonly setQuery: React.Dispatch<React.SetStateAction<AssetQuery>>
+  readonly setAreSuggestionsVisible: (value: boolean) => void
+}
+
+/**
+ * Renders a suggestion.
+ */
+const SuggestionRenderer = React.memo(function SuggestionRenderer(props: SuggestionRendererProps) {
+  const {
+    index,
+    selectedIndex,
+    selectedIndices,
+    querySource,
+    setQuery,
+    suggestion,
+    setSelectedIndices,
+    setAreSuggestionsVisible,
+    query,
+    baseQuery,
+  } = props
+
+  return (
+    <aria.Button
+      data-testid="asset-search-suggestion"
+      key={index}
+      ref={(el) => {
+        if (index === selectedIndex) {
+          el?.focus()
+        }
+      }}
+      className={tailwindMerge.twMerge(
+        'flex cursor-pointer rounded-l-default rounded-r-sm px-[7px] py-0.5 text-left transition-[background-color] hover:bg-primary/5',
+        selectedIndices.has(index) && 'bg-primary/10',
+        index === selectedIndex && 'bg-selected-frame',
+      )}
+      onPress={(event) => {
+        querySource.current = QuerySource.internal
+        setQuery(
+          selectedIndices.has(index) ?
+            suggestion.deleteFromQuery(event.shiftKey ? query : baseQuery.current)
+          : suggestion.addToQuery(event.shiftKey ? query : baseQuery.current),
+        )
+        if (event.shiftKey) {
+          setSelectedIndices(
+            new Set(
+              selectedIndices.has(index) ?
+                [...selectedIndices].filter((otherIndex) => otherIndex !== index)
+              : [...selectedIndices, index],
+            ),
+          )
+        } else {
+          setAreSuggestionsVisible(false)
+        }
+      }}
+    >
+      <ariaComponents.Text variant="body" truncate="1" className="w-full">
+        {suggestion.render()}
+      </ariaComponents.Text>
+    </aria.Button>
+  )
+})
+
+/**
+ * Props for a {@link Labels}.
+ */
+interface LabelsProps {
+  readonly isCloud: boolean
+  readonly query: AssetQuery
+  readonly setQuery: React.Dispatch<React.SetStateAction<AssetQuery>>
+  readonly backend: Backend | null
+  readonly querySource: React.MutableRefObject<QuerySource>
+  readonly baseQuery: React.MutableRefObject<AssetQuery>
+}
+
+/**
+ * Renders labels.
+ */
+const Labels = React.memo(function Labels(props: LabelsProps) {
+  const { isCloud, query, setQuery, backend, querySource, baseQuery } = props
+
+  const labels = backendHooks.useBackendQuery(backend, 'listTags', []).data ?? []
+
+  return (
+    <>
+      {isCloud && labels.length !== 0 && (
+        <div data-testid="asset-search-labels" className="pointer-events-auto flex gap-2 px-1.5">
+          {[...labels]
+            .sort((a, b) => string.compareCaseInsensitive(a.value, b.value))
+            .map((label) => {
+              const negated = query.negativeLabels.some((term) =>
+                array.shallowEqual(term, [label.value]),
+              )
+              return (
+                <Label
+                  key={label.id}
+                  color={label.color}
+                  active={
+                    negated || query.labels.some((term) => array.shallowEqual(term, [label.value]))
+                  }
+                  negated={negated}
+                  onPress={(event) => {
+                    querySource.current = QuerySource.internal
+                    setQuery((oldQuery) => {
+                      const newQuery = oldQuery.withToggled(
+                        'labels',
+                        'negativeLabels',
+                        label.value,
+                        event.shiftKey,
+                      )
+                      baseQuery.current = newQuery
+                      return newQuery
+                    })
+                  }}
+                >
+                  {label.value}
+                </Label>
+              )
+            })}
+        </div>
+      )}
+    </>
+  )
+})
+
+export default React.memo(AssetSearchBar)

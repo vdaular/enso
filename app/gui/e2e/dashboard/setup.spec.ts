@@ -4,6 +4,9 @@ import * as test from '@playwright/test'
 import { Plan } from 'enso-common/src/services/Backend'
 import * as actions from './actions'
 
+// Reset storage state for this file to avoid being authenticated
+test.test.use({ storageState: { cookies: [], origins: [] } })
+
 test.test('setup (free plan)', ({ page }) =>
   actions
     .mockAll({

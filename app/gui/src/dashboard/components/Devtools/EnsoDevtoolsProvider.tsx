@@ -3,9 +3,9 @@
  * This file provides a zustand store that contains the state of the Enso devtools.
  */
 import type { PaywallFeatureName } from '#/hooks/billing'
+import * as zustand from '#/utilities/zustand'
 import { IS_DEV_MODE } from 'enso-common/src/detect'
 import * as React from 'react'
-import * as zustand from 'zustand'
 
 /** Configuration for a paywall feature. */
 export interface PaywallDevtoolsFeatureConfiguration {
@@ -60,7 +60,9 @@ export const ensoDevtoolsStore = zustand.createStore<EnsoDevtoolsStore>((set) =>
 
 /** A function to set whether the version checker is forcibly shown/hidden. */
 export function useEnableVersionChecker() {
-  return zustand.useStore(ensoDevtoolsStore, (state) => state.showVersionChecker)
+  return zustand.useStore(ensoDevtoolsStore, (state) => state.showVersionChecker, {
+    unsafeEnableTransition: true,
+  })
 }
 
 // ==================================
@@ -69,20 +71,28 @@ export function useEnableVersionChecker() {
 
 /** A function to set whether the version checker is forcibly shown/hidden. */
 export function useSetEnableVersionChecker() {
-  return zustand.useStore(ensoDevtoolsStore, (state) => state.setEnableVersionChecker)
+  return zustand.useStore(ensoDevtoolsStore, (state) => state.setEnableVersionChecker, {
+    unsafeEnableTransition: true,
+  })
 }
 
 /** A hook that provides access to the paywall devtools. */
 export function usePaywallDevtools() {
-  return zustand.useStore(ensoDevtoolsStore, (state) => ({
-    features: state.paywallFeatures,
-    setFeature: state.setPaywallFeature,
-  }))
+  return zustand.useStore(
+    ensoDevtoolsStore,
+    (state) => ({
+      features: state.paywallFeatures,
+      setFeature: state.setPaywallFeature,
+    }),
+    { unsafeEnableTransition: true },
+  )
 }
 
 /** A hook that provides access to the show devtools state. */
 export function useShowDevtools() {
-  return zustand.useStore(ensoDevtoolsStore, (state) => state.showDevtools)
+  return zustand.useStore(ensoDevtoolsStore, (state) => state.showDevtools, {
+    unsafeEnableTransition: true,
+  })
 }
 
 // =================================

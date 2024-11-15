@@ -1,22 +1,21 @@
 /** @file A list of previous versions of an asset. */
 import * as React from 'react'
 
-import * as reactQuery from '@tanstack/react-query'
-
 import * as toastAndLogHooks from '#/hooks/toastAndLogHooks'
 
 import * as textProvider from '#/providers/TextProvider'
 
 import AssetVersion from '#/layouts/AssetVersions/AssetVersion'
-import * as useAssetVersions from '#/layouts/AssetVersions/useAssetVersions'
-
-import Spinner, * as spinnerModule from '#/components/Spinner'
 
 import type Backend from '#/services/Backend'
 import * as backendService from '#/services/Backend'
 
+import { Result } from '#/components/Result'
+import type { AnyAsset } from '#/services/Backend'
 import * as dateTime from '#/utilities/dateTime'
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
 import * as uniqueString from 'enso-common/src/utilities/uniqueString'
+import { assetVersionsQueryOptions } from './useAssetVersions.ts'
 
 // ==============================
 // === AddNewVersionVariables ===
@@ -35,30 +34,65 @@ interface AddNewVersionVariables {
 /** Props for a {@link AssetVersions}. */
 export interface AssetVersionsProps {
   readonly backend: Backend
-  readonly item: backendService.AnyAsset
+  readonly item: AnyAsset | null
 }
 
-/** A list of previous versions of an asset. */
+/**
+ * Display a list of previous versions of an asset.
+ */
 export default function AssetVersions(props: AssetVersionsProps) {
+  const { item, backend } = props
+
+  const { getText } = textProvider.useText()
+
+  if (backend.type === backendService.BackendType.local) {
+    return (
+      <Result
+        status="info"
+        centered
+        title={getText('assetVersions.localAssetsDoNotHaveVersions')}
+      />
+    )
+  }
+
+  if (item == null) {
+    return <Result status="info" centered title={getText('assetVersions.notSelected')} />
+  }
+
+  return <AssetVersionsInternal {...props} item={item} />
+}
+
+/**
+ * Props for a {@link AssetVersionsInternal}.
+ */
+interface AssetVersionsInternalProps extends AssetVersionsProps {
+  readonly item: AnyAsset
+}
+
+/**
+ * Internal implementation of {@link AssetVersions}.
+ */
+function AssetVersionsInternal(props: AssetVersionsInternalProps) {
   const { backend, item } = props
+
   const { getText } = textProvider.useText()
   const toastAndLog = toastAndLogHooks.useToastAndLog()
+
   const [placeholderVersions, setPlaceholderVersions] = React.useState<
     readonly backendService.S3ObjectVersion[]
   >([])
-  const isCloud = backend.type === backendService.BackendType.remote
-  const queryKey = [backend.type, 'listAssetVersions', item.id, item.title]
-  const versionsQuery = useAssetVersions.useAssetVersions({
-    backend,
-    queryKey,
-    assetId: item.id,
-    title: item.title,
-    onError: (backendError) => toastAndLog('listVersionsError', backendError),
-    enabled: isCloud,
-  })
-  const latestVersion = versionsQuery.data?.find((version) => version.isLatest)
 
-  const restoreMutation = reactQuery.useMutation({
+  const versionsQuery = useSuspenseQuery(
+    assetVersionsQueryOptions({
+      assetId: item.id,
+      backend,
+      onError: (backendError) => toastAndLog('listVersionsError', backendError),
+    }),
+  )
+
+  const latestVersion = versionsQuery.data.find((version) => version.isLatest)
+
+  const restoreMutation = useMutation({
     mutationFn: async (variables: AddNewVersionVariables) => {
       if (item.type === backendService.AssetType.project) {
         await backend.restoreProject(item.id, variables.versionId, item.title)
@@ -92,13 +126,7 @@ export default function AssetVersions(props: AssetVersionsProps) {
 
   return (
     <div className="pointer-events-auto flex flex-1 shrink-0 flex-col items-center overflow-y-auto overflow-x-hidden">
-      {!isCloud ?
-        <div>{getText('localAssetsDoNotHaveVersions')}</div>
-      : versionsQuery.isPending ?
-        <Spinner size={32} state={spinnerModule.SpinnerState.loadingMedium} />
-      : versionsQuery.isError ?
-        <div>{getText('listVersionsError')}</div>
-      : versionsQuery.data.length === 0 ?
+      {versionsQuery.data.length === 0 ?
         <div>{getText('noVersionsFound')}</div>
       : latestVersion == null ?
         <div>{getText('fetchLatestVersionError')}</div>

@@ -560,14 +560,11 @@ export default class RemoteBackend extends Backend {
   }
 
   /** List all previous versions of an asset. */
-  override async listAssetVersions(
-    assetId: backend.AssetId,
-    title: string,
-  ): Promise<backend.AssetVersions> {
+  override async listAssetVersions(assetId: backend.AssetId): Promise<backend.AssetVersions> {
     const path = remoteBackendPaths.listAssetVersionsPath(assetId)
     const response = await this.get<backend.AssetVersions>(path)
     if (!responseIsSuccessful(response)) {
-      return await this.throw(response, 'listAssetVersionsBackendError', title)
+      return await this.throw(response, 'listAssetVersionsBackendError')
     } else {
       return await response.json()
     }
@@ -576,14 +573,13 @@ export default class RemoteBackend extends Backend {
   /** Fetch the content of the `Main.enso` file of a project. */
   override async getFileContent(
     projectId: backend.ProjectId,
-    version: string,
-    title: string,
+    versionId?: backend.S3ObjectVersionId,
   ): Promise<string> {
-    const path = remoteBackendPaths.getProjectContentPath(projectId, version)
+    const path = remoteBackendPaths.getProjectContentPath(projectId, versionId)
     const response = await this.get<string>(path)
 
     if (!responseIsSuccessful(response)) {
-      return this.throw(response, 'getFileContentsBackendError', title)
+      return this.throw(response, 'getFileContentsBackendError')
     } else {
       return await response.text()
     }
@@ -762,15 +758,11 @@ export default class RemoteBackend extends Backend {
    * Return details for a project.
    * @throws An error if a non-successful status code (not 200-299) was received.
    */
-  override async getProjectDetails(
-    projectId: backend.ProjectId,
-    _directory: backend.DirectoryId | null,
-    title: string,
-  ): Promise<backend.Project> {
+  override async getProjectDetails(projectId: backend.ProjectId): Promise<backend.Project> {
     const path = remoteBackendPaths.getProjectDetailsPath(projectId)
     const response = await this.get<backend.ProjectRaw>(path)
     if (!responseIsSuccessful(response)) {
-      return await this.throw(response, 'getProjectDetailsBackendError', title)
+      return await this.throw(response, 'getProjectDetailsBackendError')
     } else {
       const project = await response.json()
       const ideVersion =
@@ -1293,6 +1285,16 @@ export default class RemoteBackend extends Backend {
     } else {
       return (await response.json()).url
     }
+  }
+
+  /**
+   * Resolve the path of a project asset relative to the project `src` directory.
+   */
+  override resolveProjectAssetPath(
+    _projectId: backend.ProjectId,
+    _relativePath: string,
+  ): Promise<string> {
+    return Promise.reject(new Error('Not implemented.'))
   }
 
   /** Get the default version given the type of version (IDE or backend). */

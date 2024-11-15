@@ -7,7 +7,7 @@ import type { AssetColumnProps } from '#/components/dashboard/column'
 import PermissionDisplay from '#/components/dashboard/PermissionDisplay'
 import { PaywallDialogButton } from '#/components/Paywall'
 import AssetEventType from '#/events/AssetEventType'
-import { useAssetPassiveListenerStrict } from '#/hooks/backendHooks'
+import { useAssetStrict } from '#/hooks/backendHooks'
 import { usePaywall } from '#/hooks/billing'
 import { useDispatchAssetEvent } from '#/layouts/AssetsTable/EventListProvider'
 import ManagePermissionsModal from '#/modals/ManagePermissionsModal'
@@ -36,7 +36,12 @@ interface SharedWithColumnPropsInternal extends Pick<AssetColumnProps, 'item'> {
 export default function SharedWithColumn(props: SharedWithColumnPropsInternal) {
   const { item, state, isReadonly = false } = props
   const { backend, category, setQuery } = state
-  const asset = useAssetPassiveListenerStrict(backend.type, item.id, item.parentId, category)
+  const asset = useAssetStrict({
+    backend,
+    assetId: item.id,
+    parentId: item.parentId,
+    category,
+  })
   const { user } = useFullUserSession()
   const dispatchAssetEvent = useDispatchAssetEvent()
   const { isFeatureUnderPaywall } = usePaywall({ plan: user.plan })

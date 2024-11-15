@@ -1,10 +1,7 @@
 /** @file A loading screen, displayed while the user is logging in. */
-import * as React from 'react'
-
-import * as textProvider from '#/providers/TextProvider'
-
-import * as ariaComponents from '#/components/AriaComponents'
-import StatelessSpinner, * as statelessSpinner from '#/components/StatelessSpinner'
+import { Text } from '#/components/AriaComponents'
+import { StatelessSpinner } from '#/components/StatelessSpinner'
+import { useText } from '#/providers/TextProvider'
 
 // =================
 // === Constants ===
@@ -19,19 +16,16 @@ const SPINNER_SIZE_PX = 64
 
 /** A loading screen. */
 export default function LoadingScreen() {
-  const { getText } = textProvider.useText()
+  const { getText } = useText()
 
   return (
     <div className="grid h-screen w-screen place-items-center text-primary">
       <div className="flex flex-col items-center gap-8 text-center">
-        <StatelessSpinner
-          state={statelessSpinner.SpinnerState.loadingFast}
-          size={SPINNER_SIZE_PX}
-        />
+        <StatelessSpinner state="loading-fast" size={SPINNER_SIZE_PX} />
 
-        <ariaComponents.Text.Heading variant="h1" color="inherit">
+        <Text.Heading variant="h1" color="inherit">
           {getText('loadingAppMessage')}
-        </ariaComponents.Text.Heading>
+        </Text.Heading>
       </div>
     </div>
   )

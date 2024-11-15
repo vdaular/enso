@@ -33,6 +33,14 @@ interface AuthenticationPagePropsBase {
 export type AuthenticationPageProps<Schema extends TSchema> = AuthenticationPagePropsBase &
   Partial<FormProps<Schema>>
 
+const CONTAINER_CLASSES = DIALOG_BACKGROUND({
+  className: 'flex w-full flex-col gap-4 rounded-4xl p-12',
+})
+
+const OFFLINE_ALERT_CLASSES = DIALOG_BACKGROUND({
+  className: 'flex mt-auto rounded-sm items-center justify-center p-4 px-12 rounded-4xl',
+})
+
 /** A styled authentication page. */
 export default function AuthenticationPage<Schema extends TSchema>(
   props: AuthenticationPageProps<Schema>,
@@ -51,14 +59,6 @@ export default function AuthenticationPage<Schema extends TSchema>(
       </Text.Heading>
     : null
 
-  const containerClasses = DIALOG_BACKGROUND({
-    className: 'flex w-full flex-col gap-4 rounded-4xl p-12',
-  })
-
-  const offlineAlertClasses = DIALOG_BACKGROUND({
-    className: 'flex mt-auto rounded-sm items-center justify-center p-4 px-12 rounded-4xl',
-  })
-
   return (
     <Page>
       <div className="flex h-full w-full flex-col overflow-y-auto p-12">
@@ -67,7 +67,7 @@ export default function AuthenticationPage<Schema extends TSchema>(
           data-testid={props['data-testid']}
         >
           {isOffline && (
-            <div className={offlineAlertClasses}>
+            <div className={OFFLINE_ALERT_CLASSES}>
               <Text className="text-center" balance elementType="p">
                 {getText('loginUnavailableOffline')}{' '}
                 {supportsOffline && getText('loginUnavailableOfflineLocal')}
@@ -77,7 +77,7 @@ export default function AuthenticationPage<Schema extends TSchema>(
 
           <div className="row-start-2 row-end-3 flex w-full flex-col items-center gap-auth">
             {!isForm ?
-              <div className={containerClasses}>
+              <div className={CONTAINER_CLASSES}>
                 {heading}
                 {(() => {
                   invariant(
@@ -91,7 +91,7 @@ export default function AuthenticationPage<Schema extends TSchema>(
                 // This is SAFE, as the props type of this type extends `FormProps`.
                 // eslint-disable-next-line no-restricted-syntax
                 {...(form ? { form } : (formProps as FormProps<Schema>))}
-                className={containerClasses}
+                className={CONTAINER_CLASSES}
               >
                 {(innerProps) => (
                   <>

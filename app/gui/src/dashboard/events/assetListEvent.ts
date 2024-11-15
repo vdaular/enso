@@ -58,7 +58,7 @@ interface AssetListNewProjectEvent extends AssetListBaseEvent<AssetListEventType
   readonly templateId: string | null
   readonly datalinkId: backend.DatalinkId | null
   readonly preferredName: string | null
-  readonly onCreated?: (project: backend.CreatedProject) => void
+  readonly onCreated?: (project: backend.CreatedProject, parentId: backend.DirectoryId) => void
   readonly onError?: () => void
 }
 

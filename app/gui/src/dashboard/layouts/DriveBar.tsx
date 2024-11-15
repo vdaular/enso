@@ -4,7 +4,7 @@
  */
 import * as React from 'react'
 
-import { skipToken, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 
 import AddDatalinkIcon from '#/assets/add_datalink.svg'
 import AddFolderIcon from '#/assets/add_folder.svg'
@@ -12,7 +12,6 @@ import AddKeyIcon from '#/assets/add_key.svg'
 import DataDownloadIcon from '#/assets/data_download.svg'
 import DataUploadIcon from '#/assets/data_upload.svg'
 import Plus2Icon from '#/assets/plus2.svg'
-import RightPanelIcon from '#/assets/right_panel.svg'
 import { Input as AriaInput } from '#/components/aria'
 import {
   Button,
@@ -36,23 +35,17 @@ import StartModal from '#/layouts/StartModal'
 import ConfirmDeleteModal from '#/modals/ConfirmDeleteModal'
 import UpsertDatalinkModal from '#/modals/UpsertDatalinkModal'
 import UpsertSecretModal from '#/modals/UpsertSecretModal'
-import {
-  useCanCreateAssets,
-  useCanDownload,
-  useDriveStore,
-  useIsAssetPanelVisible,
-  usePasteData,
-  useSetIsAssetPanelPermanentlyVisible,
-  useSetIsAssetPanelTemporarilyVisible,
-} from '#/providers/DriveProvider'
+import { useCanCreateAssets, useCanDownload, usePasteData } from '#/providers/DriveProvider'
 import { useInputBindings } from '#/providers/InputBindingsProvider'
 import { useSetModal } from '#/providers/ModalProvider'
 import { useText } from '#/providers/TextProvider'
 import type Backend from '#/services/Backend'
-import { ProjectState, type CreatedProject, type Project, type ProjectId } from '#/services/Backend'
+import type { DirectoryId } from '#/services/Backend'
+import { ProjectState, type CreatedProject, type ProjectId } from '#/services/Backend'
 import type AssetQuery from '#/utilities/AssetQuery'
 import { inputFiles } from '#/utilities/input'
 import * as sanitizedEventTargets from '#/utilities/sanitizedEventTargets'
+import { AssetPanelToggle } from './AssetPanel'
 
 // ================
 // === DriveBar ===
@@ -68,7 +61,7 @@ export interface DriveBarProps {
   readonly doCreateProject: (
     templateId?: string | null,
     templateName?: string | null,
-    onCreated?: (project: CreatedProject) => void,
+    onCreated?: (project: CreatedProject, parentId: DirectoryId) => void,
     onError?: () => void,
   ) => void
   readonly doCreateDirectory: () => void
@@ -91,15 +84,11 @@ export default function DriveBar(props: DriveBarProps) {
     false,
   )
 
-  const driveStore = useDriveStore()
   const { unsetModal } = useSetModal()
   const { getText } = useText()
   const inputBindings = useInputBindings()
   const dispatchAssetEvent = useDispatchAssetEvent()
   const canCreateAssets = useCanCreateAssets()
-  const isAssetPanelVisible = useIsAssetPanelVisible()
-  const setIsAssetPanelTemporarilyVisible = useSetIsAssetPanelTemporarilyVisible()
-  const setIsAssetPanelPermanentlyVisible = useSetIsAssetPanelPermanentlyVisible()
   const createAssetButtonsRef = React.useRef<HTMLDivElement>(null)
   const uploadFilesRef = React.useRef<HTMLInputElement>(null)
   const isCloud = isCloudCategory(category)
@@ -118,7 +107,10 @@ export default function DriveBar(props: DriveBarProps) {
   })
   const [isCreatingProjectFromTemplate, setIsCreatingProjectFromTemplate] = React.useState(false)
   const [isCreatingProject, setIsCreatingProject] = React.useState(false)
-  const [createdProjectId, setCreatedProjectId] = React.useState<ProjectId | null>(null)
+  const [createdProjectId, setCreatedProjectId] = React.useState<{
+    projectId: ProjectId
+    parentId: DirectoryId
+  } | null>(null)
   const pasteData = usePasteData()
   const effectivePasteData =
     (
@@ -142,8 +134,8 @@ export default function DriveBar(props: DriveBarProps) {
         doCreateProject(
           null,
           null,
-          (project) => {
-            setCreatedProjectId(project.projectId)
+          (project, parentId) => {
+            setCreatedProjectId({ projectId: project.projectId, parentId })
           },
           () => {
             setIsCreatingProject(false)
@@ -156,11 +148,18 @@ export default function DriveBar(props: DriveBarProps) {
     })
   }, [isCloud, doCreateDirectory, doCreateProject, inputBindings])
 
-  const createdProjectQuery = useQuery<Project | null>(
-    createdProjectId ?
-      createGetProjectDetailsQuery.createPassiveListener(createdProjectId)
-    : { queryKey: ['__IGNORE__'], queryFn: skipToken },
-  )
+  const createdProjectQuery = useQuery({
+    ...createGetProjectDetailsQuery({
+      // This is safe because we disable the query when `createdProjectId` is `null`.
+      // see `enabled` property below.
+      // eslint-disable-next-line no-restricted-syntax
+      assetId: createdProjectId?.projectId as ProjectId,
+      // eslint-disable-next-line no-restricted-syntax
+      parentId: createdProjectId?.parentId as DirectoryId,
+      backend,
+    }),
+    enabled: createdProjectId != null,
+  })
 
   const isFetching =
     (createdProjectQuery.isLoading ||
@@ -183,26 +182,8 @@ export default function DriveBar(props: DriveBarProps) {
   const assetPanelToggle = (
     <>
       {/* Spacing. */}
-      <div className={!isAssetPanelVisible ? 'w-5' : 'hidden'} />
-      <div className="absolute right-[15px] top-[27px] z-1">
-        <Button
-          size="medium"
-          variant="custom"
-          isActive={isAssetPanelVisible}
-          icon={RightPanelIcon}
-          aria-label={isAssetPanelVisible ? getText('openAssetPanel') : getText('closeAssetPanel')}
-          onPress={() => {
-            const isAssetPanelTemporarilyVisible =
-              driveStore.getState().isAssetPanelTemporarilyVisible
-            if (isAssetPanelTemporarilyVisible) {
-              setIsAssetPanelTemporarilyVisible(false)
-              setIsAssetPanelPermanentlyVisible(false)
-            } else {
-              setIsAssetPanelPermanentlyVisible(!isAssetPanelVisible)
-            }
-          }}
-        />
-      </div>
+      <div className="ml-auto" />
+      <AssetPanelToggle showWhen="collapsed" className="my-auto" />
     </>
   )
 
@@ -279,8 +260,8 @@ export default function DriveBar(props: DriveBarProps) {
                   doCreateProject(
                     templateId,
                     templateName,
-                    (project) => {
-                      setCreatedProjectId(project.projectId)
+                    ({ projectId }, parentId) => {
+                      setCreatedProjectId({ projectId, parentId })
                     },
                     () => {
                       setIsCreatingProjectFromTemplate(false)
@@ -301,8 +282,8 @@ export default function DriveBar(props: DriveBarProps) {
                 doCreateProject(
                   null,
                   null,
-                  (project) => {
-                    setCreatedProjectId(project.projectId)
+                  ({ projectId }, parentId) => {
+                    setCreatedProjectId({ projectId, parentId })
                     setIsCreatingProject(false)
                   },
                   () => {
@@ -336,6 +317,7 @@ export default function DriveBar(props: DriveBarProps) {
                   <UpsertSecretModal id={null} name={null} doCreate={doCreateSecret} />
                 </DialogTrigger>
               )}
+
               {isCloud && (
                 <DialogTrigger>
                   <Button

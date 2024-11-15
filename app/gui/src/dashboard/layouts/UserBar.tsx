@@ -12,16 +12,8 @@ import { useFullUserSession } from '#/providers/AuthProvider'
 import { useText } from '#/providers/TextProvider'
 import { Plan } from '#/services/Backend'
 
-// =================
-// === Constants ===
-// =================
-
 /** Whether the chat button should be visible. Temporarily disabled. */
 const SHOULD_SHOW_CHAT_BUTTON: boolean = false
-
-// ===============
-// === UserBar ===
-// ===============
 
 /** Props for a {@link UserBar}. */
 export interface UserBarProps {

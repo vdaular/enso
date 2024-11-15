@@ -130,6 +130,13 @@ class App {
         electron.app.whenReady().then(
           async () => {
             logger.log('Electron application is ready.')
+
+            electron.protocol.handle('enso', request =>
+              projectManager.handleProjectProtocol(
+                decodeURIComponent(request.url.replace('enso://', '')),
+              ),
+            )
+
             await this.main(windowSize)
           },
           error => {

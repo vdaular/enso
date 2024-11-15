@@ -1,6 +1,7 @@
 /** @file Column types and column display modes. */
 import type { Dispatch, JSX, SetStateAction } from 'react'
 
+import type { SortableColumn } from '#/components/dashboard/column/columnUtils'
 import { Column } from '#/components/dashboard/column/columnUtils'
 import DocsColumn from '#/components/dashboard/column/DocsColumn'
 import LabelsColumn from '#/components/dashboard/column/LabelsColumn'
@@ -9,7 +10,9 @@ import NameColumn from '#/components/dashboard/column/NameColumn'
 import PlaceholderColumn from '#/components/dashboard/column/PlaceholderColumn'
 import SharedWithColumn from '#/components/dashboard/column/SharedWithColumn'
 import type { AssetRowState, AssetsTableState } from '#/layouts/AssetsTable'
+import type { Category } from '#/layouts/CategorySwitcher/Category'
 import type { AnyAsset, Asset, AssetId, BackendType } from '#/services/Backend'
+import type { SortInfo } from '#/utilities/sorting'
 
 // ===================
 // === AssetColumn ===
@@ -29,11 +32,15 @@ export interface AssetColumnProps {
   readonly rowState: AssetRowState
   readonly setRowState: Dispatch<SetStateAction<AssetRowState>>
   readonly isEditable: boolean
+  readonly isPlaceholder: boolean
 }
 
 /** Props for a {@link AssetColumn}. */
 export interface AssetColumnHeadingProps {
-  readonly state: AssetsTableState
+  readonly category: Category
+  readonly hideColumn: (column: Column) => void
+  readonly sortInfo: SortInfo<SortableColumn> | null
+  readonly setSortInfo: (sortInfo: SortInfo<SortableColumn> | null) => void
 }
 
 /** Metadata describing how to render a column of the table. */

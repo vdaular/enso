@@ -4,52 +4,34 @@
  * It sets up watchers for the client and content, and spawns the electron process with the IDE.
  * The spawned electron process can then use its refresh capability to pull the latest changes
  * from the watchers.
- *
- * If the electron app is closed, the script will restart it, allowing to test the IDE setup.
- * To stop, use Ctrl+C.
  */
-import * as childProcess from 'node:child_process'
-import * as fs from 'node:fs/promises'
+import chalk from 'chalk'
+import { spawn } from 'node:child_process'
+import { mkdir, rm, symlink } from 'node:fs/promises'
 import * as path from 'node:path'
 import process from 'node:process'
 
-import * as esbuild from 'esbuild'
+import { BuildResult, context } from 'esbuild'
 
-import * as clientBundler from './esbuildConfig'
-import * as paths from './paths'
+import { bundlerOptionsFromEnv } from './esbuildConfig'
+import { getIdeDirectory, getProjectManagerBundlePath, PROJECT_MANAGER_BUNDLE } from './paths'
 
-// =============
-// === Types ===
-// =============
-
-/** Set of esbuild watches for the client and content. */
-interface Watches {
-  readonly client: esbuild.BuildResult
-}
-
-// =================
-// === Constants ===
-// =================
-
-const IDE_DIR_PATH = paths.getIdeDirectory()
-const PROJECT_MANAGER_BUNDLE_PATH = paths.getProjectManagerBundlePath()
-
-// =============
-// === Watch ===
-// =============
+const IDE_DIR_PATH = getIdeDirectory()
+const PROJECT_MANAGER_BUNDLE_PATH = getProjectManagerBundlePath()
 
 // @ts-expect-error This is the only place where an environment variable should be written to.
 process.env.ELECTRON_DEV_MODE = 'true'
-console.log('Cleaning IDE dist directory.')
-await fs.rm(IDE_DIR_PATH, { recursive: true, force: true })
-await fs.mkdir(IDE_DIR_PATH, { recursive: true })
+
+console.log(chalk.cyan('Cleaning IDE dist directory.'))
+await rm(IDE_DIR_PATH, { recursive: true, force: true })
+await mkdir(IDE_DIR_PATH, { recursive: true })
 const NODE_MODULES_PATH = path.resolve('./node_modules')
 
-const ALL_BUNDLES_READY = new Promise<Watches>((resolve, reject) => {
+const BUNDLE_READY = new Promise<BuildResult>((resolve, reject) => {
   void (async () => {
-    console.log('Bundling client.')
+    console.log(chalk.cyan('Bundling client.'))
     const devMode = true
-    const clientBundlerOpts = clientBundler.bundlerOptionsFromEnv(devMode)
+    const clientBundlerOpts = bundlerOptionsFromEnv(devMode)
     clientBundlerOpts.outdir = path.resolve(IDE_DIR_PATH)
     ;(clientBundlerOpts.plugins ??= []).push({
       name: 'enso-on-rebuild',
@@ -58,36 +40,38 @@ const ALL_BUNDLES_READY = new Promise<Watches>((resolve, reject) => {
           if (result.errors.length) {
             // We cannot carry on if the client failed to build, because electron
             // would immediately exit with an error.
-            console.error('Client watch bundle failed:', result.errors[0])
+            console.error(chalk.red('Client bundle update failed:'), result.errors[0])
             reject(result.errors[0])
           } else {
-            console.log('Client bundle updated.')
+            console.log(chalk.green('Client bundle updated.'))
+            for (const error of result.errors) {
+              console.error(error)
+            }
+            for (const warning of result.warnings) {
+              console.warn(warning)
+            }
           }
         })
       },
     })
-    const clientBuilder = await esbuild.context(clientBundlerOpts)
+    const clientBuilder = await context(clientBundlerOpts)
     const client = await clientBuilder.rebuild()
-    console.log('Result of client bundling: ', client)
     void clientBuilder.watch()
 
-    resolve({ client })
+    resolve(client)
   })()
 })
 
-await ALL_BUNDLES_READY
-console.log('Exposing Project Manager bundle.')
+await BUNDLE_READY
 console.log(
-  `Linking '${PROJECT_MANAGER_BUNDLE_PATH}' to '${path.join(
-    IDE_DIR_PATH,
-    paths.PROJECT_MANAGER_BUNDLE,
-  )}'.`,
+  chalk.cyan(
+    `Linking Project Manager bundle at '${PROJECT_MANAGER_BUNDLE_PATH}' to '${path.join(
+      IDE_DIR_PATH,
+      PROJECT_MANAGER_BUNDLE,
+    )}'.`,
+  ),
 )
-await fs.symlink(
-  PROJECT_MANAGER_BUNDLE_PATH,
-  path.join(IDE_DIR_PATH, paths.PROJECT_MANAGER_BUNDLE),
-  'dir',
-)
+await symlink(PROJECT_MANAGER_BUNDLE_PATH, path.join(IDE_DIR_PATH, PROJECT_MANAGER_BUNDLE), 'dir')
 
 const ELECTRON_FLAGS =
   process.env.ELECTRON_FLAGS == null ? [] : String(process.env.ELECTRON_FLAGS).split(' ')
@@ -98,21 +82,24 @@ const ELECTRON_ARGS = [
   ...process.argv.slice(2).map(arg => `'${arg}'`),
 ]
 
-process.on('SIGINT', () => {
-  console.log('SIGINT received. Exiting.')
-  void fs.rm(IDE_DIR_PATH, { recursive: true, force: true }).then(() => {
+const exit = (code = 0) => {
+  void rm(IDE_DIR_PATH, { recursive: true, force: true }).then(() => {
     // The `esbuild` process seems to remain alive at this point and will keep our process
     // from ending. Thus, we exit manually. It seems to terminate the child `esbuild` process
     // as well.
-    process.exit(0)
+    process.exit(code)
   })
+}
+
+process.on('SIGINT', () => {
+  exit()
 })
 
 /** Starts the electron process with the IDE. */
 function startElectronProcess() {
-  console.log('Spawning Electron process.')
+  console.log(chalk.cyan('Spawning Electron process.'))
 
-  const electronProcess = childProcess.spawn('electron', ELECTRON_ARGS, {
+  const electronProcess = spawn('electron', ELECTRON_ARGS, {
     stdio: 'inherit',
     shell: true,
     env: Object.assign({ NODE_MODULES_PATH }, process.env),
@@ -121,15 +108,16 @@ function startElectronProcess() {
   electronProcess.on('close', code => {
     if (code === 0) {
       electronProcess.removeAllListeners()
-      process.exit(0)
+      exit()
     }
   })
+
   electronProcess.on('error', error => {
-    console.error('Electron process failed:', error)
-    console.error('Killing electron process.')
+    console.error(chalk.red('Electron process failed:'), error)
+    console.error(chalk.red('Killing electron process.'))
     electronProcess.removeAllListeners()
     electronProcess.kill()
-    process.exit(1)
+    exit(1)
   })
 }
 

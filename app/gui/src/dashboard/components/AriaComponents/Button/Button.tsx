@@ -5,7 +5,7 @@ import * as focusHooks from '#/hooks/focusHooks'
 
 import * as aria from '#/components/aria'
 import * as ariaComponents from '#/components/AriaComponents'
-import StatelessSpinner, * as spinnerModule from '#/components/StatelessSpinner'
+import { StatelessSpinner } from '#/components/StatelessSpinner'
 import SvgMask from '#/components/SvgMask'
 
 import { forwardRef } from '#/utilities/react'
@@ -398,7 +398,7 @@ export const Button = forwardRef(function Button(
       } else if (isLoading && loaderPosition === 'icon') {
         return (
           <span className={styles.icon()}>
-            <StatelessSpinner state={spinnerModule.SpinnerState.loadingMedium} size={16} />
+            <StatelessSpinner state="loading-medium" size={16} />
           </span>
         )
       } else {
@@ -468,7 +468,7 @@ export const Button = forwardRef(function Button(
 
           {isLoading && loaderPosition === 'full' && (
             <span ref={loaderRef} className={styles.loader()}>
-              <StatelessSpinner state={spinnerModule.SpinnerState.loadingMedium} size={16} />
+              <StatelessSpinner state="loading-medium" size={16} />
             </span>
           )}
         </span>

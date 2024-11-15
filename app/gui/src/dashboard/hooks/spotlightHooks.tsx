@@ -1,9 +1,11 @@
 /** @file Hooks for showing an overlay with a cutout for a rectangular element. */
-import { useEffect, useLayoutEffect, useState, type CSSProperties, type RefObject } from 'react'
-import { createPortal } from 'react-dom'
+import { startTransition, useEffect, useLayoutEffect, useState, type CSSProperties } from 'react'
 
-import { useDimensions } from '#/hooks/dimensionsHooks'
+import Portal from '#/components/Portal'
 import { convertCSSUnitString } from '#/utilities/convertCSSUnits'
+import { useEventCallback } from './eventCallbackHooks'
+import type { RectReadOnly } from './measureHooks'
+import { useMeasure } from './measureHooks'
 
 /** Default padding around the spotlight element. */
 const DEFAULT_PADDING_PX = 8
@@ -17,7 +19,6 @@ const BACKGROUND_ELEMENT = document.getElementsByClassName('enso-spotlight')[0] 
 /** Props for {@link useSpotlight}. */
 export interface SpotlightOptions {
   readonly enabled: boolean
-  readonly ref: RefObject<HTMLElement | SVGElement | null>
   readonly close: () => void
   readonly backgroundElement?: HTMLElement
   readonly paddingPx?: number | undefined
@@ -25,26 +26,36 @@ export interface SpotlightOptions {
 
 /** A hook for showing an overlay with a cutout for a rectangular element. */
 export function useSpotlight(options: SpotlightOptions) {
-  const { enabled, ref, close, backgroundElement: backgroundElementRaw } = options
+  const { enabled, close, backgroundElement: backgroundElementRaw } = options
   const { paddingPx = DEFAULT_PADDING_PX } = options
   const backgroundElement = backgroundElementRaw ?? BACKGROUND_ELEMENT
+
+  const [refElement, setRefElement] = useState<HTMLElement | SVGElement | null>(null)
+
+  const refCallback = useEventCallback((node: HTMLElement | SVGElement | null) => {
+    if (node) {
+      setRefElement(node)
+    } else {
+      setRefElement(null)
+    }
+  })
 
   const spotlightElement =
     !enabled || !backgroundElement ?
       null
     : <Spotlight
         close={close}
-        element={ref}
+        element={refElement}
         backgroundElement={backgroundElement}
         paddingPx={paddingPx}
       />
   const style = { position: 'relative', zIndex: 3 } satisfies CSSProperties
-  return { spotlightElement, props: { style } }
+  return { spotlightElement, props: { style, ref: refCallback } }
 }
 
 /** Props for a {@link Spotlight}. */
 interface SpotlightProps {
-  readonly element: RefObject<HTMLElement | SVGElement | null>
+  readonly element: HTMLElement | SVGElement | null
   readonly close: () => void
   readonly backgroundElement: HTMLElement | SVGElement
   readonly paddingPx?: number | undefined
@@ -52,27 +63,44 @@ interface SpotlightProps {
 
 /** A spotlight element. */
 function Spotlight(props: SpotlightProps) {
-  const { element, close, backgroundElement, paddingPx = 0 } = props
-  const [dimensionsRef, { top: topRaw, left: leftRaw, height, width }] = useDimensions()
-  const top = topRaw - paddingPx
-  const left = leftRaw - paddingPx
+  const { element, close, paddingPx = 0 } = props
+
+  const [bounds, setBounds] = useState<RectReadOnly>()
   const [borderRadius, setBorderRadius] = useState(0)
-  const r = Math.min(borderRadius, height / 2 + paddingPx, width / 2 + paddingPx)
-  const straightWidth = Math.max(0, width + paddingPx * 2 - borderRadius * 2)
-  const straightHeight = Math.max(0, height + paddingPx * 2 - borderRadius * 2)
+
+  const [dimensionsRef] = useMeasure({
+    onResize: (nextBounds) => {
+      startTransition(() => {
+        setBounds(nextBounds)
+      })
+    },
+  })
 
   useEffect(() => {
-    if (element.current) {
-      dimensionsRef(element.current)
+    if (element) {
+      dimensionsRef(element)
     }
   }, [dimensionsRef, element])
 
   useLayoutEffect(() => {
-    if (element.current) {
-      const sizeString = getComputedStyle(element.current).borderRadius
-      setBorderRadius(convertCSSUnitString(sizeString, 'px', element.current).number)
+    if (element) {
+      const sizeString = getComputedStyle(element).borderRadius
+      setBorderRadius(convertCSSUnitString(sizeString, 'px', element).number)
     }
   }, [element])
+
+  if (!bounds) {
+    return null
+  }
+
+  const { top: topRaw, left: leftRaw, height, width } = bounds
+
+  const top = topRaw - paddingPx
+  const left = leftRaw - paddingPx
+
+  const r = Math.min(borderRadius, height / 2 + paddingPx, width / 2 + paddingPx)
+  const straightWidth = Math.max(0, width + paddingPx * 2 - borderRadius * 2)
+  const straightHeight = Math.max(0, height + paddingPx * 2 - borderRadius * 2)
 
   const clipPath =
     // A rectangle covering the entire screen
@@ -97,18 +125,13 @@ function Spotlight(props: SpotlightProps) {
     (r !== 0 ? `a${r} ${r} 0 0 1 ${r} -${r}` : '') +
     'Z")'
 
-  return createPortal(
-    <div
-      onClick={close}
-      style={{
-        position: 'absolute',
-        zIndex: 2,
-        height: '100vh',
-        width: '100vw',
-        backgroundColor: 'lch(0 0 0 / 25%)',
-        clipPath,
-      }}
-    />,
-    backgroundElement,
+  return (
+    <Portal>
+      <div
+        onClick={close}
+        className="absolute inset-0 z-20 h-full w-full bg-primary/25 contain-strict"
+        style={{ clipPath }}
+      />
+    </Portal>
   )
 }

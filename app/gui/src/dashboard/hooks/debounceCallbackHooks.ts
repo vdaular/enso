@@ -5,22 +5,21 @@
  */
 import * as React from 'react'
 
-import * as callbackHooks from './eventCallbackHooks'
-import * as unmountEffect from './unmountHooks'
+import { useEventCallback } from './eventCallbackHooks'
+import { useUnmount } from './unmountHooks'
 
 /** Wrap a callback into debounce function */
 export function useDebouncedCallback<Fn extends (...args: never[]) => unknown>(
   callback: Fn,
-  deps: React.DependencyList,
   delay: number,
-  maxWait = 0,
+  maxWait: number | null = null,
 ): DebouncedFunction<Fn> {
-  const stableCallback = callbackHooks.useEventCallback(callback)
+  const stableCallback = useEventCallback(callback)
   const timeoutIdRef = React.useRef<ReturnType<typeof setTimeout>>()
   const waitTimeoutIdRef = React.useRef<ReturnType<typeof setTimeout>>()
   const lastCallRef = React.useRef<{ args: Parameters<Fn> }>()
 
-  const clear = () => {
+  const clear = useEventCallback(() => {
     if (timeoutIdRef.current) {
       clearTimeout(timeoutIdRef.current)
       timeoutIdRef.current = undefined
@@ -30,53 +29,50 @@ export function useDebouncedCallback<Fn extends (...args: never[]) => unknown>(
       clearTimeout(waitTimeoutIdRef.current)
       waitTimeoutIdRef.current = undefined
     }
-  }
+  })
+
+  const execute = useEventCallback(() => {
+    if (!lastCallRef.current) {
+      return
+    }
+
+    const context = lastCallRef.current
+    lastCallRef.current = undefined
+
+    stableCallback(...context.args)
+
+    clear()
+  })
+
+  const wrapped = useEventCallback((...args: Parameters<Fn>) => {
+    if (timeoutIdRef.current) {
+      clearTimeout(timeoutIdRef.current)
+    }
+
+    lastCallRef.current = { args }
+
+    if (delay === 0) {
+      execute()
+    } else {
+      // plan regular execution
+      timeoutIdRef.current = setTimeout(execute, delay)
+
+      // plan maxWait execution if required
+      if (maxWait != null && !waitTimeoutIdRef.current) {
+        waitTimeoutIdRef.current = setTimeout(execute, maxWait)
+      }
+    }
+  })
+
+  Object.defineProperties(wrapped, {
+    length: { value: stableCallback.length },
+    name: { value: `${stableCallback.name || 'anonymous'}__debounced__${delay}` },
+  })
 
   // cancel scheduled execution on unmount
-  unmountEffect.useUnmount(clear)
+  useUnmount(clear)
 
-  return React.useMemo(() => {
-    const execute = () => {
-      if (!lastCallRef.current) {
-        return
-      }
-
-      const context = lastCallRef.current
-      lastCallRef.current = undefined
-
-      stableCallback(...context.args)
-
-      clear()
-    }
-
-    const wrapped = (...args: Parameters<Fn>) => {
-      if (timeoutIdRef.current) {
-        clearTimeout(timeoutIdRef.current)
-      }
-
-      lastCallRef.current = { args }
-
-      if (delay === 0) {
-        execute()
-      } else {
-        // plan regular execution
-        timeoutIdRef.current = setTimeout(execute, delay)
-
-        // plan maxWait execution if required
-        if (maxWait > 0 && !waitTimeoutIdRef.current) {
-          waitTimeoutIdRef.current = setTimeout(execute, maxWait)
-        }
-      }
-    }
-
-    Object.defineProperties(wrapped, {
-      length: { value: stableCallback.length },
-      name: { value: `${stableCallback.name || 'anonymous'}__debounced__${delay}` },
-    })
-
-    return wrapped
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stableCallback, delay, maxWait, ...deps])
+  return wrapped
 }
 
 /** The type of a wrapped function that has been debounced. */

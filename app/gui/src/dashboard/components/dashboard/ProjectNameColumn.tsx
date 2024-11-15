@@ -38,7 +38,17 @@ export interface ProjectNameColumnProps extends column.AssetColumnProps {
  * This should never happen.
  */
 export default function ProjectNameColumn(props: ProjectNameColumnProps) {
-  const { item, selected, rowState, setRowState, state, isEditable, backendType, isOpened } = props
+  const {
+    item,
+    selected,
+    rowState,
+    setRowState,
+    state,
+    isEditable,
+    backendType,
+    isOpened,
+    isPlaceholder,
+  } = props
   const { depth } = props
   const { backend, nodeMap } = state
 
@@ -114,7 +124,14 @@ export default function ProjectNameColumn(props: ProjectNameColumnProps) {
         }
       }}
     >
-      <ProjectIcon isDisabled={!canExecute} isOpened={isOpened} backend={backend} item={item} />
+      <ProjectIcon
+        isDisabled={!canExecute}
+        isOpened={isOpened}
+        backend={backend}
+        item={item}
+        isPlaceholder={isPlaceholder}
+      />
+
       <EditableSpan
         data-testid="asset-row-name"
         editable={rowState.isEditingName}

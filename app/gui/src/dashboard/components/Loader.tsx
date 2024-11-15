@@ -1,5 +1,5 @@
 /** @file A full-screen loading spinner. */
-import StatelessSpinner, * as spinnerModule from '#/components/StatelessSpinner'
+import { StatelessSpinner, type SpinnerState } from '#/components/StatelessSpinner'
 
 import * as twv from '#/utilities/tailwindVariants'
 
@@ -57,7 +57,7 @@ export type Size = 'large' | 'medium' | 'small'
 export interface LoaderProps extends twv.VariantProps<typeof STYLES> {
   readonly className?: string
   readonly size?: Size | number
-  readonly state?: spinnerModule.SpinnerState
+  readonly state?: SpinnerState
 }
 
 /** A full-screen loading spinner. */
@@ -65,7 +65,7 @@ export function Loader(props: LoaderProps) {
   const {
     className,
     size: sizeRaw = 'medium',
-    state = spinnerModule.SpinnerState.loadingFast,
+    state = 'loading-fast',
     minHeight = 'full',
     color = 'primary',
   } = props

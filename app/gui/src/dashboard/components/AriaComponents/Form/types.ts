@@ -7,7 +7,6 @@ import type * as React from 'react'
 
 import type * as reactHookForm from 'react-hook-form'
 
-import type { DeepPartialSkipArrayKey } from 'react-hook-form'
 import type { TestIdProps } from '../types'
 import type * as components from './components'
 import type * as styles from './styles'
@@ -37,7 +36,6 @@ interface BaseFormProps<Schema extends components.TSchema>
     | ((
         props: components.UseFormReturn<Schema> & {
           readonly form: components.UseFormReturn<Schema>
-          readonly values: DeepPartialSkipArrayKey<components.FieldValues<Schema>>
         },
       ) => React.ReactNode)
   readonly formRef?: React.MutableRefObject<components.UseFormReturn<Schema>>

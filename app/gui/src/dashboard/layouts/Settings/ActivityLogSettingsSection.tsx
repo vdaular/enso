@@ -10,7 +10,7 @@ import Play2Icon from '#/assets/play2.svg'
 import SortAscendingIcon from '#/assets/sort_ascending.svg'
 import TrashIcon from '#/assets/trash.svg'
 import { Button, DatePicker, Dropdown, Form, Text } from '#/components/AriaComponents'
-import StatelessSpinner, { SpinnerState } from '#/components/StatelessSpinner'
+import { StatelessSpinner } from '#/components/StatelessSpinner'
 import FocusArea from '#/components/styled/FocusArea'
 import SvgMask from '#/components/SvgMask'
 import { useBackendQuery } from '#/hooks/backendHooks'
@@ -358,7 +358,7 @@ export default function ActivityLogSettingsSection(props: ActivityLogSettingsSec
             <tr className="h-table-row">
               <td colSpan={4} className="rounded-full bg-transparent">
                 <div className="flex justify-center">
-                  <StatelessSpinner size={32} state={SpinnerState.loadingMedium} />
+                  <StatelessSpinner size={32} state="loading-medium" />
                 </div>
               </td>
             </tr>

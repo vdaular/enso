@@ -1,12 +1,12 @@
 /** @file Settings tab for viewing and editing roles for all users in the organization. */
-import * as React from 'react'
+import { useMemo, useRef } from 'react'
 
 import { useMutation } from '@tanstack/react-query'
 
 import { Cell, Column, Row, Table, TableBody, TableHeader, useDragAndDrop } from '#/components/aria'
 import { Button, ButtonGroup } from '#/components/AriaComponents'
 import { PaywallDialogButton } from '#/components/Paywall'
-import StatelessSpinner, { SpinnerState } from '#/components/StatelessSpinner'
+import { StatelessSpinner } from '#/components/StatelessSpinner'
 import { USER_MIME_TYPE } from '#/data/mimeTypes'
 import {
   backendMutationOptions,
@@ -49,15 +49,15 @@ export default function UserGroupsSettingsSection(props: UserGroupsSettingsSecti
   const toastAndLog = useToastAndLog()
   const { data: users } = useBackendQuery(backend, 'listUsers', [])
   const userGroups = useListUserGroupsWithUsers(backend)
-  const rootRef = React.useRef<HTMLDivElement>(null)
-  const bodyRef = React.useRef<HTMLTableSectionElement>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const bodyRef = useRef<HTMLTableSectionElement>(null)
   const changeUserGroup = useMutation(
     backendMutationOptions(backend, 'changeUserGroup'),
   ).mutateAsync
   const deleteUserGroup = useMutation(
     backendMutationOptions(backend, 'deleteUserGroup'),
   ).mutateAsync
-  const usersMap = React.useMemo(
+  const usersMap = useMemo(
     () => new Map((users ?? []).map((otherUser) => [otherUser.userId, otherUser])),
     [users],
   )
@@ -214,7 +214,7 @@ export default function UserGroupsSettingsSection(props: UserGroupsSettingsSecti
                   }}
                 >
                   <div className="flex justify-center">
-                    <StatelessSpinner size={32} state={SpinnerState.loadingMedium} />
+                    <StatelessSpinner size={32} state="loading-medium" />
                   </div>
                 </Cell>
               </Row>

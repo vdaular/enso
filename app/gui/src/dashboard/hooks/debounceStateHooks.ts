@@ -7,7 +7,7 @@
 import * as React from 'react'
 
 import * as debouncedCallback from './debounceCallbackHooks'
-import * as eventCallbackHooks from './eventCallbackHooks'
+import { useEventCallback } from './eventCallbackHooks'
 
 /** A hook that returns a stateful value, and a function to update it that will debounce updates. */
 export function useDebounceState<S>(
@@ -17,21 +17,20 @@ export function useDebounceState<S>(
 ): [S, React.Dispatch<React.SetStateAction<S>>] {
   const [state, setState] = React.useState(initialState)
   const currentValueRef = React.useRef(state)
-  const [, startTransition] = React.useTransition()
 
   const debouncedSetState = debouncedCallback.useDebouncedCallback<
     React.Dispatch<React.SetStateAction<S>>
   >(
     (value) => {
-      startTransition(() => {
+      React.startTransition(() => {
         setState(value)
       })
     },
-    [],
     delay,
     maxWait,
   )
-  const setValue = eventCallbackHooks.useEventCallback((next: S | ((currentValue: S) => S)) => {
+
+  const setValue = useEventCallback((next: S | ((currentValue: S) => S)) => {
     currentValueRef.current = next instanceof Function ? next(currentValueRef.current) : next
 
     debouncedSetState(currentValueRef.current)

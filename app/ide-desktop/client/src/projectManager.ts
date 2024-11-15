@@ -1,12 +1,15 @@
 /** @file Project Manager bindings. */
 
+import { net } from 'electron'
 import * as childProcess from 'node:child_process'
 import * as fsSync from 'node:fs'
+import * as url from 'node:url'
 import * as util from 'node:util'
 
 import * as contentConfig from '@/contentConfig'
 
 import type * as config from '@/config'
+import { getProjectRoot } from './projectManagement'
 
 const logger = contentConfig.logger
 const execFile = util.promisify(childProcess.execFile)
@@ -97,4 +100,19 @@ export async function version(args: config.Args) {
   } else {
     return
   }
+}
+
+/**
+ * Handle requests to the `enso-project` protocol.
+ *
+ * The protocol is used to fetch project assets from the backend.
+ * If a given path is not inside a project, the request is rejected with a 403 error.
+ */
+export async function handleProjectProtocol(absolutePath: string) {
+  if (getProjectRoot(absolutePath) == null) {
+    logger.error(`The given path is not inside a project: ${absolutePath}.`)
+    return new Response(null, { status: 403 })
+  }
+
+  return net.fetch(url.pathToFileURL(absolutePath).toString())
 }

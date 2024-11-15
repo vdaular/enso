@@ -20,12 +20,9 @@ import KeyboardShortcut from '#/components/dashboard/KeyboardShortcut'
 import FocusRing from '#/components/styled/FocusRing'
 import SvgMask from '#/components/SvgMask'
 
+import { useSyncRef } from '#/hooks/syncRefHooks'
 import * as sanitizedEventTargets from '#/utilities/sanitizedEventTargets'
 import * as tailwindVariants from '#/utilities/tailwindVariants'
-
-// =================
-// === Constants ===
-// =================
 
 const MENU_ENTRY_VARIANTS = tailwindVariants.tv({
   base: 'flex h-row grow place-content-between items-center rounded-inherit p-menu-entry text-left selectable group-enabled:active hover:bg-hover-bg disabled:bg-transparent',
@@ -84,10 +81,6 @@ export const ACTION_TO_TEXT_ID: Readonly<
   openInFileBrowser: 'openInFileBrowserShortcut',
 } satisfies { [Key in inputBindings.DashboardBindingKey]: `${Key}Shortcut` }
 
-// =================
-// === MenuEntry ===
-// =================
-
 /** Props for a {@link MenuEntry}. */
 export interface MenuEntryProps extends tailwindVariants.VariantProps<typeof MENU_ENTRY_VARIANTS> {
   readonly icon?: string
@@ -119,6 +112,8 @@ export default function MenuEntry(props: MenuEntryProps) {
   const inputBindings = inputBindingsProvider.useInputBindings()
   const focusChildProps = focusHooks.useFocusChild()
   const info = inputBindings.metadata[action]
+  const isDisabledRef = useSyncRef(isDisabled)
+
   const labelTextId: text.TextId = (() => {
     if (action === 'openInFileBrowser') {
       return (
@@ -131,17 +126,16 @@ export default function MenuEntry(props: MenuEntryProps) {
     }
   })()
 
-  React.useEffect(() => {
-    // This is slower (but more convenient) than registering every shortcut in the context menu
-    // at once.
-    if (isDisabled) {
-      return
-    }
-
-    return inputBindings.attach(sanitizedEventTargets.document.body, 'keydown', {
-      [action]: doAction,
-    })
-  }, [isDisabled, inputBindings, action, doAction])
+  React.useEffect(
+    () =>
+      inputBindings.attach(sanitizedEventTargets.document.body, 'keydown', {
+        [action]: () => {
+          if (isDisabledRef.current) return
+          doAction()
+        },
+      }),
+    [inputBindings, action, doAction, isDisabledRef],
+  )
 
   return hidden ? null : (
       <FocusRing>

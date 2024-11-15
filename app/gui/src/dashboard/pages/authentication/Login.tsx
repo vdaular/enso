@@ -14,12 +14,18 @@ import type { CognitoUser } from '#/authentication/cognito'
 import { Button, Form, Input, OTPInput, Password, Text } from '#/components/AriaComponents'
 import Link from '#/components/Link'
 import { Stepper } from '#/components/Stepper'
+import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import AuthenticationPage from '#/pages/authentication/AuthenticationPage'
 import { passwordSchema } from '#/pages/authentication/schemas'
 import { useAuth } from '#/providers/AuthProvider'
 import { useLocalBackend } from '#/providers/BackendProvider'
 import { useText } from '#/providers/TextProvider'
 import { useState } from 'react'
+
+// eslint-disable-next-line no-restricted-syntax
+const GOOGLE_ICON = <img src={GoogleIcon} alt="" />
+// eslint-disable-next-line no-restricted-syntax
+const GITHUB_ICON = <img src={GithubIcon} alt="" />
 
 // =============
 // === Login ===
@@ -74,6 +80,14 @@ export default function Login() {
     defaultStep: 0,
   })
 
+  const handleGooglePress = useEventCallback(async () => {
+    await signInWithGoogle()
+  })
+
+  const handleGitHubPress = useEventCallback(async () => {
+    await signInWithGitHub()
+  })
+
   return (
     <AuthenticationPage
       title={getText('loginToYourAccount')}
@@ -96,24 +110,10 @@ export default function Login() {
         <Stepper.StepContent index={0}>
           {() => (
             <div className="flex flex-col gap-auth">
-              <Button
-                size="large"
-                variant="outline"
-                icon={<img src={GoogleIcon} alt={getText('googleIcon')} />}
-                onPress={async () => {
-                  await signInWithGoogle()
-                }}
-              >
+              <Button size="large" variant="outline" icon={GOOGLE_ICON} onPress={handleGooglePress}>
                 {getText('signUpOrLoginWithGoogle')}
               </Button>
-              <Button
-                size="large"
-                variant="outline"
-                icon={<img src={GithubIcon} alt={getText('gitHubIcon')} />}
-                onPress={async () => {
-                  await signInWithGitHub()
-                }}
-              >
+              <Button size="large" variant="outline" icon={GITHUB_ICON} onPress={handleGitHubPress}>
                 {getText('signUpOrLoginWithGitHub')}
               </Button>
 

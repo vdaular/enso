@@ -14,6 +14,9 @@ import {
 // === Tests ===
 // =============
 
+// Reset storage state for this file to avoid being authenticated
+test.test.use({ storageState: { cookies: [], origins: [] } })
+
 test.test('login screen', ({ page }) =>
   mockAll({ page })
     .loginThatShouldFail('invalid email', VALID_PASSWORD, {
@@ -25,9 +28,6 @@ test.test('login screen', ({ page }) =>
     })
     // Technically it should not be allowed, but
     .login(VALID_EMAIL, INVALID_PASSWORD)
-    .do(async (thePage) => {
-      await passAgreementsDialog({ page: thePage })
-    })
     .withDriveView(async (driveView) => {
       await test.expect(driveView).toBeVisible()
     }),

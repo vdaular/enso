@@ -25,24 +25,18 @@ const EMAIL = 'baz.quux@email.com'
 test.test('open and close asset panel', ({ page }) =>
   actions
     .mockAllAndLogin({ page })
-    .createFolder()
-    .driveTable.clickRow(0)
     .withAssetPanel(async (assetPanel) => {
-      await actions.expectNotOnScreen(assetPanel)
+      await test.expect(assetPanel).toBeVisible()
     })
     .toggleAssetPanel()
     .withAssetPanel(async (assetPanel) => {
-      await actions.expectOnScreen(assetPanel)
-    })
-    .toggleAssetPanel()
-    .withAssetPanel(async (assetPanel) => {
-      await actions.expectNotOnScreen(assetPanel)
+      await test.expect(assetPanel).not.toBeVisible()
     }),
 )
 
 test.test('asset panel contents', ({ page }) =>
   actions
-    .mockAll({
+    .mockAllAndLogin({
       page,
       setupAPI: (api) => {
         const { defaultOrganizationId, defaultUserId } = api
@@ -63,12 +57,8 @@ test.test('asset panel contents', ({ page }) =>
         })
       },
     })
-    .login()
-    .do(async (thePage) => {
-      await actions.passAgreementsDialog({ page: thePage })
-    })
     .driveTable.clickRow(0)
-    .toggleAssetPanel()
+    .toggleDescriptionAssetPanel()
     .do(async () => {
       await test.expect(actions.locateAssetPanelDescription(page)).toHaveText(DESCRIPTION)
       // `getByText` is required so that this assertion works if there are multiple permissions.

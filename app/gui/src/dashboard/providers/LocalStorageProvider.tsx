@@ -31,7 +31,7 @@ export type LocalStorageProviderProps = Readonly<React.PropsWithChildren>
 /** A React Provider that lets components get the shortcut registry. */
 export default function LocalStorageProvider(props: LocalStorageProviderProps) {
   const { children } = props
-  const localStorage = React.useMemo(() => new LocalStorage(), [])
+  const [localStorage] = React.useState(() => new LocalStorage())
 
   return (
     <LocalStorageContext.Provider value={{ localStorage }}>{children}</LocalStorageContext.Provider>
@@ -43,24 +43,50 @@ export function useLocalStorage() {
   return React.useContext(LocalStorageContext)
 }
 
+export function useLocalStorageState<K extends LocalStorageKey>(
+  key: K,
+): readonly [
+  value: LocalStorageData[K] | undefined,
+  setValue: (newValue: React.SetStateAction<LocalStorageData[K] | undefined>) => void,
+]
+
+export function useLocalStorageState<K extends LocalStorageKey>(
+  key: K,
+  defaultValue: LocalStorageData[K],
+): readonly [
+  value: LocalStorageData[K],
+  setValue: (newValue: React.SetStateAction<LocalStorageData[K]>) => void,
+]
+
 /** Subscribe to Local Storage updates for a specific key. */
 export function useLocalStorageState<K extends LocalStorageKey>(
   key: K,
-): [
+  defaultValue?: LocalStorageData[K],
+): readonly [
   value: LocalStorageData[K] | undefined,
   setValue: (newValue: LocalStorageData[K] | undefined) => void,
 ] {
   const { localStorage } = useLocalStorage()
-  const value = React.useSyncExternalStore(
-    (callback) => localStorage.subscribe(key, callback),
-    () => localStorage.get(key),
+
+  const [value, privateSetValue] = React.useState<LocalStorageData[K] | undefined>(
+    () => localStorage.get(key) ?? defaultValue,
   )
-  const setValue = useEventCallback((newValue: LocalStorageData[K] | undefined) => {
-    if (newValue === undefined) {
-      localStorage.delete(key)
-    } else {
-      localStorage.set(key, newValue)
-    }
-  })
-  return [value, setValue] as const
+
+  const setValue = useEventCallback(
+    (newValue: React.SetStateAction<LocalStorageData[K] | undefined>) => {
+      privateSetValue((currentValue) => {
+        const nextValue = typeof newValue === 'function' ? newValue(currentValue) : newValue
+
+        if (nextValue === undefined) {
+          localStorage.delete(key)
+        } else {
+          localStorage.set(key, nextValue)
+        }
+
+        return nextValue
+      })
+    },
+  )
+
+  return [value, setValue]
 }
