@@ -104,8 +104,8 @@ type Table
 
        Arguments:
        - columns: A set of either Column objects or pairs of name and data to
-         construct a column from from. If passing name and data, the items can
-         be passed as a Vector, Range or a Date_Range.
+         construct a column from. If passing name and data, the items can be
+         passed as a Vector, Range or a Date_Range.
 
        Returns:
        - A Table of all of the input data.
@@ -198,8 +198,8 @@ type Table
 
        Arguments:
        - columns: A set of either Column objects or set of name, data and
-         optionally type to construct a column from from. If the data is passed
-         as Vector Text then it will be parsed into the specified type (defaults
+         optionally type to construct a column from. If the data is passed as
+         Vector Text then it will be parsed into the specified type (defaults
          to auto detect).
 
        Returns:
@@ -225,11 +225,11 @@ type Table
         resolved_columns = columns.map c-> case c of
             _ : Column -> c
             _ : Vector -> if c.length < 2 || (c.first . is_a Text).not then throw_bad_column else
-                raw_column = Column.from_vector c.first (c.at 1)
+                raw_column = Column.from_vector c.first c.second
                 target_type = c.get 2 Auto
                 if target_type != Auto && (target_type.is_a Value_Type).not then throw_bad_column else
                     case raw_column.value_type.is_text of
-                        True -> if target_type != Auto && target_type.is_text then raw_column.cast target_type else raw_column.parse target_type
+                        True -> if target_type.is_a Value_Type && target_type.is_text then raw_column.cast target_type else raw_column.parse target_type
                         False -> if target_type == Auto then raw_column else raw_column.cast target_type
             _ -> throw_bad_column
         resolved_columns.if_not_error <| Table.new resolved_columns

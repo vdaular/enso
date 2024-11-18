@@ -18,7 +18,7 @@ import project.Runtime.Ref.Ref
 from project.Data.Boolean import Boolean, False, True
 from project.Data.Range.Extensions import all
 from project.Errors.Common import Unsupported_Argument_Types
-from project.Metadata import Choice, Widget
+from project.Metadata import Choice, Display, Widget
 
 polyglot java import java.lang.NullPointerException
 polyglot java import org.enso.base.CompareException
@@ -133,11 +133,10 @@ type Statistic
 
     ## PRIVATE
        Bulk widget for Statistic.
-    bulk_widget : Widget
-    bulk_widget =
+    bulk_widget display:Display=..When_Modified -> Widget =
         options = ["Count", "Minimum", "Maximum", "Sum", "Product", "Mean", "Variance", "Standard_Deviation", "Skew", "Kurtosis", "Covariance", "Pearson", "Spearman", "R_Squared"].map n-> Choice.Option n ".."+n
         items = Widget.Single_Choice options
-        Widget.Vector_Editor items "..Count"
+        Widget.Vector_Editor items "..Count" display=display
 
     ## PRIVATE
        Gets the order needed to compute a statistic for a moment based statistic.

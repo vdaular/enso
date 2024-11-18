@@ -44,32 +44,36 @@ type Google_Analytics_Property
     to_display_text : Text
     to_display_text self = self.to_text
 
-    ## ICON data_input
+    ## GROUP Standard.Base.Metadata
+       ICON data_input
        List of all metrics of the property.
 
        Arguments:
        - credentials: The Google credentials to use. Default is the default
          credentials.
+    @credentials (Google_Credential.default_widget)
     metrics : Google_Credential -> Vector
     metrics self credentials:Google_Credential=..Default =
-        Google_Analytics.list_metrics self credentials
+        Google_Analytics.list_metrics credentials self
 
-    ## ICON data_input
+    ## GROUP Standard.Base.Metadata
+       ICON data_input
        List of all dimensions of the property.
 
        Arguments:
        - credentials: The Google credentials to use. Default is the default
          credentials.
+    @credentials (Google_Credential.default_widget)
     dimensions : Google_Credential -> Vector
     dimensions self credentials:Google_Credential=..Default =
-        Google_Analytics.list_dimensions self credentials
+        Google_Analytics.list_dimensions credentials self
 
     ## PRIVATE
     default_widget self_arg cache display:Display=..Always -> Widget =
         _ = self_arg
         Panic.catch Any handler=_->(Widget.Text_Input display=display) <|
             credentials = cache.if_not_nothing <| cache "credentials"
-            options = Google_Analytics.list_properties account=..All_Accounts credentials=(credentials.if_nothing Google_Credential.Default) limit=(..First 10) . map p->(Option (p.name + " (" + p.id + ")") p.id.pretty)
+            options = Google_Analytics.list_properties credentials=(credentials.if_nothing Google_Credential.Default) account=..All_Accounts limit=(..First 10) . map p->(Option (p.name + " (" + p.id + ")") p.id.pretty)
             make_single_choice options display=display
 
 ## PRIVATE

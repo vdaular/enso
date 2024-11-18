@@ -16,12 +16,12 @@ import project.Helpers
    Prepares a table or column for visualization.
 
    Arguments:
-   - x: The table to prepare for visualization.
+   - y: The table to prepare for visualization.
    - max_rows: The maximum number of rows to display.
 
    In case of Database backed data, it materializes a fragment of the data.
 prepare_visualization : Any -> Integer -> Text
-prepare_visualization y max_rows=1000 =
+prepare_visualization y max_rows=1000 = if y.is_error then (make_json_for_error y.catch).to_text else
     x = Warning.set y []
 
     result = case x of
@@ -63,9 +63,16 @@ max_columns = 250
 whitespace_count : Column -> Integer | Nothing
 whitespace_count col =
     find_whitespace col = 
-        filtered = col.to_vector.filter (c-> c.is_a Text && (c.first.is_whitespace || c.last.is_whitespace))
+        filtered = col.to_vector.filter (c-> c.is_a Text && c.is_empty.not && (c.first.is_whitespace || c.last.is_whitespace))
         filtered.length
     if (col.value_type == Value_Type.Mixed || col.value_type.is_text) then find_whitespace col else Nothing 
+
+## PRIVATE
+   Render Error to JSON
+make_json_for_error : Any -> JS_Object
+make_json_for_error error =
+    pairs = [["error", error.to_display_text]]
+    JS_Object.from_pairs pairs
 
 ## PRIVATE
    Render Vector to JSON

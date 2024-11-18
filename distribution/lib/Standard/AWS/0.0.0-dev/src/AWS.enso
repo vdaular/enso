@@ -95,6 +95,7 @@ type AWS
 
        Arguments:
          - uri: The URI to resolve.
+    @uri (Text_Input display=..Always)
     resolve_region_and_service : URI -> AWS_Region_Service
     resolve_region_and_service (uri:URI=(Missing_Argument.throw "uri")) =
         region_regex = regex "^(([a-z]{2}-[^.]+?-\d+)|(global))$"

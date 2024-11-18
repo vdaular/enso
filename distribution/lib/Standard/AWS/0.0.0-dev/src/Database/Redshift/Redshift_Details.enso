@@ -31,7 +31,15 @@ type Redshift_Details
        - use_ssl: Whether to use SSL (defaults to `SSL_Mode.Require`).
        - client_cert: The client certificate to use or `Nothing` if not needed.
     @host (Text_Input display=..Always)
-    Redshift (host:Text=(Missing_Argument.throw "host")) (port:Integer=5439) (schema:Text='') (db_user:Text='') (credentials:Credentials|AWS_Credential=AWS_Credential.Profile) (use_ssl:SSL_Mode=..Require) (client_cert:Client_Certificate|Nothing=Nothing)
+    @credentials AWS_Credential.default_widget add_user_password=True
+    Redshift
+        host:Text=(Missing_Argument.throw "host")
+        port:Integer=5439
+        schema:Text=''
+        db_user:Text=''
+        credentials:Credentials|AWS_Credential=..Profile
+        use_ssl:SSL_Mode=..Require
+        client_cert:Client_Certificate|Nothing=Nothing
 
     ## PRIVATE
        Attempt to resolve the constructor.

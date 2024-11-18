@@ -197,11 +197,7 @@ Table.lookup_ignore_case self name =
    Guides the visualization system to display the most suitable graphical
    representation for this table.
 Table.default_visualization : Id
-Table.default_visualization self =
-    cols = self.columns.map .name . map name-> name.to_case Case.Lower
-    if cols.contains "latitude" && cols.contains "longitude" then Id.geo_map else
-        if cols.contains "x" && cols.contains "y" then Id.scatter_plot else
-            Id.table
+Table.default_visualization self = Id.table
 
 ## PRIVATE
 

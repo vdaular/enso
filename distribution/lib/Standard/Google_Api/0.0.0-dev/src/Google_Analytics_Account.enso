@@ -42,7 +42,8 @@ type Google_Analytics_Account
     to_display_text : Text
     to_display_text self = "GA Account {" + self.name + " (" + self.id + ")}"
 
-    ## ICON data_input
+    ## GROUP Standard.Base.Metadata
+       ICON data_input
        List of all properties of the account.
 
        Arguments:
@@ -53,8 +54,8 @@ type Google_Analytics_Account
     @credentials Google_Credential.default_widget
     @limit Rows_To_Read.default_widget
     properties : Google_Credential -> Rows_To_Read -> Boolean -> Vector
-    properties self credential:Google_Credential=..Default (limit : Rows_To_Read = ..First_With_Warning 1000) include_deleted:Boolean=False =
-        Google_Analytics.list_properties self credential limit include_deleted
+    properties self credentials:Google_Credential=..Default (limit : Rows_To_Read = ..First_With_Warning 1000) include_deleted:Boolean=False =
+        Google_Analytics.list_properties credentials self limit include_deleted
 
 ## Filter for Google Analytics accounts.
 type Google_Analytics_Account_Filter
