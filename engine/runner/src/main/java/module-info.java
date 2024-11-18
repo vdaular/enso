@@ -9,6 +9,7 @@ module org.enso.runner {
   requires org.enso.logging.config;
   requires org.enso.logging.utils;
   requires org.enso.runtime.parser;
+  requires org.enso.runtime.version.manager;
   requires org.enso.runner.common;
   requires org.enso.pkg;
   requires org.enso.polyglot.api;

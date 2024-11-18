@@ -18,6 +18,7 @@ object BuildInfo {
     * @param ensoVersion Enso version
     * @param scalacVersion Scala compiler version used in the project
     * @param graalVersion GraalVM version used in the project
+    * @param javaVersion Java language version used in the project.
     * @param currentEdition name of the edition associated with the Enso
     *                       version; this should be removed once #1831 is
     *                       implemented
@@ -30,6 +31,7 @@ object BuildInfo {
     ensoVersion: String,
     scalacVersion: String,
     graalVersion: String,
+    javaVersion: String,
     currentEdition: String
   ): Seq[File] = {
     val gitInfo   = getGitInformation(log).getOrElse(fallbackGitInformation)
@@ -56,6 +58,10 @@ object BuildInfo {
          |
          |  static String graalVersion() {
          |    return "${graalVersion}";
+         |  }
+         |
+         |  static String javaVersion() {
+         |    return "${javaVersion}";
          |  }
          |
          |  static String currentEdition() {

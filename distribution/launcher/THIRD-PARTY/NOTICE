@@ -36,21 +36,6 @@ The license file can be found at `licenses/APACHE2.0`.
 Copyright notices related to this dependency can be found in the directory `com.typesafe.akka.akka-actor_2.13-2.6.20`.
 
 
-'akka-http-core_2.13', licensed under the Apache-2.0, is distributed with the launcher.
-The license file can be found at `licenses/APACHE2.0`.
-Copyright notices related to this dependency can be found in the directory `com.typesafe.akka.akka-http-core_2.13-10.2.10`.
-
-
-'akka-http_2.13', licensed under the Apache-2.0, is distributed with the launcher.
-The license file can be found at `licenses/APACHE2.0`.
-Copyright notices related to this dependency can be found in the directory `com.typesafe.akka.akka-http_2.13-10.2.10`.
-
-
-'akka-parsing_2.13', licensed under the Apache-2.0, is distributed with the launcher.
-The license file can be found at `licenses/APACHE2.0`.
-Copyright notices related to this dependency can be found in the directory `com.typesafe.akka.akka-parsing_2.13-10.2.10`.
-
-
 'akka-slf4j_2.13', licensed under the Apache-2.0, is distributed with the launcher.
 The license file can be found at `licenses/APACHE2.0`.
 Copyright notices related to this dependency can be found in the directory `com.typesafe.akka.akka-slf4j_2.13-2.6.20`.

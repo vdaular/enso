@@ -664,6 +664,7 @@ pub async fn runner_sanity_test(
             .bin
             .join("enso")
             .with_executable_extension();
+
         let test_base = Command::new(&enso)
             .args(["--run", repo_root.test.join("Base_Tests").as_str()])
             .set_env(ENSO_DATA_DIRECTORY, engine_package)?
@@ -686,7 +687,25 @@ pub async fn runner_sanity_test(
             .run_ok()
             .await;
 
-        test_base.and(test_internal_base).and(test_geo)
+        let all_cmds = test_base.and(test_internal_base).and(test_geo);
+
+        // The following test does not actually run anything, it just checks if the engine
+        // can accept `--jvm` argument and evaluates something.
+        if TARGET_OS != OS::Windows {
+            let test_jvm_arg = Command::new(&enso)
+                .args([
+                    "--jvm",
+                    "--run",
+                    repo_root.test.join("Base_Tests").as_str(),
+                    "__NON_EXISTING_TEST__",
+                ])
+                .set_env(ENSO_DATA_DIRECTORY, engine_package)?
+                .run_ok()
+                .await;
+            all_cmds.and(test_jvm_arg)
+        } else {
+            all_cmds
+        }
     } else {
         Ok(())
     }

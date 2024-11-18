@@ -1339,22 +1339,13 @@ public class Main {
         println(JVM_OPTION + " option has no effect - already running in JVM " + current);
       } else {
         var commandAndArgs = new ArrayList<String>();
-        JVM_FOUND:
         if (jvm == null) {
-          var env = new Environment() {};
-          var dm = new DistributionManager(env);
-          var paths = dm.paths();
-          var files = paths.runtimes().toFile().listFiles();
-          if (files != null) {
-            for (var d : files) {
-              var java = new File(new File(d, "bin"), "java").getAbsoluteFile();
-              if (java.exists()) {
-                commandAndArgs.add(java.getPath());
-                break JVM_FOUND;
-              }
-            }
+          var javaExe = JavaFinder.findJavaExecutable();
+          if (javaExe == null) {
+            println("Cannot find java executable");
+            throw exitFail();
           }
-          commandAndArgs.add("java");
+          commandAndArgs.add(javaExe);
         } else {
           commandAndArgs.add(new File(new File(new File(jvm), "bin"), "java").getAbsolutePath());
         }
