@@ -38,7 +38,7 @@
 
             packages = with pkgs; [
               # === TypeScript dependencies ===
-              nodejs_20
+              nodejs_22
               corepack
               # === Electron ===
               electron
