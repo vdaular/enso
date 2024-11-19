@@ -93,6 +93,8 @@ const expressionUpdatesDiagnostics = computed(() => {
 
 // == CodeMirror editor setup  ==
 
+// Disable EditContext API because of https://github.com/codemirror/dev/issues/1458.
+;(EditorView as any).EDIT_CONTEXT = false
 const editorView = new EditorView()
 const viewInitialized = ref(false)
 watchEffect(() => {
