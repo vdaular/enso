@@ -1,0 +1,20 @@
+from Standard.Base import all
+from Standard.Test import all
+import Standard.Base.Errors.Common.Type_Error
+
+import project.Data.Complex.Complex
+
+add_specs suite_builder =
+    suite_builder.group "Complex Multi Value" group_builder->
+        group_builder.specify "Cannot convert to Float if it has imaginary part" <|
+            c = Complex.new 1 5
+            Test.expect_panic Type_Error (c:Float)
+        group_builder.specify "Represents both Complex & Float with only real part" <|
+            c = Complex.new 1.5 0.0
+            (c:Complex).re . should_equal 1.5
+            (c:Float) . should_equal 1.5
+
+main filter=Nothing =
+    suite = Test.build suite_builder->
+        add_specs suite_builder
+    suite.run_with_filter filter
