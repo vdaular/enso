@@ -1,7 +1,17 @@
 import { markdown as baseMarkdown, markdownLanguage } from '@codemirror/lang-markdown'
 import type { Extension } from '@codemirror/state'
 import type { Tree } from '@lezer/common'
-import type { BlockContext, BlockParser, Line, MarkdownParser, NodeSpec } from '@lezer/markdown'
+import type {
+  BlockContext,
+  BlockParser,
+  DelimiterType,
+  InlineContext,
+  InlineDelimiter,
+  InlineParser,
+  Line,
+  MarkdownParser,
+  NodeSpec,
+} from '@lezer/markdown'
 import { Element } from '@lezer/markdown'
 import { assertDefined } from 'ydoc-shared/util/assert'
 
@@ -18,6 +28,7 @@ export function markdown(): Extension {
     extensions: [
       {
         parseBlock: [headerParser, bulletList, orderedList, blockquoteParser, disableSetextHeading],
+        parseInline: [linkParser, imageParser, linkEndParser],
         defineNodes: [blockquoteNode],
       },
     ],
@@ -138,8 +149,8 @@ const blockquoteNode: NodeSpec = {
   },
 }
 
-function elt(type: number, from: number, to: number): Element {
-  return new (Element as any)(type, from, to)
+function elt(type: number, from: number, to: number, children?: readonly Element[]): Element {
+  return new (Element as any)(type, from, to, children)
 }
 
 function isBlockquote(line: Line) {
@@ -194,6 +205,212 @@ function getListIndent(line: Line, pos: number) {
   const indentAfter = line.countIndent(pos, line.pos, line.indent)
   const indented = line.countIndent(line.skipSpace(pos), pos, indentAfter)
   return indented >= indentAfter + 5 ? indentAfter + 1 : indented
+}
+
+// === Link ===
+
+const enum Mark {
+  None = 0,
+  Open = 1,
+  Close = 2,
+}
+
+const LinkStart: DelimiterType = {}
+const ImageStart: DelimiterType = {}
+
+const linkParser: InlineParser = {
+  name: 'Link',
+  parse: (cx, next, start) => {
+    return next == 91 /* '[' */ ? cx.addDelimiter(LinkStart, start, start + 1, true, false) : -1
+  },
+}
+
+const imageParser: InlineParser = {
+  name: 'Image',
+  parse: (cx, next, start) => {
+    return next == 33 /* '!' */ && cx.char(start + 1) == 91 /* '[' */ ?
+        cx.addDelimiter(ImageStart, start, start + 2, true, false)
+      : -1
+  },
+}
+
+const linkEndParser: InlineParser = {
+  name: 'LinkEnd',
+  parse: (cx, next, start) => {
+    if (next != 93 /* ']' */) return -1
+    // Scanning back to the next link/image start marker
+    const openDelim = cx.findOpeningDelimiter(LinkStart) ?? cx.findOpeningDelimiter(ImageStart)
+    if (openDelim == null) return -1
+    const part = cx.parts[openDelim] as InlineDelimiter
+    // If this one has been set invalid (because it would produce
+    // a nested link) or there's no valid link here ignore both.
+    if (
+      !part.side ||
+      (cx.skipSpace(part.to) == start && !/[([]/.test(cx.slice(start + 1, start + 2)))
+    ) {
+      cx.parts[openDelim] = null
+      return -1
+    }
+    // Finish the content and replace the entire range in
+    // this.parts with the link/image node.
+    const content = cx.takeContent(openDelim)
+    const link = (cx.parts[openDelim] = finishLink(
+      cx,
+      content,
+      part.type == LinkStart ? getType(cx, 'Link') : getType(cx, 'Image'),
+      part.from,
+      start + 1,
+    ))
+    // Set any open-link markers before this link to invalid.
+    if (part.type == LinkStart)
+      for (let j = 0; j < openDelim; j++) {
+        const p = cx.parts[j]
+        if (p != null && !(p instanceof Element) && p.type == LinkStart) p.side = Mark.None
+      }
+    return link.to
+  },
+}
+
+function finishLink(
+  cx: InlineContext,
+  content: Element[],
+  type: number,
+  start: number,
+  startPos: number,
+) {
+  const { text } = cx,
+    next = cx.char(startPos)
+  let endPos = startPos
+  const LinkMarkType = getType(cx, 'LinkMark')
+  const ImageType = getType(cx, 'Image')
+  content.unshift(elt(LinkMarkType, start, start + (type == ImageType ? 2 : 1)))
+  content.push(elt(LinkMarkType, startPos - 1, startPos))
+  if (next == 40 /* '(' */) {
+    let pos = cx.skipSpace(startPos + 1)
+    const dest = parseURL(text, pos - cx.offset, cx.offset, getType(cx, 'URL'), LinkMarkType)
+    let title
+    if (dest) {
+      const last = dest.at(-1)!
+      pos = cx.skipSpace(last.to)
+      // The destination and title must be separated by whitespace
+      if (pos != last.to) {
+        title = parseLinkTitle(text, pos - cx.offset, cx.offset, getType(cx, 'LinkTitle'))
+        if (title) pos = cx.skipSpace(title.to)
+      }
+    }
+    if (cx.char(pos) == 41 /* ')' */) {
+      content.push(elt(LinkMarkType, startPos, startPos + 1))
+      endPos = pos + 1
+      if (dest) content.push(...dest)
+      if (title) content.push(title)
+      content.push(elt(LinkMarkType, pos, endPos))
+    }
+  } else if (next == 91 /* '[' */) {
+    const label = parseLinkLabel(
+      text,
+      startPos - cx.offset,
+      cx.offset,
+      false,
+      getType(cx, 'LinkLabelType'),
+    )
+    if (label) {
+      content.push(label)
+      endPos = label.to
+    }
+  }
+  return elt(type, start, endPos, content)
+}
+
+// These return `null` when falling off the end of the input, `false`
+// when parsing fails otherwise (for use in the incremental link
+// reference parser).
+function parseURL(
+  text: string,
+  start: number,
+  offset: number,
+  urlType: number,
+  linkMarkType: number,
+): null | false | Element[] {
+  const next = text.charCodeAt(start)
+  if (next == 60 /* '<' */) {
+    for (let pos = start + 1; pos < text.length; pos++) {
+      const ch = text.charCodeAt(pos)
+      if (ch == 62 /* '>' */)
+        return [
+          elt(linkMarkType, start + offset, start + offset + 1),
+          elt(urlType, start + offset + 1, pos + offset),
+          elt(linkMarkType, pos + offset, pos + offset + 1),
+        ]
+      if (ch == 60 || ch == 10 /* '<\n' */) return false
+    }
+    return null
+  } else {
+    let depth = 0,
+      pos = start
+    for (let escaped = false; pos < text.length; pos++) {
+      const ch = text.charCodeAt(pos)
+      if (isSpace(ch)) {
+        break
+      } else if (escaped) {
+        escaped = false
+      } else if (ch == 40 /* '(' */) {
+        depth++
+      } else if (ch == 41 /* ')' */) {
+        if (!depth) break
+        depth--
+      } else if (ch == 92 /* '\\' */) {
+        escaped = true
+      }
+    }
+    return (
+      pos > start ? [elt(urlType, start + offset, pos + offset)]
+      : pos == text.length ? null
+      : false
+    )
+  }
+}
+
+function parseLinkTitle(
+  text: string,
+  start: number,
+  offset: number,
+  linkTitleType: number,
+): null | false | Element {
+  const next = text.charCodeAt(start)
+  if (next != 39 && next != 34 && next != 40 /* '"\'(' */) return false
+  const end = next == 40 ? 41 : next
+  for (let pos = start + 1, escaped = false; pos < text.length; pos++) {
+    const ch = text.charCodeAt(pos)
+    if (escaped) escaped = false
+    else if (ch == end) return elt(linkTitleType, start + offset, pos + 1 + offset)
+    else if (ch == 92 /* '\\' */) escaped = true
+  }
+  return null
+}
+
+function parseLinkLabel(
+  text: string,
+  start: number,
+  offset: number,
+  requireNonWS: boolean,
+  linkLabelType: number,
+): null | false | Element {
+  for (
+    let escaped = false, pos = start + 1, end = Math.min(text.length, pos + 999);
+    pos < end;
+    pos++
+  ) {
+    const ch = text.charCodeAt(pos)
+    if (escaped) escaped = false
+    else if (ch == 93 /* ']' */)
+      return requireNonWS ? false : elt(linkLabelType, start + offset, pos + 1 + offset)
+    else {
+      if (requireNonWS && !isSpace(ch)) requireNonWS = false
+      if (ch == 91 /* '[' */) return false
+      else if (ch == 92 /* '\\' */) escaped = true
+    }
+  }
+  return null
 }
 
 // === Debugging ===

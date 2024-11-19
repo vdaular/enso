@@ -105,6 +105,21 @@ test.each([
     },
   },
   {
+    markdown: '![](<https://www.example.com/The image.avif>)',
+    image: {
+      src: 'https://www.example.com/The image.avif',
+      alt: '',
+    },
+  },
+  {
+    markdown: '![](<https://www.example.com/The image.avif)',
+    image: null,
+  },
+  {
+    markdown: '![](https://www.example.com/The image.avif)',
+    image: null,
+  },
+  {
     markdown: '![Image](https://www.example.com/image.avif',
     image: null,
   },

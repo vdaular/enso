@@ -60,6 +60,12 @@ func2 a =
     r
 
 ## The main method
+
+   Here we test images:
+
+   ![Image](/images/image.png)
+   ![Image](../images/image.png)
+   ![Image](</images/image.png>)
 main =
     five = 5
     ten = 10
@@ -82,6 +88,16 @@ const fileTree = {
   src: {
     get 'Main.enso'() {
       return mainFile
+    },
+  },
+  images: {
+    get 'image.png'() {
+      return new Uint16Array([
+        20617, 18254, 2573, 2586, 0, 3328, 18505, 21060, 0, 768, 0, 768, 772, 0, 41984, 43014, 140,
+        0, 20501, 21580, 65093, 13106, 11262, 64043, 27756, 24571, 64863, 14906, 12030, 65070,
+        10023, 29424, 11222, 0, 4352, 17481, 21569, 55048, 28771, 24661, 4960, 24672, 52, 768, 161,
+        21933, 29603, 124, 0, 18688, 20037, 44612, 24642, 130,
+      ]).buffer
     },
   },
 }

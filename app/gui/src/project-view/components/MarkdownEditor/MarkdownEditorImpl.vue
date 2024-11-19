@@ -7,7 +7,8 @@ import {
 } from '@/components/MarkdownEditor/imageUrlTransformer'
 import { ensoMarkdown } from '@/components/MarkdownEditor/markdown'
 import VueComponentHost from '@/components/VueComponentHost.vue'
-import { EditorState } from '@codemirror/state'
+import { Vec2 } from '@/util/data/vec2'
+import { EditorState, Text } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { minimalSetup } from 'codemirror'
 import { type ComponentInstance, onMounted, ref, toRef, useCssModule, watch } from 'vue'
@@ -48,6 +49,31 @@ onMounted(() => {
 })
 
 const editing = ref(false)
+
+/**
+ * Replace text in given document range with `text`, putting text cursor after inserted text.
+ *
+ * If text contains multiple lines, it should use '\n', not '\r\n' for line endings.
+ */
+function putTextAt(text: string, from: number, to: number) {
+  const insert = Text.of(text.split('\n'))
+  editorView.dispatch({
+    changes: { from, to, insert },
+    selection: { anchor: from + insert.length },
+  })
+}
+
+defineExpose({
+  putText: (text: string) => {
+    const range = editorView.state.selection.main
+    putTextAt(text, range.from, range.to)
+  },
+  putTextAt,
+  putTextAtCoords: (text: string, coords: Vec2) => {
+    const pos = editorView.posAtCoords(coords, false)
+    putTextAt(text, pos, pos)
+  },
+})
 </script>
 
 <template>
@@ -68,6 +94,10 @@ const editing = ref(false)
 :deep(.cm-scroller) {
   /* Prevent touchpad back gesture, which can be triggered while panning. */
   overscroll-behavior: none;
+}
+
+:deep(img.uploading) {
+  opacity: 0.5;
 }
 
 .EditorRoot :deep(.cm-editor) {

@@ -24,6 +24,8 @@
   component.][11452]
 - [New documentation editor provides improved Markdown editing experience, and
   paves the way for new documentation features.][11469]
+- [You can now add images to documentation panel][11547] by pasting them from
+  clipboard or by drag'n'dropping image files.
 - ["Write" button in component menu allows to evaluate it separately from the
   rest of the workflow][11523].
 
@@ -42,6 +44,7 @@
 [11448]: https://github.com/enso-org/enso/pull/11448
 [11452]: https://github.com/enso-org/enso/pull/11452
 [11469]: https://github.com/enso-org/enso/pull/11469
+[11547]: https://github.com/enso-org/enso/pull/11547
 [11523]: https://github.com/enso-org/enso/pull/11523
 
 #### Enso Standard Library

@@ -160,10 +160,15 @@ export class DataServer extends ObservableV2<DataServerEvents> {
         return initResult.error.payload
       }
     }
-    this.websocket.send(builder.finish(rootTable).toArrayBuffer())
     const promise = new Promise<T | Error>((resolve) => {
       this.resolveCallbacks.set(messageUuid, resolve)
     })
+    try {
+      this.websocket.send(builder.finish(rootTable).toArrayBuffer())
+    } catch (e: unknown) {
+      this.resolveCallbacks.delete(messageUuid)
+      throw e
+    }
     return promise
   }
 

@@ -7,13 +7,18 @@ import * as locate from './locate'
 test('Main method documentation', async ({ page }) => {
   await actions.goToGraph(page)
 
+  const rightDock = locate.rightDock(page)
   // Documentation panel hotkey opens right-dock.
-  await expect(locate.rightDock(page)).toBeHidden()
+  await expect(rightDock).toBeHidden()
   await page.keyboard.press(`${CONTROL_KEY}+D`)
-  await expect(locate.rightDock(page)).toBeVisible()
+  await expect(rightDock).toBeVisible()
 
   // Right-dock displays main method documentation.
-  await expect(locate.editorRoot(locate.rightDock(page))).toHaveText('The main method')
+  await expect(locate.editorRoot(rightDock)).toContainText('The main method')
+  // All three images are loaded properly
+  await expect(rightDock.getByAltText('Image')).toHaveCount(3)
+  for (const img of await rightDock.getByAltText('Image').all())
+    await expect(img).toHaveJSProperty('naturalWidth', 3)
 
   // Documentation hotkey closes right-dock.p
   await page.keyboard.press(`${CONTROL_KEY}+D`)

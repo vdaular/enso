@@ -40,5 +40,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <img :src="data?.ok ? data.value.url : ''" :alt="alt" :title="title" />
+  <img
+    :src="data?.ok ? data.value.url : ''"
+    :alt="alt"
+    :title="title"
+    :class="{ uploading: data?.ok && data.value.uploading?.value }"
+  />
 </template>

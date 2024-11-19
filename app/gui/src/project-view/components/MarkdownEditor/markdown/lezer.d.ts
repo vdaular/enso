@@ -32,4 +32,15 @@ declare module '@lezer/markdown' {
     writeElements: (elts: readonly Element[], offset?: number) => Buffer
     finish: (type: number, length: number) => Tree
   }
+
+  export interface InlineDelimiter {
+    readonly type: DelimiterType
+    readonly from: number
+    readonly to: number
+    side: Mark
+  }
+
+  export interface InlineContext {
+    parts: (Element | InlineDelimiter | null)[]
+  }
 }

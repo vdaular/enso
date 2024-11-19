@@ -144,12 +144,10 @@ function parseLinkLike(node: SyntaxNode, doc: Text) {
   if (!textOpen) return
   const textClose = textOpen.nextSibling // ]
   if (!textClose) return
-  const urlOpen = textClose.nextSibling // (
-  // The parser accepts partial links such as `[Missing url]`.
-  if (!urlOpen) return
-  const urlNode = urlOpen.nextSibling
-  // If the URL is empty, this will be the closing 'LinkMark'.
-  if (urlNode?.name !== 'URL') return
+  const urlNode = findNextSiblingNamed(textClose, 'URL')
+  if (!urlNode) return
+  console.log('RANGE', urlNode.from, urlNode.to)
+  console.log(doc)
   return {
     textFrom: textOpen.to,
     textTo: textClose.from,
@@ -266,5 +264,13 @@ class ImageWidget extends WidgetType {
   override destroy() {
     this.vueHostRegistration?.unregister()
     this.container = undefined
+  }
+}
+
+function findNextSiblingNamed(node: SyntaxNode, name: string) {
+  for (let sibling = node.nextSibling; sibling != null; sibling = sibling.nextSibling) {
+    if (sibling.name === name) {
+      return sibling
+    }
   }
 }
