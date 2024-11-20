@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import type { UrlTransformer } from '@/components/MarkdownEditor/imageUrlTransformer'
+import {
+  provideDocumentationImageUrlTransformer,
+  type UrlTransformer,
+} from '@/components/MarkdownEditor/imageUrlTransformer'
 import { Vec2 } from '@/util/data/vec2'
-import { ComponentInstance, computed, defineAsyncComponent, ref } from 'vue'
+import { ComponentInstance, computed, defineAsyncComponent, ref, toRef } from 'vue'
 import * as Y from 'yjs'
 
 const props = defineProps<{
-  yText: Y.Text
+  content: Y.Text | string
   transformImageUrl?: UrlTransformer
   toolbarContainer: HTMLElement | undefined
 }>()
@@ -15,6 +18,8 @@ const inner = ref<ComponentInstance<typeof LazyMarkdownEditor>>()
 const LazyMarkdownEditor = defineAsyncComponent(
   () => import('@/components/MarkdownEditor/MarkdownEditorImpl.vue'),
 )
+
+provideDocumentationImageUrlTransformer(toRef(props, 'transformImageUrl'))
 
 defineExpose({
   loaded: computed(() => inner.value != null),
@@ -29,6 +34,6 @@ defineExpose({
 
 <template>
   <Suspense>
-    <LazyMarkdownEditor ref="inner" v-bind="props" />
+    <LazyMarkdownEditor ref="inner" v-bind="props" class="MarkdownEditor" />
   </Suspense>
 </template>

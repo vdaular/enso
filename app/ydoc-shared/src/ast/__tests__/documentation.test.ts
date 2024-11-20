@@ -1,3 +1,4 @@
+import * as iter from 'enso-common/src/utilities/data/iter'
 import { describe, expect, test } from 'vitest'
 import { assert } from '../../util/assert'
 import { MutableModule } from '../mutableModule'
@@ -91,7 +92,7 @@ test('Creating comments: indented', () => {
   expect(statement.module.root()?.code()).toBe(`main =\n    ## ${docText}\n    x = 1`)
 })
 
-describe('Markdown documentation', () => {
+describe('Function documentation (Markdown)', () => {
   const cases = [
     {
       source: '## My function',
@@ -100,6 +101,10 @@ describe('Markdown documentation', () => {
     {
       source: '## My function\n\n   Second paragraph',
       markdown: 'My function\nSecond paragraph',
+    },
+    {
+      source: '## Trailing whitespace \n\n   Second paragraph',
+      markdown: 'Trailing whitespace \nSecond paragraph',
     },
     {
       source: '## My function\n\n\n   Second paragraph after extra gap',
@@ -141,14 +146,23 @@ describe('Markdown documentation', () => {
         'the Enso syntax specification which requires line length not to exceed 100 characters.',
       ].join(' '), // TODO: This should be '\n   ' when hard-wrapping is implemented.
     },
+    {
+      source: '## Table below:\n   | a | b |\n   |---|---|',
+      markdown: 'Table below:\n| a | b |\n|---|---|',
+    },
+    {
+      source: '## Table below:\n\n   | a | b |\n   |---|---|',
+      markdown: 'Table below:\n\n| a | b |\n|---|---|',
+    },
   ]
 
-  test.each(cases)('Enso source comments to markdown', ({ source, markdown }) => {
+  test.each(cases)('Enso source comments to normalized markdown', ({ source, markdown }) => {
     const moduleSource = `${source}\nmain =\n    x = 1`
     const topLevel = parseModule(moduleSource)
     topLevel.module.setRoot(topLevel)
-    const main = [...topLevel.statements()][0]
+    const main = iter.first(topLevel.statements())
     assert(main instanceof MutableFunctionDef)
+    expect(main.name.code()).toBe('main')
     expect(main.mutableDocumentationMarkdown().toJSON()).toBe(markdown)
   })
 
@@ -156,7 +170,7 @@ describe('Markdown documentation', () => {
     const functionCode = 'main =\n    x = 1'
     const topLevel = parseModule(functionCode)
     topLevel.module.setRoot(topLevel)
-    const main = [...topLevel.statements()][0]
+    const main = iter.first(topLevel.statements())
     assert(main instanceof MutableFunctionDef)
     const markdownYText = main.mutableDocumentationMarkdown()
     expect(markdownYText.toJSON()).toBe('')
@@ -202,7 +216,7 @@ describe('Markdown documentation', () => {
     const topLevel = parseModule(originalSourceWithDocComment)
     expect(topLevel.code()).toBe(originalSourceWithDocComment)
 
-    const main = [...topLevel.statements()][0]
+    const main = iter.first(topLevel.statements())
     assert(main instanceof MutableFunctionDef)
     const markdownYText = main.mutableDocumentationMarkdown()
     markdownYText.delete(0, markdownYText.length)

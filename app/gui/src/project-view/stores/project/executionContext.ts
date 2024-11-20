@@ -9,7 +9,6 @@ import {
   type Identifier,
 } from '@/util/qualifiedName'
 import * as array from 'lib0/array'
-import * as object from 'lib0/object'
 import { ObservableV2 } from 'lib0/observable'
 import * as random from 'lib0/random'
 import { reactive } from 'vue'

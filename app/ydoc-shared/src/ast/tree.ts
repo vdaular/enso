@@ -565,8 +565,11 @@ export function syncFields(ast1: MutableAst, ast2: Ast, f: (id: AstId) => AstId 
 }
 
 function syncYText(target: Y.Text, source: Y.Text) {
-  target.delete(0, target.length)
-  target.insert(0, source.toJSON())
+  const sourceString = source.toJSON()
+  if (target.toJSON() !== sourceString) {
+    target.delete(0, target.length)
+    target.insert(0, sourceString)
+  }
 }
 
 /** TODO: Add docs */

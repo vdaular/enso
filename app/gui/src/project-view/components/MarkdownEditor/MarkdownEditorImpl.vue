@@ -1,54 +1,59 @@
 <script setup lang="ts">
-import EditorRoot from '@/components/EditorRoot.vue'
+import EditorRoot from '@/components/codemirror/EditorRoot.vue'
+import { yCollab } from '@/components/codemirror/yCollab'
 import { highlightStyle } from '@/components/MarkdownEditor/highlight'
-import {
-  provideDocumentationImageUrlTransformer,
-  type UrlTransformer,
-} from '@/components/MarkdownEditor/imageUrlTransformer'
 import { ensoMarkdown } from '@/components/MarkdownEditor/markdown'
 import VueComponentHost from '@/components/VueComponentHost.vue'
+import { assert } from '@/util/assert'
 import { Vec2 } from '@/util/data/vec2'
 import { EditorState, Text } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { minimalSetup } from 'codemirror'
-import { type ComponentInstance, onMounted, ref, toRef, useCssModule, watch } from 'vue'
-import { yCollab } from 'y-codemirror.next'
-import * as awarenessProtocol from 'y-protocols/awareness.js'
+import { type ComponentInstance, computed, onMounted, ref, toRef, useCssModule, watch } from 'vue'
+import { Awareness } from 'y-protocols/awareness.js'
 import * as Y from 'yjs'
 
 const editorRoot = ref<ComponentInstance<typeof EditorRoot>>()
 
 const props = defineProps<{
-  yText: Y.Text
-  transformImageUrl?: UrlTransformer | undefined
-  toolbarContainer: HTMLElement | undefined
+  content: Y.Text | string
+  toolbarContainer?: HTMLElement | undefined
 }>()
 
 const vueHost = ref<ComponentInstance<typeof VueComponentHost>>()
+const focused = ref(false)
+const readonly = computed(() => typeof props.content === 'string')
+const editing = computed(() => !readonly.value && focused.value)
 
-provideDocumentationImageUrlTransformer(toRef(props, 'transformImageUrl'))
-
-const awareness = new awarenessProtocol.Awareness(new Y.Doc())
+const awareness = new Awareness(new Y.Doc())
 const editorView = new EditorView()
+// Disable EditContext API because of https://github.com/codemirror/dev/issues/1458.
+;(EditorView as any).EDIT_CONTEXT = false
 const constantExtensions = [minimalSetup, highlightStyle(useCssModule()), EditorView.lineWrapping]
-
-watch([vueHost, toRef(props, 'yText')], ([vueHost, yText]) => {
+watch([vueHost, toRef(props, 'content')], ([vueHost, content]) => {
   if (!vueHost) return
-  editorView.setState(
-    EditorState.create({
-      doc: yText.toString(),
-      extensions: [...constantExtensions, ensoMarkdown({ vueHost }), yCollab(yText, awareness)],
-    }),
-  )
+  let doc = ''
+  const extensions = [...constantExtensions, ensoMarkdown({ vueHost })]
+  if (typeof content === 'string') {
+    doc = content
+  } else {
+    assert(content.doc !== null)
+    const yTextWithDoc: Y.Text & { doc: Y.Doc } = content as any
+    doc = content.toString()
+    extensions.push(yCollab(yTextWithDoc, awareness))
+  }
+  editorView.setState(EditorState.create({ doc, extensions }))
 })
 
 onMounted(() => {
-  const content = editorView.dom.getElementsByClassName('cm-content')[0]!
-  content.addEventListener('focusin', () => (editing.value = true))
+  // Enable rendering the line containing the current cursor in `editing` mode if focus enters the element *inside* the
+  // scroll area--if we attached the handler to the editor root, clicking the scrollbar would cause editing mode to be
+  // activated.
+  editorView.dom
+    .getElementsByClassName('cm-content')[0]!
+    .addEventListener('focusin', () => (focused.value = true))
   editorRoot.value?.rootElement?.prepend(editorView.dom)
 })
-
-const editing = ref(false)
 
 /**
  * Replace text in given document range with `text`, putting text cursor after inserted text.
@@ -77,12 +82,7 @@ defineExpose({
 </script>
 
 <template>
-  <EditorRoot
-    ref="editorRoot"
-    class="MarkdownEditor"
-    :class="{ editing }"
-    @focusout="editing = false"
-  />
+  <EditorRoot ref="editorRoot" v-bind="$attrs" :class="{ editing }" @focusout="focused = false" />
   <VueComponentHost ref="vueHost" />
 </template>
 
@@ -91,23 +91,14 @@ defineExpose({
   font-family: var(--font-sans);
 }
 
-:deep(.cm-scroller) {
-  /* Prevent touchpad back gesture, which can be triggered while panning. */
-  overscroll-behavior: none;
+:deep(.cm-editor) {
+  opacity: 1;
+  color: black;
+  font-size: 12px;
 }
 
 :deep(img.uploading) {
   opacity: 0.5;
-}
-
-.EditorRoot :deep(.cm-editor) {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  opacity: 1;
-  color: black;
-  font-size: 12px;
-  outline: none;
 }
 </style>
 

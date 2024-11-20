@@ -223,7 +223,7 @@ const handler = documentationEditorBindings.handler({
       >
         <MarkdownEditor
           ref="markdownEditor"
-          :yText="yText"
+          :content="yText"
           :transformImageUrl="transformImageUrl"
           :toolbarContainer="toolbarElement"
         />

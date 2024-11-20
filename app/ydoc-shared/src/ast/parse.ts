@@ -534,3 +534,38 @@ export function setExternalIds(edit: MutableModule, spans: SpanMap, ids: IdMap):
   }
   return astsMatched
 }
+
+/**
+ * Determines the context of `ast`: module root, body block, statement, or expression; parses the given code in the same
+ * context.
+ */
+export function parseInSameContext(
+  module: MutableModule,
+  code: string,
+  ast: Ast,
+): { root: Owned; spans: SpanMap; toRaw: Map<AstId, RawAst.Tree> } {
+  const rawParsed = rawParseInContext(code, getParseContext(ast))
+  return abstract(module, rawParsed, code)
+}
+
+type ParseContext = 'module' | 'block' | 'expression' | 'statement'
+
+function getParseContext(ast: Ast): ParseContext {
+  const astModuleRoot = ast.module.root()
+  if (ast instanceof BodyBlock) return astModuleRoot && ast.is(astModuleRoot) ? 'module' : 'block'
+  return ast.isExpression() ? 'expression' : 'statement'
+}
+
+function rawParseInContext(code: string, context: ParseContext): RawAst.Tree {
+  if (context === 'module') return rawParseModule(code)
+  const block = rawParseBlock(code)
+  if (context === 'block') return block
+  const statement = iter.tryGetSoleValue(block.statements)?.expression
+  if (!statement) return block
+  if (context === 'statement') return statement
+  if (context === 'expression')
+    return statement.type === RawAst.Tree.Type.ExpressionStatement ?
+        statement.expression
+      : statement
+  return context satisfies never
+}

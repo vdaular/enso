@@ -1,4 +1,5 @@
 import { LINE_BOUNDARIES } from 'enso-common/src/utilities/data/string'
+import { markdownParser } from './ensoMarkdown'
 import { xxHash128 } from './ffi'
 import type { ConcreteChild, RawConcreteChild } from './print'
 import { ensureUnspaced, firstChild, preferUnspaced, unspaced } from './print'
@@ -32,6 +33,8 @@ export function* docLineToConcrete(
   for (const newline of docLine.newlines) yield preferUnspaced(newline)
 }
 
+// === Markdown ===
+
 /**
  * Render function documentation to concrete tokens. If the `markdown` content has the same value as when `docLine` was
  * parsed (as indicated by `hash`), the `docLine` will be used (preserving concrete formatting). If it is different, the
@@ -42,12 +45,18 @@ export function functionDocsToConcrete(
   hash: string | undefined,
   docLine: DeepReadonly<DocLine> | undefined,
   indent: string | null,
-): IterableIterator<RawConcreteChild> | undefined {
+): Iterable<RawConcreteChild> | undefined {
   return (
     hash && docLine && xxHash128(markdown) === hash ? docLineToConcrete(docLine, indent)
-    : markdown ? yTextToTokens(markdown, (indent || '') + '   ')
+    : markdown ? markdownYTextToTokens(markdown, (indent || '') + '   ')
     : undefined
   )
+}
+
+function markdownYTextToTokens(yText: string, indent: string): Iterable<ConcreteChild<Token>> {
+  const tokensBuilder = new DocTokensBuilder(indent)
+  standardizeMarkdown(yText, tokensBuilder)
+  return tokensBuilder.build()
 }
 
 /**
@@ -56,81 +65,141 @@ export function functionDocsToConcrete(
  * source code).
  */
 export function abstractMarkdown(elements: undefined | TextToken<ConcreteRefs>[]) {
-  let markdown = ''
-  let newlines = 0
-  let readingTags = true
-  let elidedNewline = false
-  ;(elements ?? []).forEach(({ token: { node } }, i) => {
-    if (node.tokenType_ === TokenType.Newline) {
-      if (readingTags || newlines > 0) {
-        markdown += '\n'
-        elidedNewline = false
-      } else {
-        elidedNewline = true
-      }
-      newlines += 1
-    } else {
-      let nodeCode = node.code()
-      if (i === 0) nodeCode = nodeCode.trimStart()
-      if (elidedNewline) markdown += ' '
-      markdown += nodeCode
-      newlines = 0
-      if (readingTags) {
-        if (!nodeCode.startsWith('ICON ')) {
-          readingTags = false
-        }
-      }
-    }
-  })
+  const { tags, rawMarkdown } = toRawMarkdown(elements)
+  const markdown = [...tags, normalizeMarkdown(rawMarkdown)].join('\n')
   const hash = xxHash128(markdown)
   return { markdown, hash }
 }
 
-// TODO: Paragraphs should be hard-wrapped to fit within the column limit, but this requires:
-//  - Recognizing block elements other than paragraphs; we must not split non-paragraph elements.
-//  - Recognizing inline elements; some cannot be split (e.g. links), while some can be broken into two (e.g. bold).
-//    If we break inline elements, we must also combine them when encountered during parsing.
-const ENABLE_INCOMPLETE_WORD_WRAP_SUPPORT = false
-
-function* yTextToTokens(yText: string, indent: string): IterableIterator<ConcreteChild<Token>> {
-  yield unspaced(Token.new('##', TokenType.TextStart))
-  const lines = yText.split(LINE_BOUNDARIES)
-  let printingTags = true
-  for (const [i, value] of lines.entries()) {
-    if (i) {
-      yield unspaced(Token.new('\n', TokenType.Newline))
-      if (value && !printingTags) yield unspaced(Token.new('\n', TokenType.Newline))
-    }
-    printingTags = printingTags && value.startsWith('ICON ')
-    let offset = 0
-    while (offset < value.length) {
-      if (offset !== 0) yield unspaced(Token.new('\n', TokenType.Newline))
-      let wrappedLineEnd = value.length
-      let printableOffset = offset
-      if (i !== 0) {
-        while (printableOffset < value.length && value[printableOffset] === ' ')
-          printableOffset += 1
+function toRawMarkdown(elements: undefined | TextToken<ConcreteRefs>[]) {
+  const tags: string[] = []
+  let readingTags = true
+  let rawMarkdown = ''
+  ;(elements ?? []).forEach(({ token: { node } }, i) => {
+    if (node.tokenType_ === TokenType.Newline) {
+      if (!readingTags) {
+        rawMarkdown += '\n'
       }
-      if (ENABLE_INCOMPLETE_WORD_WRAP_SUPPORT && !printingTags) {
-        const ENSO_SOURCE_MAX_COLUMNS = 100
-        const MIN_DOC_COLUMNS = 40
-        const availableWidth = Math.max(
-          ENSO_SOURCE_MAX_COLUMNS - indent.length - (i === 0 && offset === 0 ? '## '.length : 0),
-          MIN_DOC_COLUMNS,
-        )
-        if (availableWidth < wrappedLineEnd - printableOffset) {
-          const wrapIndex = value.lastIndexOf(' ', printableOffset + availableWidth)
-          if (printableOffset < wrapIndex) {
-            wrappedLineEnd = wrapIndex
-          }
+    } else {
+      let nodeCode = node.code()
+      if (i === 0) nodeCode = nodeCode.trimStart()
+      if (readingTags) {
+        if (nodeCode.startsWith('ICON ')) {
+          tags.push(nodeCode)
+        } else {
+          readingTags = false
         }
       }
-      while (printableOffset < value.length && value[printableOffset] === ' ') printableOffset += 1
-      const whitespace = i === 0 && offset === 0 ? ' ' : indent
-      const wrappedLine = value.substring(printableOffset, wrappedLineEnd)
-      yield { whitespace, node: Token.new(wrappedLine, TokenType.TextSection) }
-      offset = wrappedLineEnd
+      if (!readingTags) {
+        rawMarkdown += nodeCode
+      }
     }
+  })
+  return { tags, rawMarkdown }
+}
+
+/**
+ * Convert the Markdown input to a format with rendered-style linebreaks: Hard-wrapped lines within a paragraph will be
+ * joined, and only a single linebreak character is used to separate paragraphs.
+ */
+function normalizeMarkdown(rawMarkdown: string): string {
+  let normalized = ''
+  let prevTo = 0
+  let prevName: string | undefined = undefined
+  const cursor = markdownParser.parse(rawMarkdown).cursor()
+  cursor.firstChild()
+  do {
+    if (prevTo < cursor.from) {
+      const textBetween = rawMarkdown.slice(prevTo, cursor.from)
+      normalized +=
+        cursor.name === 'Paragraph' && prevName !== 'Table' ? textBetween.slice(0, -1) : textBetween
+    }
+    const text = rawMarkdown.slice(cursor.from, cursor.to)
+    normalized += cursor.name === 'Paragraph' ? text.replaceAll(/ *\n */g, ' ') : text
+    prevTo = cursor.to
+    prevName = cursor.name
+  } while (cursor.nextSibling())
+  return normalized
+}
+
+/**
+ * Convert from "normalized" Markdown to the on-disk representation, with paragraphs hard-wrapped and separated by blank
+ * lines.
+ */
+function standardizeMarkdown(normalizedMarkdown: string, textConsumer: TextConsumer) {
+  let prevTo = 0
+  let prevName: string | undefined = undefined
+  let printingTags = true
+  const cursor = markdownParser.parse(normalizedMarkdown).cursor()
+  cursor.firstChild()
+  do {
+    if (prevTo < cursor.from) {
+      const betweenText = normalizedMarkdown.slice(prevTo, cursor.from)
+      for (const _match of betweenText.matchAll(LINE_BOUNDARIES)) {
+        textConsumer.newline()
+      }
+      if (cursor.name === 'Paragraph' && prevName !== 'Table') {
+        textConsumer.newline()
+      }
+    }
+    const lines = normalizedMarkdown.slice(cursor.from, cursor.to).split(LINE_BOUNDARIES)
+    if (cursor.name === 'Paragraph') {
+      let printingNonTags = false
+      lines.forEach((line, i) => {
+        if (printingTags) {
+          if (cursor.name === 'Paragraph' && line.startsWith('ICON ')) {
+            textConsumer.text(line)
+          } else {
+            printingTags = false
+          }
+        }
+        if (!printingTags) {
+          if (i > 0) {
+            textConsumer.newline()
+            if (printingNonTags) textConsumer.newline()
+          }
+          textConsumer.wrapText(line)
+          printingNonTags = true
+        }
+      })
+    } else {
+      lines.forEach((line, i) => {
+        if (i > 0) textConsumer.newline()
+        textConsumer.text(line)
+      })
+      printingTags = false
+    }
+    prevTo = cursor.to
+    prevName = cursor.name
+  } while (cursor.nextSibling())
+}
+
+interface TextConsumer {
+  text: (text: string) => void
+  wrapText: (text: string) => void
+  newline: () => void
+}
+
+class DocTokensBuilder implements TextConsumer {
+  private readonly tokens: ConcreteChild<Token>[] = [unspaced(Token.new('##', TokenType.TextStart))]
+
+  constructor(private readonly indent: string) {}
+
+  text(text: string): void {
+    const whitespace = this.tokens.length === 1 ? ' ' : this.indent
+    this.tokens.push({ whitespace, node: Token.new(text, TokenType.TextSection) })
   }
-  yield unspaced(Token.new('\n', TokenType.Newline))
+
+  wrapText(text: string): void {
+    this.text(text)
+  }
+
+  newline(): void {
+    this.tokens.push(unspaced(Token.new('\n', TokenType.Newline)))
+  }
+
+  build(): ConcreteChild<Token>[] {
+    this.newline()
+    return this.tokens
+  }
 }

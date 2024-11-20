@@ -85,6 +85,7 @@ export const componentBrowser = componentLocator('.ComponentBrowser')
 export const nodeOutputPort = componentLocator('.outputPortHoverArea')
 export const smallPlusButton = componentLocator('.SmallPlusButton')
 export const editorRoot = componentLocator('.EditorRoot')
+export const nodeComment = componentLocator('.GraphNodeComment div[contentEditable]')
 
 /**
  * A not-selected variant of Component Browser Entry.

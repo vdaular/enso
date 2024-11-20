@@ -1,6 +1,4 @@
-import { markdown as baseMarkdown, markdownLanguage } from '@codemirror/lang-markdown'
-import type { Extension } from '@codemirror/state'
-import type { Tree } from '@lezer/common'
+import { TreeCursor } from '@lezer/common'
 import type {
   BlockContext,
   BlockParser,
@@ -12,31 +10,11 @@ import type {
   MarkdownParser,
   NodeSpec,
 } from '@lezer/markdown'
-import { Element } from '@lezer/markdown'
+import { parser as baseParser, Element, Emoji, GFM, Subscript, Superscript } from '@lezer/markdown'
 import { assertDefined } from 'ydoc-shared/util/assert'
 
-/**
- * Enso Markdown extension. Differences from CodeMirror's base Markdown extension:
- * - It defines the flavor of Markdown supported in Enso documentation. Currently, this is mostly CommonMark except we
- *   don't support setext headings. Planned features include support for some GFM extensions.
- * - Many of the parsers differ from the `@lezer/markdown` parsers in their treatment of whitespace, in order to support
- *   a rendering mode where markup (and some associated spacing) is hidden.
- */
-export function markdown(): Extension {
-  return baseMarkdown({
-    base: markdownLanguage,
-    extensions: [
-      {
-        parseBlock: [headerParser, bulletList, orderedList, blockquoteParser, disableSetextHeading],
-        parseInline: [linkParser, imageParser, linkEndParser],
-        defineNodes: [blockquoteNode],
-      },
-    ],
-  })
-}
-
 function getType({ parser }: { parser: MarkdownParser }, name: string) {
-  const ty = parser.nodeSet.types.find((ty) => ty.name === name)
+  const ty = parser.nodeSet.types.find(ty => ty.name === name)
   assertDefined(ty)
   return ty.id
 }
@@ -424,12 +402,12 @@ export interface DebugTree {
 
 // noinspection JSUnusedGlobalSymbols
 /** @returns A debug representation of the provided {@link Tree} */
-export function debugTree(tree: Tree): DebugTree {
+export function debugTree(tree: { cursor: () => TreeCursor }): DebugTree {
   const cursor = tree.cursor()
   let current: DebugTree[] = []
   const stack: DebugTree[][] = []
   cursor.iterate(
-    (node) => {
+    node => {
       const children: DebugTree[] = []
       current.push({
         name: node.name,
@@ -463,3 +441,25 @@ function isAtxHeading(line: Line) {
 function isSpace(ch: number) {
   return ch == 32 || ch == 9 || ch == 10 || ch == 13
 }
+
+const ensoMarkdownLanguageExtension = {
+  parseBlock: [headerParser, bulletList, orderedList, blockquoteParser, disableSetextHeading],
+  parseInline: [linkParser, imageParser, linkEndParser],
+  defineNodes: [blockquoteNode],
+}
+
+/**
+ * Lezer (CodeMirror) parser for the Enso documentation Markdown dialect.
+ * Differences from CodeMirror's base Markdown language:
+ * - It defines the flavor of Markdown supported in Enso documentation. Currently, this is mostly CommonMark except we
+ *   don't support setext headings. Planned features include support for some GFM extensions.
+ * - Many of the parsers differ from the `@lezer/markdown` parsers in their treatment of whitespace, in order to support
+ *   a rendering mode where markup (and some associated spacing) is hidden.
+ */
+export const markdownParser: MarkdownParser = baseParser.configure([
+  GFM,
+  Subscript,
+  Superscript,
+  Emoji,
+  ensoMarkdownLanguageExtension,
+])
