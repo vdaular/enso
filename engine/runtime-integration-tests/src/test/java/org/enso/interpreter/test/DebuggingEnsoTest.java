@@ -318,6 +318,41 @@ public class DebuggingEnsoTest {
   }
 
   @Test
+  public void testEvaluateExpressionInDebugBreakpoint() {
+    Value fooFunc =
+        createEnsoMethod(
+            """
+
+        import Standard.Base.Runtime.Debug
+
+        foo x =
+            a = 6
+            b = 7
+            Debug.breakpoint
+        """,
+            "foo");
+
+    int[] res = {0};
+    try (DebuggerSession session =
+        debugger.startSession(
+            (SuspendedEvent event) -> {
+              switch (event.getSourceSection().getCharacters().toString().strip()) {
+                case "Debug.breakpoint" -> {
+                  DebugStackFrame stackFrame = event.getTopStackFrame();
+                  DebugValue evaluatedValue = stackFrame.eval("a * b");
+                  assertTrue(evaluatedValue.isNumber());
+                  assertEquals(42, res[0] = evaluatedValue.asInt());
+                }
+              }
+              event.getSession().suspendNextExecution();
+            })) {
+      session.suspendNextExecution();
+      fooFunc.execute(0);
+    }
+    assertEquals("Really suspended at 42", 42, res[0]);
+  }
+
+  @Test
   public void testRewriteLocalVariable() {
     Value fooFunc =
         createEnsoMethod(
