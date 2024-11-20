@@ -834,17 +834,9 @@ function createPlaceholderId(from?: string): string {
   return id as string
 }
 
-/**
- * Whether a given {@link AssetId} is a placeholder id.
- */
+/** Whether a given {@link AssetId} is a placeholder id. */
 export function isPlaceholderId(id: AssetId) {
-  if (typeof id === 'string') {
-    return false
-  }
-
-  console.log('isPlaceholderId id', id, PLACEHOLDER_SIGNATURE in id)
-
-  return PLACEHOLDER_SIGNATURE in id
+  return typeof id !== 'string' && PLACEHOLDER_SIGNATURE in id
 }
 
 /**
@@ -900,7 +892,7 @@ export function createPlaceholderProjectAsset(
   title: string,
   parentId: DirectoryId,
   assetPermissions: readonly AssetPermission[],
-  organization: User | null,
+  user: User | null,
   path: Path | null,
 ): ProjectAsset {
   return {
@@ -913,9 +905,75 @@ export function createPlaceholderProjectAsset(
     projectState: {
       type: ProjectState.new,
       volumeId: '',
-      ...(organization != null ? { openedBy: organization.email } : {}),
+      ...(user != null ? { openedBy: user.email } : {}),
       ...(path != null ? { path } : {}),
     },
+    extension: null,
+    labels: [],
+    description: null,
+    parentsPath: '',
+    virtualParentsPath: '',
+  }
+}
+
+/** Creates a {@link DirectoryAsset} using the given values. */
+export function createPlaceholderDirectoryAsset(
+  title: string,
+  parentId: DirectoryId,
+  assetPermissions: readonly AssetPermission[],
+): DirectoryAsset {
+  return {
+    type: AssetType.directory,
+    id: DirectoryId(createPlaceholderId()),
+    title,
+    parentId,
+    permissions: assetPermissions,
+    modifiedAt: dateTime.toRfc3339(new Date()),
+    projectState: null,
+    extension: null,
+    labels: [],
+    description: null,
+    parentsPath: '',
+    virtualParentsPath: '',
+  }
+}
+
+/** Creates a {@link SecretAsset} using the given values. */
+export function createPlaceholderSecretAsset(
+  title: string,
+  parentId: DirectoryId,
+  assetPermissions: readonly AssetPermission[],
+): SecretAsset {
+  return {
+    type: AssetType.secret,
+    id: SecretId(createPlaceholderId()),
+    title,
+    parentId,
+    permissions: assetPermissions,
+    modifiedAt: dateTime.toRfc3339(new Date()),
+    projectState: null,
+    extension: null,
+    labels: [],
+    description: null,
+    parentsPath: '',
+    virtualParentsPath: '',
+  }
+}
+
+/** Creates a {@link DatalinkAsset} using the given values. */
+export function createPlaceholderDatalinkAsset(
+  title: string,
+  parentId: DirectoryId,
+  assetPermissions: readonly AssetPermission[],
+): DatalinkAsset {
+  return {
+    type: AssetType.datalink,
+    id: DatalinkId(createPlaceholderId()),
+    title,
+    parentId,
+    permissions: assetPermissions,
+    modifiedAt: dateTime.toRfc3339(new Date()),
+    projectState: null,
     extension: null,
     labels: [],
     description: null,

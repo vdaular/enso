@@ -6,7 +6,7 @@ import FolderArrowIcon from '#/assets/folder_arrow.svg'
 
 import { backendMutationOptions } from '#/hooks/backendHooks'
 
-import { useDriveStore } from '#/providers/DriveProvider'
+import { useDriveStore, useToggleDirectoryExpansion } from '#/providers/DriveProvider'
 import * as textProvider from '#/providers/TextProvider'
 
 import * as ariaComponents from '#/components/AriaComponents'
@@ -38,10 +38,11 @@ export interface DirectoryNameColumnProps extends column.AssetColumnProps {
  * This should never happen.
  */
 export default function DirectoryNameColumn(props: DirectoryNameColumnProps) {
-  const { item, selected, state, rowState, setRowState, isEditable, depth } = props
-  const { backend, nodeMap, doToggleDirectoryExpansion, expandedDirectoryIds } = state
+  const { item, depth, selected, state, rowState, setRowState, isEditable } = props
+  const { backend, nodeMap, expandedDirectoryIds } = state
   const { getText } = textProvider.useText()
   const driveStore = useDriveStore()
+  const toggleDirectoryExpansion = useToggleDirectoryExpansion()
   const isExpanded = expandedDirectoryIds.includes(item.id)
 
   const updateDirectoryMutation = useMutation(backendMutationOptions(backend, 'updateDirectory'))
@@ -98,7 +99,7 @@ export default function DirectoryNameColumn(props: DirectoryNameColumnProps) {
           isExpanded && 'rotate-90',
         )}
         onPress={() => {
-          doToggleDirectoryExpansion(item.id, item.id)
+          toggleDirectoryExpansion(item.id)
         }}
       />
       <SvgMask src={FolderIcon} className="m-name-column-icon size-4 group-hover:hidden" />

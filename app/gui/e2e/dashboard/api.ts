@@ -12,7 +12,6 @@ import * as uniqueString from 'enso-common/src/utilities/uniqueString'
 
 import * as actions from './actions'
 
-import invariant from 'tiny-invariant'
 import LATEST_GITHUB_RELEASES from './latestGithubReleases.json' with { type: 'json' }
 
 // =================
@@ -170,12 +169,15 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
         type: backend.AssetType.directory,
         id: backend.DirectoryId('directory-' + uniqueString.uniqueString()),
         projectState: null,
+        extension: null,
         title,
         modifiedAt: dateTime.toRfc3339(new Date()),
         description: null,
         labels: [],
         parentId: defaultDirectoryId,
         permissions: [],
+        parentsPath: '',
+        virtualParentsPath: '',
       },
       rest,
     )
@@ -192,12 +194,15 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
           type: backend.ProjectState.closed,
           volumeId: '',
         },
+        extension: null,
         title,
         modifiedAt: dateTime.toRfc3339(new Date()),
         description: null,
         labels: [],
         parentId: defaultDirectoryId,
         permissions: [],
+        parentsPath: '',
+        virtualParentsPath: '',
       },
       rest,
     )
@@ -208,12 +213,15 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
         type: backend.AssetType.file,
         id: backend.FileId('file-' + uniqueString.uniqueString()),
         projectState: null,
+        extension: '',
         title,
         modifiedAt: dateTime.toRfc3339(new Date()),
         description: null,
         labels: [],
         parentId: defaultDirectoryId,
         permissions: [],
+        parentsPath: '',
+        virtualParentsPath: '',
       },
       rest,
     )
@@ -227,12 +235,15 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
         type: backend.AssetType.secret,
         id: backend.SecretId('secret-' + uniqueString.uniqueString()),
         projectState: null,
+        extension: null,
         title,
         modifiedAt: dateTime.toRfc3339(new Date()),
         description: null,
         labels: [],
         parentId: defaultDirectoryId,
         permissions: [],
+        parentsPath: '',
+        virtualParentsPath: '',
       },
       rest,
     )
@@ -571,23 +582,21 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
       const projectId = backend.ProjectId(request.url().match(/[/]projects[/]([^?/]+)/)?.[1] ?? '')
       const project = assetMap.get(projectId)
 
-      invariant(
-        project,
-        `Cannot get details for a project that does not exist. Project ID: ${projectId} \n
+      if (!project) {
+        throw new Error(`Cannot get details for a project that does not exist. Project ID: ${projectId} \n
         Please make sure that you've created the project before opening it.
         ------------------------------------------------------------------------------------------------
         
         Existing projects: ${Array.from(assetMap.values())
           .filter((asset) => asset.type === backend.AssetType.project)
           .map((asset) => asset.id)
-          .join(', ')}`,
-      )
-      invariant(
-        project.projectState,
-        `Attempting to get a project that does not have a state. Usually it is a bug in the application.
+          .join(', ')}`)
+      }
+      if (!project.projectState) {
+        throw new Error(`Attempting to get a project that does not have a state. Usually it is a bug in the application.
         ------------------------------------------------------------------------------------------------
-        Tried to get: \n ${JSON.stringify(project, null, 2)}`,
-      )
+        Tried to get: \n ${JSON.stringify(project, null, 2)}`)
+      }
 
       return {
         organizationId: defaultOrganizationId,
@@ -635,7 +644,7 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
         const body: Body = request.postDataJSON()
         const parentId = body.parentDirectoryId
         // Can be any asset ID.
-        const id = backend.DirectoryId(`directory-${uniqueString.uniqueString()}`)
+        const id = backend.DirectoryId(`${assetId?.split('-')[0]}-${uniqueString.uniqueString()}`)
         const json: backend.CopyAssetResponse = {
           asset: {
             id,
@@ -681,10 +690,11 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
 
       const project = assetMap.get(projectId)
 
-      invariant(
-        project,
-        `Tried to open a project that does not exist. Project ID: ${projectId} \n Please make sure that you've created the project before opening it.`,
-      )
+      if (!project) {
+        throw new Error(
+          `Tried to open a project that does not exist. Project ID: ${projectId} \n Please make sure that you've created the project before opening it.`,
+        )
+      }
 
       if (project?.projectState) {
         object.unsafeMutable(project.projectState).type = backend.ProjectState.opened

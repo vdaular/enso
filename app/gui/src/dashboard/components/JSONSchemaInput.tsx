@@ -95,6 +95,7 @@ export default function JSONSchemaInput(props: JSONSchemaInputProps) {
                 </div>
                 {...errors}
               </div>,
+              ...errors,
             )
           } else {
             children.push(

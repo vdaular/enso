@@ -35,7 +35,7 @@ import ManagePermissionsModal from '#/modals/ManagePermissionsModal'
 import * as backendModule from '#/services/Backend'
 import * as localBackendModule from '#/services/LocalBackend'
 
-import { useUploadFileWithToastMutation } from '#/hooks/backendHooks'
+import { useNewProject, useUploadFileWithToastMutation } from '#/hooks/backendHooks'
 import {
   usePasteData,
   useSetAssetPanelProps,
@@ -104,6 +104,8 @@ export default function AssetContextMenu(props: AssetContextMenuProps) {
 
   const { isFeatureUnderPaywall } = billingHooks.usePaywall({ plan: user.plan })
   const isUnderPaywall = isFeatureUnderPaywall('share')
+
+  const newProject = useNewProject(backend, category)
 
   const systemApi = window.systemApi
   const ownsThisAsset = !isCloud || self?.permission === permissions.PermissionAction.own
@@ -225,14 +227,11 @@ export default function AssetContextMenu(props: AssetContextMenuProps) {
               hidden={hidden}
               action="useInNewProject"
               doAction={() => {
-                dispatchAssetListEvent({
-                  type: AssetListEventType.newProject,
-                  parentId: asset.parentId,
-                  parentKey: asset.parentId,
-                  templateId: null,
-                  datalinkId: asset.id,
-                  preferredName: asset.title,
-                })
+                void newProject(
+                  { templateName: asset.title, datalinkId: asset.id },
+                  asset.parentId,
+                  path,
+                )
               }}
             />
           )}
@@ -513,9 +512,11 @@ export default function AssetContextMenu(props: AssetContextMenuProps) {
           <GlobalContextMenu
             hidden={hidden}
             backend={backend}
+            category={category}
             rootDirectoryId={rootDirectoryId}
             directoryKey={asset.id}
             directoryId={asset.id}
+            path={path}
             doPaste={doPaste}
           />
         )}

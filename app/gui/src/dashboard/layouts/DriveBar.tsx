@@ -4,7 +4,7 @@
  */
 import * as React from 'react'
 
-import { useQuery } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 
 import AddDatalinkIcon from '#/assets/add_datalink.svg'
 import AddFolderIcon from '#/assets/add_folder.svg'
@@ -12,7 +12,6 @@ import AddKeyIcon from '#/assets/add_key.svg'
 import DataDownloadIcon from '#/assets/data_download.svg'
 import DataUploadIcon from '#/assets/data_upload.svg'
 import Plus2Icon from '#/assets/plus2.svg'
-import { Input as AriaInput } from '#/components/aria'
 import {
   Button,
   ButtonGroup,
@@ -21,8 +20,16 @@ import {
   useVisualTooltip,
 } from '#/components/AriaComponents'
 import AssetEventType from '#/events/AssetEventType'
+import {
+  useNewDatalink,
+  useNewFolder,
+  useNewProject,
+  useNewSecret,
+  useRootDirectoryId,
+  useUploadFiles,
+} from '#/hooks/backendHooks'
+import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import { useOffline } from '#/hooks/offlineHooks'
-import { createGetProjectDetailsQuery } from '#/hooks/projectHooks'
 import { useSearchParamsState } from '#/hooks/searchParamsStateHooks'
 import AssetSearchBar from '#/layouts/AssetSearchBar'
 import { useDispatchAssetEvent } from '#/layouts/AssetsTable/EventListProvider'
@@ -35,13 +42,16 @@ import StartModal from '#/layouts/StartModal'
 import ConfirmDeleteModal from '#/modals/ConfirmDeleteModal'
 import UpsertDatalinkModal from '#/modals/UpsertDatalinkModal'
 import UpsertSecretModal from '#/modals/UpsertSecretModal'
-import { useCanCreateAssets, useCanDownload, usePasteData } from '#/providers/DriveProvider'
+import {
+  useCanCreateAssets,
+  useCanDownload,
+  useDriveStore,
+  usePasteData,
+} from '#/providers/DriveProvider'
 import { useInputBindings } from '#/providers/InputBindingsProvider'
 import { useSetModal } from '#/providers/ModalProvider'
 import { useText } from '#/providers/TextProvider'
 import type Backend from '#/services/Backend'
-import type { DirectoryId } from '#/services/Backend'
-import { ProjectState, type CreatedProject, type ProjectId } from '#/services/Backend'
 import type AssetQuery from '#/utilities/AssetQuery'
 import { inputFiles } from '#/utilities/input'
 import * as sanitizedEventTargets from '#/utilities/sanitizedEventTargets'
@@ -58,16 +68,6 @@ export interface DriveBarProps {
   readonly setQuery: React.Dispatch<React.SetStateAction<AssetQuery>>
   readonly category: Category
   readonly doEmptyTrash: () => void
-  readonly doCreateProject: (
-    templateId?: string | null,
-    templateName?: string | null,
-    onCreated?: (project: CreatedProject, parentId: DirectoryId) => void,
-    onError?: () => void,
-  ) => void
-  readonly doCreateDirectory: () => void
-  readonly doCreateSecret: (name: string, value: string) => void
-  readonly doCreateDatalink: (name: string, value: unknown) => void
-  readonly doUploadFiles: (files: File[]) => void
 }
 
 /**
@@ -75,9 +75,7 @@ export interface DriveBarProps {
  * and a column display mode switcher.
  */
 export default function DriveBar(props: DriveBarProps) {
-  const { backend, query, setQuery, category } = props
-  const { doEmptyTrash, doCreateProject, doCreateDirectory } = props
-  const { doCreateSecret, doCreateDatalink, doUploadFiles } = props
+  const { backend, query, setQuery, category, doEmptyTrash } = props
 
   const [startModalDefaultOpen, , resetStartModalDefaultOpen] = useSearchParamsState(
     'startModalDefaultOpen',
@@ -86,11 +84,11 @@ export default function DriveBar(props: DriveBarProps) {
 
   const { unsetModal } = useSetModal()
   const { getText } = useText()
+  const driveStore = useDriveStore()
   const inputBindings = useInputBindings()
   const dispatchAssetEvent = useDispatchAssetEvent()
   const canCreateAssets = useCanCreateAssets()
   const createAssetButtonsRef = React.useRef<HTMLDivElement>(null)
-  const uploadFilesRef = React.useRef<HTMLInputElement>(null)
   const isCloud = isCloudCategory(category)
   const { isOffline } = useOffline()
   const canDownload = useCanDownload()
@@ -105,12 +103,6 @@ export default function DriveBar(props: DriveBarProps) {
     targetRef: createAssetButtonsRef,
     overlayPositionProps: { placement: 'top' },
   })
-  const [isCreatingProjectFromTemplate, setIsCreatingProjectFromTemplate] = React.useState(false)
-  const [isCreatingProject, setIsCreatingProject] = React.useState(false)
-  const [createdProjectId, setCreatedProjectId] = React.useState<{
-    projectId: ProjectId
-    parentId: DirectoryId
-  } | null>(null)
   const pasteData = usePasteData()
   const effectivePasteData =
     (
@@ -120,60 +112,64 @@ export default function DriveBar(props: DriveBarProps) {
       pasteData
     : null
 
+  const getTargetDirectory = useEventCallback(() => driveStore.getState().targetDirectory)
+  const rootDirectoryId = useRootDirectoryId(backend, category)
+
+  const newFolderRaw = useNewFolder(backend, category)
+  const newFolder = useEventCallback(async () => {
+    const parent = getTargetDirectory()
+    return await newFolderRaw(parent?.directoryId ?? rootDirectoryId, parent?.path)
+  })
+  const uploadFilesRaw = useUploadFiles(backend, category)
+  const uploadFiles = useEventCallback(async (files: readonly File[]) => {
+    const parent = getTargetDirectory()
+    await uploadFilesRaw(files, parent?.directoryId ?? rootDirectoryId, parent?.path)
+  })
+  const newSecretRaw = useNewSecret(backend, category)
+  const newSecret = useEventCallback(async (name: string, value: string) => {
+    const parent = getTargetDirectory()
+    return await newSecretRaw(name, value, parent?.directoryId ?? rootDirectoryId, parent?.path)
+  })
+  const newDatalinkRaw = useNewDatalink(backend, category)
+  const newDatalink = useEventCallback(async (name: string, value: unknown) => {
+    const parent = getTargetDirectory()
+    return await newDatalinkRaw(name, value, parent?.directoryId ?? rootDirectoryId, parent?.path)
+  })
+  const newProjectRaw = useNewProject(backend, category)
+  const newProjectMutation = useMutation({
+    mutationKey: ['newProject'],
+    mutationFn: async ([templateId, templateName]: [
+      templateId: string | null | undefined,
+      templateName: string | null | undefined,
+    ]) => {
+      const parent = getTargetDirectory()
+      return await newProjectRaw(
+        { templateName, templateId },
+        parent?.directoryId ?? rootDirectoryId,
+        parent?.path,
+      )
+    },
+  })
+  const newProject = newProjectMutation.mutateAsync
+  const isCreatingProject = newProjectMutation.isPending
+
   React.useEffect(() => {
     return inputBindings.attach(sanitizedEventTargets.document.body, 'keydown', {
       ...(isCloud ?
         {
           newFolder: () => {
-            doCreateDirectory()
+            void newFolder()
           },
         }
       : {}),
       newProject: () => {
-        setIsCreatingProject(true)
-        doCreateProject(
-          null,
-          null,
-          (project, parentId) => {
-            setCreatedProjectId({ projectId: project.projectId, parentId })
-          },
-          () => {
-            setIsCreatingProject(false)
-          },
-        )
+        void newProject([null, null])
       },
       uploadFiles: () => {
-        uploadFilesRef.current?.click()
+        void inputFiles().then((files) => uploadFiles(Array.from(files)))
       },
     })
-  }, [isCloud, doCreateDirectory, doCreateProject, inputBindings])
-
-  const createdProjectQuery = useQuery({
-    ...createGetProjectDetailsQuery({
-      // This is safe because we disable the query when `createdProjectId` is `null`.
-      // see `enabled` property below.
-      // eslint-disable-next-line no-restricted-syntax
-      assetId: createdProjectId?.projectId as ProjectId,
-      // eslint-disable-next-line no-restricted-syntax
-      parentId: createdProjectId?.parentId as DirectoryId,
-      backend,
-    }),
-    enabled: createdProjectId != null,
-  })
-
-  const isFetching =
-    (createdProjectQuery.isLoading ||
-      (createdProjectQuery.data &&
-        createdProjectQuery.data.state.type !== ProjectState.opened &&
-        createdProjectQuery.data.state.type !== ProjectState.closing)) ??
-    false
-
-  React.useEffect(() => {
-    if (!isFetching) {
-      setIsCreatingProject(false)
-      setIsCreatingProjectFromTemplate(false)
-    }
-  }, [isFetching])
+  }, [inputBindings, isCloud, newFolder, newProject, uploadFiles])
 
   const searchBar = (
     <AssetSearchBar backend={backend} isCloud={isCloud} query={query} setQuery={setQuery} />
@@ -246,9 +242,8 @@ export default function DriveBar(props: DriveBarProps) {
               <Button
                 size="medium"
                 variant="accent"
-                isDisabled={shouldBeDisabled || isCreatingProject || isCreatingProjectFromTemplate}
+                isDisabled={shouldBeDisabled || isCreatingProject}
                 icon={Plus2Icon}
-                loading={isCreatingProjectFromTemplate}
                 loaderPosition="icon"
               >
                 {getText('startWithATemplate')}
@@ -256,40 +251,18 @@ export default function DriveBar(props: DriveBarProps) {
 
               <StartModal
                 createProject={(templateId, templateName) => {
-                  setIsCreatingProjectFromTemplate(true)
-                  doCreateProject(
-                    templateId,
-                    templateName,
-                    ({ projectId }, parentId) => {
-                      setCreatedProjectId({ projectId, parentId })
-                    },
-                    () => {
-                      setIsCreatingProjectFromTemplate(false)
-                    },
-                  )
+                  void newProject([templateId, templateName])
                 }}
               />
             </DialogTrigger>
             <Button
               size="medium"
               variant="outline"
-              isDisabled={shouldBeDisabled || isCreatingProject || isCreatingProjectFromTemplate}
+              isDisabled={shouldBeDisabled || isCreatingProject}
               icon={Plus2Icon}
-              loading={isCreatingProject}
               loaderPosition="icon"
-              onPress={() => {
-                setIsCreatingProject(true)
-                doCreateProject(
-                  null,
-                  null,
-                  ({ projectId }, parentId) => {
-                    setCreatedProjectId({ projectId, parentId })
-                    setIsCreatingProject(false)
-                  },
-                  () => {
-                    setIsCreatingProject(false)
-                  },
-                )
+              onPress={async () => {
+                await newProject([null, null])
               }}
             >
               {getText('newEmptyProject')}
@@ -301,8 +274,8 @@ export default function DriveBar(props: DriveBarProps) {
                 icon={AddFolderIcon}
                 isDisabled={shouldBeDisabled}
                 aria-label={getText('newFolder')}
-                onPress={() => {
-                  doCreateDirectory()
+                onPress={async () => {
+                  await newFolder()
                 }}
               />
               {isCloud && (
@@ -314,7 +287,13 @@ export default function DriveBar(props: DriveBarProps) {
                     isDisabled={shouldBeDisabled}
                     aria-label={getText('newSecret')}
                   />
-                  <UpsertSecretModal id={null} name={null} doCreate={doCreateSecret} />
+                  <UpsertSecretModal
+                    id={null}
+                    name={null}
+                    doCreate={async (name, value) => {
+                      await newSecret(name, value)
+                    }}
+                  />
                 </DialogTrigger>
               )}
 
@@ -327,23 +306,13 @@ export default function DriveBar(props: DriveBarProps) {
                     isDisabled={shouldBeDisabled}
                     aria-label={getText('newDatalink')}
                   />
-                  <UpsertDatalinkModal doCreate={doCreateDatalink} />
+                  <UpsertDatalinkModal
+                    doCreate={async (name, value) => {
+                      await newDatalink(name, value)
+                    }}
+                  />
                 </DialogTrigger>
               )}
-              <AriaInput
-                ref={uploadFilesRef}
-                type="file"
-                multiple
-                className="hidden"
-                onInput={(event) => {
-                  if (event.currentTarget.files != null) {
-                    doUploadFiles(Array.from(event.currentTarget.files))
-                  }
-                  // Clear the list of selected files, otherwise `onInput` will not be
-                  // dispatched again if the same file is selected.
-                  event.currentTarget.value = ''
-                }}
-              />
               <Button
                 variant="icon"
                 size="medium"
@@ -352,7 +321,7 @@ export default function DriveBar(props: DriveBarProps) {
                 aria-label={getText('uploadFiles')}
                 onPress={async () => {
                   const files = await inputFiles()
-                  doUploadFiles(Array.from(files))
+                  await uploadFiles(Array.from(files))
                 }}
               />
               <Button

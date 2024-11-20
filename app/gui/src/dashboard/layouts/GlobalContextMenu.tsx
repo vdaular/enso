@@ -1,34 +1,38 @@
 /** @file A context menu available everywhere in the directory. */
 import { useStore } from 'zustand'
 
-import AssetListEventType from '#/events/AssetListEventType'
-
 import ContextMenu from '#/components/ContextMenu'
 import ContextMenuEntry from '#/components/ContextMenuEntry'
 
 import UpsertDatalinkModal from '#/modals/UpsertDatalinkModal'
 import UpsertSecretModal from '#/modals/UpsertSecretModal'
 
-import { useDispatchAssetListEvent } from '#/layouts/AssetsTable/EventListProvider'
+import {
+  useNewDatalink,
+  useNewFolder,
+  useNewProject,
+  useNewSecret,
+  useUploadFiles,
+} from '#/hooks/backendHooks'
+import { useEventCallback } from '#/hooks/eventCallbackHooks'
+import type { Category } from '#/layouts/CategorySwitcher/Category'
 import { useDriveStore } from '#/providers/DriveProvider'
 import { useSetModal } from '#/providers/ModalProvider'
 import { useText } from '#/providers/TextProvider'
-import type * as backendModule from '#/services/Backend'
 import type Backend from '#/services/Backend'
-import { BackendType } from '#/services/Backend'
+import { BackendType, type DirectoryId } from '#/services/Backend'
 import { inputFiles } from '#/utilities/input'
 
 /** Props for a {@link GlobalContextMenu}. */
 export interface GlobalContextMenuProps {
   readonly hidden?: boolean
   readonly backend: Backend
-  readonly rootDirectoryId: backendModule.DirectoryId
-  readonly directoryKey: backendModule.DirectoryId | null
-  readonly directoryId: backendModule.DirectoryId | null
-  readonly doPaste: (
-    newParentKey: backendModule.DirectoryId,
-    newParentId: backendModule.DirectoryId,
-  ) => void
+  readonly category: Category
+  readonly rootDirectoryId: DirectoryId
+  readonly directoryKey: DirectoryId | null
+  readonly directoryId: DirectoryId | null
+  readonly path: string | null
+  readonly doPaste: (newParentKey: DirectoryId, newParentId: DirectoryId) => void
 }
 
 /** A context menu available everywhere in the directory. */
@@ -40,15 +44,17 @@ export const GlobalContextMenu = function GlobalContextMenu(props: GlobalContext
   const {
     hidden = false,
     backend,
+    category,
     directoryKey = null,
     directoryId = null,
+    path,
     rootDirectoryId,
   } = props
   const { doPaste } = props
 
   const { getText } = useText()
   const { setModal, unsetModal } = useSetModal()
-  const dispatchAssetListEvent = useDispatchAssetListEvent()
+  const isCloud = backend.type === BackendType.remote
 
   const driveStore = useDriveStore()
   const hasPasteData = useStore(
@@ -56,7 +62,28 @@ export const GlobalContextMenu = function GlobalContextMenu(props: GlobalContext
     (storeState) => (storeState.pasteData?.data.ids.size ?? 0) > 0,
   )
 
-  const isCloud = backend.type === BackendType.remote
+  const newFolderRaw = useNewFolder(backend, category)
+  const newFolder = useEventCallback(async () => {
+    return await newFolderRaw(directoryId ?? rootDirectoryId, path)
+  })
+  const newSecretRaw = useNewSecret(backend, category)
+  const newSecret = useEventCallback(async (name: string, value: string) => {
+    return await newSecretRaw(name, value, directoryId ?? rootDirectoryId, path)
+  })
+  const newProjectRaw = useNewProject(backend, category)
+  const newProject = useEventCallback(
+    async (templateId: string | null | undefined, templateName: string | null | undefined) => {
+      return await newProjectRaw({ templateName, templateId }, directoryId ?? rootDirectoryId, path)
+    },
+  )
+  const newDatalinkRaw = useNewDatalink(backend, category)
+  const newDatalink = useEventCallback(async (name: string, value: unknown) => {
+    return await newDatalinkRaw(name, value, directoryId ?? rootDirectoryId, path)
+  })
+  const uploadFilesRaw = useUploadFiles(backend, category)
+  const uploadFiles = useEventCallback(async (files: readonly File[]) => {
+    await uploadFilesRaw(files, directoryId ?? rootDirectoryId, path)
+  })
 
   return (
     <ContextMenu aria-label={getText('globalContextMenuLabel')} hidden={hidden}>
@@ -65,12 +92,7 @@ export const GlobalContextMenu = function GlobalContextMenu(props: GlobalContext
         action="uploadFiles"
         doAction={async () => {
           const files = await inputFiles()
-          dispatchAssetListEvent({
-            type: AssetListEventType.uploadFiles,
-            parentKey: directoryKey ?? rootDirectoryId,
-            parentId: directoryId ?? rootDirectoryId,
-            files: Array.from(files),
-          })
+          await uploadFiles(Array.from(files))
         }}
       />
       <ContextMenuEntry
@@ -78,14 +100,7 @@ export const GlobalContextMenu = function GlobalContextMenu(props: GlobalContext
         action="newProject"
         doAction={() => {
           unsetModal()
-          dispatchAssetListEvent({
-            type: AssetListEventType.newProject,
-            parentKey: directoryKey ?? rootDirectoryId,
-            parentId: directoryId ?? rootDirectoryId,
-            templateId: null,
-            datalinkId: null,
-            preferredName: null,
-          })
+          void newProject(null, null)
         }}
       />
       <ContextMenuEntry
@@ -93,11 +108,7 @@ export const GlobalContextMenu = function GlobalContextMenu(props: GlobalContext
         action="newFolder"
         doAction={() => {
           unsetModal()
-          dispatchAssetListEvent({
-            type: AssetListEventType.newFolder,
-            parentKey: directoryKey ?? rootDirectoryId,
-            parentId: directoryId ?? rootDirectoryId,
-          })
+          void newFolder()
         }}
       />
       {isCloud && (
@@ -109,14 +120,8 @@ export const GlobalContextMenu = function GlobalContextMenu(props: GlobalContext
               <UpsertSecretModal
                 id={null}
                 name={null}
-                doCreate={(name, value) => {
-                  dispatchAssetListEvent({
-                    type: AssetListEventType.newSecret,
-                    parentKey: directoryKey ?? rootDirectoryId,
-                    parentId: directoryId ?? rootDirectoryId,
-                    name,
-                    value,
-                  })
+                doCreate={async (name, value) => {
+                  await newSecret(name, value)
                 }}
               />,
             )
@@ -130,14 +135,8 @@ export const GlobalContextMenu = function GlobalContextMenu(props: GlobalContext
           doAction={() => {
             setModal(
               <UpsertDatalinkModal
-                doCreate={(name, value) => {
-                  dispatchAssetListEvent({
-                    type: AssetListEventType.newDatalink,
-                    parentKey: directoryKey ?? rootDirectoryId,
-                    parentId: directoryId ?? rootDirectoryId,
-                    name,
-                    value,
-                  })
+                doCreate={async (name, value) => {
+                  await newDatalink(name, value)
                 }}
               />,
             )
