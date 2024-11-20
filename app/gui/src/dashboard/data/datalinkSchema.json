@@ -117,9 +117,9 @@
         "libraryName": { "const": "Standard.Base" },
         "path": {
           "title": "Path",
-          "description": "Must start with \"enso://<organization-name>/\".",
+          "description": "Must start with \"enso://Users/<username>/\" or \"enso://Teams/<team name>/\".",
           "type": "string",
-          "pattern": "^enso://.+/.*$",
+          "pattern": "^enso://(?:Users|Teams)/.*/.*$",
           "format": "enso-file"
         },
         "format": { "title": "Format", "$ref": "#/$defs/Format" }

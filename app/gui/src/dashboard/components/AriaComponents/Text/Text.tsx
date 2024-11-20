@@ -17,8 +17,11 @@ export interface TextProps
   readonly elementType?: keyof HTMLElementTagNameMap
   readonly lineClamp?: number
   readonly tooltip?: React.ReactElement | string | false | null
+  readonly tooltipTriggerRef?: React.RefObject<HTMLElement>
   readonly tooltipDisplay?: visualTooltip.VisualTooltipProps['display']
   readonly tooltipPlacement?: aria.Placement
+  readonly tooltipOffset?: number
+  readonly tooltipCrossOffset?: number
 }
 
 export const TEXT_STYLE = twv.tv({
@@ -134,8 +137,11 @@ export const Text = forwardRef(function Text(props: TextProps, ref: React.Ref<HT
     balance,
     elementType: ElementType = 'span',
     tooltip: tooltipElement = children,
+    tooltipTriggerRef,
     tooltipDisplay = 'whenOverflowing',
     tooltipPlacement,
+    tooltipOffset,
+    tooltipCrossOffset,
     textSelection,
     disableLineHeightCompensation = false,
     ...ariaProps
@@ -176,9 +182,18 @@ export const Text = forwardRef(function Text(props: TextProps, ref: React.Ref<HT
   const { tooltip, targetProps } = visualTooltip.useVisualTooltip({
     isDisabled: isTooltipDisabled(),
     targetRef: textElementRef,
+    triggerRef: tooltipTriggerRef,
     display: tooltipDisplay,
     children: tooltipElement,
-    ...(tooltipPlacement ? { overlayPositionProps: { placement: tooltipPlacement } } : {}),
+    ...(tooltipPlacement || tooltipOffset != null ?
+      {
+        overlayPositionProps: {
+          ...(tooltipPlacement && { placement: tooltipPlacement }),
+          ...(tooltipOffset != null && { offset: tooltipOffset }),
+          ...(tooltipCrossOffset != null && { crossOffset: tooltipCrossOffset }),
+        },
+      }
+    : {}),
   })
 
   return (

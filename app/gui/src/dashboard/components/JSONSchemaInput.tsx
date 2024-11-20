@@ -51,8 +51,13 @@ export default function JSONSchemaInput(props: JSONSchemaInputProps) {
     schema.format === 'enso-secret'
   const { data: secrets } = useBackendQuery(remoteBackend, 'listSecrets', [], { enabled: isSecret })
   const autocompleteItems = isSecret ? secrets?.map((secret) => secret.path) ?? null : null
-  const validityClassName =
-    isAbsent || getValidator(path)(value) ? 'border-primary/20' : 'border-red-700/60'
+  const isInvalid = !isAbsent && !getValidator(path)(value)
+  const validationErrorClassName =
+    isInvalid && 'border border-danger focus:border-danger focus:outline-danger'
+  const errors =
+    isInvalid && 'description' in schema && typeof schema.description === 'string' ?
+      [<Text className="px-2 text-danger">{schema.description}</Text>]
+    : []
 
   // NOTE: `enum` schemas omitted for now as they are not yet used.
   if ('const' in schema) {
@@ -66,100 +71,120 @@ export default function JSONSchemaInput(props: JSONSchemaInputProps) {
           if ('format' in schema && schema.format === 'enso-secret') {
             const isValid = typeof value === 'string' && value !== ''
             children.push(
-              <div className={twMerge('w-full rounded-default border-0.5', validityClassName)}>
-                <Autocomplete
-                  items={autocompleteItems ?? []}
-                  itemToKey={(item) => item}
-                  placeholder={getText('enterSecretPath')}
-                  matches={(item, text) => item.toLowerCase().includes(text.toLowerCase())}
-                  values={isValid ? [value] : []}
-                  setValues={(values) => {
-                    onChange(values[0] ?? '')
-                  }}
-                  text={autocompleteText}
-                  setText={setAutocompleteText}
+              <div className="flex flex-col">
+                <div
+                  className={twMerge(
+                    'w-full rounded-default border-0.5 border-primary/20 outline-offset-2 transition-[border-color,outline] duration-200 focus:border-primary/50 focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-primary',
+                    validationErrorClassName,
+                  )}
                 >
-                  {(item) => item}
-                </Autocomplete>
+                  <Autocomplete
+                    items={autocompleteItems ?? []}
+                    itemToKey={(item) => item}
+                    placeholder={getText('enterSecretPath')}
+                    matches={(item, text) => item.toLowerCase().includes(text.toLowerCase())}
+                    values={isValid ? [value] : []}
+                    setValues={(values) => {
+                      onChange(values[0] ?? '')
+                    }}
+                    text={autocompleteText}
+                    setText={setAutocompleteText}
+                  >
+                    {(item) => item}
+                  </Autocomplete>
+                </div>
+                {...errors}
               </div>,
             )
           } else {
             children.push(
-              <FocusRing>
-                <Input
-                  type="text"
-                  readOnly={readOnly}
-                  value={typeof value === 'string' ? value : ''}
-                  size={1}
-                  className={twMerge(
-                    'focus-child h-6 w-full grow rounded-input border-0.5 bg-transparent px-2 read-only:read-only',
-                    validityClassName,
-                  )}
-                  placeholder={getText('enterText')}
-                  onChange={(event) => {
-                    const newValue: string = event.currentTarget.value
-                    onChange(newValue)
-                  }}
-                />
-              </FocusRing>,
+              <div className="flex flex-col">
+                <FocusRing>
+                  <Input
+                    type="text"
+                    readOnly={readOnly}
+                    value={typeof value === 'string' ? value : ''}
+                    size={1}
+                    className={twMerge(
+                      'focus-child h-6 w-full grow rounded-input border-0.5 border-primary/20 bg-transparent px-2 outline-offset-2 transition-[border-color,outline] duration-200 read-only:read-only focus:border-primary/50 focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-primary',
+                      validationErrorClassName,
+                    )}
+                    placeholder={getText('enterText')}
+                    onChange={(event) => {
+                      const newValue: string = event.currentTarget.value
+                      onChange(newValue)
+                    }}
+                  />
+                </FocusRing>
+                {...errors}
+              </div>,
             )
           }
           break
         }
         case 'number': {
           children.push(
-            <FocusRing>
-              <Input
-                type="number"
-                readOnly={readOnly}
-                value={typeof value === 'number' ? value : ''}
-                size={1}
-                className={twMerge(
-                  'focus-child h-6 w-full grow rounded-input border-0.5 bg-transparent px-2 read-only:read-only',
-                  validityClassName,
-                )}
-                placeholder={getText('enterNumber')}
-                onChange={(event) => {
-                  const newValue: number = event.currentTarget.valueAsNumber
-                  if (Number.isFinite(newValue)) {
-                    onChange(newValue)
-                  }
-                }}
-              />
-            </FocusRing>,
+            <div className="flex flex-col">
+              <FocusRing>
+                <Input
+                  type="number"
+                  readOnly={readOnly}
+                  value={typeof value === 'number' ? value : ''}
+                  size={1}
+                  className={twMerge(
+                    'focus-child h-6 w-full grow rounded-input border-0.5 border-primary/20 bg-transparent px-2 outline-offset-2 transition-[border-color,outline] duration-200 read-only:read-only focus:border-primary/50 focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-primary',
+                    validationErrorClassName,
+                  )}
+                  placeholder={getText('enterNumber')}
+                  onChange={(event) => {
+                    const newValue: number = event.currentTarget.valueAsNumber
+                    if (Number.isFinite(newValue)) {
+                      onChange(newValue)
+                    }
+                  }}
+                />
+              </FocusRing>
+              {...errors}
+            </div>,
           )
           break
         }
         case 'integer': {
           children.push(
-            <FocusRing>
-              <Input
-                type="number"
-                readOnly={readOnly}
-                value={typeof value === 'number' ? value : ''}
-                size={1}
-                className={twMerge(
-                  'focus-child h-6 w-full grow rounded-input border-0.5 bg-transparent px-2 read-only:read-only',
-                  validityClassName,
-                )}
-                placeholder={getText('enterInteger')}
-                onChange={(event) => {
-                  const newValue: number = Math.floor(event.currentTarget.valueAsNumber)
-                  onChange(newValue)
-                }}
-              />
-            </FocusRing>,
+            <div className="flex flex-col">
+              <FocusRing>
+                <Input
+                  type="number"
+                  readOnly={readOnly}
+                  value={typeof value === 'number' ? value : ''}
+                  size={1}
+                  className={twMerge(
+                    'focus-child h-6 w-full grow rounded-input border-0.5 border-primary/20 bg-transparent px-2 outline-offset-2 transition-[border-color,outline] duration-200 read-only:read-only focus:border-primary/50 focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-primary',
+                    validationErrorClassName,
+                  )}
+                  placeholder={getText('enterInteger')}
+                  onChange={(event) => {
+                    const newValue: number = Math.floor(event.currentTarget.valueAsNumber)
+                    onChange(newValue)
+                  }}
+                />
+              </FocusRing>
+              {...errors}
+            </div>,
           )
           break
         }
         case 'boolean': {
           children.push(
-            <Checkbox
-              name="input"
-              isReadOnly={readOnly}
-              isSelected={typeof value === 'boolean' && value}
-              onChange={onChange}
-            />,
+            <div className="flex flex-col">
+              <Checkbox
+                name="input"
+                isReadOnly={readOnly}
+                isSelected={typeof value === 'boolean' && value}
+                onChange={onChange}
+              />
+              {...errors}
+            </div>,
           )
           break
         }
@@ -186,7 +211,7 @@ export default function JSONSchemaInput(props: JSONSchemaInputProps) {
               >
                 {propertyDefinitions.map((definition) => {
                   const { key, schema: childSchema } = definition
-                  const isOptional = !requiredProperties.includes(key)
+                  const isOptional = !requiredProperties.includes(key) || isAbsent
                   const isPresent = !isAbsent && value != null && key in value
                   return constantValueOfSchema(defs, childSchema).length === 1 ?
                       null
@@ -250,7 +275,7 @@ export default function JSONSchemaInput(props: JSONSchemaInputProps) {
                                 newValue = unsafeValue!
                               }
                               const fullObject =
-                                value ?? constantValueOfSchema(defs, childSchema, true)[0]
+                                value ?? constantValueOfSchema(defs, schema, true)[0]
                               onChange(
                                 (
                                   typeof fullObject === 'object' &&
@@ -346,6 +371,7 @@ export default function JSONSchemaInput(props: JSONSchemaInputProps) {
               path={selectedChildPath}
               getValidator={getValidator}
               noBorder={noChildBorder}
+              isAbsent={isAbsent}
               value={value}
               onChange={onChange}
             />
@@ -364,6 +390,7 @@ export default function JSONSchemaInput(props: JSONSchemaInputProps) {
           path={`${path}/allOf/${i}`}
           getValidator={getValidator}
           noBorder={noChildBorder}
+          isAbsent={isAbsent}
           value={value}
           onChange={onChange}
         />

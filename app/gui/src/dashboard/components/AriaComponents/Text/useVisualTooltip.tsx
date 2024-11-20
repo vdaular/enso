@@ -18,10 +18,11 @@ export interface VisualTooltipProps
   readonly children: React.ReactNode
   readonly className?: string
   readonly targetRef: React.RefObject<HTMLElement>
+  readonly triggerRef?: React.RefObject<HTMLElement> | undefined
   readonly isDisabled?: boolean
   readonly overlayPositionProps?: Pick<
     aria.AriaPositionProps,
-    'containerPadding' | 'offset' | 'placement'
+    'containerPadding' | 'crossOffset' | 'offset' | 'placement'
   >
   /**
    * Determines when the tooltip should be displayed.
@@ -56,6 +57,7 @@ export function useVisualTooltip(props: VisualTooltipProps): VisualTooltipReturn
   const {
     children,
     targetRef,
+    triggerRef = targetRef,
     className,
     isDisabled = false,
     overlayPositionProps = {},
@@ -70,6 +72,7 @@ export function useVisualTooltip(props: VisualTooltipProps): VisualTooltipReturn
   const {
     containerPadding = 0,
     offset = DEFAULT_OFFSET,
+    crossOffset = 0,
     placement = 'bottom',
   } = overlayPositionProps
 
@@ -115,8 +118,9 @@ export function useVisualTooltip(props: VisualTooltipProps): VisualTooltipReturn
   const { overlayProps, updatePosition } = aria.useOverlayPosition({
     isOpen: state.isOpen,
     overlayRef: popoverRef,
-    targetRef,
+    targetRef: triggerRef,
     offset,
+    crossOffset,
     placement,
     containerPadding,
   })
