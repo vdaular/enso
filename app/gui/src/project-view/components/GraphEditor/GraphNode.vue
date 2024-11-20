@@ -462,7 +462,6 @@ function recomputeOnce() {
         :nodePosition="nodePosition"
         :nodeSize="graphSelectionSize"
         :class="{ draggable: true, dragged: isDragged }"
-        :selected
         :color
         :externalHovered="nodeHovered"
         @visible="selectionVisible = $event"
@@ -605,8 +604,19 @@ function recomputeOnce() {
   height: var(--node-size-y);
   rx: var(--node-border-radius);
 
-  fill: var(--node-color-primary);
+  fill: var(--color-node-background);
   transition: fill 0.2s ease;
+}
+
+.GraphNode {
+  --color-node-text: white;
+  --color-node-primary: var(--node-group-color);
+  --color-node-background: var(--node-group-color);
+}
+
+.GraphNode.selected {
+  --color-node-background: color-mix(in oklab, var(--color-node-primary) 30%, white 70%);
+  --color-node-text: color-mix(in oklab, var(--color-node-primary) 70%, black 30%);
 }
 
 .GraphNode {
@@ -617,17 +627,13 @@ function recomputeOnce() {
   /** Space between node and component above and below, such as comments and errors. */
   --node-vertical-gap: 4px;
 
-  --node-color-primary: color-mix(
-    in oklab,
-    var(--node-group-color) 100%,
-    var(--node-group-color) 0%
-  );
-  --node-color-port: color-mix(in oklab, var(--node-color-primary) 85%, white 15%);
+  --color-node-primary: var(--node-group-color);
+  --node-color-port: color-mix(in oklab, var(--color-node-primary) 85%, white 15%);
   --node-color-error: color-mix(in oklab, var(--node-group-color) 30%, rgb(255, 0, 0) 70%);
 
   &.executionState-Unknown,
   &.executionState-Pending {
-    --node-color-primary: color-mix(in oklab, var(--node-group-color) 60%, #aaa 40%);
+    --color-node-primary: color-mix(in oklab, var(--node-group-color) 60%, #aaa 40%);
   }
 }
 

@@ -202,7 +202,7 @@ graph.suggestEdgeFromOutput(outputHovered)
   z-index: 10;
   text-anchor: middle;
   opacity: calc(var(--hover-animation) * var(--hover-animation));
-  fill: var(--node-color-primary);
+  fill: var(--color-node-primary);
   transform: translate(50%, calc(var(--node-size-y) + var(--output-port-max-width) + 16px));
 }
 </style>

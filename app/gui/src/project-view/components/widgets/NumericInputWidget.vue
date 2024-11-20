@@ -164,15 +164,18 @@ defineExpose({
   }
 }
 
-.NumericInputWidget.slider {
+.selected .NumericInputWidget {
+  background: var(--color-widget-unfocus);
   &:focus {
-    /* Color will be blended with background defined below. */
-    background-color: var(--color-widget);
+    background: var(--color-widget-focus);
   }
+}
+
+.NumericInputWidget.slider {
   background: linear-gradient(
     to right,
-    var(--color-widget-focus) 0 calc(var(--slider-width) - 1px),
-    var(--color-widget-slight) calc(var(--slider-width) - 1px) var(--slider-width),
+    color-mix(in oklab, var(--color-widget-focus) 30%, var(--color-widget) 70%) 0
+      var(--slider-width),
     var(--color-widget) var(--slider-width) 100%
   );
 }

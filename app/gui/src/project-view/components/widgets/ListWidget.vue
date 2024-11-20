@@ -132,7 +132,7 @@ const displayedChildren = computed(() => {
 
 const rootNode = ref<HTMLElement>()
 
-const cssPropsToCopy = ['--node-color-primary', '--node-color-port', '--node-border-radius']
+const cssPropsToCopy = ['--color-node-primary', '--node-color-port', '--node-border-radius']
 
 function onDragStart(event: DragEvent, index: number) {
   if (
@@ -490,13 +490,13 @@ div {
 }
 
 .item .preview {
-  background: var(--node-color-primary);
+  background: var(--color-node-primary);
   padding: 4px;
   border-radius: var(--node-border-radius);
 }
 
 .token {
-  color: rgb(255 255 255 / 0.33);
+  opacity: 0.33;
   user-select: none;
 }
 
@@ -525,21 +525,6 @@ div {
   transition: box-shadow 0.2s ease;
   pointer-events: none;
   cursor: grab;
-
-  &:before {
-    content: '';
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    position: absolute;
-    display: block;
-    left: -8px;
-    right: -16px;
-    top: -3px;
-    bottom: -3px;
-    border-radius: var(--node-border-radius) 0 0 var(--node-border-radius);
-    background-color: var(--node-color-primary);
-    z-index: -1;
-  }
 }
 
 .item:hover {
@@ -548,16 +533,16 @@ div {
 
 .item:hover .handle {
   box-shadow:
-    2px 0 0 rgb(255 255 255 / 0.5),
-    -2px 0 0 rgb(255 255 255 / 0.5);
+    2px 0 0 var(--color-widget-unfocus),
+    -2px 0 0 var(--color-widget-unfocus);
 
   &:hover {
     box-shadow:
-      2px 0 0 rgb(255 255 255 / 0.8),
-      -2px 0 0 rgb(255 255 255 / 0.8);
+      2px 0 0 var(--color-widget-focus),
+      -2px 0 0 var(--color-widget-focus);
   }
 
-  background: var(--node-color-primary);
+  background: var(--color-node-background);
   pointer-events: all;
 
   &:before {
@@ -605,7 +590,7 @@ div {
   left: -5000px;
 }
 :global(.ListWidget-drag-ghost > div) {
-  background-color: var(--node-color-primary);
+  background-color: var(--color-node-primary);
   border-radius: var(--node-border-radius);
   padding: 4px;
   color: white;

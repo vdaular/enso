@@ -137,4 +137,12 @@ export const widgetDefinition = defineWidget(
     background: var(--color-widget-selection);
   }
 }
+
+.selected .WidgetText {
+  background: var(--color-widget-unfocus);
+  &:has(> :focus) {
+    outline: none;
+    background: var(--color-widget-focus);
+  }
+}
 </style>

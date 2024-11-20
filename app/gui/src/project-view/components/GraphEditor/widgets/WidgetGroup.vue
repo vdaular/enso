@@ -47,7 +47,7 @@ export const widgetDefinition = defineWidget(
 }
 
 .token {
-  color: rgb(255 255 255 / 0.33);
+  opacity: 0.33;
   user-select: none;
 }
 </style>

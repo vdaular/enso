@@ -42,7 +42,7 @@ defineExpose({
 
 const rootStyle = computed(() => {
   return {
-    '--node-color-primary': props.nodeColor,
+    '--color-node-primary': props.nodeColor,
     '--port-edge-width': `${4 * props.navigator.scale}px`,
   }
 })
@@ -72,7 +72,7 @@ const rootStyle = computed(() => {
 
 <style scoped>
 .ComponentEditor {
-  --node-color-port: color-mix(in oklab, var(--node-color-primary) 85%, white 15%);
+  --node-color-port: color-mix(in oklab, var(--color-node-primary) 85%, white 15%);
   --port-padding: 6px;
   --icon-height: 16px;
   --icon-text-gap: 6px;

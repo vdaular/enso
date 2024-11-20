@@ -10,7 +10,7 @@ enum SortDirection {
   descending = 'descending',
 }
 
-const props = defineProps<{ color: string; entries: Entry[] }>()
+const props = defineProps<{ color: string; backgroundColor: string; entries: Entry[] }>()
 const emit = defineEmits<{ clickEntry: [entry: Entry, keepOpen: boolean] }>()
 
 const sortDirection = ref<SortDirection>(SortDirection.none)
@@ -56,7 +56,8 @@ const enableSortButton = ref(false)
 
 const styleVars = computed(() => {
   return {
-    '--dropdown-bg': props.color,
+    '--dropdown-fg': props.color,
+    '--dropdown-bg': props.backgroundColor,
     // Slightly shift the top border of drawn dropdown away from node's top border by a fraction of
     // a pixel, to prevent it from poking through and disturbing node's siluette.
     '--extend-margin': `${0.2 / (graphNavigator?.scale ?? 1)}px`,
@@ -112,6 +113,7 @@ export interface DropdownEntry {
   padding-top: var(--dropdown-extend);
   background-color: var(--dropdown-bg);
   border-radius: calc(var(--item-height) / 2 + var(--dropdown-padding));
+  color: var(--dropdown-fg);
 
   &:before {
     content: '';
@@ -130,7 +132,6 @@ export interface DropdownEntry {
   min-height: 16px;
   max-height: calc(var(--visible-items) * var(--item-height) + 2 * var(--dropdown-padding));
   list-style-type: none;
-  color: var(--color-text-light);
   scrollbar-width: thin;
   padding: var(--dropdown-padding);
   position: relative;
@@ -146,16 +147,12 @@ export interface DropdownEntry {
   overflow: hidden;
 
   &:hover {
-    background-color: color-mix(in oklab, var(--color-port-connected) 50%, transparent 50%);
+    background-color: color-mix(in oklab, var(--dropdown-bg) 50%, white 50%);
     span {
       --text-scroll-max: calc(var(--dropdown-max-width) - 28px);
       will-change: transform;
       animation: 6s 1s infinite text-scroll;
     }
-  }
-
-  &:not(.selected):hover {
-    color: white;
   }
 
   &.selected {

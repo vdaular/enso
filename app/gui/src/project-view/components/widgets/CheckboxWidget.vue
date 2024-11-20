@@ -19,6 +19,10 @@ const emit = defineEmits<{ 'update:modelValue': [modelValue: boolean] }>()
   background: var(--color-widget);
 }
 
+.selected .Checkbox {
+  background: color-mix(in oklab, var(--color-widget-selected) 30%, var(--color-node-primary) 70%);
+}
+
 .Checkbox > div {
   width: var(--widget-checkbox-inner-size);
   height: var(--widget-checkbox-inner-size);

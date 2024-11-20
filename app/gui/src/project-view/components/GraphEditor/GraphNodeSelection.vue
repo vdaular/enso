@@ -5,7 +5,6 @@ import { computed, ref, watchEffect } from 'vue'
 const props = defineProps<{
   nodePosition: Vec2
   nodeSize: Vec2
-  selected: boolean
   externalHovered: boolean
   color: string
 }>()
@@ -15,7 +14,7 @@ const emit = defineEmits<{
 }>()
 
 const hovered = ref(false)
-const visible = computed(() => props.selected || props.externalHovered || hovered.value)
+const visible = computed(() => props.externalHovered || hovered.value)
 
 watchEffect(() => emit('visible', visible.value))
 
@@ -33,7 +32,7 @@ const rootStyle = computed(() => {
 <template>
   <div
     class="GraphNodeSelection"
-    :class="{ visible, selected: props.selected }"
+    :class="{ visible }"
     :style="rootStyle"
     @pointerenter="hovered = true"
     @pointerleave="hovered = false"
@@ -52,7 +51,7 @@ const rootStyle = computed(() => {
   &:before {
     position: absolute;
     content: '';
-    opacity: 0.2;
+    opacity: 0.3;
     display: block;
     inset: var(--selected-node-border-width);
     box-shadow: 0 0 0 calc(0px - var(--node-border-radius)) var(--selection-color);
@@ -66,9 +65,5 @@ const rootStyle = computed(() => {
 
 .GraphNodeSelection.visible::before {
   box-shadow: 0 0 0 var(--selected-node-border-width) var(--selection-color);
-}
-
-.GraphNodeSelection:not(.selected):hover::before {
-  opacity: 0.3;
 }
 </style>

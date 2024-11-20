@@ -471,7 +471,8 @@ declare module '@/providers/widgetRegistry' {
         <SizeTransition height :duration="100">
           <DropdownWidget
             v-if="dropDownInteraction.isActive() && activity == null"
-            color="var(--node-color-primary)"
+            color="var(--color-node-text)"
+            backgroundColor="var(--color-node-background)"
             :entries="entries"
             @clickEntry="onClick"
           />
@@ -517,7 +518,7 @@ svg.arrow {
 }
 
 .activityElement {
-  --background-color: var(--node-color-primary);
+  --background-color: var(--color-node-primary);
   /* Above the circular menu. */
   z-index: 26;
 }

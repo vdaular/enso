@@ -70,6 +70,6 @@ export const ArgumentNameShownKey: unique symbol = Symbol.for('WidgetInput:Argum
 
 .placeholder,
 .name {
-  color: rgb(255 255 255 / 0.5);
+  opacity: 0.6;
 }
 </style>

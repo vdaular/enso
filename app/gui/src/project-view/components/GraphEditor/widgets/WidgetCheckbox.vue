@@ -113,7 +113,7 @@ export const widgetDefinition = defineWidget(
 }
 
 .name {
-  color: rgb(255 255 255 / 0.5);
+  opacity: 0.5;
   margin-right: var(--widget-token-pad-unit);
 }
 </style>
