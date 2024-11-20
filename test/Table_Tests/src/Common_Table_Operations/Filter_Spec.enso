@@ -38,7 +38,6 @@ add_specs suite_builder setup =
    as that seems to be the case.
 add_filter_specs suite_builder setup =
     prefix = setup.prefix
-    test_selection = setup.test_selection
     table_builder = setup.light_table_builder
 
     suite_builder.group prefix+"Table.filter" group_builder->

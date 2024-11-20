@@ -174,10 +174,10 @@ type SQLServer_Dialect
         mapping = self.get_type_mapping
         source_type = mapping.sql_type_to_value_type column.sql_type_reference.get
         target_value_type = mapping.sql_type_to_value_type target_type
-        # Boolean to Numeric casts need special handling:
-        transformed_expression = case source_type.is_boolean && target_value_type.is_numeric of
+        # Boolean to String casts need special handling:
+        transformed_expression = case source_type.is_boolean && target_value_type.is_text of
             True ->
-                SQL_Expression.Operation "IIF" [Internals_Access.column_expression column, SQL_Expression.Literal "1", SQL_Expression.Literal "0"]
+                SQL_Expression.Operation "IIF" [Internals_Access.column_expression column, SQL_Expression.Literal "'True'", SQL_Expression.Literal "'False'"]
             False -> Internals_Access.column_expression column
         target_type_sql_text = mapping.sql_type_to_text target_type
         new_expression = SQL_Expression.Operation "CAST" [transformed_expression, SQL_Expression.Literal target_type_sql_text]
@@ -242,6 +242,7 @@ type SQLServer_Dialect
             Feature.Sort -> True
             Feature.Filter -> True
             Feature.Join -> True
+            Feature.Union -> True
             _ -> False
 
     ## PRIVATE
@@ -374,15 +375,14 @@ private _generate_expression dialect base_gen expr expression_kind:Expression_Ki
             "FALSE" -> "0"
             _ -> value
         wrapped = _align_type (SQL_Builder.code modified_value) Expression_Kind.Value expression_kind
-        pair wrapped [wrapped]
+        pair wrapped []
     SQL_Expression.Text_Literal _ ->
         wrapped_literal = base_gen.generate_expression dialect expr
         pair wrapped_literal []
     SQL_Expression.Operation op_kind arguments metadata ->
         op = dialect.dialect_operations.operations_dict.get op_kind (Error.throw <| Unsupported_Database_Operation.Error op_kind)
-        expected_kind = _op_expected_kind op_kind
         materialize_child_null_check = _op_needs_to_materialize_null_checks op_kind
-        parsed_args_and_null_checks = arguments.map (c -> _generate_expression dialect base_gen c expected_kind materialize_child_null_check)
+        parsed_args_and_null_checks = arguments.map_with_index (i->c-> _generate_expression dialect base_gen c (_op_expected_kind op_kind i) materialize_child_null_check)
         parsed_args = parsed_args_and_null_checks.map .first
         null_checks = parsed_args_and_null_checks.map .second  . flatten
 
@@ -424,8 +424,11 @@ private _generate_null_check_sql_builder null_checks:Vector expr -> SQL_Builder 
 private _generate_is_null_expr null_checks:Vector -> SQL_Builder =
     (null_checks.map it->(it.paren ++ " IS NULL ")) . reduce acc-> i-> acc ++ "OR " ++ i
 
-private _op_expected_kind op -> Expression_Kind =
-    if ["NOT"].contains op then Expression_Kind.Boolean_Condition else Expression_Kind.Value
+private _op_expected_kind op arg_pos -> Expression_Kind =
+    case op of
+        "NOT" -> Expression_Kind.Boolean_Condition
+        "IIF" -> [Expression_Kind.Boolean_Condition, Expression_Kind.Value, Expression_Kind.Value] . at arg_pos
+        _ -> Expression_Kind.Value
 
 private _op_return_kind op -> Expression_Kind = 
     return_bool_ops = ["NOT", "BETWEEN", ">=", ">", "<=", "<", "!=", "==", "IN", "IS_NULL", "LIKE", "STARTS_WITH", "ENDS_WITH", "CONTAINS", "EQUALS_IGNORE_CASE", "IS_EMPTY"]
@@ -446,11 +449,21 @@ make_dialect_operations =
     stddev_samp = ["STDDEV_SAMP", Base_Generator.make_function "stddev_samp"]
     stats = [agg_median, agg_mode, agg_percentile, stddev_pop, stddev_samp]
     date_ops = [["year", Base_Generator.make_function "year"], make_datepart "quarter", ["month", Base_Generator.make_function "month"], make_datepart "week" "iso_week", ["day", Base_Generator.make_function "day"], make_datepart "hour", make_datepart "minute", make_datepart "day_of_year" "dayofyear", make_day_of_week, make_datepart "second", make_datepart "millisecond", make_extract_microsecond, ["date_add", make_date_add], ["date_diff", make_date_diff], ["date_trunc_to_day", make_date_trunc_to_day]]
-    special_overrides = [is_empty]
+    special_overrides = [is_empty, ["IIF", _make_iif]]
     other = [["RUNTIME_ERROR", make_runtime_error_op]]
     my_mappings = text + counts + stats + first_last_aggregators + arith_extensions + bool + date_ops + special_overrides + other
     base = Base_Generator.base_dialect_operations . extend_with my_mappings
     Base_Generator.Dialect_Operations.Value (base.operations_dict.remove "IS_IN")
+
+private _make_iif arguments:Vector -> SQL_Builder =
+    case arguments.length of
+        3 ->
+            expr = arguments.at 0
+            when_true = arguments.at 1
+            when_false = arguments.at 2
+            SQL_Builder.code "IIF(" ++ expr ++ ", " ++ when_true ++ ", " ++ when_false ++ ")"
+        _ ->
+            Error.throw <| Illegal_State.Error ("Invalid amount of arguments for operation IIF")
 
 ## PRIVATE
 agg_count_is_null = Base_Generator.lift_unary_op "COUNT_IS_NULL" arg->
