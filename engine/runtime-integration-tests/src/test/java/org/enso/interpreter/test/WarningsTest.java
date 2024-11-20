@@ -150,6 +150,33 @@ public class WarningsTest {
     }
   }
 
+  @Test
+  public void toDisplayText() throws Exception {
+    var code =
+        """
+    from Standard.Base import Integer, Warning, Error, Text
+
+    type My_Warning
+        private Value msg
+
+        to_display_text self -> Text = Error.throw "Don't call me!"
+        to_text self -> Text = "My_Warning to_text: "+self.msg
+
+    fn =
+        Warning.attach (My_Warning.Value "ONE") 1
+    """;
+
+    var module = ctx.eval(LanguageInfo.ID, code);
+    var ownWarning = module.invokeMember(MethodNames.Module.EVAL_EXPRESSION, "fn");
+
+    assertTrue("Warning is seen as exception", ownWarning.isException());
+    try {
+      throw ownWarning.throwException();
+    } catch (PolyglotException ex) {
+      assertEquals("My_Warning to_text: ONE", ex.getMessage());
+    }
+  }
+
   private void assertWarningsForAType(Value v) {
     var type = v.getMetaObject();
 

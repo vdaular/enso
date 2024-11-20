@@ -141,4 +141,37 @@ public class DebugServerInspectTest {
         err.toString(),
         AllOf.allOf(containsString("d = Error:2"), not(containsString("j = 1"))));
   }
+
+  @Test
+  public void toTextIsCalledForListings() throws Exception {
+    var code =
+        """
+        from Standard.Base import all
+
+        type My_Warning
+            Value msg
+            to_text self -> Text = "Beware of "+self.msg
+
+        inspect =
+            one = Warning.attach (My_Warning.Value "ONE") 1
+            half = Warning.attach (My_Warning.Value "HALF") 2
+            two = Warning.attach (My_Warning.Value "TWO") half
+            [one, half, two]
+        """;
+    var r = ContextUtils.evalModule(ctx, code, "ScriptTest.enso", "inspect");
+    assertTrue("Got array back: " + r, r.hasArrayElements());
+    assertEquals("Got three elements", 3, r.getArraySize());
+    assertEquals("One", 1, r.getArrayElement(0).asInt());
+    assertEquals("Half", 2, r.getArrayElement(1).asInt());
+    assertEquals("Two", 2, r.getArrayElement(2).asInt());
+    assertEquals("No output printed", "", out.toString());
+    assertThat(
+        "Stderr contains some warnings",
+        err.toString(),
+        AllOf.allOf(
+            containsString("half = 2\n ! Beware of HALF"),
+            containsString("one = 1\n ! Beware of ONE"),
+            containsString("two = 2\n ! Beware of TWO\n ! Beware of HALF"),
+            containsString("two = 2")));
+  }
 }

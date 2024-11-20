@@ -184,25 +184,34 @@ public final class WithWarnings extends EnsoObject {
             WarningsLibrary.getUncached(),
             ArrayLikeAtNodeGen.getUncached(),
             ArrayLikeLengthNodeGen.getUncached());
+    var text = warningsToText(warnsMap, where, null);
+    return new PanicException(text, where);
+  }
+
+  @CompilerDirectives.TruffleBoundary
+  public static Text warningsToText(EnsoHashMap warnsMap, Node where, Text prefix)
+      throws PanicException {
     var warns = Warning.fromMapToArray(warnsMap);
     var ctx = EnsoContext.get(where);
     var scopeOfAny = ctx.getBuiltins().any().getDefinitionScope();
     var toText = UnresolvedSymbol.build("to_text", scopeOfAny);
     var node = InteropMethodCallNode.getUncached();
     var state = State.create(ctx);
-
     var text = Text.empty();
     for (var w : warns) {
       try {
-        var wText = node.execute(toText, state, new Object[] {w});
+        var wText = node.execute(toText, state, new Object[] {w.getValue()});
         if (wText instanceof Text t) {
+          if (prefix != null) {
+            text = text.add(prefix);
+          }
           text = text.add(t);
         }
       } catch (ArityException e) {
         throw ctx.raiseAssertionPanic(where, null, e);
       }
     }
-    return new PanicException(text, where);
+    return text;
   }
 
   @ExportMessage
