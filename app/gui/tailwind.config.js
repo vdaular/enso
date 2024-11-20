@@ -158,10 +158,6 @@ export default /** @satisfies {import('tailwindcss').Config} */ ({
 
         'members-name-column': 'var(--members-name-column-width)',
         'members-email-column': 'var(--members-email-column-width)',
-        'keyboard-shortcuts-icon-column': 'var(--keyboard-shortcuts-icon-column-width)',
-        'keyboard-shortcuts-name-column': 'var(--keyboard-shortcuts-name-column-width)',
-        'keyboard-shortcuts-description-column':
-          'var(--keyboard-shortcuts-description-column-width)',
         'drive-name-column': 'var(--drive-name-column-width)',
         'drive-modified-column': 'var(--drive-modified-column-width)',
         'drive-shared-with-column': 'var(--drive-shared-with-column-width)',
@@ -226,8 +222,6 @@ export default /** @satisfies {import('tailwindcss').Config} */ ({
         'settings-entry': 'var(--settings-entry-gap)',
         'settings-sidebar': 'var(--settings-sidebar-gap)',
         'new-empty-project': 'var(--new-empty-project-gap)',
-        modifiers: 'var(--modifiers-gap)',
-        'modifiers-macos': 'var(--modifiers-macos-gap)',
         'side-panel': 'var(--side-panel-gap)',
         'side-panel-section': 'var(--side-panel-section-gap)',
         'asset-search-bar': 'var(--asset-search-bar-gap)',
@@ -244,7 +238,6 @@ export default /** @satisfies {import('tailwindcss').Config} */ ({
         'context-menus': 'var(--context-menus-gap)',
         'asset-panel': 'var(--asset-panel-gap)',
         'search-suggestions': 'var(--search-suggestions-gap)',
-        'keyboard-shortcuts-button': 'var(--keyboard-shortcuts-button-gap)',
         'chat-buttons': 'var(--chat-buttons-gap)',
       },
       padding: {

@@ -140,7 +140,7 @@ export default function MembersTable(props: MembersTableProps) {
             {getText('email')}
           </Column>
           {/* Delete button. */}
-          {allowDelete && <Column className="w border-0" />}
+          {allowDelete && <Column className="w-0 border-0" />}
         </TableHeader>
         <TableBody ref={bodyRef} items={users ?? []} dependencies={[users]} className="select-text">
           {(member) => (

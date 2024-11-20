@@ -100,11 +100,13 @@ const MODIFIER_TO_TEXT_ID: Readonly<Record<ModifierKey, text.TextId>> = {
 /** Props for a {@link KeyboardShortcut}, specifying the keyboard action. */
 export interface KeyboardShortcutActionProps {
   readonly action: DashboardBindingKey
+  readonly className?: string
 }
 
 /** Props for a {@link KeyboardShortcut}, specifying the shortcut string. */
 export interface KeyboardShortcutShortcutProps {
   readonly shortcut: string
+  readonly className?: string
 }
 
 /** Props for a {@link KeyboardShortcut}. */
@@ -112,10 +114,12 @@ export type KeyboardShortcutProps = KeyboardShortcutActionProps | KeyboardShortc
 
 /** A visual representation of a keyboard shortcut. */
 export default function KeyboardShortcut(props: KeyboardShortcutProps) {
+  const { className } = props
   const { getText } = useText()
   const inputBindings = useInputBindings()
   const shortcutString =
     'shortcut' in props ? props.shortcut : inputBindings.metadata[props.action].bindings[0]
+
   if (shortcutString == null) {
     return null
   } else {
@@ -125,7 +129,8 @@ export default function KeyboardShortcut(props: KeyboardShortcutProps) {
       <div
         className={twMerge(
           'flex items-center',
-          detect.isOnMacOS() ? 'gap-modifiers-macos' : 'gap-modifiers',
+          className,
+          detect.isOnMacOS() ? 'gap-[3px]' : 'gap-0.5',
         )}
       >
         {modifiers.map(

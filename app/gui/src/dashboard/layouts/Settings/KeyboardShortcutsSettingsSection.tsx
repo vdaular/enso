@@ -45,7 +45,7 @@ export default function KeyboardShortcutsSettingsSection() {
 
   return (
     <>
-      <ButtonGroup>
+      <ButtonGroup className="grow-0">
         <DialogTrigger>
           <Button size="medium" variant="outline">
             {getText('resetAll')}
@@ -68,32 +68,25 @@ export default function KeyboardShortcutsSettingsSection() {
           <div
             {...mergeProps<JSX.IntrinsicElements['div']>()(innerProps, {
               ref: rootRef,
-              // There is a horizontal scrollbar for some reason without `px-px`.
-              className: 'overflow-auto px-px',
+              className: 'flex-1 min-h-0 overflow-auto',
               onScroll,
             })}
           >
             <table className="table-fixed border-collapse rounded-rows">
               <thead className="sticky top-0">
                 <tr className="h-row text-left text-sm font-semibold">
-                  <th className="pr-keyboard-shortcuts-icon-column-r min-w-keyboard-shortcuts-icon-column pl-cell-x">
-                    {/* Icon */}
-                  </th>
-                  <th className="min-w-keyboard-shortcuts-name-column px-cell-x">
-                    {getText('name')}
-                  </th>
+                  <th className="min-w-8 pl-cell-x pr-1.5">{/* Icon */}</th>
+                  <th className="min-w-36 px-cell-x">{getText('name')}</th>
                   <th className="px-cell-x">{getText('shortcuts')}</th>
-                  <th className="w-full min-w-keyboard-shortcuts-description-column px-cell-x">
-                    {getText('description')}
-                  </th>
+                  <th className="w-full min-w-64 px-cell-x">{getText('description')}</th>
                 </tr>
               </thead>
               <tbody ref={bodyRef}>
                 {visibleBindings.map((kv) => {
                   const [action, info] = kv
                   return (
-                    <tr key={action}>
-                      <td className="flex h-row items-center rounded-l-full bg-clip-padding pl-cell-x pr-icon-column-r">
+                    <tr key={action} className="rounded-rows-child">
+                      <td className="flex h-row items-center rounded-l-full bg-clip-padding pl-cell-x pr-1.5">
                         <SvgMask
                           src={info.icon ?? BlankIcon}
                           color={info.color}
@@ -112,11 +105,11 @@ export default function KeyboardShortcutsSettingsSection() {
                               {}
                               <div className="gap-buttons flex items-center pr-4">
                                 {info.bindings.map((binding, j) => (
-                                  <div
-                                    key={j}
-                                    className="inline-flex shrink-0 items-center gap-keyboard-shortcuts-button"
-                                  >
-                                    <KeyboardShortcut shortcut={binding} />
+                                  <div key={j} className="inline-flex shrink-0 items-center gap-1">
+                                    <KeyboardShortcut
+                                      shortcut={binding}
+                                      className="rounded-lg border-0.5 border-primary/10 px-1"
+                                    />
                                     <Button
                                       variant="ghost"
                                       size="medium"
@@ -132,7 +125,7 @@ export default function KeyboardShortcutsSettingsSection() {
                                   </div>
                                 ))}
                                 <div className="grow" />
-                                <div className="gap-keyboard-shortcuts-buttons flex shrink-0 items-center">
+                                <div className="flex shrink-0 items-center gap-1">
                                   <DialogTrigger>
                                     <Button
                                       variant="ghost"
