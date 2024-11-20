@@ -79,7 +79,7 @@ import org.enso.interpreter.node.callable.{
   SequenceLiteralNode
 }
 import org.enso.interpreter.node.controlflow.caseexpr._
-import org.enso.interpreter.node.expression.builtin.interop.syntax.HostValueToEnsoNode
+import org.enso.interpreter.node.expression.foreign.HostValueToEnsoNode
 import org.enso.interpreter.node.expression.builtin.BuiltinRootNode
 import org.enso.interpreter.node.expression.constant._
 import org.enso.interpreter.node.expression.foreign.ForeignMethodCallNode

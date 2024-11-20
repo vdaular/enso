@@ -1,4 +1,4 @@
-package org.enso.interpreter.node.expression.builtin.interop.syntax;
+package org.enso.interpreter.node.expression.foreign;
 
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Fallback;

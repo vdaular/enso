@@ -384,8 +384,8 @@ abstract class EqualsSimpleNode extends Node {
    * Return true iff object is a primitive value used in some specializations guard. By primitive
    * value we mean any value that can be present in Enso, so, for example, not Integer, as that
    * cannot be present in Enso. All the primitive types should be handled in their corresponding
-   * specializations. See {@link
-   * org.enso.interpreter.node.expression.builtin.interop.syntax.HostValueToEnsoNode}.
+   * specializations. See {@link import
+   * org.enso.interpreter.node.expression.foreign.HostValueToEnsoNode}.
    */
   static boolean isPrimitive(Object object, InteropLibrary interop) {
     return isPrimitiveValue(object)

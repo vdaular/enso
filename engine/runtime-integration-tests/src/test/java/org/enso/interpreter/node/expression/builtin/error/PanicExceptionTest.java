@@ -3,7 +3,7 @@ package org.enso.interpreter.node.expression.builtin.error;
 import static org.junit.Assert.assertEquals;
 
 import com.oracle.truffle.api.interop.InteropLibrary;
-import org.enso.interpreter.node.expression.builtin.interop.syntax.HostValueToEnsoNode;
+import org.enso.interpreter.node.expression.foreign.HostValueToEnsoNode;
 import org.enso.interpreter.runtime.data.text.Text;
 import org.enso.interpreter.runtime.error.PanicException;
 import org.enso.test.utils.ContextUtils;
