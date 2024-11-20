@@ -180,7 +180,7 @@ add_replace_specs suite_builder setup =
             table.replace lookup_table 'x' to_column=9 . should_fail_with Illegal_Argument
             table.replace lookup_table 'x' from_column=8 to_column=9 . should_fail_with Illegal_Argument
 
-        if setup.test_selection.date_time then group_builder.specify "should correctly infer types of columns (Date/Time)" <|
+        if setup.flagged ..Date_Time then group_builder.specify "should correctly infer types of columns (Date/Time)" <|
             my_table = setup.table_builder [["X", [1, 2, 3, 2]], ["rowid", [1, 2, 3, 4]]]
 
             t1 = my_table.replace (Dictionary.from_vector [[1, Date.new 2021], [2, Date.new 2022], [3, Date.new 2023]]) "X" allow_unmatched_rows=False . sort "rowid"

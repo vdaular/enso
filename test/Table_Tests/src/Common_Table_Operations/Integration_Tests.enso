@@ -118,7 +118,7 @@ add_integration_specs suite_builder setup =
             t4 = t1.sort "Y" . distinct "X" . sort "Y" |> materialize
             t4.row_count . should_equal 2
 
-        if setup.test_selection.distinct_returns_first_row_from_group_if_ordered then
+        if setup.flagged ..Distinct_Returns_First_Row_From_Group_If_Ordered then
             group_builder.specify "distinct and ordering if first row is returned after ordering" <|
                 a = ["A", ["a", "a", "a", "a", "a", "a"]]
                 b = ["B", [1, 1, 2, 2, 1, 2]]
@@ -194,7 +194,7 @@ add_integration_specs suite_builder setup =
                 r123.at "X" . to_vector . should_equal ["a", "b", "c", "ddd", "eee", "fff", "a", "b", "c"]
                 r123.at "Row" . to_vector . should_equal [1, 2, 3, 1, 2, 3, 1.5, 2.5, 3.5]
 
-        if setup.test_selection.fixed_length_text_columns then
+        if setup.flagged ..Fixed_Length_Text_Columns then
             group_builder.specify "types of unioned fixed-length columns should be correctly inferred after passing through other operations that infer types from Database, like aggregate Shortest" <|
                 t1 = (table_builder [["X", ["a", "b", "c"]], ["Y", [1, 0, 2]]]) . cast "X" (Value_Type.Char 1 False)
                 t2 = (table_builder [["X", ["ddd", "eee", "fff"]], ["Y", [0, 1, 0]]]) . cast "X" (Value_Type.Char 3 False)

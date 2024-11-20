@@ -256,7 +256,7 @@ add_missing_value_specs suite_builder setup =
                 mix_filled.to_vector . should_equal [1, 0, 2, 0]
                 mix_filled.value_type . should_equal Value_Type.Mixed
 
-        group_builder.specify "should correctly unify text columns of various fixed lengths" pending=(if setup.test_selection.fixed_length_text_columns.not then "Fixed-length Char columns are not supported by this backend.") <|
+        group_builder.specify "should correctly unify text columns of various fixed lengths" pending=(if (setup.flagged ..Fixed_Length_Text_Columns).not then "Fixed-length Char columns are not supported by this backend.") <|
             t0 = table_builder [["A", ["a", Nothing, "c"]], ["B", ["X", "Y", "Z"]], ["C", ["xyz", "abc", "def"]]]
             t1 = t0 . cast "A" (Value_Type.Char size=1 variable_length=False) . cast "B" (Value_Type.Char size=1 variable_length=False) . cast "C" (Value_Type.Char size=3 variable_length=False)
 
@@ -279,7 +279,7 @@ add_missing_value_specs suite_builder setup =
                 max_len = e.value_type.size
                 (max_len.is_nothing || (max_len.integer >= 3)).should_be_true
 
-        group_builder.specify "should correctly unify text columns of various varying lengths" pending=(if setup.test_selection.text_length_limited_columns.not then "Length-limited Char columns are not supported by this backend.") <|
+        group_builder.specify "should correctly unify text columns of various varying lengths" pending=(if (setup.flagged ..Text_Length_Limited_Columns).not then "Length-limited Char columns are not supported by this backend.") <|
             t0 = table_builder [["A", ["a", Nothing, "c"]], ["B", ["X", "Y", "Z"]], ["C", ["xyz", "abc", "def"]]]
             t1 = t0 . cast "A" (Value_Type.Char size=1 variable_length=True) . cast "B" (Value_Type.Char size=1 variable_length=True) . cast "C" (Value_Type.Char size=3 variable_length=True)
 

@@ -161,6 +161,9 @@ type Redshift_Dialect
     prepare_fetch_types_query : SQL_Expression -> Context -> SQL_Statement
     prepare_fetch_types_query self expression context =
         Base_Generator.default_fetch_types_query self expression context
+   
+    ## PRIVATE
+    generate_collate self collation_name:Text -> Text = Base_Generator.default_generate_collate collation_name     
 
     ## PRIVATE
     check_aggregate_support : Aggregate_Column -> Boolean ! Unsupported_Database_Operation
@@ -194,6 +197,26 @@ type Redshift_Dialect
             Dialect_Flag.Supports_Case_Sensitive_Columns -> True
             Dialect_Flag.Supports_Infinity -> True
             Dialect_Flag.Case_Sensitive_Text_Comparison -> True
+            Dialect_Flag.Supports_Sort_Digits_As_Numbers -> False
+            Dialect_Flag.Case_Insensitive_Ordering -> False
+            Dialect_Flag.Order_By_Unicode_Normalization_By_Default -> True
+            Dialect_Flag.Allows_Mixed_Type_Comparisons -> False
+            Dialect_Flag.Supports_Unicode_Normalization -> False
+            Dialect_Flag.NaN_Non_Comparable -> True
+            Dialect_Flag.Distinct_Returns_First_Row_From_Group_If_Ordered -> True
+            Dialect_Flag.Date_Time -> True
+            Dialect_Flag.Text_Length_Limited_Columns -> False
+            Dialect_Flag.Fixed_Length_Text_Columns -> False
+            Dialect_Flag.Length_Restricted_Text_Columns -> True
+            Dialect_Flag.Removes_Trailing_Whitespace_Casting_From_Char_To_Varchar -> False
+            Dialect_Flag.Char_Max_Size_After_Substring_Kept -> True
+            Dialect_Flag.Different_Size_Integer_Types -> True
+            Dialect_Flag.Supports_8bit_Integer -> False
+            Dialect_Flag.Supports_Decimal_Type -> True
+            Dialect_Flag.Supports_Time_Duration -> False
+            Dialect_Flag.Supports_Nanoseconds_In_Time -> False
+            Dialect_Flag.Supports_Mixed_Columns -> False
+            Dialect_Flag.Supports_Date_Time_Without_Timezone -> False
 
     ## PRIVATE
        The default table types to use when listing tables.

@@ -171,6 +171,12 @@ type Dialect
         _ = [expression, context]
         Unimplemented.throw "This is an interface only."
 
+
+    ## PRIVATE
+    generate_collate self collation_name:Text -> Text = 
+         _ = collation_name
+         Unimplemented.throw "This is an interface only."
+
     ## PRIVATE
        Checks if the given aggregate is supported.
 

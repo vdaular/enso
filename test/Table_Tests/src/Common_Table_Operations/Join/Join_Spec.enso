@@ -164,7 +164,7 @@ add_join_specs suite_builder setup =
             r2 . at "Y" . to_vector . should_equal [1, 1, 2]
             r2 . at "Z" . to_vector . should_equal [1, 2, 3]
 
-        if setup.test_selection.supports_unicode_normalization then
+        if setup.flagged ..Supports_Unicode_Normalization then
             group_builder.specify "should correctly handle Unicode equality" <|
                 t1 = table_builder [["X", ['s\u0301', 'S\u0301']], ["Y", [1, 2]]]
                 t2 = table_builder [["X", ['s', 'S', 'ś']], ["Z", [1, 2, 3]]]
@@ -291,7 +291,7 @@ add_join_specs suite_builder setup =
                 r2.column_names . should_equal ["X"]
                 r2.at "X" . to_vector . should_equal [10]
 
-        if setup.test_selection.supports_unicode_normalization then
+        if setup.flagged ..Supports_Unicode_Normalization then
             group_builder.specify "should allow range-based joins (using Between) for text with Unicode normalization" <|
                 t1 = table_builder [["X", ['s\u0301', 's']], ["Y", [1, 2]]]
                 t2 = table_builder [["lower", ['s', 'ś']], ["upper", ['sa', 'ś']], ["Z", [10, 20]]]

@@ -34,7 +34,7 @@ add_expression_specs suite_builder detailed setup =
         column_c = ["C", ["Hello", "World", "Hello World!", "", Nothing]]
         table_builder [column_a_description, column_b, column_c, column_odd_description]
 
-    pending_datetime = if setup.test_selection.date_time.not then "Date/Time operations are not supported by this backend."
+    pending_datetime = if (setup.flagged ..Date_Time).not then "Date/Time operations are not supported by this backend."
 
     epsilon=0.0000000001
 

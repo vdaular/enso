@@ -329,7 +329,7 @@ run_union_tests group_builder setup call_union =
 
         check_same <| call_union [t1] columns_to_keep=(..In_List ["A", "B"])
 
-    group_builder.specify "should correctly unify text columns of various lengths" pending=(if setup.test_selection.fixed_length_text_columns.not then "Fixed-length Char columns are not supported by this backend.") <|
+    group_builder.specify "should correctly unify text columns of various lengths" pending=(if (setup.flagged ..Fixed_Length_Text_Columns).not then "Fixed-length Char columns are not supported by this backend.") <|
         t1 = (table_builder [["A", ["a", "b", "c"]]]) . cast "A" (Value_Type.Char size=1 variable_length=False)
         t2 = (table_builder [["A", ["xyz", "abc", "def"]]]) . cast "A" (Value_Type.Char size=3 variable_length=False)
 
@@ -413,7 +413,7 @@ run_union_tests group_builder setup call_union =
                 m12.at "X" . to_vector . should_equal [0, 1, 2, 3, 4, 5]
                 m12.at "Y" . to_vector . should_equal ['aa', 'bb', 'cc', 'x', 'y', 'z']
 
-    date_time_pending = if setup.test_selection.date_time.not then "Date/Time operations are not supported."
+    date_time_pending = if (setup.flagged ..Date_Time).not then "Date/Time operations are not supported."
     group_builder.specify "should warn when converting a Date to Date_Time" pending=date_time_pending <|
         t1 = build_table_with_maybe_rowid [["D", [Date_Time.new 2024 5 16 16 48 23]]]
         t2 = build_table_with_maybe_rowid [["D", [Date.new 2019 10 23, Date.new 2020]]]

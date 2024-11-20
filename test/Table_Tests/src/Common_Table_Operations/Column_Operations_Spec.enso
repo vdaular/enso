@@ -20,7 +20,6 @@ from Standard.Test import all
 
 import enso_dev.Base_Tests.Data.Round_Spec
 
-import project.Common_Table_Operations.Main.Char_Max_Size_After_Substring_Behavior
 from project.Common_Table_Operations.Util import all
 
 main filter=Nothing = run_default_backend add_specs filter
@@ -154,7 +153,7 @@ add_column_operation_specs suite_builder setup =
     table_builder = setup.table_builder
     create_connection_fn = setup.create_connection_func
     light_table_builder = setup.light_table_builder
-    pending_datetime = if setup.test_selection.date_time.not then "Date/Time operations are not supported by this backend."
+    pending_datetime = if (setup.flagged ..Date_Time).not then "Date/Time operations are not supported by this backend."
 
     suite_builder.group prefix+"(Column_Operations_Spec) Rounding numeric tests" group_builder->
         round_one n dp=0 use_bankers=False =
@@ -214,7 +213,7 @@ add_column_operation_specs suite_builder setup =
             clue = table.columns.map (c-> c.name + "->" + c.value_type.to_display_text) . join ", " "{Table: " "} "
             Test.with_clue clue <|
                 callback table
-        case setup.test_selection.supports_mixed_columns of
+        case setup.flagged ..Supports_Mixed_Columns of
             False -> callback_with_clue (build_sorted_table table_structure)
             True ->
                 all_combinations (Vector.fill table_structure.length [Nothing, Mixed_Type_Object]) . each combination->
@@ -289,7 +288,7 @@ add_column_operation_specs suite_builder setup =
                         c2.to_vector . should_equal [10, "<NA>"]
                     False -> c2.should_fail_with No_Common_Type
 
-        group_builder.specify "iif should correctly unify text columns of various lengths" pending=(if setup.test_selection.fixed_length_text_columns.not then "Fixed-length Char columns are not supported by this backend.") <|
+        group_builder.specify "iif should correctly unify text columns of various lengths" pending=(if (setup.flagged ..Fixed_Length_Text_Columns).not then "Fixed-length Char columns are not supported by this backend.") <|
             t0 = table_builder [["x", [False, True, False]], ["A", ["a", "b", "c"]], ["B", ["xyz", "abc", "def"]]]
             t1 = t0 . cast "A" (Value_Type.Char size=1 variable_length=False) . cast "B" (Value_Type.Char size=3 variable_length=False)
 
@@ -504,7 +503,7 @@ add_column_operation_specs suite_builder setup =
             # SELECT SYSTEM$TYPEOF(COALESCE(CAST("literal_table"."x" AS CHAR(1)), 'N/A')) FROM (VALUES ('1'), (NULL), ('a')) AS "literal_table"("x");
             # VARCHAR(3) - so it is correct
             # TODO - investigate JDBC / our mapping bug
-            case setup.test_selection.length_restricted_text_columns of
+            case setup.flagged ..Length_Restricted_Text_Columns of
                 True -> actual.at "col0" . value_type . should_equal (Value_Type.Char size=5 variable_length=True)
                 False -> actual.at "col0" . value_type . should_equal (Value_Type.Char variable_length=True)
 
@@ -518,7 +517,7 @@ add_column_operation_specs suite_builder setup =
             t = table_builder [["col0", [Nothing, "200", Nothing, "400", "500", Nothing]]] . cast "col0" (Value_Type.Char size=3 variable_length=False)
             actual = t.fill_nothing ["col0"] ""
             actual.at "col0" . to_vector . should_equal ["", "200", "", "400", "500", ""]
-            case setup.test_selection.length_restricted_text_columns of
+            case setup.flagged ..Length_Restricted_Text_Columns of
                 True -> actual.at "col0" . value_type . should_equal (Value_Type.Char size=3 variable_length=True)
                 False -> actual.at "col0" . value_type . should_equal (Value_Type.Char variable_length=True)
 
@@ -527,10 +526,10 @@ add_column_operation_specs suite_builder setup =
             fillBlank = t.fill_nothing ["col0"] ""
             fillOneSpace = t.fill_nothing ["col0"] " "
             fillTwoSpaces = t.fill_nothing ["col0"] "  "
-            case setup.test_selection.length_restricted_text_columns of
+            case setup.flagged ..Length_Restricted_Text_Columns of
                 True ->
                     fillBlank.at "col0" . value_type . should_equal (Value_Type.Char size=1 variable_length=True)
-                    case setup.test_selection.fixed_length_text_columns of
+                    case setup.flagged ..Fixed_Length_Text_Columns of
                         True  -> fillOneSpace.at "col0" . value_type . should_equal (Value_Type.Char size=1 variable_length=False)
                         False -> fillOneSpace.at "col0" . value_type . should_equal (Value_Type.Char size=1 variable_length=True)
                     fillTwoSpaces.at "col0" . value_type . should_equal (Value_Type.Char size=2 variable_length=True)
@@ -539,13 +538,13 @@ add_column_operation_specs suite_builder setup =
                     fillOneSpace.at "col0" . value_type . should_equal (Value_Type.Char variable_length=True)
                     fillTwoSpaces.at "col0" . value_type . should_equal (Value_Type.Char variable_length=True)
 
-            case setup.test_selection.removes_trailing_whitespace_casting_from_char_to_varchar of
+            case setup.flagged ..Removes_Trailing_Whitespace_Casting_From_Char_To_Varchar of
                 True -> fillBlank.at "col0" . to_vector . should_equal ["a", "", ""]
                 False -> fillBlank.at "col0" . to_vector . should_equal ["a", "", " "]
 
             fillOneSpace.at "col0" . to_vector . should_equal ["a", " ", " "]
 
-            case setup.test_selection.removes_trailing_whitespace_casting_from_char_to_varchar of
+            case setup.flagged ..Removes_Trailing_Whitespace_Casting_From_Char_To_Varchar of
                 True -> fillTwoSpaces.at "col0" . to_vector . should_equal ["a", "", ""]
                 False -> fillTwoSpaces.at "col0" . to_vector . should_equal ["a", "  ", " "]
 
@@ -554,9 +553,9 @@ add_column_operation_specs suite_builder setup =
             actual = t.fill_nothing ["col0"] "   "
             actual.at "col0" . to_vector . should_equal ["   ", "200", "   ", "400", "500", "   "]
 
-            case setup.test_selection.length_restricted_text_columns of
+            case setup.flagged ..Length_Restricted_Text_Columns of
                 True ->
-                    case setup.test_selection.fixed_length_text_columns of
+                    case setup.flagged ..Fixed_Length_Text_Columns of
                         True  -> actual.at "col0" . value_type . should_equal (Value_Type.Char size=3 variable_length=False)
                         False -> actual.at "col0" . value_type . should_equal (Value_Type.Char size=3 variable_length=True)
                 False -> actual.at "col0" . value_type . should_equal (Value_Type.Char variable_length=True)
@@ -698,7 +697,7 @@ add_column_operation_specs suite_builder setup =
                 setup.is_integer_type (t.at "i").inferred_precise_value_type . should_be_true
                 (t.at "f").inferred_precise_value_type . should_be_a (Value_Type.Float ...)
 
-                case setup.test_selection.supports_decimal_type of
+                case setup.flagged ..Supports_Decimal_Type of
                     True ->
                         (t.at "d").inferred_precise_value_type . should_be_a (Value_Type.Decimal ...)
                     False ->
@@ -792,7 +791,7 @@ add_column_operation_specs suite_builder setup =
                 op (t.at "Z") 32 . should_fail_with Invalid_Value_Type
                 op (t.at "Z") (t.at "X") . should_fail_with Invalid_Value_Type
 
-        if setup.test_selection.supports_mixed_columns then
+        if setup.flagged ..Supports_Mixed_Columns then
             group_builder.specify "should allow comparing Mixed columns" <|
                 t1 = table_builder [["X", ["a", 23]], ["Y", ["b", 1]]]
                 ((t1.at "X") == (t1.at "Y")) . to_vector . should_equal [False, False]
@@ -886,7 +885,7 @@ add_column_operation_specs suite_builder setup =
 
             (data.x ^ data.x).value_type . is_numeric . should_be_true
 
-        if setup.test_selection.supports_decimal_type then
+        if setup.flagged ..Supports_Decimal_Type then
             # TODO in-memory specific tests may be added in In_Memory/Table_Spec as part of #10429
             divide_in_memory_pending = if setup.is_database.not then "TODO: https://github.com/enso-org/enso/issues/10429"
             group_builder.specify "should correctly infer the types (for decimal division)" pending=divide_in_memory_pending <|
@@ -1123,7 +1122,7 @@ add_column_operation_specs suite_builder setup =
                 result.name . should_equal "round([x])"
 
         test_floatlike Value_Type.Float
-        if setup.test_selection.supports_decimal_type then
+        if setup.flagged ..Supports_Decimal_Type then
             test_floatlike Value_Type.Decimal
 
         group_builder.specify "should allow round on an int column" <|
@@ -1154,7 +1153,7 @@ add_column_operation_specs suite_builder setup =
             table = table_builder [["x", [0, 3, -3, 1, -2]]]
             table.at "x" . round 16 . should_fail_with Illegal_Argument
 
-        if setup.test_selection.supports_decimal_type then
+        if setup.flagged ..Supports_Decimal_Type then
             group_builder.specify "ceil, floor and truncate should work correctly on Integers outside the java Long range" <|
                 positive_values = [9223372036854775806, 9223372036854775807, 9223372036854775808, 9223372036854775809, 9223372036854775807000000]
                 values = positive_values + positive_values.map .negate
@@ -1175,7 +1174,7 @@ add_column_operation_specs suite_builder setup =
                     c.floor . to_vector . should_equal [x_int, -x_int]
                     c.truncate . to_vector . should_equal [x_int, -x_int]
 
-        if setup.test_selection.supports_decimal_type then
+        if setup.flagged ..Supports_Decimal_Type then
             group_builder.specify "ceil, floor and truncate should work correctly on Decimals" <|
                 c = table_builder [["X", [Decimal.new "123492233720368547758075678.25", Decimal.new "179243023788662739454197523.625", Decimal.new "-123492233720368547758075678.25", Decimal.new "-179243023788662739454197523.625"]]] . at "X"
                 c.value_type.is_decimal . should_be_true
@@ -1282,12 +1281,15 @@ add_column_operation_specs suite_builder setup =
                 resLeft . to_vector . should_equal ["a", "f", "", Nothing, "c", "I"]
                 resRight . to_vector . should_equal ["a", "r", "", Nothing, "é", "."]
 
-                expected_new_size = case setup.test_selection.char_max_size_after_substring of
-                    Char_Max_Size_After_Substring_Behavior.Reset   -> Nothing
-                    Char_Max_Size_After_Substring_Behavior.Kept    -> 286
-                    Char_Max_Size_After_Substring_Behavior.Reduced -> 1
+                expected_new_size = case setup.flagged ..Char_Max_Size_After_Substring_Kept of
+                    False   -> Nothing
+                    True    -> 286
 
-                Test.with_clue "(Expected behaviour for substring size = "+setup.test_selection.char_max_size_after_substring.to_text+".) " <|
+                expected_behavior = case setup.flagged ..Char_Max_Size_After_Substring_Kept of
+                    False   -> "Reset"
+                    True    -> "Kept"
+
+                Test.with_clue "(Expected behaviour for substring size = "+expected_behavior+".) " <|
                     resLeft.value_type . should_equal (Value_Type.Char size=expected_new_size variable_length=True)
                     resRight.value_type . should_equal (Value_Type.Char size=expected_new_size variable_length=True)
 
@@ -1662,7 +1664,7 @@ add_column_operation_specs suite_builder setup =
                     vt1.should_be_a (Value_Type.Char ...)
                     vt1.variable_length.should_be_true
 
-            group_builder.specify "should infer correct return type (2)" pending=(if setup.test_selection.fixed_length_text_columns.not then "Fixed-length Char columns are not supported by this backend.") <|
+            group_builder.specify "should infer correct return type (2)" pending=(if (setup.flagged ..Fixed_Length_Text_Columns).not then "Fixed-length Char columns are not supported by this backend.") <|
                 c = table_builder [["texts", ["foo", "bar"]]] . at "texts"
                 c2 = c.cast (Value_Type.Char size=2 variable_length=False)
                 c3 = c2.text_replace "a" "---"
@@ -1851,7 +1853,7 @@ add_column_operation_specs suite_builder setup =
             c4.to_vector . should_equal ["asdf", "asdf", "asdf"]
             c4.value_type.should_be_a (Value_Type.Char ...)
 
-        if setup.test_selection.date_time then group_builder.specify "Should allow the creation of constant date/time columns" <|
+        if setup.flagged ..Date_Time then group_builder.specify "Should allow the creation of constant date/time columns" <|
             t = table_builder [["x", ["1", "2", "3"]]]
             d = Date.new 2024 07 05
             c1 = t.make_constant_column d

@@ -166,7 +166,7 @@ type SQL_Generator
             Nulls_Order.Last -> " NULLS LAST"
         collation = case order_descriptor.collation of
             Nothing -> ""
-            collation_name -> ' COLLATE "' + collation_name + '"'
+            collation_name -> dialect.generate_collate collation_name
         base_expression = self.generate_expression dialect order_descriptor.expression
         base_expression ++ collation ++ order_suffix ++ nulls_suffix
 
@@ -724,6 +724,9 @@ truncate_table_truncate_table_style dialect table_name =
 default_fetch_types_query dialect expression context where_filter_always_false_literal="FALSE" =
     empty_context = context.add_where_filters [SQL_Expression.Literal where_filter_always_false_literal]
     dialect.generate_sql (Query.Select [["typed_column", expression]] empty_context)
+
+## PRIVATE
+default_generate_collate collation_name:Text -> Text = ' COLLATE "' + collation_name + '"'
 
 ## PRIVATE
    Helper class for shortening the binder names generated for WITH clauses.

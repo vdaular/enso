@@ -79,7 +79,7 @@ add_filter_specs suite_builder setup =
             ## We do not do typechecking at Enso level here, as it is
                DB-dependent if such mixing is allowed, so we will rely on an SQL
                error.
-            case test_selection.allows_mixed_type_comparisons of
+            case setup.flagged ..Allows_Mixed_Type_Comparisons of
                 True -> v.should_equal []
                 False -> v.should_fail_with SQL_Error
 
@@ -108,7 +108,7 @@ add_filter_specs suite_builder setup =
                 False -> t.filter "X" (Filter_Condition.Less than=10.0) . at "X" . to_vector . should_equal [2.5]
 
             # In some backends, NaN is greater than any other value, so it is > 10.0; in other implementations it is usually not greater nor smaller, so it gets filtered out.
-            nan_is_comparable = setup.test_selection.is_nan_comparable
+            nan_is_comparable = setup.flagged ..NaN_Non_Comparable . not
             t.filter "X" (Filter_Condition.Greater than=10.0) . at "ix" . to_vector . should_equal <|
                 case setup.flagged ..Supports_Infinity of
                     True -> if nan_is_comparable then [1, 4, 5] else [1, 5]
@@ -149,7 +149,7 @@ add_filter_specs suite_builder setup =
             t.filter "X" (Filter_Condition.Between "b" "c") . at "X" . to_vector . should_equal ["baca", "b", "c"]
             t.filter "X" (Filter_Condition.Equal to="baca") . at "X" . to_vector . should_equal ["baca"]
             v = t.filter "X" (Filter_Condition.Equal to=52) . at "X" . to_vector
-            case test_selection.allows_mixed_type_comparisons of
+            case setup.flagged ..Allows_Mixed_Type_Comparisons of
                 True -> v.should_equal []
                 False -> v.should_fail_with SQL_Error
 
@@ -240,7 +240,7 @@ add_filter_specs suite_builder setup =
             t.filter "X" (Filter_Condition.Ends_With '\n') . at "X" . to_vector . should_equal ['a\n\n\n', 'a\n']
             t.filter "X" (Filter_Condition.Starts_With 'c') . at "X" . to_vector . should_equal ['caa\nbb']
 
-        if test_selection.supports_unicode_normalization then
+        if setup.flagged ..Supports_Unicode_Normalization then
             t = table_builder [["X", ['śnieg', 's\u0301nieg', 'X', Nothing, 'połać', 'połac\u0301']]]
             group_builder.specify "text operations should support Unicode normalization" <|
                 t.filter "X" (Filter_Condition.Starts_With 'ś') . at "X" . to_vector . should_equal ['śnieg', 's\u0301nieg']
@@ -314,7 +314,7 @@ add_filter_specs suite_builder setup =
             t.filter "X" (Filter_Condition.Is_In ["ccc"]) . at "X" . to_vector . should_equal ["ccc"]
             t.filter "X" (Filter_Condition.Is_In []) . at "X" . to_vector . should_equal []
 
-            if test_selection.allows_mixed_type_comparisons then
+            if setup.flagged ..Allows_Mixed_Type_Comparisons then
                 mixed = t.filter "X" (Filter_Condition.Is_In (t1.at "int")) . at "X" . to_vector
                 # Some backends (e.g. SQLite) allow to coerce integer and text types when doing mixed type comparisons.
                 ((mixed == []) || (mixed == ["2"])).should_be_true
@@ -325,11 +325,11 @@ add_filter_specs suite_builder setup =
             t.filter "ix" (Filter_Condition.Is_In [Nothing]) . at "ix" . to_vector . should_equal []
 
             v1 = t.filter "X" (Filter_Condition.Is_In ["c", "f", "b", "b", "b", 15, Nothing]) . at "X" . to_vector
-            case test_selection.allows_mixed_type_comparisons of
+            case setup.flagged ..Allows_Mixed_Type_Comparisons of
                 True -> v1.should_equal ["b", "f"]
                 False -> v1.should_fail_with SQL_Error
             v2 = t.filter "ix" (Filter_Condition.Is_In ["c", 3, 2, "a"]) . at "ix" . to_vector
-            case test_selection.allows_mixed_type_comparisons of
+            case setup.flagged ..Allows_Mixed_Type_Comparisons of
                 True -> v2.should_equal [2, 3]
                 False -> v2.should_fail_with SQL_Error
 

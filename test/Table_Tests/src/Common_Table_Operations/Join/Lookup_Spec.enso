@@ -237,7 +237,7 @@ add_merge_specs suite_builder setup =
                 t2.at "Z2" . value_type . should_equal Value_Type.Float
                 t2.at "W2" . value_type . should_equal Value_Type.Boolean
 
-        if setup.test_selection.fixed_length_text_columns then group_builder.specify "should correctly preserve types of original, merged and added columns (various Char types test case)" <|
+        if setup.flagged ..Fixed_Length_Text_Columns then group_builder.specify "should correctly preserve types of original, merged and added columns (various Char types test case)" <|
             table2 = (table_builder [["key", ["0"]], ["X", ["a"]], ["A", ["bbbbb"]]]) . cast "key" (Value_Type.Char size=50) . cast "X" (Value_Type.Char size=1) . cast "A" (Value_Type.Char size=5 variable_length=False)
             lookup2 = (table_builder [["key", ["0"]], ["X2", ["ccc"]], ["A", ["dddd"]]]) . cast "key" (Value_Type.Char size=100) . cast "X2" (Value_Type.Char size=3 variable_length=False) . cast "A" (Value_Type.Char size=4 variable_length=False)
 

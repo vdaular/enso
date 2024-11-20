@@ -40,7 +40,7 @@ add_specs suite_builder setup =
     prefix = setup.prefix
     table_builder = Util.build_sorted_table setup
     data = Data.setup table_builder
-    pending_datetime = if setup.test_selection.date_time.not then "Date/Time operations are not supported by this backend."
+    pending_datetime = if (setup.flagged ..Date_Time).not then "Date/Time operations are not supported by this backend."
 
     suite_builder.group prefix+"Date-Time support" pending=pending_datetime group_builder->
         group_builder.specify "should allow to create Table with Date columns and round-trip them back to Enso" <|
@@ -75,7 +75,7 @@ add_specs suite_builder setup =
         # Currently we support Value_Type.Date_Time with_timezone=False in Database backends, not in-memory.
         # In this test we create the table using the connection, so it only can run on Database.
         # This is the only way to enforce uploading Date Times without TZ without relying on Casting (which works on another level so it would not be a good test of the upload mechanism).
-        if setup.is_database && setup.test_selection.supports_date_time_without_timezone then group_builder.specify "should allow to create Table with Date Time (without timezone) columns and round-trip them back to Enso, preserving the date/time parts, possibly losing the timezone/offset" <|
+        if setup.is_database && setup.flagged ..Supports_Date_Time_Without_Timezone then group_builder.specify "should allow to create Table with Date Time (without timezone) columns and round-trip them back to Enso, preserving the date/time parts, possibly losing the timezone/offset" <|
             dt1 = Date_Time.new 2020 10 24 1 2 3 millisecond=4 microsecond=5
             offset_zone = Time_Zone.new hours=(-11) minutes=(-30)
             dt2 = Date_Time.new 2021 11 23 1 2 3 zone=offset_zone
@@ -171,14 +171,14 @@ add_specs suite_builder setup =
             a.date_part Time_Period.Second . to_vector . should_equal      [59, 44, 0, Nothing]
             a.date_part Time_Period.Millisecond . to_vector . should_equal [567, 1, 0, Nothing]
             a.date_part Time_Period.Microsecond . to_vector . should_equal [0,   2, 0, Nothing]
-            case setup.test_selection.supports_nanoseconds_in_time of
+            case setup.flagged ..Supports_Nanoseconds_In_Time of
                 True ->
                     a.date_part Time_Period.Nanosecond . to_vector . should_equal  [123, 0, 0, Nothing]
                 False ->
                     a.date_part Time_Period.Nanosecond . should_fail_with Unsupported_Database_Operation
 
             testCases = [a.date_part Time_Period.Second, a.date_part Time_Period.Millisecond, a.date_part Time_Period.Microsecond]
-            if setup.test_selection.supports_nanoseconds_in_time then
+            if setup.flagged ..Supports_Nanoseconds_In_Time then
                 testCases = testCases + (a.date_part Time_Period.Nanosecond)
             testCases.each c->
                 Test.with_clue "The column "+c.name+" value type ("+c.value_type.to_display_text+") should be an integer: " <|
@@ -199,14 +199,14 @@ add_specs suite_builder setup =
             a.date_part Date_Period.Week . to_vector . should_equal [53, 9, 1, Nothing, 21]
             a.date_part Time_Period.Millisecond . to_vector . should_equal [567, 1, 0, Nothing, 0]
             a.date_part Time_Period.Microsecond . to_vector . should_equal [0,   2, 0, Nothing, 0]
-            case setup.test_selection.supports_nanoseconds_in_time of
+            case setup.flagged ..Supports_Nanoseconds_In_Time of
                 True ->
                     a.date_part Time_Period.Nanosecond . to_vector . should_equal  [123, 0, 0, Nothing, 0]
                 False ->
                     a.date_part Time_Period.Nanosecond . should_fail_with Unsupported_Database_Operation
 
             testCases = [a.date_part Date_Period.Quarter, a.date_part Date_Period.Week, a.date_part Time_Period.Second, a.date_part Time_Period.Millisecond, a.date_part Time_Period.Microsecond]
-            if setup.test_selection.supports_nanoseconds_in_time then
+            if setup.flagged ..Supports_Nanoseconds_In_Time then
                 testCases = testCases + (a.date_part Time_Period.Nanosecond)
             testCases.each c->
                 Test.with_clue "The column "+c.name+" value type ("+c.value_type.to_display_text+") should be an integer: " <|
@@ -231,11 +231,10 @@ add_specs suite_builder setup =
 
         group_builder.specify "should allow to compare time-of-day" <|
             t = table_builder [["X", [Time_Of_Day.new 12 30 0]], ["Y", [Time_Of_Day.new 12 30 1]]]
-
             [(<), (<=), (>), (>=), (==), (!=)].each op->
                 op (t.at "X") (t.at "Y") . value_type . should_equal Value_Type.Boolean
                 op (t.at "X") (t.at "Y") . to_vector . should_succeed
-                op (t.at "X") (Time_Of_Day.new 12 30 0) . to_vector . should_succeed
+                op (t.at "X") (Time_Of_Day.new 12 30 5) . to_vector . should_succeed
 
         group_builder.specify "should not allow to mix types in ordering comparisons" <|
             t = table_builder [["X", [Date.new 2021 12 3]], ["Y", [Date_Time.new 2021 12 5 12 30 0]], ["Z", [Time_Of_Day.new 12 30 0]]]
@@ -244,7 +243,7 @@ add_specs suite_builder setup =
                 op (t.at "X") (t.at "Y") . should_fail_with Invalid_Value_Type
                 op (t.at "X") (t.at "Z") . should_fail_with Invalid_Value_Type
 
-        if setup.test_selection.supports_time_duration then
+        if setup.flagged ..Supports_Time_Duration then
             group_builder.specify "should allow to subtract two Dates" <|
                 t = table_builder [["X", [Date.new 2021 11 3]], ["Y", [Date.new 2021 12 5]]]
 
@@ -266,7 +265,7 @@ add_specs suite_builder setup =
                 ((t.at "Y") - (t.at "X")) . to_vector . should_equal [Duration.new hours=2 minutes=15 seconds=20, Duration.new hours=(-1) minutes=0 seconds=0]
                 ((t.at "Y") - (Time_Of_Day.new 0 0 0)) . to_vector . should_equal [Duration.new hours=12 minutes=30 seconds=20, Duration.zero]
 
-        if setup.test_selection.supports_time_duration.not then
+        if (setup.flagged ..Supports_Time_Duration).not then
             group_builder.specify "should report unsupported operation for subtracting date/time" <|
                 t1 = table_builder [["X", [Date.new 2021 11 3]], ["Y", [Date.new 2021 12 5]]]
                 t2 = table_builder [["X", [Date_Time.new 2021 11 3 10 15 0]], ["Y", [Date_Time.new 2021 12 5 12 30 20]]]
@@ -300,10 +299,6 @@ add_specs suite_builder setup =
             (t1.at "X").date_diff (t1.at "Y") Date_Period.Day . to_vector . should_equal [32]
             (t1.at "Y").date_diff (t1.at "X") Date_Period.Day . to_vector . should_equal [-32]
             (t1.at "X").date_diff (Date.new 2021 11 3) Date_Period.Day . to_vector . should_equal [0]
-
-            (t1.at "X").date_diff (t1.at "Y") Date_Period.Month . to_vector . should_equal [1]
-            (t1.at "X").date_diff (Date.new 2020 12 1) Date_Period.Month . to_vector . should_equal [-11]
-            (t1.at "X").date_diff (Date.new 2021 12 1) Date_Period.Month . to_vector . should_equal [0]
 
             (t1.at "X").date_diff (t1.at "Y") Date_Period.Quarter . to_vector . should_equal [0]
             (t1.at "X").date_diff (Date.new 2021 5 1) Date_Period.Quarter . to_vector . should_equal [-2]
@@ -348,7 +343,7 @@ add_specs suite_builder setup =
             (t2.at "X").date_diff (t2.at "Y") Time_Period.Microsecond . to_vector . should_equal [2772920000000]
             (t2.at "X").date_diff (Date_Time.new 2021 11 3 10 15 30 123 456 zone=zone) Time_Period.Microsecond . to_vector . should_equal [30123456]
 
-            case setup.test_selection.supports_nanoseconds_in_time of
+            case setup.flagged ..Supports_Nanoseconds_In_Time of
                 True ->
                     (t2.at "X").date_diff (t2.at "Y") Time_Period.Nanosecond . to_vector . should_equal [2772920000000000]
                     (t2.at "X").date_diff (Date_Time.new 2021 11 3 10 15 30 123 456 789 zone=zone) Time_Period.Nanosecond . to_vector . should_equal [30123456789]
@@ -376,13 +371,36 @@ add_specs suite_builder setup =
             (t3.at "X").date_diff (t3.at "Y") Time_Period.Microsecond . to_vector . should_equal [8120*1000*1000]
             (t3.at "X").date_diff (Time_Of_Day.new 10 15 12 34 56) Time_Period.Microsecond . to_vector . should_equal [12034056]
 
-            case setup.test_selection.supports_nanoseconds_in_time of
+            case setup.flagged ..Supports_Nanoseconds_In_Time of
                 True ->
                     (t3.at "X").date_diff (t3.at "Y") Time_Period.Nanosecond . to_vector . should_equal [8120*1000*1000*1000]
                     (t3.at "X").date_diff (Time_Of_Day.new 10 15 12 34 56 78) Time_Period.Nanosecond . to_vector . should_equal [12034056078]
                 False ->
                     (t3.at "X").date_diff (t3.at "Y") Time_Period.Nanosecond . should_fail_with Unsupported_Database_Operation
                     (t3.at "X").date_diff (Time_Of_Day.new 10 15 12 34 56 78) Time_Period.Nanosecond . should_fail_with Unsupported_Database_Operation
+
+        ## dates = [["d_X", [Date.new 2021 11 3]], ["d_Y", [Date.new 2021 12 5]], ["X1", [Date.new 2021 01 02]]]
+        group_builder.specify "should allow computing a SQL-like month difference (date_diff)" <|
+            t1 = dates1.get.select_columns ["d_X", "d_Y", "X1"] reorder=True . rename_columns ["X", "Y", "X1"]
+
+            (t1.at "X").date_diff (t1.at "Y") Date_Period.Month . to_vector . should_equal [1]
+            ## same month always 0
+            (t1.at "X").date_diff (Date.new 2021 11 1) Date_Period.Month . to_vector . should_equal [0]
+            (t1.at "X").date_diff (Date.new 2021 11 3) Date_Period.Month . to_vector . should_equal [0]
+            (t1.at "X").date_diff (Date.new 2021 11 30) Date_Period.Month . to_vector . should_equal [0]
+
+            ## next month 1 if date equal or later
+            (t1.at "X").date_diff (Date.new 2021 12 1) Date_Period.Month . to_vector . should_equal [0]
+            (t1.at "X").date_diff (Date.new 2021 12 3) Date_Period.Month . to_vector . should_equal [1]
+            (t1.at "X").date_diff (Date.new 2021 12 31) Date_Period.Month . to_vector . should_equal [1]
+
+            ## previous month -1 if date equal or earlier
+            (t1.at "X").date_diff (Date.new 2021 10 1) Date_Period.Month . to_vector . should_equal [-1]
+            (t1.at "X").date_diff (Date.new 2021 10 3) Date_Period.Month . to_vector . should_equal [-1]
+            (t1.at "X").date_diff (Date.new 2021 10 31) Date_Period.Month . to_vector . should_equal [0]
+
+            (t1.at "X").date_diff (Date.new 2020 12 1) Date_Period.Month . to_vector . should_equal [-11]
+            (t1.at "X").date_diff (Date.new 2021 12 1) Date_Period.Month . to_vector . should_equal [0]
 
         group_builder.specify "date_diff should return integers" <|
             t = table_builder [["X", [Date.new 2021 01 31]], ["Y", [Time_Of_Day.new 12 30 20]], ["Z", [Date_Time.new 2021 12 5 12 30 20]]]
@@ -443,7 +461,7 @@ add_specs suite_builder setup =
             (t2.at "X").date_add 1 Time_Period.Second . to_vector . should_equal_tz_agnostic [Date_Time.new 2021 01 31 12 30 1, Date_Time.new 2021 01 01 12 30 1, Date_Time.new 2021 12 31 12 30 1]
             (t2.at "X").date_add 1 Time_Period.Millisecond . to_vector . should_equal_tz_agnostic [Date_Time.new 2021 01 31 12 30 millisecond=1, Date_Time.new 2021 01 01 12 30 millisecond=1, Date_Time.new 2021 12 31 12 30 millisecond=1]
             (t2.at "X").date_add 1 Time_Period.Microsecond . to_vector . should_equal_tz_agnostic [Date_Time.new 2021 01 31 12 30 microsecond=1, Date_Time.new 2021 01 01 12 30 microsecond=1, Date_Time.new 2021 12 31 12 30 microsecond=1]
-            case setup.test_selection.supports_nanoseconds_in_time of
+            case setup.flagged ..Supports_Nanoseconds_In_Time of
                 True ->
                     (t2.at "X").date_add 1 Time_Period.Nanosecond . to_vector . should_equal_tz_agnostic [Date_Time.new 2021 01 31 12 30 nanosecond=1, Date_Time.new 2021 01 01 12 30 nanosecond=1, Date_Time.new 2021 12 31 12 30 nanosecond=1]
                 False ->
@@ -459,7 +477,7 @@ add_specs suite_builder setup =
             (t3.at "X").date_add 1 Time_Period.Second . to_vector . should_equal [Time_Of_Day.new 12 30 1, Time_Of_Day.new 23 45 1, Time_Of_Day.new 1 30 1]
             (t3.at "X").date_add 1 Time_Period.Millisecond . to_vector . should_equal [Time_Of_Day.new 12 30 millisecond=1, Time_Of_Day.new 23 45 millisecond=1, Time_Of_Day.new 1 30 millisecond=1]
             (t3.at "X").date_add 1 Time_Period.Microsecond . to_vector . should_equal [Time_Of_Day.new 12 30 microsecond=1, Time_Of_Day.new 23 45 microsecond=1, Time_Of_Day.new 1 30 microsecond=1]
-            case setup.test_selection.supports_nanoseconds_in_time of
+            case setup.flagged ..Supports_Nanoseconds_In_Time of
                 True ->
                     (t3.at "X").date_add 1 Time_Period.Nanosecond . to_vector . should_equal [Time_Of_Day.new 12 30 nanosecond=1, Time_Of_Day.new 23 45 nanosecond=1, Time_Of_Day.new 1 30 nanosecond=1]
                 False ->
@@ -520,7 +538,7 @@ add_specs suite_builder setup =
             y.date_diff dt4 Date_Period.Day . to_vector . should_equal [0]
             y.date_diff dt4 Time_Period.Hour . to_vector . should_equal [23]
 
-    if setup.test_selection.date_time.not then
+    if (setup.flagged ..Date_Time).not then
         suite_builder.group prefix+"partial Date-Time support" group_builder->
             group_builder.specify "will fail when uploading a Table containing Dates" pending="TODO" <|
                 d = Date.new 2020 10 24

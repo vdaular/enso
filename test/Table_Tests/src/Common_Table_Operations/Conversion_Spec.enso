@@ -31,7 +31,7 @@ add_specs suite_builder setup =
 add_conversion_specs suite_builder setup =
     prefix = setup.prefix
     materialize = setup.materialize
-    supports_dates = setup.test_selection.date_time
+    supports_dates = setup.flagged ..Date_Time
     supports_conversion_failure_reporting = setup.is_database.not
     table_builder = build_sorted_table setup
     suite_builder.group prefix+"(Conversion_Spec) Table/Column.cast - to text" group_builder->
@@ -94,7 +94,7 @@ add_conversion_specs suite_builder setup =
                 c.value_type.is_decimal . should_be_true
                 c.to_vector . should_equal [1, 2, 3000]
 
-        if setup.test_selection.fixed_length_text_columns then
+        if setup.flagged ..Fixed_Length_Text_Columns then
             group_builder.specify "should allow to cast a text column to fixed-length"  <|
                 t = table.get
                 c = t.at "W" . cast (Value_Type.Char size=3 variable_length=False)
@@ -133,7 +133,7 @@ add_conversion_specs suite_builder setup =
                 r1.should_fail_with Illegal_Argument
                 r1.catch.to_display_text . should_contain "positive"
 
-        if setup.test_selection.text_length_limited_columns then
+        if setup.flagged ..Length_Restricted_Text_Columns then
             group_builder.specify "should allow to cast a text column to variable-length with a max size" <|
                 t = table_builder [["X", ["a", "DEF", "a slightly longer text"]]]
                 c = t.at "X" . cast (Value_Type.Char size=3 variable_length=True)
@@ -161,7 +161,7 @@ add_conversion_specs suite_builder setup =
             c.value_type.is_floating_point . should_be_true
             c.to_vector . should_equal [1.0, 2.0, 3.0]
 
-        if setup.test_selection.different_size_integer_types then
+        if setup.flagged ..Different_Size_Integer_Types then
             group_builder.specify "should allow to cast an integer column to a smaller bit-width and larger bit-width" <|
                 t = table_builder [["X", [1, 2, 3]]]
                 c = t.at "X" . cast (Value_Type.Integer Bits.Bits_16)
@@ -187,7 +187,7 @@ add_conversion_specs suite_builder setup =
                 c3.value_type . should_equal (Value_Type.Integer Bits.Bits_32)
                 c3.to_vector . should_equal [1, 2, 3]
 
-        if setup.test_selection.supports_8bit_integer then
+        if setup.flagged ..Supports_8bit_Integer then
             group_builder.specify "should allow to cast an integer column to a byte and back" <|
                 t = table_builder [["X", [1, 2, 3]]]
                 c1 = t.at "X" . cast Value_Type.Byte
@@ -427,14 +427,14 @@ add_conversion_specs suite_builder setup =
             t2.at "Z" . to_vector . should_equal ["7", "8", "9"]
             t2.at "A" . to_vector . should_equal [True, False, True]
 
-        if setup.test_selection.different_size_integer_types then
+        if setup.flagged ..Different_Size_Integer_Types then
             group_builder.specify "should preserve the overridden types when materialized (Integer)" <|
                 t = table_builder [["X", [1, 2, 100]]]
                 t2 = t . cast "X" (Value_Type.Integer Bits.Bits_16)
                 t3 = materialize t2
                 t3.at "X" . value_type . should_equal (Value_Type.Integer Bits.Bits_16)
 
-        if setup.test_selection.fixed_length_text_columns then
+        if setup.flagged ..Fixed_Length_Text_Columns then
             group_builder.specify "should preserve the overridden types when materialized (Char)" <|
                 t = table_builder [["Y", ["a", "abcdef", "abc"]]]
                 t2 = t . cast "Y" (Value_Type.Char size=3 variable_length=False)
@@ -513,7 +513,7 @@ add_conversion_specs suite_builder setup =
                 c3.to_vector . should_equal ["1", "2.25", "3", "-45.25", "2.0", "X", "2020-01-01", date_time_str, "12:30:00", "{{{MY Type [x=42] }}}", "True", Nothing, "True"]
                 Problems.assume_no_problems c3
 
-                if setup.test_selection.text_length_limited_columns then
+                if setup.flagged ..Text_Length_Limited_Columns then
                     c3_2 = t2.cast "super-mix" (Value_Type.Char size=2) . at "super-mix"
                     c3_2.value_type . should_equal (Value_Type.Char size=2)
                     c3_2.to_vector . should_equal ["1", "2.", "3", "-4", "2.", "X", "20", "20", "12", "{{", "Tr", Nothing, "Tr"]

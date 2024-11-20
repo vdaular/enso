@@ -74,7 +74,7 @@ add_map_to_table_specs suite_builder setup =
                 vecs2 = [[], [3, 4, 5], [6, 7, 8]]
                 data.dummy_table.make_table_from_vectors vecs2 ['x', 'y', 'z'] . read . should_fail_with Illegal_Argument
 
-        if setup.test_selection.date_time then
+        if setup.flagged ..Date_Time then
             group_builder.specify "should be able to create a table of date-time values" <|
                 vecs = [[Date.new 2021 01 02], [Time_Of_Day.new 12 35 4], [Date_Time.new 2020 04 02 18 55], ['2001-01-01'], ['01:01:01']]
                 t = data.dummy_table.make_table_from_vectors vecs ['date', 'time', 'datetime', 'date-like-text', 'time-like-text']
