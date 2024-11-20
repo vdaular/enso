@@ -36,7 +36,7 @@ import org.enso.interpreter.runtime.library.dispatch.TypesLibrary;
 @ExportLibrary(TypesLibrary.class)
 @ExportLibrary(InteropLibrary.class)
 @Builtin(stdlibName = "Standard.Base.Data.Dictionary.Dictionary", name = "Dictionary")
-public final class EnsoHashMap implements EnsoObject {
+public final class EnsoHashMap extends EnsoObject {
   private final EnsoHashMapBuilder mapBuilder;
   private final int generation;
   private final int size;
@@ -166,7 +166,8 @@ public final class EnsoHashMap implements EnsoObject {
 
   @ExportMessage
   @TruffleBoundary
-  Object toDisplayString(boolean allowSideEffects) {
+  @Override
+  public Object toDisplayString(boolean allowSideEffects) {
     return toString(true);
   }
 

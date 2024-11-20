@@ -17,7 +17,6 @@ import java.util.concurrent.ExecutionException;
 import org.enso.common.MethodNames;
 import org.enso.compiler.PackageRepository;
 import org.enso.editions.LibraryName;
-import org.enso.interpreter.EnsoLanguage;
 import org.enso.interpreter.runtime.EnsoContext;
 import org.enso.interpreter.runtime.Module;
 import org.enso.interpreter.runtime.builtin.Builtins;
@@ -30,7 +29,7 @@ import org.enso.pkg.QualifiedName;
 
 /** Represents the top scope of Enso execution, containing all the importable modules. */
 @ExportLibrary(InteropLibrary.class)
-public final class TopLevelScope implements EnsoObject {
+public final class TopLevelScope extends EnsoObject {
   private final Builtins builtins;
   private final PackageRepository packageRepository;
 
@@ -264,33 +263,14 @@ public final class TopLevelScope implements EnsoObject {
   }
 
   /**
-   * Checks if this value is associated with a language.
-   *
-   * @return {@code true}
-   */
-  @ExportMessage
-  final boolean hasLanguage() {
-    return true;
-  }
-
-  /**
-   * Returns the language associated with this scope value.
-   *
-   * @return the language with which this value is associated
-   */
-  @ExportMessage
-  final Class<EnsoLanguage> getLanguage() {
-    return EnsoLanguage.class;
-  }
-
-  /**
    * Converts this scope to a human readable string.
    *
    * @param allowSideEffects whether or not side effects are allowed
    * @return a string representation of this scope
    */
   @ExportMessage
-  final Object toDisplayString(boolean allowSideEffects) {
+  @Override
+  public Object toDisplayString(boolean allowSideEffects) {
     return "Enso.Top_Scope";
   }
 }

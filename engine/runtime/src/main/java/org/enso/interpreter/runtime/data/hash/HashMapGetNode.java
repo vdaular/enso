@@ -34,6 +34,10 @@ public abstract class HashMapGetNode extends Node {
     return HashMapGetNodeGen.create();
   }
 
+  public static HashMapGetNode getUncached() {
+    return HashMapGetNodeGen.getUncached();
+  }
+
   public abstract Object execute(
       VirtualFrame frame, State state, Object self, Object key, @Suspend Object defaultValue);
 

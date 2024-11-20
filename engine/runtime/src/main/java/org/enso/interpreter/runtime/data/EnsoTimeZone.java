@@ -1,6 +1,7 @@
 package org.enso.interpreter.runtime.data;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Bind;
 import com.oracle.truffle.api.interop.InteropLibrary;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
@@ -23,7 +24,7 @@ import org.enso.polyglot.common_utils.Core_Date_Utils;
     pkg = "date",
     name = "TimeZone",
     stdlibName = "Standard.Base.Data.Time.Time_Zone.Time_Zone")
-public final class EnsoTimeZone implements EnsoObject {
+public final class EnsoTimeZone extends EnsoObject {
   private final ZoneId zone;
 
   public EnsoTimeZone(ZoneId zone) {
@@ -84,7 +85,9 @@ public final class EnsoTimeZone implements EnsoObject {
   }
 
   @ExportMessage
-  String toDisplayString(boolean ignoreSideEffects) {
+  @Override
+  @TruffleBoundary
+  public String toDisplayString(boolean ignoreSideEffects) {
     return zone.toString();
   }
 

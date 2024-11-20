@@ -25,7 +25,7 @@ import org.enso.polyglot.common_utils.Core_Date_Utils;
     pkg = "date",
     name = "DateTime",
     stdlibName = "Standard.Base.Data.Time.Date_Time.Date_Time")
-public final class EnsoDateTime implements EnsoObject {
+public final class EnsoDateTime extends EnsoObject {
   private final ZonedDateTime dateTime;
 
   public EnsoDateTime(ZonedDateTime dateTime) {
@@ -227,6 +227,7 @@ public final class EnsoDateTime implements EnsoObject {
 
   @ExportMessage
   @CompilerDirectives.TruffleBoundary
+  @Override
   public Object toDisplayString(boolean allowSideEffects) {
     return Core_Date_Utils.defaultZonedDateTimeFormatter.format(dateTime);
   }

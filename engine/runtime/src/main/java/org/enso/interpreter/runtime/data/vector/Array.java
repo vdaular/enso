@@ -1,6 +1,7 @@
 package org.enso.interpreter.runtime.data.vector;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Bind;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Cached.Shared;
@@ -32,7 +33,7 @@ import org.enso.interpreter.runtime.warning.WarningsLibrary;
 @ExportLibrary(TypesLibrary.class)
 @ExportLibrary(WarningsLibrary.class)
 @Builtin(pkg = "mutable", stdlibName = "Standard.Base.Data.Array.Array")
-final class Array implements EnsoObject {
+final class Array extends EnsoObject {
   private final Object[] items;
 
   /** If true, some elements contain warning, and thus, this Array contains warning. */
@@ -152,7 +153,9 @@ final class Array implements EnsoObject {
   }
 
   @ExportMessage
-  String toDisplayString(boolean b) {
+  @TruffleBoundary
+  @Override
+  public String toDisplayString(boolean b) {
     return toString();
   }
 

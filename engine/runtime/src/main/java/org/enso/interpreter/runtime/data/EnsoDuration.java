@@ -22,7 +22,7 @@ import org.enso.interpreter.runtime.library.dispatch.TypesLibrary;
 @ExportLibrary(InteropLibrary.class)
 @ExportLibrary(TypesLibrary.class)
 @Builtin(pkg = "date", name = "Duration", stdlibName = "Standard.Base.Data.Time.Duration.Duration")
-public final class EnsoDuration implements EnsoObject {
+public final class EnsoDuration extends EnsoObject {
   private final Duration duration;
 
   public EnsoDuration(Duration duration) {
@@ -185,6 +185,7 @@ public final class EnsoDuration implements EnsoObject {
 
   @ExportMessage
   @TruffleBoundary
+  @Override
   public String toDisplayString(boolean allowSideEffects) {
     return duration.toString();
   }

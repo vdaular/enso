@@ -30,7 +30,7 @@ import org.enso.pkg.QualifiedName;
 
 @ExportLibrary(TypesLibrary.class)
 @ExportLibrary(InteropLibrary.class)
-public final class Type implements EnsoObject {
+public final class Type extends EnsoObject {
 
   private final String name;
   private @CompilerDirectives.CompilationFinal ModuleScope.Builder definitionScope;
@@ -279,7 +279,8 @@ public final class Type implements EnsoObject {
   }
 
   @ExportMessage
-  String toDisplayString(boolean allowSideEffects) {
+  @Override
+  public String toDisplayString(boolean allowSideEffects) {
     return name;
   }
 

@@ -24,7 +24,7 @@ import org.graalvm.collections.Pair;
 /** Simple runtime value representing a yet-unresolved by-name symbol. */
 @ExportLibrary(InteropLibrary.class)
 @ExportLibrary(TypesLibrary.class)
-public final class UnresolvedSymbol implements EnsoObject {
+public final class UnresolvedSymbol extends EnsoObject {
   private final String name;
   private final ModuleScope scope;
 
@@ -85,7 +85,8 @@ public final class UnresolvedSymbol implements EnsoObject {
 
   @ExportMessage
   @TruffleBoundary
-  String toDisplayString(boolean allowSideEffects) {
+  @Override
+  public String toDisplayString(boolean allowSideEffects) {
     return this.toString();
   }
 

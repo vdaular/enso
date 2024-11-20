@@ -1,6 +1,7 @@
 package org.enso.interpreter.runtime.warning;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Bind;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Cached.Shared;
@@ -54,7 +55,7 @@ import org.enso.interpreter.runtime.state.State;
 @ExportLibrary(WarningsLibrary.class)
 @ExportLibrary(ReflectionLibrary.class)
 @ExportLibrary(value = InteropLibrary.class, delegateTo = "value")
-public final class WithWarnings implements EnsoObject {
+public final class WithWarnings extends EnsoObject {
   final Object value;
 
   /**
@@ -268,6 +269,19 @@ public final class WithWarnings implements EnsoObject {
   @ExportMessage
   RuntimeException throwException(@Bind("$node") Node node) {
     throw asException(node);
+  }
+
+  @TruffleBoundary
+  @Override
+  @ExportMessage.Ignore
+  public Object toDisplayString(boolean allowSideEffects) {
+    return toDisplayString(allowSideEffects, InteropLibrary.getUncached());
+  }
+
+  @ExportMessage
+  public Object toDisplayString(
+      boolean allowSideEffects, @CachedLibrary("this.value") InteropLibrary interop) {
+    return interop.toDisplayString(value, allowSideEffects);
   }
 
   @Override

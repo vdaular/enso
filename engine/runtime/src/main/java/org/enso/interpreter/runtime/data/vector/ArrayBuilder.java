@@ -15,7 +15,7 @@ import org.enso.interpreter.runtime.data.EnsoObject;
 import org.enso.interpreter.runtime.warning.WarningsLibrary;
 
 @ExportLibrary(InteropLibrary.class)
-final class ArrayBuilder implements EnsoObject {
+final class ArrayBuilder extends EnsoObject {
   private static final String[] MEMBERS =
       new String[] {"isEmpty", "add", "appendTo", "get", "getSize", "toArray"};
   private final int initialCapacity;
@@ -238,7 +238,8 @@ final class ArrayBuilder implements EnsoObject {
   }
 
   @ExportMessage
-  String toDisplayString(boolean ignore) {
+  @Override
+  public String toDisplayString(boolean ignore) {
     return "Array_Builder";
   }
 

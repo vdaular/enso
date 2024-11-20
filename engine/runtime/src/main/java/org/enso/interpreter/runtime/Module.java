@@ -1,6 +1,7 @@
 package org.enso.interpreter.runtime;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.TruffleFile;
 import com.oracle.truffle.api.TruffleLogger;
 import com.oracle.truffle.api.dsl.Cached;
@@ -53,7 +54,7 @@ import org.enso.text.buffer.Rope;
 
 /** Represents a source module with a known location. */
 @ExportLibrary(InteropLibrary.class)
-public final class Module implements EnsoObject {
+public final class Module extends EnsoObject {
   private ModuleSources sources;
   private QualifiedName name;
   private ModuleScope.Builder scopeBuilder;
@@ -772,6 +773,10 @@ public final class Module implements EnsoObject {
   boolean isMemberInvocable(String member) {
     return member.equals(MethodNames.Module.GET_METHOD)
         || member.equals(MethodNames.Module.REPARSE)
+        || member.equals(MethodNames.Module.GATHER_IMPORT_STATEMENTS)
+        || member.equals(MethodNames.Module.GENERATE_DOCS)
+        || member.equals(MethodNames.Module.GET_NAME)
+        || member.equals(MethodNames.Module.GET_TYPE)
         || member.equals(MethodNames.Module.SET_SOURCE)
         || member.equals(MethodNames.Module.SET_SOURCE_FILE)
         || member.equals(MethodNames.Module.GET_ASSOCIATED_TYPE)
@@ -795,8 +800,15 @@ public final class Module implements EnsoObject {
         MethodNames.Module.EVAL_EXPRESSION);
   }
 
+  @ExportMessage
+  @TruffleBoundary
+  @Override
+  public String toDisplayString(boolean allowSideEffects) {
+    return "Module[" + name + ']';
+  }
+
   @Override
   public String toString() {
-    return "Module[" + name + ']';
+    return toDisplayString(false);
   }
 }

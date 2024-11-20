@@ -20,8 +20,9 @@ import org.enso.interpreter.runtime.library.dispatch.TypesLibrary;
 
 @Builtin(pkg = "error", stdlibName = "Standard.Base.Warning.Warning")
 @ExportLibrary(TypesLibrary.class)
-public final class Warning implements EnsoObject {
-  private final Object value;
+@ExportLibrary(value = InteropLibrary.class, delegateTo = "value")
+public final class Warning extends EnsoObject {
+  final Object value;
   private final Object origin;
   private final long sequenceId;
 
@@ -57,7 +58,8 @@ public final class Warning implements EnsoObject {
       description = "Attaches the given warning to the value.",
       autoRegister = false)
   @Builtin.Specialize
-  public static EnsoObject attach(
+  @SuppressWarnings("generic-enso-builtin-type")
+  public static Object attach(
       EnsoContext ctx,
       Object value,
       Object warning,
@@ -103,6 +105,18 @@ public final class Warning implements EnsoObject {
       map = mapInsertNode.execute(null, map, warn.getSequenceId(), warn);
     }
     return map;
+  }
+
+  @ExportMessage
+  @TruffleBoundary
+  @Override
+  public Object toDisplayString(boolean enableSideEffects) {
+    return toString();
+  }
+
+  @ExportMessage
+  boolean isNull() {
+    return false;
   }
 
   @CompilerDirectives.TruffleBoundary

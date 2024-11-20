@@ -1,7 +1,9 @@
 package org.enso.interpreter.runtime.data;
 
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Bind;
 import com.oracle.truffle.api.interop.InteropLibrary;
+import com.oracle.truffle.api.library.CachedLibrary;
 import com.oracle.truffle.api.library.ExportLibrary;
 import com.oracle.truffle.api.library.ExportMessage;
 import com.oracle.truffle.api.nodes.Node;
@@ -13,7 +15,7 @@ import org.enso.interpreter.runtime.library.dispatch.TypesLibrary;
 @ExportLibrary(InteropLibrary.class)
 @ExportLibrary(TypesLibrary.class)
 @Builtin(pkg = "mutable", stdlibName = "Standard.Base.Runtime.Ref.Ref")
-public final class Ref implements EnsoObject {
+public final class Ref extends EnsoObject {
   private volatile Object value;
 
   /**
@@ -67,5 +69,18 @@ public final class Ref implements EnsoObject {
   @ExportMessage
   Type getType(@Bind("$node") Node node) {
     return EnsoContext.get(node).getBuiltins().ref();
+  }
+
+  @ExportMessage
+  Object toDisplayString(
+      boolean allowSideEffects, @CachedLibrary(limit = "3") InteropLibrary interop) {
+    return interop.toDisplayString(value, allowSideEffects);
+  }
+
+  @TruffleBoundary
+  @Override
+  @ExportMessage.Ignore
+  public Object toDisplayString(boolean allowSideEffects) {
+    return toDisplayString(allowSideEffects, InteropLibrary.getUncached());
   }
 }

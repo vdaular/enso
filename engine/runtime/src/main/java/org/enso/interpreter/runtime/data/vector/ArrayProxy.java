@@ -1,6 +1,7 @@
 package org.enso.interpreter.runtime.data.vector;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Bind;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.ImportStatic;
@@ -28,7 +29,7 @@ import org.enso.interpreter.runtime.library.dispatch.TypesLibrary;
 @ExportLibrary(InteropLibrary.class)
 @ExportLibrary(TypesLibrary.class)
 @ImportStatic(BranchProfile.class)
-final class ArrayProxy implements EnsoObject {
+final class ArrayProxy extends EnsoObject {
   private final long length;
   private final Object at;
 
@@ -76,7 +77,9 @@ final class ArrayProxy implements EnsoObject {
   }
 
   @ExportMessage
-  String toDisplayString(boolean b) {
+  @TruffleBoundary
+  @Override
+  public String toDisplayString(boolean b) {
     return toString();
   }
 

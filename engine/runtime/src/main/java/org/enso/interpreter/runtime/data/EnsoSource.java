@@ -12,7 +12,7 @@ import org.enso.interpreter.runtime.data.vector.ArrayLikeHelpers;
 
 /** Wrapper for exposing sources to Enso. Delegates to original methods with no behavior changes. */
 @ExportLibrary(InteropLibrary.class)
-public final class EnsoSource implements EnsoObject {
+public final class EnsoSource extends EnsoObject {
   private static final String[] MEMBERS = {
     "getLanguage", //
     "getName", //
@@ -68,5 +68,12 @@ public final class EnsoSource implements EnsoObject {
   @ExportMessage
   Object getMembers(boolean includeInternal) {
     return ArrayLikeHelpers.wrapStrings(MEMBERS);
+  }
+
+  @Override
+  @TruffleBoundary
+  @ExportMessage
+  public Object toDisplayString(boolean allowSideEffects) {
+    return "EnsoSource{" + (source != null ? source.toString() : "") + "}";
   }
 }

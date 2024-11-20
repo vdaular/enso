@@ -23,7 +23,7 @@ import org.enso.interpreter.runtime.library.dispatch.TypesLibrary;
     pkg = "date",
     name = "TimeOfDay",
     stdlibName = "Standard.Base.Data.Time.Time_Of_Day.Time_Of_Day")
-public final class EnsoTimeOfDay implements EnsoObject {
+public final class EnsoTimeOfDay extends EnsoObject {
   private final LocalTime localTime;
 
   public EnsoTimeOfDay(LocalTime localTime) {
@@ -165,6 +165,7 @@ public final class EnsoTimeOfDay implements EnsoObject {
 
   @CompilerDirectives.TruffleBoundary
   @ExportMessage
+  @Override
   public Object toDisplayString(boolean allowSideEffects) {
     return DateTimeFormatter.ISO_LOCAL_TIME.format(localTime);
   }

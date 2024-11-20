@@ -9,12 +9,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.oracle.truffle.api.interop.InteropLibrary;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.function.Predicate;
 import org.enso.common.MethodNames;
 import org.enso.interpreter.runtime.data.Type;
 import org.enso.interpreter.runtime.type.ConstantsGen;
@@ -270,6 +272,33 @@ main = Nothing
           };
       assertTrue("Unexpected simple name for number: " + v + " is " + simpleName, ok);
     }
+  }
+
+  /**
+   * Primitive values and exceptions currently don't have an associated language.
+   *
+   * <p>TODO[PM]: Will be implemented in https://github.com/enso-org/enso/pull/11468
+   */
+  @Test
+  public void allEnsoNonPrimitiveValuesHaveLanguage() throws Exception {
+    var gen = ValuesGenerator.create(ctx, Language.ENSO);
+    Predicate<Value> isPrimitiveOrException =
+        (val) -> val.fitsInInt() || val.fitsInDouble() || val.isBoolean() || val.isException();
+    var nonPrimitiveValues =
+        gen.allValues().stream().filter(isPrimitiveOrException.negate()).toList();
+    var interop = InteropLibrary.getUncached();
+    ContextUtils.executeInContext(
+        ctx,
+        () -> {
+          for (var value : nonPrimitiveValues) {
+            var unwrappedValue = ContextUtils.unwrapValue(ctx, value);
+            assertThat(
+                "Value " + unwrappedValue + " should have associated language",
+                interop.hasLanguage(unwrappedValue),
+                is(true));
+          }
+          return null;
+        });
   }
 
   @Test

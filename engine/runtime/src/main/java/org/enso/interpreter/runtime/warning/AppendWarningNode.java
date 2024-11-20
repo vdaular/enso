@@ -13,7 +13,6 @@ import com.oracle.truffle.api.library.CachedLibrary;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.enso.interpreter.runtime.EnsoContext;
-import org.enso.interpreter.runtime.data.EnsoObject;
 import org.enso.interpreter.runtime.data.hash.EnsoHashMap;
 import org.enso.interpreter.runtime.data.hash.HashMapInsertAllNode;
 import org.enso.interpreter.runtime.data.hash.HashMapInsertNode;
@@ -42,7 +41,7 @@ public abstract class AppendWarningNode extends Node {
    *     It is expected that all the elements in the container are of {@link Warning} class.
    * @return A wrapped object with warnings
    */
-  public abstract EnsoObject executeAppend(VirtualFrame frame, Object object, Object warnings);
+  public abstract Object executeAppend(VirtualFrame frame, Object object, Object warnings);
 
   @Specialization(guards = "!isError(object)")
   WithWarnings doSingleWarning(
@@ -175,8 +174,8 @@ public abstract class AppendWarningNode extends Node {
   }
 
   @Specialization(guards = "isError(object)")
-  EnsoObject dontAnnotateError(Object object, Object ignoreWarnings) {
-    return (EnsoObject) object;
+  Object dontAnnotateError(Object object, Object ignoreWarnings) {
+    return object;
   }
 
   /** Inserts all {@code warnings} to the {@code initialWarningMap}. */

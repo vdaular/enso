@@ -19,7 +19,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.enso.interpreter.EnsoLanguage;
 import org.enso.interpreter.runtime.callable.UnresolvedSymbol;
 import org.enso.interpreter.runtime.callable.argument.ArgumentDefinition;
 import org.enso.interpreter.runtime.callable.function.Function;
@@ -51,7 +50,7 @@ import org.enso.interpreter.runtime.warning.WarningsLibrary;
  */
 @ExportLibrary(InteropLibrary.class)
 @ExportLibrary(TypesLibrary.class)
-public abstract class Atom implements EnsoObject {
+public abstract class Atom extends EnsoObject {
   final AtomConstructor constructor;
   private Integer hashCode;
 
@@ -383,6 +382,18 @@ public abstract class Atom implements EnsoObject {
     }
   }
 
+  @Override
+  @TruffleBoundary
+  @ExportMessage.Ignore
+  public Object toDisplayString(boolean allowSideEffects) {
+    return toDisplayString(
+        allowSideEffects,
+        InteropLibrary.getUncached(),
+        WarningsLibrary.getUncached(),
+        InteropLibrary.getUncached(),
+        BranchProfile.getUncached());
+  }
+
   @ExportMessage
   Text toDisplayString(
       boolean allowSideEffects,
@@ -417,16 +428,6 @@ public abstract class Atom implements EnsoObject {
       msg = this.toString("Panic in method `to_text` of [", 10, "]: ", panic);
     }
     return Text.create(msg);
-  }
-
-  @ExportMessage
-  Class<EnsoLanguage> getLanguage() {
-    return EnsoLanguage.class;
-  }
-
-  @ExportMessage
-  boolean hasLanguage() {
-    return true;
   }
 
   @ExportMessage

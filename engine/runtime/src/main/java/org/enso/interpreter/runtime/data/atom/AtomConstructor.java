@@ -41,7 +41,7 @@ import org.enso.pkg.QualifiedName;
  */
 @ExportLibrary(InteropLibrary.class)
 @ExportLibrary(TypesLibrary.class)
-public final class AtomConstructor implements EnsoObject {
+public final class AtomConstructor extends EnsoObject {
 
   private final String name;
   private final Module definitionModule;
@@ -414,7 +414,8 @@ public final class AtomConstructor implements EnsoObject {
 
   @ExportMessage
   @TruffleBoundary
-  String toDisplayString(boolean allowSideEffects) {
+  @Override
+  public String toDisplayString(boolean allowSideEffects) {
     var sb = new StringBuilder();
     sb.append("Constructor<").append(getDisplayName()).append(">");
     for (var f : getFields()) {

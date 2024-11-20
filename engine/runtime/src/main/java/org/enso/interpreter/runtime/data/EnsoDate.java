@@ -18,7 +18,7 @@ import org.enso.polyglot.common_utils.Core_Date_Utils;
 @ExportLibrary(InteropLibrary.class)
 @ExportLibrary(TypesLibrary.class)
 @Builtin(pkg = "date", name = "Date", stdlibName = "Standard.Base.Data.Time.Date.Date")
-public final class EnsoDate implements EnsoObject {
+public final class EnsoDate extends EnsoObject {
   private final LocalDate date;
 
   public EnsoDate(LocalDate date) {
@@ -99,6 +99,7 @@ public final class EnsoDate implements EnsoObject {
 
   @CompilerDirectives.TruffleBoundary
   @ExportMessage
+  @Override
   public Object toDisplayString(boolean allowSideEffects) {
     return Core_Date_Utils.defaultLocalDateFormatter.format(date);
   }
