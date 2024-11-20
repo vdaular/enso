@@ -546,13 +546,18 @@ impl JobArchetype for PackageIde {
             } else {
                 shell(TEST_COMMAND)
             };
-            let test_step = test_step
+            let mut test_step = test_step
                 .with_env("DEBUG", "pw:browser log:")
                 .with_secret_exposed_as(secret::ENSO_CLOUD_TEST_ACCOUNT_USERNAME, "ENSO_TEST_USER")
                 .with_secret_exposed_as(
                     secret::ENSO_CLOUD_TEST_ACCOUNT_PASSWORD,
                     "ENSO_TEST_USER_PASSWORD",
                 );
+            // Make E2E tests optional on Windows, as we have an ongoing issue with the runner.
+            // TODO[ib]: remove once the issue is resolved.
+            if target.0 == OS::Windows {
+                test_step.continue_on_error = Some(true);
+            }
             steps.push(test_step);
 
             // After the E2E tests run, they create a credentials file in user home directory.
