@@ -73,8 +73,7 @@ const targetPos = computed<Vec2 | undefined>(() => {
   if (expr != null && targetNode.value != null && targetNodeRect.value != null) {
     const targetRectRelative = graph.getPortRelativeRect(expr)
     if (targetRectRelative == null) return
-    const yAdjustment =
-      targetIsSelfArgument.value ? -(selfArgumentArrowHeight + selfArgumentArrowYOffset) : 0
+    const yAdjustment = -(arrowHeight + arrowYOffset)
     return targetNodeRect.value.pos.add(new Vec2(targetRectRelative.center().x, yAdjustment))
   } else if (mouseAnchorPos.value != null) {
     return mouseAnchorPos.value
@@ -509,29 +508,18 @@ const backwardEdgeArrowTransform = computed<string | undefined>(() => {
   return svgTranslate(origin.add(points[1]))
 })
 
-const targetIsSelfArgument = computed(() => {
-  if ('targetIsSelfArgument' in props.edge && props.edge?.targetIsSelfArgument) return true
-  if (!targetExpr.value) return
-  const nodeId = graph.getPortNodeId(targetExpr.value)
-  if (!nodeId) return
-  const primarySubject = graph.db.nodeIdToNode.get(nodeId)?.primarySubject
-  if (!primarySubject) return
-  return targetExpr.value === primarySubject
-})
-
-const selfArgumentArrowHeight = 9
-const selfArgumentArrowYOffset = 0
-const selfArgumentArrowTransform = computed<string | undefined>(() => {
-  const selfArgumentArrowTopOffset = 4
-  const selfArgumentArrowWidth = 12
-  if (!targetIsSelfArgument.value) return
+const arrowHeight = 9
+const arrowYOffset = 0
+const arrowTransform = computed<string | undefined>(() => {
+  const arrowTopOffset = 4
+  const arrowWidth = 12
   const target = targetPos.value
   if (target == null) return
-  const pos = target.sub(new Vec2(selfArgumentArrowWidth / 2, selfArgumentArrowTopOffset))
+  const pos = target.sub(new Vec2(arrowWidth / 2, arrowTopOffset))
   return svgTranslate(pos)
 })
 
-const selfArgumentArrowPath = [
+const arrowPath = [
   'M10.9635 1.5547',
   'L6.83205 7.75193',
   'C6.43623 8.34566 5.56377 8.34566 5.16795 7.75192',
@@ -620,9 +608,9 @@ const sourceHoverAnimationStyle = computed(() => {
         :data-target-node-id="targetNode"
       />
       <path
-        v-if="selfArgumentArrowTransform"
-        :transform="selfArgumentArrowTransform"
-        :d="selfArgumentArrowPath"
+        v-if="arrowTransform"
+        :transform="arrowTransform"
+        :d="arrowPath"
         :class="{ arrow: true, visible: true, dimmed: targetEndIsDimmed }"
         :style="baseStyle"
       />

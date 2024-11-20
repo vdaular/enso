@@ -41,6 +41,8 @@ const PAN_MARGINS = {
 }
 const COMPONENT_EDITOR_PADDING = 12
 const ICON_WIDTH = 16
+// Component editor is larger than a typical node, so the edge should touch it a bit higher.
+const EDGE_Y_OFFSET = -6
 
 const cssComponentEditorPadding = `${COMPONENT_EDITOR_PADDING}px`
 
@@ -199,7 +201,9 @@ watchEffect(() => {
     return
   }
   const scenePos = originScenePos.value.add(
-    new Vec2(COMPONENT_EDITOR_PADDING + ICON_WIDTH / 2, 0).scale(clientToSceneFactor.value),
+    new Vec2(COMPONENT_EDITOR_PADDING + ICON_WIDTH / 2, 0)
+      .scale(clientToSceneFactor.value)
+      .add(new Vec2(0, EDGE_Y_OFFSET)),
   )
   graphStore.cbEditedEdge = {
     source,

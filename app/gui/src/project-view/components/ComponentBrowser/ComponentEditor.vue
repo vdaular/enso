@@ -105,17 +105,6 @@ const rootStyle = computed(() => {
   isolation: isolate;
 }
 
-.iconPort::before {
-  content: '';
-  position: absolute;
-  top: calc(var(--port-padding) - var(--component-editor-padding));
-  width: var(--port-edge-width);
-  height: calc(var(--component-editor-padding) - var(--port-padding) + var(--icon-height) / 2);
-  transform: translate(-50%, 0);
-  background-color: var(--node-color-port);
-  z-index: -1;
-}
-
 .nodeIcon {
   color: white;
   width: var(--icon-height);

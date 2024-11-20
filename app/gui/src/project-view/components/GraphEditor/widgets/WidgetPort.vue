@@ -189,7 +189,6 @@ export const widgetDefinition = defineWidget(
       enabled,
       connected,
       isTarget,
-      isSelfArgument,
       widgetRounded: connected,
       newToConnect: !hasConnection && isCurrentEdgeHoverTarget,
       primary: props.nesting < 2,
@@ -247,17 +246,5 @@ export const widgetDefinition = defineWidget(
     left: 0px;
     right: 0px;
   }
-}
-
-.WidgetPort.isTarget:not(.isSelfArgument):after {
-  content: '';
-  position: absolute;
-  top: -4px;
-  left: 50%;
-  width: 4px;
-  height: 5px;
-  transform: translate(-50%, 0);
-  background-color: var(--node-color-port);
-  z-index: -1;
 }
 </style>
