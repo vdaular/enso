@@ -1026,6 +1026,30 @@ public class SignatureTest extends ContextTest {
     }
   }
 
+  @Test
+  public void returnTypeCheckByLastStatementOfMain() throws Exception {
+    final URI uri = new URI("memory://rts.enso");
+    final Source src =
+        Source.newBuilder(
+                "enso",
+                """
+                from Standard.Base import all
+
+                fn =
+                    (42 : Text & Integer)
+
+                Text.from (that:Integer) = that.to_text
+                """,
+                uri.getAuthority())
+            .uri(uri)
+            .buildLiteral();
+
+    var module = ctx.eval(src);
+    var main = module.invokeMember(MethodNames.Module.EVAL_EXPRESSION, "fn");
+    assertEquals(42, main.asInt());
+    assertEquals("42", main.asString());
+  }
+
   /**
    * Similar scenario to {@code returnTypeCheckOptInError}, but with the opt out signature the check
    * is not currently performed.

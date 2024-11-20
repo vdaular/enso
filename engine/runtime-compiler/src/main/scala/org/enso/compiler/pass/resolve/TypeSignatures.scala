@@ -318,7 +318,7 @@ case object TypeSignatures extends IRPass {
       case a => Some(resolveExpression(a))
     } ::: lastSignature
       .map({
-        case asc @ Type.Ascription(_: Name, sig, comment, _, _) =>
+        case asc @ Type.Ascription(_, sig, comment, _, _) =>
           asc.updateMetadata(
             new MetadataPair(this, Signature(sig, comment))
           )
