@@ -61,10 +61,12 @@ const DIALOG_STYLES = tv({
       modal: {
         base: 'w-full min-h-[100px] max-h-[90vh]',
         header: 'px-3.5 pt-[3px] pb-0.5 min-h-[42px]',
+        measuredContent: 'max-h-[90vh]',
       },
       fullscreen: {
         base: 'w-full h-full max-w-full max-h-full bg-clip-border',
         header: 'px-4 pt-[5px] pb-1.5 min-h-12',
+        measuredContent: 'max-h-[100vh]',
       },
     },
     fitContent: {
@@ -124,7 +126,7 @@ const DIALOG_STYLES = tv({
     closeButton: 'col-start-1 col-end-1 mr-auto',
     heading: 'col-start-2 col-end-2 my-0 text-center',
     content: 'relative flex-auto overflow-y-auto max-h-[inherit]',
-    measuredContent: 'flex flex-col max-h-[90vh]',
+    measuredContent: 'flex flex-col',
   },
   compoundVariants: [
     { type: 'modal', size: 'small', class: 'max-w-sm' },
@@ -207,7 +209,9 @@ export function Dialog(props: DialogProps) {
   const dialogLayoutId = `dialog-${dialogId}`
   const titleId = `${dialogId}-title`
 
-  const [contentDimensionsRef, { width: dialogWidth, height: dialogHeight }] = useDimensions()
+  const [contentDimensionsRef, dimensions] = useDimensions()
+  const dialogWidth = dimensions.width || '100%'
+  const dialogHeight = dimensions.height || '100%'
   const dialogRef = React.useRef<HTMLDivElement>(null)
   const overlayState = React.useRef<aria.OverlayTriggerState | null>(null)
   const root = portal.useStrictPortalContext()
