@@ -389,6 +389,10 @@
     <path fill-rule="evenodd" clip-rule="evenodd" d="M8 6.50002H16V8H16C16 9.83233 15.371 11.6091 14.2182 13.0333C13.9184 13.4036 13.588 13.7443 13.2316 14.0523L10.6177 12.0013C11.0304 11.7313 11.4018 11.3972 11.7165 11.0084C12.0481 10.5988 12.3071 10.1404 12.4867 9.653C12.4932 9.63537 12.4996 9.61771 12.5059 9.60002H8V8.00002V6.50002Z" fill="#4285F4"></path>
   </symbol>
 
+  <symbol id="grab" viewBox="0 0 16 16" width="16" height="16" fill="none">
+    <path d="M5.33334 2.66666H6.66667V3.99999H5.33334V2.66666ZM5.33334 7.33332H6.66667V8.66666H5.33334V7.33332ZM6.66667 12H5.33334V13.3333H6.66667V12ZM9.33334 2.66666H10.6667V3.99999H9.33334V2.66666ZM10.6667 7.33332H9.33334V8.66666H10.6667V7.33332ZM9.33334 12H10.6667V13.3333H9.33334V12Z" stroke="currentColor" stroke-width="2"></path>
+  </symbol>
+
   <symbol id="graph" viewBox="0 0 16 16" width="16" height="16" fill="none">
     <rect width="16" height="4" rx="2" fill="currentColor"></rect>
     <rect y="12" width="16" height="4" rx="2" fill="currentColor"></rect>
