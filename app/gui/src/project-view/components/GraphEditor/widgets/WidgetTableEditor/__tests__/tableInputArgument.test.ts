@@ -4,9 +4,9 @@ import {
   NEW_COLUMN_ID,
   ROW_INDEX_HEADER,
   RowData,
-  tableNewCallMayBeHandled,
-  useTableNewArgument,
-} from '@/components/GraphEditor/widgets/WidgetTableEditor/tableNewArgument'
+  tableInputCallMayBeHandled,
+  useTableInputArgument,
+} from '@/components/GraphEditor/widgets/WidgetTableEditor/tableInputArgument'
 import { MenuItem } from '@/components/shared/AgGridTableView.vue'
 import { WidgetInput } from '@/providers/widgetRegistry'
 import { SuggestionDb } from '@/stores/suggestionDatabase'
@@ -24,7 +24,7 @@ function suggestionDbWithNothing() {
 }
 
 function generateTableOfOnes(rows: number, cols: number) {
-  const code = `Table.new [${[...Array(cols).keys()].map((i) => `['Column #${i}', [${Array(rows).fill('1').join(',')}]]`).join(',')}]`
+  const code = `Table.input [${[...Array(cols).keys()].map((i) => `['Column #${i}', [${Array(rows).fill("'1'").join(',')}]]`).join(',')}]`
   const ast = Ast.parseExpression(code)
   assertDefined(ast)
   return ast
@@ -38,7 +38,7 @@ assert(CELLS_LIMIT_SQRT === Math.floor(CELLS_LIMIT_SQRT))
 
 test.each([
   {
-    code: 'Table.new [["a", [1, 2, 3]], ["b", [4, 5, "six"]], ["empty", [Nothing, Standard.Base.Nothing, Nothing]]]',
+    code: "Table.input [['a', ['1', '2', '3']], ['b', ['4', '5', 'six']], ['empty', [Nothing, Standard.Base.Nothing, Nothing]]]",
     expectedColumnDefs: [
       expectedRowIndexColumnDef,
       { headerName: 'a' },
@@ -47,34 +47,34 @@ test.each([
       expectedNewColumnDef,
     ],
     expectedRows: [
-      { [ROW_INDEX_HEADER]: 0, a: 1, b: 4, empty: null, '': null },
-      { [ROW_INDEX_HEADER]: 1, a: 2, b: 5, empty: null, '': null },
-      { [ROW_INDEX_HEADER]: 2, a: 3, b: 'six', empty: null, '': null },
+      { [ROW_INDEX_HEADER]: 0, a: '1', b: '4', empty: null, '': null },
+      { [ROW_INDEX_HEADER]: 1, a: '2', b: '5', empty: null, '': null },
+      { [ROW_INDEX_HEADER]: 2, a: '3', b: 'six', empty: null, '': null },
       { [ROW_INDEX_HEADER]: 3, a: null, b: null, empty: null, '': null },
     ],
   },
   {
-    code: 'Table.new []',
+    code: 'Table.input []',
     expectedColumnDefs: [expectedRowIndexColumnDef, expectedNewColumnDef],
     expectedRows: [{ [ROW_INDEX_HEADER]: 0, '': null }],
   },
   {
-    code: 'Table.new',
+    code: 'Table.input',
     expectedColumnDefs: [expectedRowIndexColumnDef, expectedNewColumnDef],
     expectedRows: [{ [ROW_INDEX_HEADER]: 0, '': null }],
   },
   {
-    code: 'Table.new _',
+    code: 'Table.input _',
     expectedColumnDefs: [expectedRowIndexColumnDef, expectedNewColumnDef],
     expectedRows: [{ [ROW_INDEX_HEADER]: 0, '': null }],
   },
   {
-    code: 'Table.new [["a", []]]',
+    code: 'Table.input [["a", []]]',
     expectedColumnDefs: [expectedRowIndexColumnDef, { headerName: 'a' }, expectedNewColumnDef],
     expectedRows: [{ [ROW_INDEX_HEADER]: 0, a: null, '': null }],
   },
   {
-    code: 'Table.new [["a", [1,,2]], ["b", [3, 4,]], ["c", [, 5, 6]], ["d", [,,]]]',
+    code: "Table.input [['a', ['1',,'2']], ['b', ['3', '4',]], ['c', [, '5', '6']], ['d', [,,]]]",
     expectedColumnDefs: [
       expectedRowIndexColumnDef,
       { headerName: 'a' },
@@ -84,21 +84,21 @@ test.each([
       expectedNewColumnDef,
     ],
     expectedRows: [
-      { [ROW_INDEX_HEADER]: 0, a: 1, b: 3, c: null, d: null, '': null },
-      { [ROW_INDEX_HEADER]: 1, a: null, b: 4, c: 5, d: null, '': null },
-      { [ROW_INDEX_HEADER]: 2, a: 2, b: null, c: 6, d: null, '': null },
+      { [ROW_INDEX_HEADER]: 0, a: '1', b: '3', c: null, d: null, '': null },
+      { [ROW_INDEX_HEADER]: 1, a: null, b: '4', c: '5', d: null, '': null },
+      { [ROW_INDEX_HEADER]: 2, a: '2', b: null, c: '6', d: null, '': null },
       { [ROW_INDEX_HEADER]: 3, a: null, b: null, c: null, d: null, '': null },
     ],
   },
 ])('Read table from $code', ({ code, expectedColumnDefs, expectedRows }) => {
   const ast = Ast.parseExpression(code)
   assertDefined(ast)
-  expect(tableNewCallMayBeHandled(ast)).toBeTruthy()
+  expect(tableInputCallMayBeHandled(ast)).toBeTruthy()
   const input = WidgetInput.FromAst(ast)
   const startEdit = vi.fn()
   const addMissingImports = vi.fn()
   const onUpdate = vi.fn()
-  const tableNewArgs = useTableNewArgument(
+  const tableNewArgs = useTableInputArgument(
     input,
     { startEdit, addMissingImports },
     suggestionDbWithNothing(),
@@ -160,7 +160,7 @@ test.each([
   'Allowed actions in table near limit (rows: $rows, cols: $cols)',
   ({ rows, cols, expectNewRowEnabled, expectNewColEnabled }) => {
     const input = WidgetInput.FromAst(generateTableOfOnes(rows, cols))
-    const tableNewArgs = useTableNewArgument(
+    const tableNewArgs = useTableInputArgument(
       input,
       { startEdit: vi.fn(), addMissingImports: vi.fn() },
       suggestionDbWithNothing(),
@@ -174,16 +174,17 @@ test.each([
 )
 
 test.each([
-  'Table.new 14',
-  'Table.new array1',
-  "Table.new ['a', [123]]",
-  "Table.new [['a', [123]], ['b', [124], []]]",
-  "Table.new [['a', [123]], ['a'.repeat 170, [123]]]",
-  "Table.new [['a', [1, 2, 3, 3 + 1]]]",
+  'Table.input 14',
+  'Table.input array1',
+  "Table.input ['a', ['123']]",
+  "Table.input [['a', [123]]]",
+  "Table.input [['a', ['123']], ['b', ['124'], []]]",
+  "Table.input [['a', ['123']], ['a'.repeat 170, ['123']]]",
+  "Table.input [['a', ['1', '2', '3', 3 + 1]]]",
 ])('"%s" is not valid input for Table Editor Widget', (code) => {
   const ast = Ast.parseExpression(code)
   assertDefined(ast)
-  expect(tableNewCallMayBeHandled(ast)).toBeFalsy()
+  expect(tableInputCallMayBeHandled(ast)).toBeFalsy()
 })
 
 function tableEditFixture(code: string, expectedCode: string) {
@@ -207,7 +208,7 @@ function tableEditFixture(code: string, expectedCode: string) {
       },
     ])
   })
-  const tableNewArgs = useTableNewArgument(
+  const tableNewArgs = useTableInputArgument(
     input,
     { startEdit, addMissingImports },
     suggestionDbWithNothing(),
@@ -223,62 +224,56 @@ function tableEditFixture(code: string, expectedCode: string) {
 
 test.each([
   {
-    code: "Table.new [['a', [1, 2, 3]], ['b', [4, 5, 6]]]",
-    description: 'Edit number',
-    edit: { column: 1, row: 1, value: -22 },
-    expected: "Table.new [['a', [1, -22, 3]], ['b', [4, 5, 6]]]",
-  },
-  {
-    code: "Table.new [['a', [1, 2, 3]], ['b', [4, 5, 6]]]",
-    description: 'Edit string',
+    code: "Table.input [['a', ['1', '2', '3']], ['b', ['4', '5', '6']]]",
+    description: 'Edit value',
     edit: { column: 1, row: 1, value: 'two' },
-    expected: "Table.new [['a', [1, 'two', 3]], ['b', [4, 5, 6]]]",
+    expected: "Table.input [['a', ['1', 'two', '3']], ['b', ['4', '5', '6']]]",
   },
   {
-    code: "Table.new [['a', [1, 2, 3]], ['b', [4, 5, 6]]]",
+    code: "Table.input [['a', ['1', '2', '3']], ['b', ['4', '5', '6']]]",
     description: 'Put blank value',
     edit: { column: 2, row: 1, value: '' },
-    expected: "Table.new [['a', [1, 2, 3]], ['b', [4, Nothing, 6]]]",
+    expected: "Table.input [['a', ['1', '2', '3']], ['b', ['4', Nothing, '6']]]",
     importExpected: true,
   },
 
   {
-    code: "Table.new [['a', [1, 2, 3]], ['b', [4, 5, 6]]]",
+    code: "Table.input [['a', ['1', '2', '3']], ['b', ['4', '5', '6']]]",
     description: 'Add new row',
-    edit: { column: 1, row: 3, value: 4.5 },
-    expected: "Table.new [['a', [1, 2, 3, 4.5]], ['b', [4, 5, 6, Nothing]]]",
+    edit: { column: 1, row: 3, value: '4.5' },
+    expected: "Table.input [['a', ['1', '2', '3', '4.5']], ['b', ['4', '5', '6', Nothing]]]",
     importExpected: true,
   },
   {
-    code: "Table.new [['a', []], ['b', []]]",
+    code: "Table.input [['a', []], ['b', []]]",
     description: 'Add first row',
     edit: { column: 2, row: 0, value: 'val' },
-    expected: "Table.new [['a', [Nothing]], ['b', ['val']]]",
+    expected: "Table.input [['a', [Nothing]], ['b', ['val']]]",
     importExpected: true,
   },
   {
-    code: "Table.new [['a', [1, ,3]]]",
+    code: "Table.input [['a', ['1', ,'3']]]",
     description: 'Set missing value',
-    edit: { column: 1, row: 1, value: 2 },
-    expected: "Table.new [['a', [1, 2 ,3]]]",
+    edit: { column: 1, row: 1, value: '2' },
+    expected: "Table.input [['a', ['1', '2' ,'3']]]",
   },
   {
-    code: "Table.new [['a', [, 2, 3]]]",
+    code: "Table.input [['a', [, '2', '3']]]",
     description: 'Set missing value at first row',
-    edit: { column: 1, row: 0, value: 1 },
-    expected: "Table.new [['a', [1, 2, 3]]]",
+    edit: { column: 1, row: 0, value: '1' },
+    expected: "Table.input [['a', ['1', '2', '3']]]",
   },
   {
-    code: "Table.new [['a', [1, 2,]]]",
+    code: "Table.input [['a', ['1', '2',]]]",
     description: 'Set missing value at last row',
-    edit: { column: 1, row: 2, value: 3 },
-    expected: "Table.new [['a', [1, 2, 3]]]",
+    edit: { column: 1, row: 2, value: '3' },
+    expected: "Table.input [['a', ['1', '2', '3']]]",
   },
   {
-    code: "Table.new [['a', [1, 2]], ['a', [3, 4]]]",
+    code: "Table.input [['a', ['1', '2']], ['a', ['3', '4']]]",
     description: 'Edit with duplicated column name',
-    edit: { column: 1, row: 1, value: 5 },
-    expected: "Table.new [['a', [1, 5]], ['a', [3, 4]]]",
+    edit: { column: 1, row: 1, value: '5' },
+    expected: "Table.input [['a', ['1', '5']], ['a', ['3', '4']]]",
   },
 ])('Edit table $code: $description', ({ code, edit, expected, importExpected }) => {
   const { tableNewArgs, onUpdate, addMissingImports } = tableEditFixture(code, expected)
@@ -295,21 +290,21 @@ test.each([
 
 test.each([
   {
-    code: "Table.new [['a', [1, 2, 3]], ['b', [4, 5, 6]]]",
-    expected: `Table.new [['a', [1, 2, 3]], ['b', [4, 5, 6]], ['${DEFAULT_COLUMN_PREFIX}3', [Nothing, Nothing, Nothing]]]`,
+    code: "Table.input [['a', ['1', '2', '3']], ['b', ['4', '5', '6']]]",
+    expected: `Table.input [['a', ['1', '2', '3']], ['b', ['4', '5', '6']], ['${DEFAULT_COLUMN_PREFIX}3', [Nothing, Nothing, Nothing]]]`,
     importExpected: true,
   },
   {
-    code: 'Table.new []',
-    expected: `Table.new [['${DEFAULT_COLUMN_PREFIX}1', []]]`,
+    code: 'Table.input []',
+    expected: `Table.input [['${DEFAULT_COLUMN_PREFIX}1', []]]`,
   },
   {
-    code: 'Table.new',
-    expected: `Table.new [['${DEFAULT_COLUMN_PREFIX}1', []]]`,
+    code: 'Table.input',
+    expected: `Table.input [['${DEFAULT_COLUMN_PREFIX}1', []]]`,
   },
   {
-    code: 'Table.new _',
-    expected: `Table.new [['${DEFAULT_COLUMN_PREFIX}1', []]]`,
+    code: 'Table.input _',
+    expected: `Table.input [['${DEFAULT_COLUMN_PREFIX}1', []]]`,
   },
 ])('Add column to table $code', ({ code, expected, importExpected }) => {
   const { tableNewArgs, onUpdate, addMissingImports } = tableEditFixture(code, expected)
@@ -340,24 +335,24 @@ function getCustomMenuItemByName(
 
 test.each([
   {
-    code: "Table.new [['a', [1, 2, 3]], ['b', [4, 5, 6]]]",
+    code: "Table.input [['a', ['1', '2', '3']], ['b', ['4', '5', '6']]]",
     removedRowIndex: 0,
-    expected: "Table.new [['a', [2, 3]], ['b', [5, 6]]]",
+    expected: "Table.input [['a', ['2', '3']], ['b', ['5', '6']]]",
   },
   {
-    code: "Table.new [['a', [1, 2, 3]], ['b', [4, 5, 6]]]",
+    code: "Table.input [['a', ['1', '2', '3']], ['b', ['4', '5', '6']]]",
     removedRowIndex: 1,
-    expected: "Table.new [['a', [1, 3]], ['b', [4, 6]]]",
+    expected: "Table.input [['a', ['1', '3']], ['b', ['4', '6']]]",
   },
   {
-    code: "Table.new [['a', [1, 2, 3]], ['b', [4, 5, 6]]]",
+    code: "Table.input [['a', ['1', '2', '3']], ['b', ['4', '5', '6']]]",
     removedRowIndex: 2,
-    expected: "Table.new [['a', [1, 2]], ['b', [4, 5]]]",
+    expected: "Table.input [['a', ['1', '2']], ['b', ['4', '5']]]",
   },
   {
-    code: "Table.new [['a', [1]], ['b', [4]]]",
+    code: "Table.input [['a', ['1']], ['b', ['4']]]",
     removedRowIndex: 0,
-    expected: "Table.new [['a', []], ['b', []]]",
+    expected: "Table.input [['a', []], ['b', []]]",
   },
 ])('Remove $removedRowIndex row in $code', ({ code, removedRowIndex, expected }) => {
   const { tableNewArgs, onUpdate, addMissingImports, gridApi } = tableEditFixture(code, expected)
@@ -376,24 +371,24 @@ test.each([
 
 test.each([
   {
-    code: "Table.new [['a', [1, 2]], ['b', [3, 4]], ['c', [5, 6]]]",
+    code: "Table.input [['a', ['1', '2']], ['b', ['3', '4']], ['c', ['5', '6']]]",
     removedColIndex: 1,
-    expected: "Table.new [['b', [3, 4]], ['c', [5, 6]]]",
+    expected: "Table.input [['b', ['3', '4']], ['c', ['5', '6']]]",
   },
   {
-    code: "Table.new [['a', [1, 2]], ['b', [3, 4]], ['c', [5, 6]]]",
+    code: "Table.input [['a', ['1', '2']], ['b', ['3', '4']], ['c', ['5', '6']]]",
     removedColIndex: 2,
-    expected: "Table.new [['a', [1, 2]], ['c', [5, 6]]]",
+    expected: "Table.input [['a', ['1', '2']], ['c', ['5', '6']]]",
   },
   {
-    code: "Table.new [['a', [1, 2]], ['b', [3, 4]], ['c', [5, 6]]]",
+    code: "Table.input [['a', ['1', '2']], ['b', ['3', '4']], ['c', ['5', '6']]]",
     removedColIndex: 3,
-    expected: "Table.new [['a', [1, 2]], ['b', [3, 4]]]",
+    expected: "Table.input [['a', ['1', '2']], ['b', ['3', '4']]]",
   },
   {
-    code: "Table.new [['a', [1, 2]]]",
+    code: "Table.input [['a', ['1', '2']]]",
     removedColIndex: 1,
-    expected: 'Table.new []',
+    expected: 'Table.input []',
   },
 ])('Remove $removedColIndex column in $code', ({ code, removedColIndex, expected }) => {
   const { tableNewArgs, onUpdate, addMissingImports, gridApi } = tableEditFixture(code, expected)
@@ -414,16 +409,16 @@ test.each([
 
 test.each([
   {
-    code: "Table.new [['a', [1, 2]], ['b', [3, 4]], ['c', [5, 6]]]",
+    code: "Table.input [['a', ['1', '2']], ['b', ['3', '4']], ['c', ['5', '6']]]",
     fromIndex: 1,
     toIndex: 3,
-    expected: "Table.new [['b', [3, 4]], ['c', [5, 6]], ['a', [1, 2]]]",
+    expected: "Table.input [['b', ['3', '4']], ['c', ['5', '6']], ['a', ['1', '2']]]",
   },
   {
-    code: "Table.new [['a', [1, 2]], ['b', [3, 4]], ['c', [5, 6]]]",
+    code: "Table.input [['a', ['1', '2']], ['b', ['3', '4']], ['c', ['5', '6']]]",
     fromIndex: 3,
     toIndex: 2,
-    expected: "Table.new [['a', [1, 2]], ['c', [5, 6]], ['b', [3, 4]]]",
+    expected: "Table.input [['a', ['1', '2']], ['c', ['5', '6']], ['b', ['3', '4']]]",
   },
 ])(
   'Move column $fromIndex to $toIndex in table $code',
@@ -439,22 +434,22 @@ test.each([
 
 test.each([
   {
-    code: "Table.new [['a', [1, 2, 3]], ['b', [4, 5, 6]]]",
+    code: "Table.input [['a', ['1', '2', '3']], ['b', ['4', '5', '6']]]",
     fromIndex: 1,
     toIndex: 2,
-    expected: "Table.new [['a', [1, 3, 2]], ['b', [4, 6, 5]]]",
+    expected: "Table.input [['a', ['1', '3', '2']], ['b', ['4', '6', '5']]]",
   },
   {
-    code: "Table.new [['a', [1, 2, 3]], ['b', [4, 5, 6]]]",
+    code: "Table.input [['a', ['1', '2', '3']], ['b', ['4', '5', '6']]]",
     fromIndex: 2,
     toIndex: 0,
-    expected: "Table.new [['a', [3, 1, 2]], ['b', [6, 4, 5]]]",
+    expected: "Table.input [['a', ['3', '1', '2']], ['b', ['6', '4', '5']]]",
   },
   {
-    code: "Table.new [['a', [1, 2, 3]], ['b', [4, 5, 6]]]",
+    code: "Table.input [['a', ['1', '2', '3']], ['b', ['4', '5', '6']]]",
     fromIndex: 1,
     toIndex: -1,
-    expected: "Table.new [['a', [1, 2, 3]], ['b', [4, 5, 6]]]",
+    expected: "Table.input [['a', ['1', '2', '3']], ['b', ['4', '5', '6']]]",
   },
 ])('Move row $fromIndex to $toIndex in table $code', ({ code, fromIndex, toIndex, expected }) => {
   const { tableNewArgs, onUpdate, addMissingImports } = tableEditFixture(code, expected)
@@ -467,100 +462,100 @@ test.each([
 
 test.each([
   {
-    code: 'Table.new',
+    code: 'Table.input',
     focused: { rowIndex: 0, colIndex: 1 },
     data: [
       ['1', '3'],
       ['2', '4'],
     ],
-    expected: `Table.new [['${DEFAULT_COLUMN_PREFIX}1', [1, 2]], ['${DEFAULT_COLUMN_PREFIX}2', [3, 4]]]`,
+    expected: `Table.input [['${DEFAULT_COLUMN_PREFIX}1', ['1', '2']], ['${DEFAULT_COLUMN_PREFIX}2', ['3', '4']]]`,
   },
   {
-    code: 'Table.new []',
+    code: 'Table.input []',
     focused: { rowIndex: 0, colIndex: 1 },
     data: [
       ['1', '3'],
       ['2', '4'],
     ],
-    expected: `Table.new [['${DEFAULT_COLUMN_PREFIX}1', [1, 2]], ['${DEFAULT_COLUMN_PREFIX}2', [3, 4]]]`,
+    expected: `Table.input [['${DEFAULT_COLUMN_PREFIX}1', ['1', '2']], ['${DEFAULT_COLUMN_PREFIX}2', ['3', '4']]]`,
   },
   {
-    code: 'Table.new []',
+    code: 'Table.input []',
     focused: { rowIndex: 0, colIndex: 1 },
     data: [['a single cell']],
-    expected: `Table.new [['${DEFAULT_COLUMN_PREFIX}1', ['a single cell']]]`,
+    expected: `Table.input [['${DEFAULT_COLUMN_PREFIX}1', ['a single cell']]]`,
   },
   {
-    code: "Table.new [['a', [1, 2]], ['b', [3, 4]]]",
+    code: "Table.input [['a', ['1', '2']], ['b', ['3', '4']]]",
     focused: { rowIndex: 0, colIndex: 1 },
     data: [['a single cell']],
-    expected: "Table.new [['a', ['a single cell', 2]], ['b', [3, 4]]]",
+    expected: "Table.input [['a', ['a single cell', '2']], ['b', ['3', '4']]]",
   },
   {
-    code: "Table.new [['a', [1, 2]], ['b', [3, 4]]]",
+    code: "Table.input [['a', ['1', '2']], ['b', ['3', '4']]]",
     focused: { rowIndex: 1, colIndex: 2 },
     data: [['a single cell']],
-    expected: "Table.new [['a', [1, 2]], ['b', [3, 'a single cell']]]",
+    expected: "Table.input [['a', ['1', '2']], ['b', ['3', 'a single cell']]]",
   },
   {
-    code: "Table.new [['a', [1, 2]], ['b', [3, 4]]]",
+    code: "Table.input [['a', ['1', '2']], ['b', ['3', '4']]]",
     focused: { rowIndex: 2, colIndex: 2 },
     data: [['a single cell']],
-    expected: "Table.new [['a', [1, 2, Nothing]], ['b', [3, 4, 'a single cell']]]",
+    expected: "Table.input [['a', ['1', '2', Nothing]], ['b', ['3', '4', 'a single cell']]]",
     importExpected: true,
   },
   {
-    code: "Table.new [['a', [1, 2]], ['b', [3, 4]]]",
+    code: "Table.input [['a', ['1', '2']], ['b', ['3', '4']]]",
     focused: { rowIndex: 1, colIndex: 3 },
     data: [['a single cell']],
-    expected: `Table.new [['a', [1, 2]], ['b', [3, 4]], ['${DEFAULT_COLUMN_PREFIX}3', [Nothing, 'a single cell']]]`,
+    expected: `Table.input [['a', ['1', '2']], ['b', ['3', '4']], ['${DEFAULT_COLUMN_PREFIX}3', [Nothing, 'a single cell']]]`,
     importExpected: true,
   },
   {
-    code: "Table.new [['a', [1, 2]], ['b', [3, 4]]]",
+    code: "Table.input [['a', ['1', '2']], ['b', ['3', '4']]]",
     focused: { rowIndex: 0, colIndex: 1 },
     data: [
       ['5', '7'],
       ['6', '8'],
     ],
-    expected: "Table.new [['a', [5, 6]], ['b', [7, 8]]]",
+    expected: "Table.input [['a', ['5', '6']], ['b', ['7', '8']]]",
   },
   {
-    code: "Table.new [['a', [1, 2]], ['b', [3, 4]]]",
+    code: "Table.input [['a', ['1', '2']], ['b', ['3', '4']]]",
     focused: { rowIndex: 1, colIndex: 1 },
     data: [
       ['5', '7'],
       ['6', '8'],
     ],
-    expected: "Table.new [['a', [1, 5, 6]], ['b', [3, 7, 8]]]",
+    expected: "Table.input [['a', ['1', '5', '6']], ['b', ['3', '7', '8']]]",
   },
   {
-    code: "Table.new [['a', [1, 2]], ['b', [3, 4]]]",
+    code: "Table.input [['a', ['1', '2']], ['b', ['3', '4']]]",
     focused: { rowIndex: 0, colIndex: 2 },
     data: [
       ['5', '7'],
       ['6', '8'],
     ],
-    expected: `Table.new [['a', [1, 2]], ['b', [5, 6]], ['${DEFAULT_COLUMN_PREFIX}3', [7, 8]]]`,
+    expected: `Table.input [['a', ['1', '2']], ['b', ['5', '6']], ['${DEFAULT_COLUMN_PREFIX}3', ['7', '8']]]`,
   },
   {
-    code: "Table.new [['a', [1, 2]], ['b', [3, 4]]]",
+    code: "Table.input [['a', ['1', '2']], ['b', ['3', '4']]]",
     focused: { rowIndex: 1, colIndex: 2 },
     data: [
       ['5', '7'],
       ['6', '8'],
     ],
-    expected: `Table.new [['a', [1, 2, Nothing]], ['b', [3, 5, 6]], ['${DEFAULT_COLUMN_PREFIX}3', [Nothing, 7, 8]]]`,
+    expected: `Table.input [['a', ['1', '2', Nothing]], ['b', ['3', '5', '6']], ['${DEFAULT_COLUMN_PREFIX}3', [Nothing, '7', '8']]]`,
     importExpected: true,
   },
   {
-    code: "Table.new [['a', [1, 2]], ['b', [3, 4]]]",
+    code: "Table.input [['a', ['1', '2']], ['b', ['3', '4']]]",
     focused: { rowIndex: 2, colIndex: 2 },
     data: [
       ['5', '7'],
       ['6', '8'],
     ],
-    expected: `Table.new [['a', [1, 2, Nothing, Nothing]], ['b', [3, 4, 5, 6]], ['${DEFAULT_COLUMN_PREFIX}3', [Nothing, Nothing, 7, 8]]]`,
+    expected: `Table.input [['a', ['1', '2', Nothing, Nothing]], ['b', ['3', '4', '5', '6']], ['${DEFAULT_COLUMN_PREFIX}3', [Nothing, Nothing, '7', '8']]]`,
     importExpected: true,
   },
 ])(
@@ -593,12 +588,13 @@ test('Pasted data which would exceed cells limit is truncated', () => {
     let cellCount = 0
     inputAst.visitRecursive((ast: Ast.Ast | Ast.Token) => {
       if (ast instanceof Ast.Token) return
-      if (ast instanceof Ast.NumericLiteral || ast.code() === 'Nothing') cellCount++
+      if (ast instanceof Ast.TextLiteral && ast.code().startsWith("'Column #")) return
+      if (ast instanceof Ast.TextLiteral || ast.code() === 'Nothing') cellCount++
     })
     expect(cellCount).toBe(CELLS_LIMIT)
   })
   const addMissingImports = vi.fn()
-  const tableNewArgs = useTableNewArgument(
+  const tableNewArgs = useTableInputArgument(
     input,
     { startEdit, addMissingImports },
     suggestionDbWithNothing(),

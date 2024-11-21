@@ -4,7 +4,6 @@ import { type RequiredImport, requiredImportsByFQN } from '@/stores/graph/import
 import type { SuggestionDb } from '@/stores/suggestionDatabase'
 import { assert } from '@/util/assert'
 import { Ast } from '@/util/ast'
-import { tryEnsoToNumber, tryNumberToEnso } from '@/util/ast/abstract'
 import { findIndexOpt } from '@/util/data/array'
 import { Err, Ok, type Result, transposeResult, unwrapOrWithLog } from '@/util/data/result'
 import { qnLastSegment, type QualifiedName } from '@/util/qualifiedName'
@@ -41,7 +40,7 @@ export type RowData = {
  */
 export interface ColumnDef extends ColDef<RowData> {
   valueGetter: ({ data }: { data: RowData | undefined }) => any
-  valueSetter?: ({ data, newValue }: { data: RowData; newValue: any }) => boolean
+  valueSetter?: ({ data, newValue }: { data: RowData; newValue: string }) => boolean
   mainMenuItems: (string | MenuItem<RowData>)[]
   contextMenuItems: (string | MenuItem<RowData>)[]
   rowDrag?: ({ data }: { data: RowData | undefined }) => boolean
@@ -54,11 +53,7 @@ namespace cellValueConversion {
     if (ast instanceof Ast.TextLiteral) return Ok(ast.rawTextContent)
     else if (ast instanceof Ast.Ident && ast.code() === NOTHING_NAME) return Ok(null)
     else if (ast instanceof Ast.PropertyAccess && ast.rhs.code() === NOTHING_NAME) return Ok(null)
-    else {
-      const asNumber = tryEnsoToNumber(ast)
-      if (asNumber != null) return Ok(asNumber)
-      else return Err('Ast is not convertible to AGGrid value')
-    }
+    else return Err('Ast is not convertible to AGGrid value')
   }
 
   /**
@@ -72,16 +67,9 @@ namespace cellValueConversion {
   ): { ast: Ast.Owned<Ast.MutableExpression>; requireNothingImport: boolean } {
     if (value == null || value === '') {
       return { ast: Ast.Ident.new(module, 'Nothing' as Ast.Identifier), requireNothingImport: true }
-    } else if (typeof value === 'number') {
-      return {
-        ast: tryNumberToEnso(value, module) ?? Ast.TextLiteral.new(`${value}`, module),
-        requireNothingImport: false,
-      }
     } else {
       return {
-        ast:
-          Ast.NumericLiteral.tryParseWithSign(`${value}`, module) ??
-          Ast.TextLiteral.new(`${value}`, module),
+        ast: Ast.TextLiteral.new(`${value}`, module),
         requireNothingImport: false,
       }
     }
@@ -92,7 +80,7 @@ function retrieveColumnsAst(call: Ast.Expression): Result<Ast.Vector | undefined
   if (!(call instanceof Ast.App)) return Ok(undefined)
   if (call.argument instanceof Ast.Vector) return Ok(call.argument)
   if (call.argument instanceof Ast.Wildcard) return Ok(undefined)
-  return Err('Expected Table.new argument to be a vector of columns or placeholder')
+  return Err('Expected Table.input argument to be a vector of columns or placeholder')
 }
 
 function readColumn(
@@ -121,11 +109,11 @@ function retrieveColumnsDefinitions(columnsAst: Ast.Vector) {
 }
 
 /**
- * Check if given ast is a `Table.new` call which may be handled by the TableEditorWidget.
+ * Check if given ast is a `Table.input` call which may be handled by the TableEditorWidget.
  *
  * This widget may handle table definitions filled with literals or `Nothing` values.
  */
-export function tableNewCallMayBeHandled(call: Ast.Expression) {
+export function tableInputCallMayBeHandled(call: Ast.Expression) {
   const columnsAst = retrieveColumnsAst(call)
   if (!columnsAst.ok) return false
   if (!columnsAst.value) return true // We can handle lack of the argument
@@ -140,13 +128,13 @@ export function tableNewCallMayBeHandled(call: Ast.Expression) {
 }
 
 /**
- * A composable responsible for interpreting `Table.new` expressions, creating AGGrid column
+ * A composable responsible for interpreting `Table.input` expressions, creating AGGrid column
  * definitions allowing also editing AST through AGGrid editing.
  * @param input the widget's input
  * @param graph the graph store
  * @param onUpdate callback called when AGGrid was edited by user, resulting in AST change.
  */
-export function useTableNewArgument(
+export function useTableInputArgument(
   input: ToValue<WidgetInput & { value: Ast.Expression }>,
   graph: {
     startEdit(): Ast.MutableModule

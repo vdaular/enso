@@ -3,10 +3,10 @@ import { WidgetInputIsSpecificMethodCall } from '@/components/GraphEditor/widget
 import TableHeader from '@/components/GraphEditor/widgets/WidgetTableEditor/TableHeader.vue'
 import {
   CELLS_LIMIT,
-  tableNewCallMayBeHandled,
-  useTableNewArgument,
+  tableInputCallMayBeHandled,
+  useTableInputArgument,
   type RowData,
-} from '@/components/GraphEditor/widgets/WidgetTableEditor/tableNewArgument'
+} from '@/components/GraphEditor/widgets/WidgetTableEditor/tableInputArgument'
 import ResizeHandles from '@/components/ResizeHandles.vue'
 import AgGridTableView from '@/components/shared/AgGridTableView.vue'
 import { injectGraphNavigator } from '@/providers/graphNavigator'
@@ -55,7 +55,7 @@ const config = computed(() => {
   }
 })
 
-const { rowData, columnDefs, moveColumn, moveRow, pasteFromClipboard } = useTableNewArgument(
+const { rowData, columnDefs, moveColumn, moveRow, pasteFromClipboard } = useTableInputArgument(
   () => props.input,
   graph,
   suggestionDb.entries,
@@ -235,12 +235,12 @@ export const widgetDefinition = defineWidget(
   WidgetInputIsSpecificMethodCall({
     module: 'Standard.Table.Table',
     definedOnType: 'Standard.Table.Table.Table',
-    name: 'new',
+    name: 'input',
   }),
   {
     priority: 999,
     score: (props) => {
-      if (!tableNewCallMayBeHandled(props.input.value)) return Score.Mismatch
+      if (!tableInputCallMayBeHandled(props.input.value)) return Score.Mismatch
       return Score.Perfect
     },
   },

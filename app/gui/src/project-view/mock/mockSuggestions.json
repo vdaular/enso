@@ -1050,6 +1050,26 @@
   {
     "type": "method",
     "module": "Standard.Table.Table",
+    "name": "input",
+    "arguments": [
+      {
+        "name": "columns",
+        "reprType": "Standard.Base.Data.Vector.Vector Standard.Base.Data.Vector.Vector | Standard.Table.Column.Column",
+        "isSuspended": false,
+        "hasDefault": false,
+        "defaultValue": null,
+        "tagValues": null
+      }
+    ],
+    "selfType": "Standard.Table.Table.Table",
+    "returnType": "Standard.Table.Table.Table",
+    "isStatic": true,
+    "documentation": "",
+    "annotations": []
+  },
+  {
+    "type": "method",
+    "module": "Standard.Table.Table",
     "name": "aggregate",
     "arguments": [
       {

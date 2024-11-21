@@ -113,22 +113,22 @@ export async function createTableNode(page: Page) {
   // Adding `Table.new` component will display the widget
   await locate.addNewNodeButton(page).click()
   await expect(locate.componentBrowser(page)).toBeVisible()
-  await page.keyboard.type('Table.new')
+  await page.keyboard.type('Table.input')
   // Wait for CB entry to appear; this way we're sure about node name (binding).
   await expect(locate.componentBrowserSelectedEntry(page)).toHaveCount(1)
-  await expect(locate.componentBrowserSelectedEntry(page)).toHaveText('Table.new')
+  await expect(locate.componentBrowserSelectedEntry(page)).toHaveText('Table.input')
   await page.keyboard.press('Enter')
   const node = locate.graphNodeByBinding(page, 'table1')
   await expect(node).toHaveCount(1)
   await expect(node).toBeVisible()
   await mockMethodCallInfo(
     page,
-    { binding: 'table1', expr: 'Table.new' },
+    { binding: 'table1', expr: 'Table.input' },
     {
       methodPointer: {
         module: 'Standard.Table.Table',
         definedOnType: 'Standard.Table.Table.Table',
-        name: 'new',
+        name: 'input',
       },
       notAppliedArguments: [0],
     },
