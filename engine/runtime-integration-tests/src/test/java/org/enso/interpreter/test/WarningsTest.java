@@ -13,7 +13,7 @@ import com.oracle.truffle.api.interop.InteropLibrary;
 import java.util.List;
 import org.enso.common.LanguageInfo;
 import org.enso.common.MethodNames;
-import org.enso.interpreter.node.expression.builtin.interop.syntax.HostValueToEnsoNode;
+import org.enso.interpreter.node.expression.foreign.HostValueToEnsoNode;
 import org.enso.interpreter.runtime.EnsoContext;
 import org.enso.interpreter.runtime.data.hash.EnsoHashMap;
 import org.enso.interpreter.runtime.data.hash.HashMapGetNode;
