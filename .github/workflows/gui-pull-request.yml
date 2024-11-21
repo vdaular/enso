@@ -22,7 +22,7 @@ permissions:
 jobs:
   changed-files:
     runs-on: ubuntu-latest
-    name: 🔍 Detect changed files in GUI
+    name: 🔍 GUI files changed
     outputs:
       all_changed_files: ${{ steps.changed-files.outputs.all_changed_files }}
       any_changed: ${{ steps.changed-files.outputs.any_changed }}
@@ -43,6 +43,7 @@ jobs:
             .prettierrc.js
             .prettierignore
             vitest.workspace.ts
+            .github/workflows/gui*
           files_ignore: |
             app/ide-desktop/**
             app/gui/scripts/**
@@ -71,13 +72,24 @@ jobs:
     if: ${{ needs.changed-files.outputs.any_changed == 'true' }}
     secrets: inherit
 
+  print-checks-result:
+    name: 🤷 Print checks result
+    runs-on: ubuntu-latest
+    needs: [checks, storybook]
+    if: always()
+    steps:
+      - name: Print checks result
+        run: |
+          echo "Checks: ${{ needs.checks.result }}"
+          echo "Storybook: ${{ needs.storybook.result }}"
+
   # This job is used to report success if the needed jobs were successful.
   # This is a workaround to make optional jobs required if they run
   report-success:
-    name: ✅ Success or skipped due to no changes
+    name: GUI Checks Success or Skipped
     runs-on: ubuntu-latest
     needs: [checks, storybook]
-    if: needs.checks.result == 'skipped' && needs.storybook.result == 'skipped' || needs.checks.result == 'success' && needs.storybook.result == 'success'
+    if: always() && (needs.checks.result == 'skipped' && needs.storybook.result == 'skipped') || (needs.checks.result == 'success' && needs.storybook.result == 'success')
     steps:
       - name: Report success
         run: echo "Success!"

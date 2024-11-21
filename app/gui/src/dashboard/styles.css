@@ -23,10 +23,3 @@
 :where(.enso-dashboard) {
   @apply absolute inset-0 flex flex-col overflow-hidden;
 }
-
-/* Disable all animations. */
-html.disable-animations * {
-  transition: none !important;
-  animation: none !important;
-  animation-play-state: paused !important;
-}

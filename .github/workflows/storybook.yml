@@ -78,6 +78,7 @@ jobs:
   comment-on-pr:
     name: 💬 Comment on PR
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     needs: deploy-chromatic-react
     steps:
       - uses: actions/checkout@v4

@@ -556,3 +556,10 @@ body[data-debug] {
 :root::highlight(field-existing-email) {
   @apply text-amber-500;
 }
+
+/* Disable all animations. */
+html.disable-animations * {
+  transition: none !important;
+  animation: none !important;
+  animation-play-state: paused !important;
+}
