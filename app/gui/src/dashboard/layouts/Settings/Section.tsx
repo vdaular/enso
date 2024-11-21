@@ -20,18 +20,20 @@ export default function SettingsSection(props: SettingsSectionProps) {
   const { context, data } = props
   const { nameId, focusArea = true, heading = true, entries } = data
   const { getText } = useText()
-  const isVisible = entries.some((entry) => entry.getVisible?.(context) ?? true)
+  const isVisible = entries.some((entry) =>
+    'getVisible' in entry ? entry.getVisible(context) : true,
+  )
 
   return !isVisible ? null : (
       <FocusArea active={focusArea} direction="vertical">
         {(innerProps) => (
-          <div className="flex w-full flex-col gap-settings-section-header" {...innerProps}>
+          <div className="flex w-full flex-col gap-2.5" {...innerProps}>
             {!heading ? null : (
               <Text.Heading level={2} weight="bold">
                 {getText(nameId)}
               </Text.Heading>
             )}
-            <div className="flex flex-col overflow-auto">
+            <div className="flex flex-col gap-2 overflow-auto">
               {entries.map((entry, i) => (
                 <SettingsEntry key={i} context={context} data={entry} />
               ))}

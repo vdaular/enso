@@ -1,7 +1,4 @@
-/**
- * @file
- * The tab bar for the dashboard page.
- */
+/** @file The tab bar for the dashboard page. */
 import DriveIcon from '#/assets/drive.svg'
 import SettingsIcon from '#/assets/settings.svg'
 import WorkspaceIcon from '#/assets/workspace.svg'
@@ -20,17 +17,13 @@ import { useText } from '#/providers/TextProvider'
 import type { ProjectId } from '#/services/Backend'
 import type { TextId } from 'enso-common/src/text'
 
-/**
- * The props for the {@link DashboardTabBar} component.
- */
+/** The props for the {@link DashboardTabBar} component. */
 export interface DashboardTabBarProps {
   readonly onCloseProject: (project: LaunchedProject) => void
   readonly onOpenEditor: (projectId: ProjectId) => void
 }
 
-/**
- * The tab bar for the dashboard page.
- */
+/** The tab bar for the dashboard page. */
 export function DashboardTabBar(props: DashboardTabBarProps) {
   const { onCloseProject, onOpenEditor } = props
 

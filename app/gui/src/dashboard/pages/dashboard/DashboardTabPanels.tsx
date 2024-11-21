@@ -1,7 +1,4 @@
-/**
- * @file
- * The tab panels for the dashboard page.
- */
+/** @file The tab panels for the dashboard page. */
 
 import * as aria from '#/components/aria'
 
@@ -17,9 +14,7 @@ import { TabType, useLaunchedProjects, usePage } from '#/providers/ProjectsProvi
 import type { ProjectId } from '#/services/Backend'
 import { Collection } from 'react-aria-components'
 
-/**
- * The props for the {@link DashboardTabPanels} component.
- */
+/** The props for the {@link DashboardTabPanels} component. */
 export interface DashboardTabPanelsProps {
   readonly appRunner: GraphEditorRunner | null
   readonly initialProjectName: string | null
@@ -29,9 +24,7 @@ export interface DashboardTabPanelsProps {
   readonly setCategory: (category: Category) => void
 }
 
-/**
- * The tab panels for the dashboard page.
- */
+/** The tab panels for the dashboard page. */
 export function DashboardTabPanels(props: DashboardTabPanelsProps) {
   const { appRunner, initialProjectName, ydocUrl, assetManagementApiRef, category, setCategory } =
     props

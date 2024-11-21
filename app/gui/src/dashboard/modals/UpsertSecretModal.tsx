@@ -1,5 +1,12 @@
 /** @file Modal for confirming delete of any type of asset. */
-import { ButtonGroup, Dialog, Form, INPUT_STYLES, Input } from '#/components/AriaComponents'
+import {
+  ButtonGroup,
+  Dialog,
+  DialogDismiss,
+  Form,
+  INPUT_STYLES,
+  Input,
+} from '#/components/AriaComponents'
 import { useText } from '#/providers/TextProvider'
 import type { SecretId } from '#/services/Backend'
 import { tv } from '#/utilities/tailwindVariants'
@@ -91,8 +98,8 @@ export default function UpsertSecretModal(props: UpsertSecretModalProps) {
       />
       <ButtonGroup className="mt-2">
         <Form.Submit>{isCreatingSecret ? getText('create') : getText('update')}</Form.Submit>
-        {canCancel && <Form.Submit action="cancel" />}
-        {canReset && <Form.Reset action="cancel" />}
+        {canCancel && <DialogDismiss />}
+        {canReset && <Form.Reset>{getText('cancel')}</Form.Reset>}
       </ButtonGroup>
     </Form>
   )

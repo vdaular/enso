@@ -12,6 +12,7 @@ import {
   ButtonGroup,
   CopyBlock,
   Dialog,
+  DialogDismiss,
   DialogTrigger,
   Form,
   OTPInput,
@@ -114,7 +115,7 @@ export function SetupTwoFaForm() {
 
                 <ButtonGroup>
                   <Form.Submit variant="delete">{getText('disable')}</Form.Submit>
-                  <Form.Submit action="cancel" />
+                  <DialogDismiss />
                 </ButtonGroup>
 
                 <Form.FormError />

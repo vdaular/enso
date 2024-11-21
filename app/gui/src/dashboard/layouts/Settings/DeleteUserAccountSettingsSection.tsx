@@ -23,7 +23,7 @@ export default function DeleteUserAccountSettingsSection() {
     <FocusArea direction="vertical">
       {(innerProps) => (
         <div
-          className="flex flex-col items-start gap-settings-section-header rounded-2.5xl border-2 border-danger px-[1rem] pb-[0.9375rem] pt-[0.5625rem]"
+          className="flex flex-col items-start gap-2.5 rounded-2.5xl border-2 border-danger px-[1rem] pb-[0.9375rem] pt-[0.5625rem]"
           {...innerProps}
         >
           <aria.Heading level={2} className="h-[2.375rem] py-0.5 text-xl font-bold text-danger">

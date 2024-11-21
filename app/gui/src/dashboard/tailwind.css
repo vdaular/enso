@@ -297,19 +297,9 @@
 
   /* The horizontal gap between the settings sidebar and main content. */
   --settings-gap: 2rem;
-  /* The vertical gap between the settings heading and everything else. */
-  --settings-header-gap: 2rem;
-  /* The horizontal gap between horizontally stacked settings sections. */
-  --settings-section-gap: 2rem;
-  /* The vertical gap between vertically stacked settings subsections. */
-  --settings-subsection-gap: 2rem;
-  /* The gap between the header and contents of a section in a settings page. */
-  --settings-section-header-gap: 0.625rem;
   /* The gap between the label and value of a settings entry. */
   --settings-entry-gap: 1.25rem;
   --settings-sidebar-width: 12.875rem;
-  /* The gap between each section in the settings sidebar. */
-  --settings-sidebar-gap: 1rem;
   /* The width of the main section of the settings page, if there are multiple sections stacked
    * horizontally. */
   --settings-main-section-width: 32rem;

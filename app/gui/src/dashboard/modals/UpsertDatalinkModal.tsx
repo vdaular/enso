@@ -1,5 +1,5 @@
 /** @file A modal for creating a Datalink. */
-import { ButtonGroup, Dialog, Form, Input } from '#/components/AriaComponents'
+import { ButtonGroup, Dialog, DialogDismiss, Form, Input } from '#/components/AriaComponents'
 import { DatalinkFormInput } from '#/components/dashboard/DatalinkInput'
 import SCHEMA from '#/data/datalinkSchema.json' with { type: 'json' }
 import { validateDatalink } from '#/data/datalinkValidator'
@@ -54,7 +54,7 @@ export default function UpsertDatalinkModal(props: UpsertDatalinkModalProps) {
 
         <ButtonGroup>
           <Form.Submit>{getText('create')}</Form.Submit>
-          <Form.Submit action="cancel" />
+          <DialogDismiss />
         </ButtonGroup>
 
         <Form.FormError />

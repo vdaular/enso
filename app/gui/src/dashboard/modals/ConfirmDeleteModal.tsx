@@ -1,7 +1,7 @@
 /** @file Modal for confirming delete of any type of asset. */
 import * as z from 'zod'
 
-import { ButtonGroup, Dialog, Form, Text } from '#/components/AriaComponents'
+import { ButtonGroup, Dialog, DialogDismiss, Form, Text } from '#/components/AriaComponents'
 import { useSetModal } from '#/providers/ModalProvider'
 import { useText } from '#/providers/TextProvider'
 
@@ -39,7 +39,7 @@ export default function ConfirmDeleteModal(props: ConfirmDeleteModalProps) {
           <Form.Submit variant="delete" className="relative">
             {actionButtonLabel}
           </Form.Submit>
-          <Form.Submit action="cancel" />
+          <DialogDismiss />
         </ButtonGroup>
       </Form>
     </Dialog>

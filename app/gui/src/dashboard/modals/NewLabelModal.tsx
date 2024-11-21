@@ -4,7 +4,7 @@ import * as React from 'react'
 import { useMutation } from '@tanstack/react-query'
 import * as z from 'zod'
 
-import { ButtonGroup, Form, Input, Popover, Text } from '#/components/AriaComponents'
+import { ButtonGroup, DialogDismiss, Form, Input, Popover, Text } from '#/components/AriaComponents'
 import ColorPicker from '#/components/ColorPicker'
 import FocusArea from '#/components/styled/FocusArea'
 import { backendMutationOptions, useBackendQuery } from '#/hooks/backendHooks'
@@ -90,7 +90,7 @@ export default function NewLabelModal(props: NewLabelModalProps) {
             </FocusArea>
             <ButtonGroup className="relative">
               <Form.Submit>{getText('create')}</Form.Submit>
-              <Form.Submit action="cancel" />
+              <DialogDismiss />
             </ButtonGroup>
             <Form.FormError />
           </>

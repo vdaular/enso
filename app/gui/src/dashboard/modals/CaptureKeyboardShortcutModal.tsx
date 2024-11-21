@@ -3,7 +3,7 @@ import { useState, type KeyboardEvent as ReactKeyboardEvent } from 'react'
 
 import { isOnMacOS } from 'enso-common/src/detect'
 
-import { ButtonGroup, Dialog, Form, Text } from '#/components/AriaComponents'
+import { ButtonGroup, Dialog, DialogDismiss, Form, Text } from '#/components/AriaComponents'
 import KeyboardShortcut from '#/components/dashboard/KeyboardShortcut'
 import { useSetModal } from '#/providers/ModalProvider'
 import { useText } from '#/providers/TextProvider'
@@ -123,7 +123,7 @@ export default function CaptureKeyboardShortcutModal(props: CaptureKeyboardShort
         </Text>
         <ButtonGroup>
           <Form.Submit isDisabled={!canSubmit}>{getText('confirm')}</Form.Submit>
-          <Form.Submit action="cancel" />
+          <DialogDismiss />
         </ButtonGroup>
       </Form>
     </Dialog>

@@ -6,27 +6,16 @@ import * as z from 'zod'
 
 import * as eventCallbacks from '#/hooks/eventCallbackHooks'
 import * as searchParamsState from '#/hooks/searchParamsStateHooks'
-
 import * as localStorageProvider from '#/providers/LocalStorageProvider'
-
 import * as backendModule from '#/services/Backend'
-
 import * as array from '#/utilities/array'
 import LocalStorage from '#/utilities/LocalStorage'
-
-// ===============
-// === TabType ===
-// ===============
 
 /** Main content of the screen. Only one should be visible at a time. */
 export enum TabType {
   drive = 'drive',
   settings = 'settings',
 }
-
-// ============================
-// === Global configuration ===
-// ============================
 
 declare module '#/utilities/LocalStorage' {
   /** */
@@ -36,10 +25,6 @@ declare module '#/utilities/LocalStorage' {
     readonly launchedProjects: z.infer<typeof LAUNCHED_PROJECT_SCHEMA>
   }
 }
-
-// =================
-// === Constants ===
-// =================
 
 const PROJECT_SCHEMA = z
   .object({
@@ -73,10 +58,6 @@ export const PAGES_SCHEMA = z
 
 LocalStorage.registerKey('page', { schema: PAGES_SCHEMA })
 
-// =======================
-// === ProjectsContext ===
-// =======================
-
 /** State contained in a `ProjectsContext`. */
 export interface ProjectsContextType {
   readonly setLaunchedProjects: (launchedProjects: readonly LaunchedProject[]) => void
@@ -99,10 +80,6 @@ const LaunchedProjectsContext = React.createContext<readonly LaunchedProject[] |
 /** Props for a {@link ProjectsProvider}. */
 export type ProjectsProviderProps = Readonly<React.PropsWithChildren>
 
-// ========================
-// === ProjectsProvider ===
-// ========================
-
 /**
  * A React provider (and associated hooks) for determining whether the current area
  * containing the current element is focused.
@@ -112,7 +89,7 @@ export default function ProjectsProvider(props: ProjectsProviderProps) {
 
   const [launchedProjects, setLaunchedProjects] = localStorageProvider.useLocalStorageState(
     'launchedProjects',
-    [],
+    array.EMPTY_ARRAY,
   )
   const [page, setPage] = searchParamsState.useSearchParamsState(
     'page',
@@ -172,10 +149,6 @@ export default function ProjectsProvider(props: ProjectsProviderProps) {
   )
 }
 
-// ========================
-// === useProjectsStore ===
-// ========================
-
 /** The projects store. */
 export function useProjectsStore() {
   const context = React.useContext(ProjectsContext)
@@ -185,9 +158,7 @@ export function useProjectsStore() {
   return context
 }
 
-/**
- * Returns the page context.
- */
+/** The page context. */
 export function usePage() {
   const context = React.useContext(PageContext)
 
@@ -195,10 +166,6 @@ export function usePage() {
 
   return context
 }
-
-// ==================
-// === useSetPage ===
-// ==================
 
 /** A function to set the current page. */
 export function useSetPage() {
@@ -208,9 +175,7 @@ export function useSetPage() {
   })
 }
 
-/**
- * Returns the launched projects context.
- */
+/** Returns the launched projects context. */
 export function useLaunchedProjects() {
   const context = React.useContext(LaunchedProjectsContext)
 
@@ -222,19 +187,11 @@ export function useLaunchedProjects() {
   return context
 }
 
-// =================================
-// === useUpdateLaunchedProjects ===
-// =================================
-
 /** A function to update launched projects. */
 export function useUpdateLaunchedProjects() {
   const { updateLaunchedProjects } = useProjectsStore()
   return updateLaunchedProjects
 }
-
-// =============================
-// === useAddLaunchedProject ===
-// =============================
 
 /** A function to add a new launched project. */
 export function useAddLaunchedProject() {
@@ -242,19 +199,11 @@ export function useAddLaunchedProject() {
   return addLaunchedProject
 }
 
-// ================================
-// === useRemoveLaunchedProject ===
-// ================================
-
 /** A function to remove a launched project. */
 export function useRemoveLaunchedProject() {
   const { removeLaunchedProject } = useProjectsStore()
   return removeLaunchedProject
 }
-
-// ================================
-// === useClearLaunchedProjects ===
-// ================================
 
 /** A function to remove all launched projects. */
 export function useClearLaunchedProjects() {
