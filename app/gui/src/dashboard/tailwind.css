@@ -398,41 +398,8 @@
   --sidebar-section-heading-margin-b: 0.375rem;
 }
 
-/* Disable all animations. */
-html.disable-animations * {
-  transition: none !important;
-  animation: none !important;
-  animation-play-state: paused !important;
-}
-
-:where(body) {
-  overflow: hidden;
-  height: 100vh;
-  background-blend-mode: lighten;
-}
-
-:where(body:not(.vibrancy)) {
-  &::before {
-    content: '';
-    inset: 0 -16vw -16vh 0;
-    z-index: -1;
-
-    background-color: #b09778ff;
-
-    @apply pointer-events-none fixed bg-cover;
-  }
-
-  & > * {
-    @apply bg-white/80;
-  }
-}
-
 .Toastify--animate {
   animation-duration: 200ms;
-}
-
-:where(.enso-dashboard) {
-  @apply absolute inset-0 flex flex-col overflow-hidden;
 }
 
 /* These styles MUST still be copied

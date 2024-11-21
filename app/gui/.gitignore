@@ -25,7 +25,11 @@ mockDist
 
 test-results/
 playwright-report/
+blob-report/
 playwright/
 
 src/project-view/util/iconList.json
 src/project-view/util/iconName.ts
+
+*storybook.log
+storybook-static

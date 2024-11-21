@@ -12,7 +12,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc",
     "compile": "tsc",
-    "lint": "eslint . --max-warnings=0"
+    "lint": "eslint . --cache --max-warnings=0"
   },
   "exports": {
     ".": {

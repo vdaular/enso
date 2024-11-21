@@ -46,24 +46,9 @@ export async function readEnvironmentFromFile() {
     }
     process.env.ENSO_CLOUD_DASHBOARD_VERSION ??= buildInfo.version ?? '0.0.0-dev'
     process.env.ENSO_CLOUD_DASHBOARD_COMMIT_HASH ??= buildInfo.commit
-  } catch (error) {
+  } catch {
     process.env.ENSO_CLOUD_DASHBOARD_VERSION ??= buildInfo.version
     process.env.ENSO_CLOUD_DASHBOARD_COMMIT_HASH ??= buildInfo.commit
-    const expectedKeys = Object.keys(DUMMY_DEFINES)
-      .map(key => key.replace(/^process[.]env[.]/, ''))
-      .filter(key => key !== 'NODE_ENV')
-    /** @type {string[]} */
-    const missingKeys = []
-    for (const key of expectedKeys) {
-      if (!(key in process.env)) {
-        missingKeys.push(key)
-      }
-    }
-    if (missingKeys.length !== 0) {
-      console.warn('Could not load `.env` file; disabling cloud backend.')
-      console.warn(`Missing keys: ${missingKeys.map(key => `'${key}'`).join(', ')}`)
-      console.error(error)
-    }
   }
 }
 

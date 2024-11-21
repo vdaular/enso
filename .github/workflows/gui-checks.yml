@@ -1,0 +1,196 @@
+name: GUI Checks
+on: workflow_call
+
+# Cancel in-progress workflows if a new one is started
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-gui-checks
+  cancel-in-progress: true
+
+permissions:
+  contents: read # Read-only access to repository contents
+  issues: write # Write access to issues
+  pull-requests: write # Write access to pull requests
+  statuses: write # Write access to commit statuses
+  checks: write
+
+jobs:
+  lint:
+    name: 👮 Lint GUI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        name: ⎔ Setup Node
+        with:
+          node-version-file: .node-version
+          cache: "pnpm"
+
+      - uses: actions/cache/restore@v4
+        name: Download cache
+        id: cache
+        with:
+          path: |
+            **/.eslintcache
+            node_modules/.cache/prettier
+          key: ${{ runner.os }}-gui-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-gui
+
+      - if: startsWith(runner.name, 'GitHub Actions') || startsWith(runner.name, 'Hosted Agent')
+        name: Installing wasm-pack
+        uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: v0.12.1
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 📝 Prettier
+        id: prettier
+        continue-on-error: true
+        run: pnpm run ci:prettier
+
+      # Next Tasks are depend on Typecheck, because we build libraries at this stage
+      - name: 🧠 Typecheck
+        id: typecheck
+        continue-on-error: true
+        run: pnpm run ci:typecheck
+
+      - name: 🧹 Lint
+        id: lint
+        continue-on-error: true
+        run: pnpm run ci:lint
+
+      - name: 🧪 Unit Tests
+        id: unit-tests
+        continue-on-error: true
+        run: pnpm run ci:test
+
+      - name: 💾 Save cache
+        uses: actions/cache/save@v4
+        if: always() && steps.cache.outputs.cache-hit != 'true'
+        id: save-cache
+        with:
+          key: ${{ steps.cache.outputs.cache-primary-key }}
+          path: |
+            **/.eslintcache
+            node_modules/.cache/prettier
+
+      - name: 📝 Annotate Code Linting Results
+        uses: ataylorme/eslint-annotate-action@v3
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          report-json: "./**/eslint_report.json"
+          markdown-report-on-step-summary: true
+          check-name: 🧹 GUI Lint Results
+
+      - name: ❌ Fail if any check failed
+        if: always() && (steps.prettier.outcome == 'failure' || steps.lint.outcome == 'failure' || steps.typecheck.outcome == 'failure' || steps.unit-tests.outcome == 'failure')
+        run: |
+          echo "Prettier outcome: ${{ steps.prettier.outcome }}"
+          echo "Lint outcome: ${{ steps.lint.outcome }}"
+          echo "Typecheck outcome: ${{ steps.typecheck.outcome }}"
+          echo "Unit tests outcome: ${{ steps.unit-tests.outcome }}"
+          exit 1
+
+  playwright:
+    name: 🎭 Playwright Tests
+    env:
+      NODE_OPTIONS: --disable-warning=ExperimentalWarning
+    runs-on:
+      - self-hosted
+      - Linux
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      max-parallel: 24
+      matrix:
+        shardIndex: [1, 2, 3, 4, 5, 6]
+        shardTotal: [6]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        name: ⎔ Setup Node
+        with:
+          node-version-file: .node-version
+          cache: "pnpm"
+
+      - if: startsWith(runner.name, 'GitHub Actions') || startsWith(runner.name, 'Hosted Agent')
+        name: Installing wasm-pack
+        uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: v0.12.1
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: 📺 Install Playwright Browsers
+        working-directory: app/gui
+        run: pnpm run playwright:install
+
+      - name: 🎭 Playwright Tests
+        working-directory: app/gui
+        run: pnpm run e2e --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+
+      - name: ⬆️ Upload blob report to GitHub Actions Artifacts
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: blob-report-${{ matrix.shardIndex }}
+          path: app/gui/blob-report
+          retention-days: 7
+
+  merge-reports:
+    name: 🔗 Merge Playwright Reports
+    if: ${{ !cancelled() }}
+    needs: [playwright]
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: "pnpm"
+
+      - if: startsWith(runner.name, 'GitHub Actions') || startsWith(runner.name, 'Hosted Agent')
+        name: Installing wasm-pack
+        uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: v0.12.1
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: 📥 Download blob reports from GitHub Actions Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: app/gui/blob-report/
+          pattern: blob-report-*
+          merge-multiple: true
+
+      - name: 🔗 Merge into HTML Report
+        working-directory: app/gui
+        run: pnpm playwright merge-reports --reporter html ./blob-report
+
+      - name: ⬆️ Upload HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report--attempt-${{ github.run_attempt }}
+          path: app/gui/playwright-report/
+          retention-days: 14

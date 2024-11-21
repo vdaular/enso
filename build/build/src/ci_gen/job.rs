@@ -397,16 +397,6 @@ impl JobArchetype for NativeTest {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct GuiCheck;
-
-impl JobArchetype for GuiCheck {
-    fn job(&self, target: Target) -> Job {
-        plain_job(target, "GUI tests", "gui check")
-    }
-}
-
-
-#[derive(Clone, Copy, Debug)]
 pub struct GuiBuild;
 
 impl JobArchetype for GuiBuild {

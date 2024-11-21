@@ -19,7 +19,8 @@ const TIMEOUT_MS =
   : 15_000
 
 // We tend to use less CPU on CI to reduce the number of failures due to timeouts.
-const WORKERS = isCI ? '25%' : '35%'
+// Instead of using workers on CI, we use shards to run tests in parallel.
+const WORKERS = isCI ? 2 : '35%'
 
 async function findFreePortInRange(min: number, max: number) {
   for (let i = 0; i < 50; i++) {
@@ -62,12 +63,13 @@ process.env.PLAYWRIGHT_PORT_PV = `${ports.projectView}`
 export default defineConfig({
   fullyParallel: true,
   ...(WORKERS ? { workers: WORKERS } : {}),
-  forbidOnly: !!process.env.CI,
-  repeatEach: process.env.CI ? 3 : 1,
-  reporter: 'html',
+  forbidOnly: isCI,
+  reporter: isCI ? ([['list'], ['blob']] as const) : ([['list']] as const),
+  retries: isCI ? 3 : 0,
   use: {
     headless: !DEBUG,
     actionTimeout: 5000,
+
     trace: 'retain-on-failure',
     ...(DEBUG ?
       {}

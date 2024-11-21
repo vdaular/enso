@@ -4,14 +4,14 @@ import * as React from 'react'
 import * as focusHooks from '#/hooks/focusHooks'
 
 import * as aria from '#/components/aria'
-import * as ariaComponents from '#/components/AriaComponents'
 import { StatelessSpinner } from '#/components/StatelessSpinner'
 import SvgMask from '#/components/SvgMask'
 
 import { forwardRef } from '#/utilities/react'
 import type { ExtractFunction, VariantProps } from '#/utilities/tailwindVariants'
 import { tv } from '#/utilities/tailwindVariants'
-import { TEXT_STYLE } from '../Text'
+import { TEXT_STYLE, useVisualTooltip } from '../Text'
+import { Tooltip, TooltipTrigger } from '../Tooltip'
 
 // ==============
 // === Button ===
@@ -82,7 +82,7 @@ export const BUTTON_STYLES = tv({
   ],
   variants: {
     isDisabled: {
-      true: 'disabled:opacity-50 disabled:cursor-not-allowed aria-disabled:opacity-50 aria-disabled:cursor-not-allowed',
+      true: 'opacity-50 cursor-not-allowed',
     },
     isFocused: {
       true: 'focus:outline-none focus-visible:outline-2 focus-visible:outline-black focus-visible:outline-offset-[-2px]',
@@ -256,6 +256,7 @@ export const BUTTON_STYLES = tv({
     variant: 'primary',
     iconPosition: 'start',
     showIconOnHover: false,
+    isDisabled: false,
   },
   compoundVariants: [
     { isFocused: true, iconOnly: true, class: 'focus-visible:outline-offset-[3px]' },
@@ -393,14 +394,14 @@ export const Button = forwardRef(function Button(
     render: aria.ButtonRenderProps | aria.LinkRenderProps,
   ): React.ReactNode => {
     const iconComponent = (() => {
-      if (icon == null) {
-        return null
-      } else if (isLoading && loaderPosition === 'icon') {
+      if (isLoading && loaderPosition === 'icon') {
         return (
           <span className={styles.icon()}>
             <StatelessSpinner state="loading-medium" size={16} />
           </span>
         )
+      } else if (icon == null) {
+        return null
       } else {
         /* @ts-expect-error any here is safe because we transparently pass it to the children, and ts infer the type outside correctly */
         const actualIcon = typeof icon === 'function' ? icon(render) : icon
@@ -429,7 +430,7 @@ export const Button = forwardRef(function Button(
     }
   }
 
-  const { tooltip: visualTooltip, targetProps } = ariaComponents.useVisualTooltip({
+  const { tooltip: visualTooltip, targetProps } = useVisualTooltip({
     targetRef: contentRef,
     children: tooltipElement,
     isDisabled: !shouldUseVisualTooltip,
@@ -483,14 +484,12 @@ export const Button = forwardRef(function Button(
         {button}
         {visualTooltip}
       </>
-    : <ariaComponents.TooltipTrigger delay={0} closeDelay={0}>
+    : <TooltipTrigger delay={0} closeDelay={0}>
         {button}
 
-        <ariaComponents.Tooltip
-          {...(tooltipPlacement != null ? { placement: tooltipPlacement } : {})}
-        >
+        <Tooltip {...(tooltipPlacement != null ? { placement: tooltipPlacement } : {})}>
           {tooltipElement}
-        </ariaComponents.Tooltip>
-      </ariaComponents.TooltipTrigger>
+        </Tooltip>
+      </TooltipTrigger>
   )
 })

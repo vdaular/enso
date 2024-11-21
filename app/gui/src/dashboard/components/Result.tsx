@@ -4,10 +4,10 @@ import * as React from 'react'
 import Success from '#/assets/check_mark.svg'
 import Error from '#/assets/cross.svg'
 
-import * as ariaComponents from '#/components/AriaComponents'
-import * as loader from '#/components/Loader'
-import SvgMask from '#/components/SvgMask'
 import { tv, type VariantProps } from '#/utilities/tailwindVariants'
+import { Text } from './AriaComponents/Text'
+import * as loader from './Loader'
+import SvgMask from './SvgMask'
 
 // =================
 // === Constants ===
@@ -15,9 +15,9 @@ import { tv, type VariantProps } from '#/utilities/tailwindVariants'
 
 const INFO_ICON = (
   // eslint-disable-next-line no-restricted-syntax
-  <ariaComponents.Text variant="custom" className="pb-0.5 text-xl leading-[0]" aria-hidden>
+  <Text variant="custom" className="pb-0.5 text-xl leading-[0]" aria-hidden>
     !
-  </ariaComponents.Text>
+  </Text>
 )
 
 const STATUS_ICON_MAP: Readonly<Record<Status, StatusIcon>> = {
@@ -142,15 +142,15 @@ export function Result(props: ResultProps) {
       : null}
 
       {typeof title === 'string' ?
-        <ariaComponents.Text.Heading level={2} className={classes.title()} variant="subtitle">
+        <Text.Heading level={2} className={classes.title()} variant="subtitle">
           {title}
-        </ariaComponents.Text.Heading>
+        </Text.Heading>
       : title}
 
       {typeof subtitle === 'string' ?
-        <ariaComponents.Text elementType="p" className={classes.subtitle()} balance variant="body">
+        <Text elementType="p" className={classes.subtitle()} balance variant="body">
           {subtitle}
-        </ariaComponents.Text>
+        </Text>
       : subtitle}
 
       {children != null && <div className={classes.content()}>{children}</div>}

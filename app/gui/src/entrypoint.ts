@@ -1,4 +1,5 @@
 import * as dashboard from '#/index'
+import '#/styles.css'
 import '#/tailwind.css'
 import { AsyncApp } from '@/asyncApp'
 import { baseConfig, configValue, mergeConfig } from '@/util/config'

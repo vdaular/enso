@@ -661,7 +661,6 @@ pub fn gui_tests() -> Result<Workflow> {
     workflow.add(PRIMARY_TARGET, job::Lint);
     workflow.add(PRIMARY_TARGET, job::WasmTest);
     workflow.add(PRIMARY_TARGET, job::NativeTest);
-    workflow.add(PRIMARY_TARGET, job::GuiCheck);
     Ok(workflow)
 }
 

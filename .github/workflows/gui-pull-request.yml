@@ -1,0 +1,83 @@
+# This file is not auto-generated. Feel free to edit it.
+
+name: ✨ GUI Pull Request
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read # Read-only access to repository contents
+  issues: write # Write access to issues
+  pull-requests: write # Write access to pull requests
+  statuses: write # Write access to commit statuses
+  checks: write
+
+jobs:
+  changed-files:
+    runs-on: ubuntu-latest
+    name: 🔍 Detect changed files in GUI
+    outputs:
+      all_changed_files: ${{ steps.changed-files.outputs.all_changed_files }}
+      any_changed: ${{ steps.changed-files.outputs.any_changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            app/**
+            package.json
+            pnpm-lock.yaml
+            pnpm-workspace.yaml
+            eslint.config.js
+            .prettierrc.js
+            .prettierignore
+            vitest.workspace.ts
+          files_ignore: |
+            app/ide-desktop/**
+            app/gui/scripts/**
+            app/gui/.gitignore
+            .git-*
+
+      - name: List all changed files
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+        run: |
+          for file in ${ALL_CHANGED_FILES}; do
+            echo "$file was changed"
+          done
+
+  checks:
+    name: 🧰 Checks
+    uses: ./.github/workflows/gui-checks.yml
+    needs: [changed-files]
+    if: ${{ needs.changed-files.outputs.any_changed == 'true' }}
+    secrets: inherit
+
+  storybook:
+    name: 📚 Deploy Storybook
+    uses: ./.github/workflows/storybook.yml
+    needs: [changed-files]
+    if: ${{ needs.changed-files.outputs.any_changed == 'true' }}
+    secrets: inherit
+
+  # This job is used to report success if the needed jobs were successful.
+  # This is a workaround to make optional jobs required if they run
+  report-success:
+    name: ✅ Success or skipped due to no changes
+    runs-on: ubuntu-latest
+    needs: [checks, storybook]
+    if: needs.checks.result == 'skipped' && needs.storybook.result == 'skipped' || needs.checks.result == 'success' && needs.storybook.result == 'success'
+    steps:
+      - name: Report success
+        run: echo "Success!"

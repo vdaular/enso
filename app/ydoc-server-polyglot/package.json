@@ -12,7 +12,7 @@
     "compile": "node ./build.mjs build",
     "start": "node ./dist/main.cjs",
     "dev:watch": "node ./build.mjs watch",
-    "lint": "eslint . --max-warnings=0"
+    "lint": "eslint . --cache --max-warnings=0"
   },
   "dependencies": {
     "ydoc-server": "workspace:*",

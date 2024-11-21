@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "include": [
+    ".storybook/**/*",
     "env.d.ts",
     "lib0-ext.d.ts",
     "src/**/*.vue",
