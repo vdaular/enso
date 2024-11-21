@@ -5,6 +5,7 @@ import { Ast } from '@/util/ast'
 import { Pattern } from '@/util/ast/match'
 import type { ToValue } from '@/util/reactivity'
 import { computed, type ComputedRef, type Ref, toValue } from 'vue'
+import { Expression, MutableExpression } from 'ydoc-shared/ast'
 
 type SortDirection = 'asc' | 'desc'
 export type SortModel = {
@@ -78,6 +79,16 @@ function useSortFilterNodesButton({
       ])
     }
     const valueFormatter = getColumnValueToEnso(columnName)
+    if (items?.length === 1) {
+      const item = items[0]
+      if (item) {
+        return filterPattern.value.instantiateCopied([
+          Ast.TextLiteral.new(columnName),
+          Ast.parseExpression('..Equal')!,
+          valueFormatter(item, module) as Expression | MutableExpression,
+        ])
+      }
+    }
     const itemList = items.map((i) => valueFormatter(i, module))
     return filterPattern.value.instantiateCopied([
       Ast.TextLiteral.new(columnName),
