@@ -65,9 +65,9 @@ const POINTER_BUTTON_FLAG = {
 
 /** Human-readable variants of pointer keys, for displaying to the user. Used in {@link BindingInfo} */
 const HUMAN_READABLE_POINTER = {
-  PointerMain: 'Mouse Left',
-  PointerSecondary: 'Mouse Right',
-  PointerAux: 'Mouse Middle',
+  PointerMain: 'Click',
+  PointerSecondary: 'Right click',
+  PointerAux: 'Middle click',
   PointerBack: 'Mouse Back',
   PointerForward: 'Mouse Forward',
 }
@@ -145,6 +145,7 @@ const allKeys = [
   'PageDown',
   'Insert',
   'Space',
+  ' ',
   'A',
   'B',
   'C',
@@ -269,6 +270,7 @@ const HUMAN_READABLE_KEYS: Partial<Record<Key, string>> = {
   ArrowDown: 'Arrow down',
   PageUp: 'Page up',
   PageDown: 'Page down',
+  ' ': 'Space',
 }
 
 // `never extends T ? Result : InferenceSource` is a trick to unify `T` with the actual type of the

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { graphBindings } from '@/bindings'
+import { graphBindings, nodeEditBindings } from '@/bindings'
 import ColorRing from '@/components/ColorRing.vue'
 import DropdownMenu from '@/components/DropdownMenu.vue'
 import MenuButton from '@/components/MenuButton.vue'
@@ -36,12 +36,13 @@ function closeDropdown() {
   isDropdownOpened.value = false
 }
 
-function openDocs(url: string) {
-  window.open(url, '_blank')
-}
-
-function readableBinding(binding: keyof (typeof graphBindings)['bindings']) {
-  return graphBindings.bindings[binding].humanReadable
+type BindingSpace<T extends string> = { bindings: Record<T, { humanReadable: string }> }
+type Binding<T extends string> = keyof BindingSpace<T>['bindings']
+function readableBinding<T extends string, BS extends BindingSpace<T>>(
+  binding: Binding<T>,
+  bindingSpace: BS,
+) {
+  return bindingSpace.bindings[binding].humanReadable
 }
 </script>
 
@@ -70,6 +71,10 @@ function readableBinding(binding: keyof (typeof graphBindings)['bindings']) {
       >
         <template #button><SvgIcon name="3_dot_menu" class="moreIcon" /></template>
         <template #entries>
+          <MenuButton @click.stop="closeDropdown(), emit('toggleDocPanel')">
+            <SvgIcon name="help" class="rowIcon" />
+            <span>Help</span>
+          </MenuButton>
           <MenuButton
             :modelValue="isVisualizationEnabled"
             @update:modelValue="emit('update:isVisualizationEnabled', $event)"
@@ -77,18 +82,18 @@ function readableBinding(binding: keyof (typeof graphBindings)['bindings']) {
           >
             <SvgIcon name="eye" class="rowIcon" />
             <span v-text="`${isVisualizationEnabled ? 'Hide' : 'Show'} Visualization`"></span>
-          </MenuButton>
-          <MenuButton
-            v-if="props.documentationUrl"
-            @click.stop="closeDropdown(), openDocs(props.documentationUrl)"
-          >
-            <SvgIcon name="help" class="rowIcon" />
-            <span>Help</span>
-            <span class="shortcutHint" v-text="`${readableBinding('openDocumentation')}`"></span>
+            <span
+              class="shortcutHint"
+              v-text="`${readableBinding('toggleVisualization', graphBindings)}`"
+            ></span>
           </MenuButton>
           <MenuButton @click.stop="closeDropdown(), emit('createNewNode')">
             <SvgIcon name="add" class="rowIcon" />
             <span>Add New Component</span>
+            <span
+              class="shortcutHint"
+              v-text="`${readableBinding('openComponentBrowser', graphBindings)}`"
+            ></span>
           </MenuButton>
           <MenuButton @click.stop="closeDropdown(), emit('startEditingComment')">
             <SvgIcon name="comment" class="rowIcon" />
@@ -117,6 +122,10 @@ function readableBinding(binding: keyof (typeof graphBindings)['bindings']) {
           <MenuButton data-testid="edit-button" @click.stop="closeDropdown(), emit('startEditing')">
             <SvgIcon name="edit" class="rowIcon" />
             <span>Code Edit</span>
+            <span
+              class="shortcutHint"
+              v-text="`${readableBinding('edit', nodeEditBindings)}`"
+            ></span>
           </MenuButton>
           <MenuButton
             data-testid="removeNode"
@@ -125,7 +134,10 @@ function readableBinding(binding: keyof (typeof graphBindings)['bindings']) {
           >
             <SvgIcon name="trash2" class="rowIcon" />
             <span>Remove Component</span>
-            <span class="shortcutHint" v-text="`${readableBinding('deleteSelected')}`"></span>
+            <span
+              class="shortcutHint"
+              v-text="`${readableBinding('deleteSelected', graphBindings)}`"
+            ></span>
           </MenuButton>
         </template>
       </DropdownMenu>
