@@ -3286,21 +3286,15 @@ lazy val `runtime-suggestions` =
 lazy val `runtime-instrument-common` =
   (project in file("engine/runtime-instrument-common"))
     .enablePlugins(JPMSPlugin)
-    .configs(Benchmark)
     .settings(
       frgaalJavaCompilerSetting,
       scalaModuleDependencySetting,
       mixedJavaScalaProjectSetting,
       inConfig(Compile)(truffleRunOptionsSettings),
-      inConfig(Benchmark)(Defaults.testSettings),
       instrumentationSettings,
       Test / javaOptions ++= Seq(
         "-Dpolyglotimpl.DisableClassPathIsolation=true"
       ),
-      bench := (Benchmark / test).tag(Exclusive).value,
-      Benchmark / parallelExecution := false,
-      (Benchmark / javaOptions) :=
-        (LocalProject("std-benchmarks") / Compile / javaOptions).value,
       Test / fork := true,
       Test / envVars ++= distributionEnvironmentOverrides ++ Map(
         "ENSO_TEST_DISABLE_IR_CACHE" -> "false"
@@ -3338,7 +3332,7 @@ lazy val `runtime-instrument-common` =
       )
     )
     .dependsOn(`refactoring-utils`)
-    .dependsOn(`runtime` % "compile->compile;runtime->runtime;bench->bench")
+    .dependsOn(`runtime` % "compile->compile;runtime->runtime")
 
 lazy val `runtime-instrument-id-execution` =
   (project in file("engine/runtime-instrument-id-execution"))
