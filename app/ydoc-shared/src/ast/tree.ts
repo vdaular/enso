@@ -8,7 +8,7 @@ import type { SourceRangeEdit } from '../util/data/text'
 import { allKeys } from '../util/types'
 import type { ExternalId, VisualizationMetadata } from '../yjsModel'
 import { visMetadataEquals } from '../yjsModel'
-import { functionDocsToConcrete } from './documentation'
+import { docLineToConcrete, functionDocsToConcrete } from './documentation'
 import { is_numeric_literal } from './ffi'
 import type { SpanMap } from './idMap'
 import { newExternalId } from './idMap'
@@ -707,17 +707,14 @@ abstract class BaseStatement extends Ast {
   override isAllowedInExpressionContext() {
     return false
   }
-  documentationText(): string | undefined {
-    return
-  }
 }
 /**
  * A statement, i.e. the contents of a line which is either at the top level of a module (a module declaration), or
  * within a body block (a function body statement).
  */
 export interface Statement extends BaseStatement {
-  /** If this statement type supports attached documentation, and documentation is present, parse and return it. */
-  documentationText(): string | undefined
+  /** If this statement type supports plain-text documentation, return a value synchronized with its content. */
+  mutableDocumentationText?: () => Y.Text
 }
 abstract class BaseMutableStatement extends MutableAst implements Statement {
   override isAllowedInStatementContext(): true {
@@ -726,18 +723,11 @@ abstract class BaseMutableStatement extends MutableAst implements Statement {
   override isAllowedInExpressionContext() {
     return false
   }
-  documentationText(): string | undefined {
-    return
-  }
-  setDocumentationText?: (text: string | undefined) => void
 }
 /** A mutable {@link Statement}. */
 export interface MutableStatement extends BaseMutableStatement {
-  /**
-   * Set (or clear) the documentation associated with this statement. This method is only present on statement types
-   * that support attaching documentation.
-   */
-  setDocumentationText?: (text: string | undefined) => void
+  /** If this statement type supports plain-text documentation, return a value synchronized with its content. */
+  mutableDocumentationText?: () => Y.Text
 }
 
 abstract class BaseExpression extends Ast {
@@ -1365,10 +1355,6 @@ export class Generic extends Ast implements Expression, Statement {
   override isAllowedInExpressionContext(): true {
     return true
   }
-  /** See {@link Statement['documentationText']}. */
-  documentationText() {
-    return undefined
-  }
   declare fields: FixedMapView<AstFields & GenericFields>
   /** TODO: Add docs */
   constructor(module: Module, fields: FixedMapView<AstFields & GenericFields>) {
@@ -1706,9 +1692,23 @@ function textElementValue(element: TextElement<ConcreteRefs>): string {
 function rawTextElementValue(raw: TextElement, module: Module): string {
   return textElementValue(mapRefs(raw, rawToConcrete(module)))
 }
-
 function uninterpolatedText(elements: DeepReadonly<TextElement[]>, module: Module): string {
   return elements.reduce((s, e) => s + rawTextElementValue(e, module), '')
+}
+function docTextToConcrete(
+  docLine: DeepReadonly<DocLine> | undefined,
+  docText: DeepReadonly<Y.Text>,
+  indent: string | null,
+  module: Module,
+): IterableIterator<RawConcreteChild> | undefined {
+  const docLineText = docLineToText(docLine, module) ?? ''
+  const docTextValue = docText.toJSON()
+  if (docLine && docTextValue === docLineText) {
+    return docLineToConcrete(docLine, indent || '')
+  } else if (docTextValue) {
+    const fromText = elementsToDocLine(textToUninterpolatedElements(docTextValue))
+    return docLineToConcrete(fromText, indent || '')
+  }
 }
 
 function fieldRawChildren(field: DeepReadonly<FieldData>) {
@@ -1886,6 +1886,7 @@ applyMixins(MutableTextLiteral, [MutableAst])
 
 interface ExpressionStatementFields {
   docLine: DocLine | undefined
+  docText: Y.Text
   expression: NodeChild<AstId>
 }
 /** TODO: Add docs */
@@ -1935,8 +1936,10 @@ export class ExpressionStatement extends BaseStatement {
   ) {
     const base = module.baseObject('ExpressionStatement')
     const id_ = base.get('id')
+    const rawDocLine = docLine && mapRefs(docLine, ownedToRaw(module, id_))
     const fields = composeFieldData(base, {
-      docLine: docLine && mapRefs(docLine, ownedToRaw(module, id_)),
+      docLine: rawDocLine,
+      docText: new Y.Text(docLineToText(rawDocLine, module) ?? ''),
       expression: concreteChild(module, expression, id_),
     })
     return asOwned(new MutableExpressionStatement(module, fields))
@@ -1947,44 +1950,22 @@ export class ExpressionStatement extends BaseStatement {
     return this.module.get(this.fields.get('expression').node) as Expression
   }
 
-  /** Return the string value of the documentation. */
-  override documentationText(): string | undefined {
-    return docLineToText(this.fields.get('docLine'), this.module)
+  /**
+   * Returns the documentation text for editing. The returned object may be used to edit the documentation directly,
+   * without creating an edit module to explicitly commit it.
+   */
+  mutableDocumentationText(): Y.Text {
+    return (this.fields as MutableExpressionStatement['fields']).get('docText')
   }
 
   /** TODO: Add docs */
-  *concreteChildren({ indent, verbatim }: PrintContext): IterableIterator<RawConcreteChild> {
-    const { docLine, expression } = getAll(this.fields)
-    if (docLine) yield* docLineToConcrete(docLine, indent || '')
-    yield docLine ?
-      { whitespace: indent || '', node: expression.node }
-    : ensureUnspaced(expression, verbatim)
+  *concreteChildren({ indent }: PrintContext): IterableIterator<RawConcreteChild> {
+    const { docLine, docText, expression } = getAll(this.fields)
+    const docTokens = docTextToConcrete(docLine, docText, indent, this.module)
+    const prevLine = !!docTokens
+    if (docTokens) yield* docTokens
+    yield prevLine ? { whitespace: indent || '', node: expression.node } : firstChild(expression)
   }
-}
-function* docLineToConcrete(
-  docLine: DeepReadonly<DocLine>,
-  indent: string,
-): IterableIterator<RawConcreteChild> {
-  yield firstChild(docLine.docs.open)
-  let prevType = undefined
-  let extraIndent = ''
-  for (const { token } of docLine.docs.elements) {
-    if (token.node.tokenType_ === TokenType.Newline) {
-      yield ensureUnspaced(token, false)
-    } else {
-      if (prevType === TokenType.Newline) {
-        yield { whitespace: indent + extraIndent, node: token.node }
-      } else {
-        if (prevType === undefined) {
-          const leadingSpace = token.node.code_.match(/ */)
-          extraIndent = '  ' + (leadingSpace ? leadingSpace[0] : '')
-        }
-        yield { whitespace: '', node: token.node }
-      }
-    }
-    prevType = token.node.tokenType_
-  }
-  for (const newline of docLine.newlines) yield preferUnspaced(newline)
 }
 function docLineToText(
   docLine: DeepReadonly<DocLine> | undefined,
@@ -1994,24 +1975,10 @@ function docLineToText(
   const raw = uninterpolatedText(docLine.docs.elements, module)
   return raw.startsWith(' ') ? raw.slice(1) : raw
 }
-function docLineFromText(
-  text: string | undefined,
-  ast: { module: MutableModule; id: AstId },
-): DocLine | undefined {
-  if (text == null) return
-  return mapRefs(
-    elementsToDocLine(textToUninterpolatedElements(text)),
-    ownedToRaw(ast.module, ast.id),
-  )
-}
 /** TODO: Add docs */
 export class MutableExpressionStatement extends ExpressionStatement implements MutableStatement {
   declare readonly module: MutableModule
   declare readonly fields: FixedMap<AstFields & ExpressionStatementFields>
-
-  setDocumentationText(text: string | undefined) {
-    this.fields.set('docLine', docLineFromText(text, this))
-  }
 
   setExpression<T extends MutableExpression>(value: Owned<T>) {
     this.fields.set('expression', unspaced(this.claimChild(value)))
@@ -2063,10 +2030,6 @@ export class Invalid extends Ast implements Statement, Expression {
   /** See {@link Ast.isAllowedInExpressionContext}. */
   override isAllowedInExpressionContext(): true {
     return true
-  }
-  /** See {@link Statement['documentationText']}. */
-  documentationText() {
-    return undefined
   }
   declare fields: FixedMapView<AstFields & InvalidFields>
   /** TODO: Add docs */
@@ -2488,11 +2451,6 @@ export class FunctionDef extends BaseStatement {
         !!equals.whitespace && !(this.module.tryGet(body.node) instanceof BodyBlock),
       )
   }
-
-  /** Return the string value of the documentation. */
-  override documentationText(): string | undefined {
-    return docLineToText(this.fields.get('docLine'), this.module)
-  }
 }
 function* argumentDefinitionToConcrete(def: DeepReadonly<ArgumentDefinition>, verbatim: boolean) {
   const { open, open2, suspension, pattern, type, close2, defaultValue, close } = def
@@ -2525,9 +2483,6 @@ export class MutableFunctionDef extends FunctionDef implements MutableStatement 
   declare readonly module: MutableModule
   declare readonly fields: FixedMap<AstFields & FunctionDefFields>
 
-  setDocumentationText(text: string | undefined) {
-    this.fields.set('docLine', docLineFromText(text, this))
-  }
   setName<T extends MutableExpression>(value: Owned<T>) {
     this.fields.set('name', unspaced(this.claimChild(value)))
   }
@@ -2563,7 +2518,8 @@ interface PrintContext {
 }
 
 interface AssignmentFields {
-  docLine: DocLine<RawRefs> | undefined
+  docLine: DocLine | undefined
+  docText: Y.Text
   pattern: NodeChild<AstId>
   equals: NodeChild<SyncTokenId>
   expression: NodeChild<AstId>
@@ -2592,8 +2548,10 @@ export class Assignment extends BaseStatement {
   ) {
     const base = module.baseObject('Assignment')
     const id_ = base.get('id')
+    const rawDocLine = docLine && mapRefs(docLine, ownedToRaw(module, id_))
     const fields = composeFieldData(base, {
-      docLine: docLine && mapRefs(docLine, ownedToRaw(module, id_)),
+      docLine: rawDocLine,
+      docText: new Y.Text(docLineToText(rawDocLine, module) ?? ''),
       pattern: concreteChild(module, pattern, id_),
       equals,
       expression: concreteChild(module, expression, id_),
@@ -2628,20 +2586,23 @@ export class Assignment extends BaseStatement {
     return this.module.get(this.fields.get('expression').node) as Expression
   }
 
-  /** TODO: Add docs */
-  *concreteChildren({ verbatim, indent }: PrintContext): IterableIterator<RawConcreteChild> {
-    const { docLine, pattern, equals, expression } = getAll(this.fields)
-    if (docLine) yield* docLineToConcrete(docLine, indent || '')
-    yield docLine ?
-      { whitespace: indent || '', node: pattern.node }
-    : ensureUnspaced(pattern, verbatim)
-    yield ensureSpacedOnlyIf(equals, expression.whitespace !== '', verbatim)
-    yield preferSpaced(expression)
+  /**
+   * Returns the documentation text for editing. The returned object may be used to edit the documentation directly,
+   * without creating an edit module to explicitly commit it.
+   */
+  mutableDocumentationText(): Y.Text {
+    return (this.fields as MutableAssignment['fields']).get('docText')
   }
 
-  /** Return the string value of the documentation. */
-  override documentationText(): string | undefined {
-    return docLineToText(this.fields.get('docLine'), this.module)
+  /** TODO: Add docs */
+  *concreteChildren({ verbatim, indent }: PrintContext): IterableIterator<RawConcreteChild> {
+    const { docLine, docText, pattern, equals, expression } = getAll(this.fields)
+    const docTokens = docTextToConcrete(docLine, docText, indent, this.module)
+    const prevLine = !!docTokens
+    if (docTokens) yield* docTokens
+    yield prevLine ? { whitespace: indent || '', node: pattern.node } : firstChild(pattern)
+    yield ensureSpacedOnlyIf(equals, expression.whitespace !== '', verbatim)
+    yield preferSpaced(expression)
   }
 }
 /** TODO: Add docs */
@@ -2649,9 +2610,6 @@ export class MutableAssignment extends Assignment implements MutableStatement {
   declare readonly module: MutableModule
   declare readonly fields: FixedMap<AstFields & AssignmentFields>
 
-  setDocumentationText(text: string | undefined) {
-    this.fields.set('docLine', docLineFromText(text, this))
-  }
   setPattern<T extends MutableExpression>(value: Owned<T>) {
     this.fields.set('pattern', unspaced(this.claimChild(value)))
   }

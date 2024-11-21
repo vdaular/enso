@@ -122,56 +122,85 @@ function normalizeMarkdown(rawMarkdown: string): string {
   return normalized
 }
 
+function stringCollector() {
+  let output = ''
+  const collector = {
+    text: (text: string) => (output += text),
+    wrapText: (text: string) => (output += text),
+    newline: () => (output += '\n'),
+  }
+  return { collector, output }
+}
+
+/**
+ * Convert from "normalized" Markdown (with hard line-breaks removed) to the standard format, with paragraphs separated
+ * by blank lines.
+ */
+export function normalizedMarkdownToStandard(normalizedMarkdown: string) {
+  const { collector, output } = stringCollector()
+  standardizeMarkdown(normalizedMarkdown, collector)
+  return output
+}
+
 /**
  * Convert from "normalized" Markdown to the on-disk representation, with paragraphs hard-wrapped and separated by blank
  * lines.
  */
 function standardizeMarkdown(normalizedMarkdown: string, textConsumer: TextConsumer) {
-  let prevTo = 0
-  let prevName: string | undefined = undefined
   let printingTags = true
   const cursor = markdownParser.parse(normalizedMarkdown).cursor()
-  cursor.firstChild()
-  do {
-    if (prevTo < cursor.from) {
-      const betweenText = normalizedMarkdown.slice(prevTo, cursor.from)
-      for (const _match of betweenText.matchAll(LINE_BOUNDARIES)) {
-        textConsumer.newline()
-      }
-      if (cursor.name === 'Paragraph' && prevName !== 'Table') {
-        textConsumer.newline()
-      }
-    }
-    const lines = normalizedMarkdown.slice(cursor.from, cursor.to).split(LINE_BOUNDARIES)
-    if (cursor.name === 'Paragraph') {
-      let printingNonTags = false
-      lines.forEach((line, i) => {
-        if (printingTags) {
-          if (cursor.name === 'Paragraph' && line.startsWith('ICON ')) {
-            textConsumer.text(line)
-          } else {
-            printingTags = false
-          }
+
+  function standardizeDocument() {
+    let prevTo = 0
+    let prevName: string | undefined = undefined
+    cursor.firstChild()
+    do {
+      if (prevTo < cursor.from) {
+        const betweenText = normalizedMarkdown.slice(prevTo, cursor.from)
+        for (const _match of betweenText.matchAll(LINE_BOUNDARIES)) {
+          textConsumer.newline()
         }
-        if (!printingTags) {
-          if (i > 0) {
-            textConsumer.newline()
-            if (printingNonTags) textConsumer.newline()
-          }
-          textConsumer.wrapText(line)
-          printingNonTags = true
+        if (cursor.name === 'Paragraph' && prevName !== 'Table') {
+          textConsumer.newline()
         }
-      })
-    } else {
-      lines.forEach((line, i) => {
-        if (i > 0) textConsumer.newline()
-        textConsumer.text(line)
-      })
-      printingTags = false
-    }
-    prevTo = cursor.to
-    prevName = cursor.name
-  } while (cursor.nextSibling())
+      }
+      const lines = normalizedMarkdown.slice(cursor.from, cursor.to).split(LINE_BOUNDARIES)
+      if (cursor.name === 'Paragraph') {
+        standardizeParagraph(lines)
+      } else {
+        lines.forEach((line, i) => {
+          if (i > 0) textConsumer.newline()
+          textConsumer.text(line)
+        })
+        printingTags = false
+      }
+      prevTo = cursor.to
+      prevName = cursor.name
+    } while (cursor.nextSibling())
+  }
+
+  function standardizeParagraph(lines: string[]) {
+    let printingNonTags = false
+    lines.forEach((line, i) => {
+      if (printingTags) {
+        if (cursor.name === 'Paragraph' && line.startsWith('ICON ')) {
+          textConsumer.text(line)
+        } else {
+          printingTags = false
+        }
+      }
+      if (!printingTags) {
+        if (i > 0) {
+          textConsumer.newline()
+          if (printingNonTags) textConsumer.newline()
+        }
+        textConsumer.wrapText(line)
+        printingNonTags = true
+      }
+    })
+  }
+
+  standardizeDocument()
 }
 
 interface TextConsumer {

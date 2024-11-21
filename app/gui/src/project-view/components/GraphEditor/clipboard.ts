@@ -2,6 +2,7 @@ import type { NodeCreationOptions } from '@/composables/nodeCreation'
 import type { GraphStore, Node, NodeId } from '@/stores/graph'
 import { Ast } from '@/util/ast'
 import { Pattern } from '@/util/ast/match'
+import { nodeDocumentationText } from '@/util/ast/node'
 import { Vec2 } from '@/util/data/vec2'
 import type { ToValue } from '@/util/reactivity'
 import * as iter from 'enso-common/src/utilities/data/iter'
@@ -186,10 +187,9 @@ export function writeClipboard(data: MimeData) {
 // === Serializing nodes ===
 
 function nodeStructuredData(node: Node): CopiedNode {
-  const documentation = node.outerAst.isStatement() ? node.outerAst.documentationText() : undefined
   return {
     expression: node.innerExpr.code(),
-    documentation,
+    documentation: nodeDocumentationText(node) || undefined,
     metadata: node.rootExpr.serializeMetadata(),
     ...(node.pattern ? { binding: node.pattern.code() } : {}),
   }

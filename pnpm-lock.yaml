@@ -157,15 +157,6 @@ importers:
       '@internationalized/date':
         specifier: ^3.5.5
         version: 3.5.5
-      '@lexical/link':
-        specifier: ^0.16.0
-        version: 0.16.0
-      '@lexical/plain-text':
-        specifier: ^0.16.0
-        version: 0.16.0
-      '@lexical/utils':
-        specifier: ^0.16.0
-        version: 0.16.0
       '@lezer/common':
         specifier: ^1.1.0
         version: 1.2.1
@@ -253,9 +244,6 @@ importers:
       isomorphic-ws:
         specifier: ^5.0.0
         version: 5.0.0(ws@8.18.0)
-      lexical:
-        specifier: ^0.16.0
-        version: 0.16.0
       lib0:
         specifier: ^0.2.85
         version: 0.2.94
@@ -1878,30 +1866,6 @@ packages:
 
   '@json-schema-tools/traverse@1.10.4':
     resolution: {integrity: sha512-9e42zjhLIxzBONroNC4SGsTqdB877tzwH2S6lqgTav9K24kWJR9vNieeMVSuyqnY8FlclH21D8wsm/tuD9WA9Q==}
-
-  '@lexical/clipboard@0.16.0':
-    resolution: {integrity: sha512-eYMJ6jCXpWBVC05Mu9HLMysrBbfi++xFfsm+Yo7A6kYGrqYUhpXqjJkYnw1xdZYL3bV73Oe4ByVJuq42GU+Mqw==}
-
-  '@lexical/html@0.16.0':
-    resolution: {integrity: sha512-okxn3q/1qkUpCZNEFRI39XeJj4YRjb6prm3WqZgP4d39DI1W24feeTZJjYRCW+dc3NInwFaolU3pNA2MGkjRtg==}
-
-  '@lexical/link@0.16.0':
-    resolution: {integrity: sha512-ppvJSh/XGqlzbeymOiwcXJcUcrqgQqTK2QXTBAZq7JThtb0WsJxYd2CSLSN+Ycu23prnwqOqILcU0+34+gAVFw==}
-
-  '@lexical/list@0.16.0':
-    resolution: {integrity: sha512-nBx/DMM7nCgnOzo1JyNnVaIrk/Xi5wIPNi8jixrEV6w9Om2K6dHutn/79Xzp2dQlNGSLHEDjky6N2RyFgmXh0g==}
-
-  '@lexical/plain-text@0.16.0':
-    resolution: {integrity: sha512-BK7/GSOZUHRJTbNPkpb9a/xN9z+FBCdunTsZhnOY8pQ7IKws3kuMO2Tk1zXfTd882ZNAxFdDKNdLYDSeufrKpw==}
-
-  '@lexical/selection@0.16.0':
-    resolution: {integrity: sha512-trT9gQVJ2j6AwAe7tHJ30SRuxCpV6yR9LFtggxphHsXSvJYnoHC0CXh1TF2jHl8Gd5OsdWseexGLBE4Y0V3gwQ==}
-
-  '@lexical/table@0.16.0':
-    resolution: {integrity: sha512-A66K779kxdr0yH2RwT2itsMnkzyFLFNPXyiWGLobCH8ON4QPuBouZvjbRHBe8Pe64yJ0c1bRDxSbTqUi9Wt3Gg==}
-
-  '@lexical/utils@0.16.0':
-    resolution: {integrity: sha512-GWmFEmd7o3GHqJBaEwzuZQbfTNI3Gg8ReGuHMHABgrkhZ8j2NggoRBlxsQLG0f7BewfTMVwbye22yBPq78775w==}
 
   '@lezer/common@1.2.1':
     resolution: {integrity: sha512-yemX0ZD2xS/73llMZIK6KplkjIjf2EvAHcinDi/TfJ9hS25G0388+ClHt6/3but0oOxinTcQHJLDXh6w1crzFQ==}
@@ -5708,9 +5672,6 @@ packages:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
 
-  lexical@0.16.0:
-    resolution: {integrity: sha512-Skn45Qhriazq4fpAtwnAB11U//GKc4vjzx54xsV3TkDLDvWpbL4Z9TNRwRoN3g7w8AkWnqjeOSODKkrjgfRSrg==}
-
   lib0@0.2.94:
     resolution: {integrity: sha512-hZ3p54jL4Wpu7IOg26uC7dnEWiMyNlUrb9KoG7+xYs45WkQwpVvKFndVq2+pqLYKe1u8Fp3+zAfZHVvTK34PvQ==}
     engines: {node: '>=16'}
@@ -9299,53 +9260,6 @@ snapshots:
       - encoding
 
   '@json-schema-tools/traverse@1.10.4': {}
-
-  '@lexical/clipboard@0.16.0':
-    dependencies:
-      '@lexical/html': 0.16.0
-      '@lexical/list': 0.16.0
-      '@lexical/selection': 0.16.0
-      '@lexical/utils': 0.16.0
-      lexical: 0.16.0
-
-  '@lexical/html@0.16.0':
-    dependencies:
-      '@lexical/selection': 0.16.0
-      '@lexical/utils': 0.16.0
-      lexical: 0.16.0
-
-  '@lexical/link@0.16.0':
-    dependencies:
-      '@lexical/utils': 0.16.0
-      lexical: 0.16.0
-
-  '@lexical/list@0.16.0':
-    dependencies:
-      '@lexical/utils': 0.16.0
-      lexical: 0.16.0
-
-  '@lexical/plain-text@0.16.0':
-    dependencies:
-      '@lexical/clipboard': 0.16.0
-      '@lexical/selection': 0.16.0
-      '@lexical/utils': 0.16.0
-      lexical: 0.16.0
-
-  '@lexical/selection@0.16.0':
-    dependencies:
-      lexical: 0.16.0
-
-  '@lexical/table@0.16.0':
-    dependencies:
-      '@lexical/utils': 0.16.0
-      lexical: 0.16.0
-
-  '@lexical/utils@0.16.0':
-    dependencies:
-      '@lexical/list': 0.16.0
-      '@lexical/selection': 0.16.0
-      '@lexical/table': 0.16.0
-      lexical: 0.16.0
 
   '@lezer/common@1.2.1': {}
 
@@ -14296,8 +14210,6 @@ snapshots:
     dependencies:
       prelude-ls: 1.2.1
       type-check: 0.4.0
-
-  lexical@0.16.0: {}
 
   lib0@0.2.94:
     dependencies:

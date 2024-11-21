@@ -9,6 +9,7 @@ import { useStore } from '#/utilities/zustand'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import * as ast from 'ydoc-shared/ast'
+import { normalizedMarkdownToStandard } from 'ydoc-shared/ast/documentation'
 import { splitFileContents } from 'ydoc-shared/ensoFile'
 import { versionContentQueryOptions } from '../AssetDiffView/useFetchVersionContent'
 import { assetPanelStore } from '../AssetPanel'
@@ -53,7 +54,7 @@ export function AssetDocsContent(props: AssetDocsContentProps) {
 
       for (const statement of module.statements()) {
         if (statement instanceof ast.MutableFunctionDef && statement.name.code() === 'main') {
-          return statement.documentationText() ?? ''
+          return normalizedMarkdownToStandard(statement.mutableDocumentationMarkdown().toJSON())
         }
       }
 

@@ -7,7 +7,7 @@ import {
 } from '@/components/GraphEditor/clipboard'
 import { type Node } from '@/stores/graph'
 import { Ast } from '@/util/ast'
-import { nodeFromAst } from '@/util/ast/node'
+import { nodeDocumentationText, nodeFromAst } from '@/util/ast/node'
 import { Blob } from 'node:buffer'
 import { expect, test } from 'vitest'
 import { assertDefined } from 'ydoc-shared/util/assert'
@@ -82,8 +82,7 @@ test.each([...testNodes.map((node) => [node]), testNodes])(
     const clipboardItem = clipboardItemFromTypes(nodesToClipboardData(sourceNodes))
     const pastedNodes = await nodesFromClipboardContent([clipboardItem])
     sourceNodes.forEach((sourceNode, i) => {
-      const documentation =
-        sourceNode.outerAst.isStatement() ? sourceNode.outerAst.documentationText() : undefined
+      const documentation = nodeDocumentationText(sourceNode) || undefined
       expect(pastedNodes[i]?.documentation).toBe(documentation)
       expect(pastedNodes[i]?.expression).toBe(sourceNode.innerExpr.code())
       expect(pastedNodes[i]?.metadata?.colorOverride).toBe(sourceNode.colorOverride)
