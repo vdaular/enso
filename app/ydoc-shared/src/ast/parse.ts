@@ -13,7 +13,6 @@ import type { LazyObject } from './parserSupport'
 import { Token } from './token'
 import type {
   Ast,
-  AstId,
   FunctionDefFields,
   MutableBodyBlock,
   MutableExpression,
@@ -74,24 +73,24 @@ export function abstract(
   tree: RawAst.Tree.BodyBlock,
   code: string,
   substitutor?: (key: NodeKey) => Owned | undefined,
-): { root: Owned<MutableBodyBlock>; spans: SpanMap; toRaw: Map<AstId, RawAst.Tree> }
+): { root: Owned<MutableBodyBlock>; spans: SpanMap }
 export function abstract(
   module: MutableModule,
   tree: RawAst.Tree,
   code: string,
   substitutor?: (key: NodeKey) => Owned | undefined,
-): { root: Owned; spans: SpanMap; toRaw: Map<AstId, RawAst.Tree> }
+): { root: Owned; spans: SpanMap }
 /** Implementation of `abstract`. */
 export function abstract(
   module: MutableModule,
   tree: RawAst.Tree,
   code: string,
   substitutor?: (key: NodeKey) => Owned | undefined,
-): { root: Owned; spans: SpanMap; toRaw: Map<AstId, RawAst.Tree> } {
+): { root: Owned; spans: SpanMap } {
   const abstractor = new Abstractor(module, code, substitutor)
   const root = abstractor.abstractTree(tree).node
   const spans = { tokens: abstractor.tokens, nodes: abstractor.nodes }
-  return { root: root as Owned<MutableBodyBlock>, spans, toRaw: abstractor.toRaw }
+  return { root: root as Owned<MutableBodyBlock>, spans }
 }
 
 /** Produces `Ast` types from `RawAst` parser output. */
@@ -101,7 +100,6 @@ class Abstractor {
   private readonly substitutor: ((key: NodeKey) => Owned | undefined) | undefined
   readonly nodes: NodeSpanMap
   readonly tokens: TokenSpanMap
-  readonly toRaw: Map<AstId, RawAst.Tree>
 
   /**
    *  @param module - Where to allocate the new nodes.
@@ -119,7 +117,6 @@ class Abstractor {
     this.substitutor = substitutor
     this.nodes = new Map()
     this.tokens = new Map()
-    this.toRaw = new Map()
   }
 
   abstractStatement(tree: RawAst.Tree): {
@@ -310,7 +307,6 @@ class Abstractor {
         node = Generic.concrete(this.module, this.abstractChildren(tree))
       }
     }
-    this.toRaw.set(node.id, tree)
     map.setIfUndefined(this.nodes, spanKey, (): Ast[] => []).unshift(node)
     return { node, whitespace }
   }
@@ -543,7 +539,7 @@ export function parseInSameContext(
   module: MutableModule,
   code: string,
   ast: Ast,
-): { root: Owned; spans: SpanMap; toRaw: Map<AstId, RawAst.Tree> } {
+): { root: Owned; spans: SpanMap } {
   const rawParsed = rawParseInContext(code, getParseContext(ast))
   return abstract(module, rawParsed, code)
 }

@@ -13,34 +13,34 @@ import type { AstId } from './tree'
  *  that can be kept up-to-date by applying AST changes.
  */
 export class SourceDocument {
-  private text_: string
-  private readonly spans: Map<AstId, SourceRange>
-  private readonly observers: SourceDocumentObserver[]
+  private readonly observers: SourceDocumentObserver[] = []
+  private constructor(
+    private readonly state: SourceDocumentState,
+    private readonly rawState: SourceDocumentState,
+  ) {}
 
-  private constructor(text: string, spans: Map<AstId, SourceRange>) {
-    this.text_ = text
-    this.spans = spans
-    this.observers = []
-  }
-
-  /** Create an empty {@link SourceDocument}. */
-  static Empty() {
-    return new this('', new Map())
+  /**
+   * Create an empty {@link SourceDocument}.
+   * @param bless - A function adding reactivity to the document state
+   */
+  static Empty(bless?: (state: SourceDocumentState) => SourceDocumentState) {
+    const state = { text: '', spans: new Map() }
+    return new this(bless ? bless(state) : state, state)
   }
 
   /** Reset this {@link SourceDocument} to an empty state. */
   clear() {
-    if (this.spans.size !== 0) this.spans.clear()
-    if (this.text_ !== '') {
-      const range: SourceRange = [0, this.text_.length]
-      this.text_ = ''
+    if (this.state.spans.size !== 0) this.state.spans.clear()
+    if (this.state.text !== '') {
+      const range: SourceRange = [0, this.state.text.length]
+      this.state.text = ''
       this.notifyObservers([{ range, insert: '' }], undefined)
     }
   }
 
   /** Apply a {@link ModuleUpdate} and notify observers of the edits. */
   applyUpdate(module: Module, update: ModuleUpdate) {
-    for (const id of update.nodesDeleted) this.spans.delete(id)
+    for (const id of update.nodesDeleted) this.state.spans.delete(id)
     const root = module.root()
     if (!root) return
     const subtreeTextEdits = new Array<SourceRangeEdit>()
@@ -48,11 +48,11 @@ export class SourceDocument {
     for (const [key, nodes] of printed.info.nodes) {
       const range = sourceRangeFromKey(key)
       for (const node of nodes) {
-        const oldSpan = this.spans.get(node.id)
-        if (!oldSpan || !rangeEquals(range, oldSpan)) this.spans.set(node.id, range)
+        const oldSpan = this.rawState.spans.get(node.id)
+        if (!oldSpan || !rangeEquals(range, oldSpan)) this.state.spans.set(node.id, range)
         if (update.updateRoots.has(node.id) && node.id !== root.id) {
           assertDefined(oldSpan)
-          const oldCode = this.text_.slice(oldSpan[0], oldSpan[1])
+          const oldCode = this.rawState.text.slice(oldSpan[0], oldSpan[1])
           const newCode = printed.code.slice(range[0], range[1])
           const subedits = textChangeToEdits(oldCode, newCode).map(textEdit =>
             offsetEdit(textEdit, oldSpan[0]),
@@ -61,30 +61,31 @@ export class SourceDocument {
         }
       }
     }
-    if (printed.code !== this.text_) {
+    if (printed.code !== this.rawState.text) {
       const textEdits =
         update.updateRoots.has(root.id) ?
-          [{ range: [0, this.text_.length] satisfies SourceRange, insert: printed.code }]
+          [{ range: [0, this.rawState.text.length] satisfies SourceRange, insert: printed.code }]
         : subtreeTextEdits
-      this.text_ = printed.code
+      this.state.text = printed.code
       this.notifyObservers(textEdits, update.origin)
     }
   }
 
   /** Get the entire text representation of this module. */
   get text(): string {
-    return this.text_
+    return this.state.text
   }
 
   /** Get a span in this document by its {@link AstId}. */
   getSpan(id: AstId): SourceRange | undefined {
-    return this.spans.get(id)
+    return this.state.spans.get(id)
   }
 
   /** Add a callback to be called with a list of edits on every update. */
   observe(observer: SourceDocumentObserver) {
     this.observers.push(observer)
-    if (this.text_.length) observer([{ range: [0, 0], insert: this.text_ }], undefined)
+    if (this.rawState.text.length)
+      observer([{ range: [0, 0], insert: this.rawState.text }], undefined)
   }
 
   /** Remove a callback to no longer be called with a list of edits on every update. */
@@ -93,12 +94,20 @@ export class SourceDocument {
     if (index !== undefined) this.observers.splice(index, 1)
   }
 
-  private notifyObservers(textEdits: readonly SourceRangeEdit[], origin: Origin | undefined) {
+  private notifyObservers(
+    textEdits: ReadonlyArray<Readonly<SourceRangeEdit>>,
+    origin: Origin | undefined,
+  ) {
     for (const o of this.observers) o(textEdits, origin)
   }
 }
 
+export interface SourceDocumentState {
+  text: string
+  readonly spans: Map<AstId, SourceRange>
+}
+
 export type SourceDocumentObserver = (
-  textEdits: readonly SourceRangeEdit[],
+  textEdits: ReadonlyArray<Readonly<SourceRangeEdit>>,
   origin: Origin | undefined,
 ) => void

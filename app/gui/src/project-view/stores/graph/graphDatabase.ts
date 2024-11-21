@@ -2,13 +2,11 @@ import { computeNodeColor } from '@/composables/nodeColors'
 import { ComputedValueRegistry, type ExpressionInfo } from '@/stores/project/computedValueRegistry'
 import { SuggestionDb, type Group } from '@/stores/suggestionDatabase'
 import type { SuggestionEntry } from '@/stores/suggestionDatabase/entry'
-import { assert } from '@/util/assert'
-import { Ast, RawAst } from '@/util/ast'
+import { Ast } from '@/util/ast'
 import type { AstId, NodeMetadata } from '@/util/ast/abstract'
 import { MutableModule } from '@/util/ast/abstract'
-import { AliasAnalyzer } from '@/util/ast/aliasAnalysis'
+import { analyzeBindings, type BindingInfo } from '@/util/ast/bindings'
 import { inputNodeFromAst, nodeFromAst, nodeRootExpr } from '@/util/ast/node'
-import { MappedKeyMap, MappedSet } from '@/util/containers'
 import { tryGetIndex } from '@/util/data/array'
 import { recordEqual } from '@/util/data/object'
 import { unwrap } from '@/util/data/result'
@@ -24,119 +22,16 @@ import {
 import * as objects from 'enso-common/src/utilities/data/object'
 import * as set from 'lib0/set'
 import { reactive, ref, shallowReactive, type Ref, type WatchStopHandle } from 'vue'
+import { type SourceDocument } from 'ydoc-shared/ast/sourceDocument'
 import type { MethodCall, StackItem } from 'ydoc-shared/languageServerTypes'
 import type { Opt } from 'ydoc-shared/util/data/opt'
-import type { ExternalId, SourceRange, VisualizationMetadata } from 'ydoc-shared/yjsModel'
-import { isUuid, sourceRangeKey, visMetadataEquals } from 'ydoc-shared/yjsModel'
+import type { ExternalId, VisualizationMetadata } from 'ydoc-shared/yjsModel'
+import { isUuid, visMetadataEquals } from 'ydoc-shared/yjsModel'
 
 export interface MethodCallInfo {
   methodCall: MethodCall
   methodCallSource: Ast.AstId
   suggestion: SuggestionEntry
-}
-
-export interface BindingInfo {
-  identifier: string
-  usages: Set<AstId>
-}
-
-/** TODO: Add docs */
-export class BindingsDb {
-  bindings = new ReactiveDb<AstId, BindingInfo>()
-  identifierToBindingId = new ReactiveIndex(this.bindings, (id, info) => [[info.identifier, id]])
-
-  /** TODO: Add docs */
-  readFunctionAst(
-    func: Ast.FunctionDef,
-    rawFunc: RawAst.Tree.Function | undefined,
-    moduleCode: string,
-    getSpan: (id: AstId) => SourceRange | undefined,
-  ) {
-    // TODO[ao]: Rename 'alias' to 'binding' in AliasAnalyzer and it's more accurate term.
-    const analyzer = new AliasAnalyzer(moduleCode, rawFunc)
-    analyzer.process()
-
-    const [bindingRangeToTree, bindingIdToRange] = BindingsDb.rangeMappings(func, analyzer, getSpan)
-
-    // Remove old keys.
-    for (const key of this.bindings.keys()) {
-      const range = bindingIdToRange.get(key)
-      if (range == null || !analyzer.aliases.has(range)) {
-        this.bindings.delete(key)
-      }
-    }
-
-    // Add or update bindings.
-    for (const [bindingRange, usagesRanges] of analyzer.aliases) {
-      const aliasAst = bindingRangeToTree.get(bindingRange)
-      if (aliasAst == null) {
-        console.warn(`Binding not found`, bindingRange)
-        continue
-      }
-      const aliasAstId = aliasAst.id
-      const info = this.bindings.get(aliasAstId)
-      if (info == null) {
-        function* usageIds() {
-          for (const usageRange of usagesRanges) {
-            const usageAst = bindingRangeToTree.get(usageRange)
-            assert(usageAst != null)
-            if (usageAst != null) yield usageAst.id
-          }
-        }
-        this.bindings.set(aliasAstId, {
-          identifier: aliasAst.code(),
-          usages: new Set(usageIds()),
-        })
-      } else {
-        const newIdentifier = aliasAst.code()
-        if (info.identifier != newIdentifier) info.identifier = newIdentifier
-        // Remove old usages.
-        for (const usage of info.usages) {
-          const range = bindingIdToRange.get(usage)
-          if (range == null || !usagesRanges.has(range)) info.usages.delete(usage)
-        }
-        // Add or update usages.
-        for (const usageRange of usagesRanges) {
-          const usageAst = bindingRangeToTree.get(usageRange)
-          if (usageAst != null && !info.usages.has(usageAst.id)) {
-            info.usages.add(usageAst.id)
-          }
-        }
-      }
-    }
-  }
-
-  /**
-   * Create mappings between bindings' ranges and AST
-   *
-   * The AliasAnalyzer is general and returns ranges, but we're interested in AST nodes. This
-   * method creates mappings in both ways. For given range, only the shallowest AST node will be
-   * assigned (RawAst.Tree.Identifier, not RawAst.Token.Identifier).
-   */
-  private static rangeMappings(
-    ast: Ast.Ast,
-    analyzer: AliasAnalyzer,
-    getSpan: (id: AstId) => SourceRange | undefined,
-  ): [MappedKeyMap<SourceRange, Ast.Ast>, Map<AstId, SourceRange>] {
-    const bindingRangeToTree = new MappedKeyMap<SourceRange, Ast.Ast>(sourceRangeKey)
-    const bindingIdToRange = new Map<AstId, SourceRange>()
-    const bindingRanges = new MappedSet(sourceRangeKey)
-    for (const [binding, usages] of analyzer.aliases) {
-      bindingRanges.add(binding)
-      for (const usage of usages) bindingRanges.add(usage)
-    }
-    ast.visitRecursive((ast) => {
-      const span = getSpan(ast.id)
-      assert(span != null)
-      if (bindingRanges.has(span)) {
-        bindingRangeToTree.set(span, ast)
-        bindingIdToRange.set(ast.id, span)
-        return false
-      }
-      return true
-    })
-    return [bindingRangeToTree, bindingIdToRange]
-  }
 }
 
 /** TODO: Add docs */
@@ -146,7 +41,10 @@ export class GraphDb {
   private highestZIndex = 0
   private readonly idToExternalMap = reactive(new Map<Ast.AstId, ExternalId>())
   private readonly idFromExternalMap = reactive(new Map<ExternalId, Ast.AstId>())
-  private bindings = new BindingsDb()
+  private readonly bindings = new ReactiveDb<AstId, BindingInfo>()
+  private readonly identifierToBindingId = new ReactiveIndex(this.bindings, (id, info) => [
+    [info.identifier, id],
+  ])
 
   /** TODO: Add docs */
   constructor(
@@ -167,7 +65,7 @@ export class GraphDb {
     return Array.from(exprs, (expr) => [id, expr])
   })
 
-  connections = new ReactiveIndex(this.bindings.bindings, (alias, info) => {
+  connections = new ReactiveIndex(this.bindings, (alias, info) => {
     const srcNode = this.getPatternExpressionNodeId(alias) ?? this.getExpressionNodeId(alias)
     if (srcNode == null) return []
     return Array.from(this.connectionsFromBindings(info, alias, srcNode))
@@ -200,7 +98,7 @@ export class GraphDb {
     if (entry.pattern == null) return []
     const ports = new Set<AstId>()
     entry.pattern.visitRecursive((ast) => {
-      if (this.bindings.bindings.has(ast.id)) {
+      if (this.bindings.has(ast.id)) {
         ports.add(ast.id)
         return false
       }
@@ -257,7 +155,7 @@ export class GraphDb {
 
   /** TODO: Add docs */
   getIdentDefiningNode(ident: string): NodeId | undefined {
-    const binding = set.first(this.bindings.identifierToBindingId.lookup(ident))
+    const binding = set.first(this.identifierToBindingId.lookup(ident))
     return this.getPatternExpressionNodeId(binding)
   }
 
@@ -269,12 +167,12 @@ export class GraphDb {
 
   /** TODO: Add docs */
   getOutputPortIdentifier(source: AstId | undefined): string | undefined {
-    return source ? this.bindings.bindings.get(source)?.identifier : undefined
+    return source ? this.bindings.get(source)?.identifier : undefined
   }
 
   /** TODO: Add docs */
   identifierUsed(ident: string): boolean {
-    return this.bindings.identifierToBindingId.hasKey(ident)
+    return this.identifierToBindingId.hasKey(ident)
   }
 
   /** TODO: Add docs */
@@ -467,13 +365,21 @@ export class GraphDb {
   }
 
   /** Deeply scan the function to perform alias-analysis. */
-  updateBindings(
-    functionAst_: Ast.FunctionDef,
-    rawFunction: RawAst.Tree.Function | undefined,
-    moduleCode: string,
-    getSpan: (id: AstId) => SourceRange | undefined,
-  ) {
-    this.bindings.readFunctionAst(functionAst_, rawFunction, moduleCode, getSpan)
+  updateBindings(func: Ast.FunctionDef, moduleSource: Pick<SourceDocument, 'text' | 'getSpan'>) {
+    const newBindings = analyzeBindings(func, moduleSource)
+    for (const id of this.bindings.keys()) {
+      if (!newBindings.has(id)) this.bindings.delete(id)
+    }
+    for (const [id, newInfo] of newBindings) {
+      const oldInfo = this.bindings.getUntracked(id)
+      if (oldInfo == null) {
+        this.bindings.set(id, newInfo)
+      } else {
+        const info = resumeReactivity(oldInfo)
+        if (oldInfo.identifier !== newInfo.identifier) info.identifier = newInfo.identifier
+        syncSetDiff(info.usages, oldInfo.usages, newInfo.usages)
+      }
+    }
   }
 
   /** TODO: Add docs */
@@ -567,7 +473,7 @@ export class GraphDb {
     }
     const bindingId = pattern.id
     this.nodeIdToNode.set(id, node)
-    this.bindings.bindings.set(bindingId, { identifier: binding, usages: new Set() })
+    this.bindings.set(bindingId, { identifier: binding, usages: new Set() })
     return node
   }
 }

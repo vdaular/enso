@@ -5,11 +5,15 @@ import { rangeEncloses, rangeLength, type SourceRange } from '../../yjsModel'
 export type SourceRangeEdit = { range: SourceRange; insert: string }
 
 /** Given text and a set of `TextEdit`s, return the result of applying the edits to the text. */
-export function applyTextEdits(oldText: string, textEdits: SourceRangeEdit[]) {
-  textEdits.sort((a, b) => a.range[0] - b.range[0])
+export function applyTextEdits(
+  oldText: string,
+  textEdits: ReadonlyArray<Readonly<SourceRangeEdit>>,
+) {
+  const editsOrdered = [...textEdits]
+  editsOrdered.sort((a, b) => a.range[0] - b.range[0])
   let start = 0
   let newText = ''
-  for (const textEdit of textEdits) {
+  for (const textEdit of editsOrdered) {
     newText += oldText.slice(start, textEdit.range[0])
     newText += textEdit.insert
     start = textEdit.range[1]

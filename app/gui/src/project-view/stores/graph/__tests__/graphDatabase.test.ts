@@ -1,5 +1,5 @@
 import { asNodeId, GraphDb } from '@/stores/graph/graphDatabase'
-import { Ast, RawAst } from '@/util/ast'
+import { Ast } from '@/util/ast'
 import assert from 'assert'
 import { expect, test } from 'vitest'
 import { watchEffect } from 'vue'
@@ -23,14 +23,14 @@ export function parseWithSpans<T extends Record<string, SourceRange>>(code: stri
     idMap.insertKnownId(span, eid)
   }
 
-  const { root: ast, toRaw, getSpan } = Ast.parseUpdatingIdMap(code, idMap)
+  const { root: ast, getSpan } = Ast.parseUpdatingIdMap(code, idMap)
   const idFromExternal = new Map<ExternalId, AstId>()
   ast.visitRecursive((ast) => {
     idFromExternal.set(ast.externalId, ast.id)
   })
   const id = (name: keyof T) => idFromExternal.get(eid(name))!
 
-  return { ast, id, eid, toRaw, getSpan }
+  return { ast, id, eid, getSpan }
 }
 
 test('Reading graph from definition', () => {
@@ -53,17 +53,15 @@ test('Reading graph from definition', () => {
     node3Content: [65, 74] as [number, number],
   }
 
-  const { ast, id, eid, toRaw, getSpan } = parseWithSpans(code, spans)
+  const { ast, id, eid, getSpan } = parseWithSpans(code, spans)
 
   const db = GraphDb.Mock()
   const expressions = Array.from(ast.statements())
   const func = expressions[0]
   assert(func instanceof Ast.FunctionDef)
-  const rawFunc = toRaw.get(func.id)
-  assert(rawFunc?.type === RawAst.Tree.Type.Function)
   db.updateExternalIds(ast)
   db.updateNodes(func, { watchEffect })
-  db.updateBindings(func, rawFunc, code, getSpan)
+  db.updateBindings(func, { text: code, getSpan })
 
   expect(Array.from(db.nodeIdToNode.keys())).toEqual([
     eid('parameter'),

@@ -1,10 +1,11 @@
 import { performCollapseImpl, prepareCollapsedInfo } from '@/components/GraphEditor/collapsing'
 import { GraphDb, type NodeId } from '@/stores/graph/graphDatabase'
 import { assert } from '@/util/assert'
-import { Ast, RawAst } from '@/util/ast'
+import { Ast } from '@/util/ast'
 import { findExpressions } from '@/util/ast/__tests__/testCase'
 import { unwrap } from '@/util/data/result'
 import { tryIdentifier } from '@/util/qualifiedName'
+import * as iter from 'enso-common/src/utilities/data/iter'
 import { expect, test } from 'vitest'
 import { watchEffect } from 'vue'
 import { Identifier } from 'ydoc-shared/ast'
@@ -15,15 +16,12 @@ import { nodeIdFromOuterAst } from '../../../stores/graph/graphDatabase'
 // ===============================
 
 function setupGraphDb(code: string, graphDb: GraphDb) {
-  const { root, toRaw, getSpan } = Ast.parseUpdatingIdMap(code)
-  const expressions = Array.from(root.statements())
-  const func = expressions[0]
+  const { root, getSpan } = Ast.parseUpdatingIdMap(code)
+  const func = iter.first(root.statements())
   assert(func instanceof Ast.FunctionDef)
-  const rawFunc = toRaw.get(func.id)
-  assert(rawFunc?.type === RawAst.Tree.Type.Function)
   graphDb.updateExternalIds(root)
   graphDb.updateNodes(func, { watchEffect })
-  graphDb.updateBindings(func, rawFunc, code, getSpan)
+  graphDb.updateBindings(func, { text: code, getSpan })
 }
 
 interface TestCase {

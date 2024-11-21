@@ -342,15 +342,15 @@ export function parseUpdatingIdMap(
 ) {
   const rawRoot = rawParseModule(code)
   const module = inModule ?? MutableModule.Transient()
-  const { root, spans, toRaw } = module.transact(() => {
-    const { root, spans, toRaw } = abstract(module, rawRoot, code)
+  const { root, spans } = module.transact(() => {
+    const { root, spans } = abstract(module, rawRoot, code)
     root.module.setRoot(root)
     if (idMap) setExternalIds(root.module, spans, idMap)
-    return { root, spans, toRaw }
+    return { root, spans }
   })
   const getSpan = spanMapToSpanGetter(spans)
   const idMapOut = spanMapToIdMap(spans)
-  return { root, idMap: idMapOut, getSpan, toRaw }
+  return { root, idMap: idMapOut, getSpan }
 }
 
 declare const tokenKey: unique symbol
