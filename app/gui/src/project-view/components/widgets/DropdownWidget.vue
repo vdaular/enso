@@ -148,7 +148,7 @@ export interface DropdownEntry {
 
   &:hover {
     background-color: color-mix(in oklab, var(--dropdown-bg) 50%, white 50%);
-    span {
+    .itemContent {
       --text-scroll-max: calc(var(--dropdown-max-width) - 28px);
       will-change: transform;
       animation: 6s 1s infinite text-scroll;

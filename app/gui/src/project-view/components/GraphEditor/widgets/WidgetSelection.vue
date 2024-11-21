@@ -49,7 +49,7 @@ const activity = shallowRef<VNode>()
 
 // How much wider a dropdown can be than a port it is attached to, when a long text is present.
 // Any text beyond that limit will receive an ellipsis and sliding animation on hover.
-const MAX_DROPDOWN_OVERSIZE_PX = 150
+const MAX_DROPDOWN_OVERSIZE_PX = 390
 
 const floatReference = computed(
   () => enclosingTopLevelArgument(widgetRoot.value, tree) ?? widgetRoot.value,
