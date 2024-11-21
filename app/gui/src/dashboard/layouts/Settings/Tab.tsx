@@ -70,7 +70,7 @@ export default function SettingsTab(props: SettingsTabProps) {
           ))}
         </div>
       : <div
-          className="flex min-h-full grow flex-col gap-8 lg:h-auto lg:flex-row"
+          className="grid min-h-full grow grid-cols-1 gap-8 lg:h-auto lg:grid-cols-2"
           {...contentProps}
         >
           {columns.map((sectionsInColumn, i) => (

@@ -30,6 +30,8 @@ export default function useOnScroll(callback: () => void, dependencies: React.De
 
   React.useLayoutEffect(() => {
     updateClipPathRef.current()
+    // Unavoidable, the dependency list is pased through transparently.
+    // eslint-disable-next-line react-compiler/react-compiler
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, dependencies)
 

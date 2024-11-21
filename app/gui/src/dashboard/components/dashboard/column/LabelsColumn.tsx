@@ -45,7 +45,7 @@ export default function LabelsColumn(props: column.AssetColumnProps) {
       self?.permission === permissions.PermissionAction.admin)
 
   return (
-    <div className="group flex items-center gap-column-items">
+    <div className="group flex items-center gap-column-items contain-strict [contain-intrinsic-size:37px] [content-visibility:auto]">
       {(item.labels ?? [])
         .filter((label) => labelsByName.has(label))
         .map((label) => (
@@ -93,7 +93,6 @@ export default function LabelsColumn(props: column.AssetColumnProps) {
             isDisabled
             key={label}
             color={labelsByName.get(label)?.color ?? backendModule.COLORS[0]}
-            onPress={() => {}}
           >
             {label}
           </Label>

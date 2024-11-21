@@ -1,5 +1,5 @@
 /** @file Column types and column display modes. */
-import type { Dispatch, JSX, SetStateAction } from 'react'
+import { memo, type Dispatch, type JSX, type SetStateAction } from 'react'
 
 import type { SortableColumn } from '#/components/dashboard/column/columnUtils'
 import { Column } from '#/components/dashboard/column/columnUtils'
@@ -33,6 +33,7 @@ export interface AssetColumnProps {
   readonly setRowState: Dispatch<SetStateAction<AssetRowState>>
   readonly isEditable: boolean
   readonly isPlaceholder: boolean
+  readonly isExpanded: boolean
 }
 
 /** Props for a {@link AssetColumn}. */
@@ -56,12 +57,14 @@ export interface AssetColumn {
 // =======================
 
 /** React components for every column. */
-export const COLUMN_RENDERER: Readonly<Record<Column, (props: AssetColumnProps) => JSX.Element>> = {
-  [Column.name]: NameColumn,
-  [Column.modified]: ModifiedColumn,
-  [Column.sharedWith]: SharedWithColumn,
-  [Column.labels]: LabelsColumn,
-  [Column.accessedByProjects]: PlaceholderColumn,
-  [Column.accessedData]: PlaceholderColumn,
-  [Column.docs]: DocsColumn,
+export const COLUMN_RENDERER: Readonly<
+  Record<Column, React.MemoExoticComponent<(props: AssetColumnProps) => React.JSX.Element>>
+> = {
+  [Column.name]: memo(NameColumn),
+  [Column.modified]: memo(ModifiedColumn),
+  [Column.sharedWith]: memo(SharedWithColumn),
+  [Column.labels]: memo(LabelsColumn),
+  [Column.accessedByProjects]: memo(PlaceholderColumn),
+  [Column.accessedData]: memo(PlaceholderColumn),
+  [Column.docs]: memo(DocsColumn),
 }

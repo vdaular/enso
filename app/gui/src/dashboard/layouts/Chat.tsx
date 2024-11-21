@@ -21,6 +21,7 @@ import * as ariaComponents from '#/components/AriaComponents'
 import SvgMask from '#/components/SvgMask'
 import Twemoji from '#/components/Twemoji'
 
+import { useSyncRef } from '#/hooks/syncRefHooks'
 import * as dateTime from '#/utilities/dateTime'
 import * as newtype from '#/utilities/newtype'
 import * as object from '#/utilities/object'
@@ -471,18 +472,17 @@ export default function Chat(props: ChatProps) {
     }
   }, [isOpen, endpoint])
 
+  const autoScrollDeps = useSyncRef({ isAtBottom, isAtTop, messagesHeightBeforeMessageHistory })
   React.useLayoutEffect(() => {
+    const deps = autoScrollDeps.current
     const element = messagesRef.current
-    if (element != null && isAtTop && messagesHeightBeforeMessageHistory != null) {
-      element.scrollTop = element.scrollHeight - messagesHeightBeforeMessageHistory
+    if (element != null && deps.isAtTop && deps.messagesHeightBeforeMessageHistory != null) {
+      element.scrollTop = element.scrollHeight - deps.messagesHeightBeforeMessageHistory
       setMessagesHeightBeforeMessageHistory(null)
-    } else if (element != null && isAtBottom) {
+    } else if (element != null && deps.isAtBottom) {
       element.scrollTop = element.scrollHeight - element.clientHeight
     }
-    // Auto-scroll MUST only happen when the message list changes.
-    // eslint-disable-next-line react-compiler/react-compiler
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages])
+  }, [messages, autoScrollDeps])
 
   const sendMessage = React.useCallback(
     (message: chat.ChatClientMessageData) => {

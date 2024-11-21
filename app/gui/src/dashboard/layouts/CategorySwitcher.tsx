@@ -173,7 +173,7 @@ function CategorySwitcherItem(props: InternalCategorySwitcherItemProps) {
         variant="custom"
         tooltip={tooltip}
         tooltipPlacement="right"
-        className={tailwindMerge.twMerge(
+        className={tailwindMerge.twJoin(
           'min-w-0 flex-auto grow-0',
           isCurrent && 'focus-default',
           isDisabled && 'cursor-not-allowed hover:bg-transparent',
@@ -182,13 +182,14 @@ function CategorySwitcherItem(props: InternalCategorySwitcherItemProps) {
         onPress={onPress}
       >
         <div
-          className={tailwindMerge.twMerge(
+          className={tailwindMerge.twJoin(
             'group flex h-row min-w-0 flex-auto items-center gap-icon-with-text rounded-full px-button-x selectable',
             isCurrent && 'disabled active',
             !isCurrent && !isDisabled && 'hover:bg-selected-frame',
           )}
         >
           <SvgMask src={icon} className={twMerge('shrink-0', iconClassName)} />
+
           <ariaComponents.Text slot="description" truncate="1" className="flex-auto">
             {label}
           </ariaComponents.Text>
@@ -224,7 +225,7 @@ export interface CategorySwitcherProps {
 }
 
 /** A switcher to choose the currently visible assets table categoryModule.categoryType. */
-export default function CategorySwitcher(props: CategorySwitcherProps) {
+function CategorySwitcher(props: CategorySwitcherProps) {
   const { category, setCategory } = props
   const { user } = authProvider.useFullUserSession()
   const { getText } = textProvider.useText()
@@ -481,3 +482,5 @@ export default function CategorySwitcher(props: CategorySwitcherProps) {
     </div>
   )
 }
+
+export default React.memo(CategorySwitcher)

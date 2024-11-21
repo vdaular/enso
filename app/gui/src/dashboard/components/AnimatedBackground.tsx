@@ -3,7 +3,7 @@
  *
  * `<AnimatedBackground />` component visually highlights selected items by sliding a background into view when hovered over or clicked.
  */
-import type { Transition } from 'framer-motion'
+import type { Transition, Variants } from 'framer-motion'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { PropsWithChildren } from 'react'
 import { createContext, memo, useContext, useId, useMemo } from 'react'
@@ -34,9 +34,9 @@ const DEFAULT_TRANSITION: Transition = {
   // eslint-disable-next-line @typescript-eslint/no-magic-numbers
   damping: 20,
   // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-  mass: 0.1,
+  mass: 0.5,
   // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-  velocity: 12,
+  velocity: 8,
 }
 
 /** `<AnimatedBackground />` component visually highlights selected items by sliding a background into view when hovered over or clicked. */
@@ -92,8 +92,15 @@ AnimatedBackground.Item = memo(function AnimatedBackgroundItem(props: AnimatedBa
     animationClassName,
     children,
     isSelected,
-    underlayElement = <div className={twJoin('h-full w-full', animationClassName)} />,
+    underlayElement: rawUnderlayElement,
   } = props
+
+  const defaultUnderlayElement = useMemo(
+    () => <div className={twJoin('h-full w-full', animationClassName)} />,
+    [animationClassName],
+  )
+
+  const underlayElement = rawUnderlayElement ?? defaultUnderlayElement
 
   const context = useContext(AnimatedBackgroundContext)
   invariant(context, '<AnimatedBackground.Item /> must be placed within an <AnimatedBackground />')
@@ -107,7 +114,7 @@ AnimatedBackground.Item = memo(function AnimatedBackgroundItem(props: AnimatedBa
   const isActive = isSelected ?? activeValue === value
 
   return (
-    <div className={twJoin('relative *:isolate', className)}>
+    <div className={twJoin('relative', className)}>
       <AnimatedBackgroundItemUnderlay
         isActive={isActive}
         underlayElement={underlayElement}
@@ -115,7 +122,7 @@ AnimatedBackground.Item = memo(function AnimatedBackgroundItem(props: AnimatedBa
         transition={transition}
       />
 
-      {children}
+      <div className="isolate contents">{children}</div>
     </div>
   )
 })
@@ -128,6 +135,11 @@ interface AnimatedBackgroundItemUnderlayProps {
   readonly underlayElement: React.ReactNode
   readonly layoutId: string
   readonly transition: Transition
+}
+
+const VARIANTS: Variants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1 },
 }
 
 /**
@@ -145,11 +157,12 @@ const AnimatedBackgroundItemUnderlay = memo(function AnimatedBackgroundItemUnder
         <motion.div
           layout="position"
           layoutId={`background-${layoutId}`}
-          className="pointer-events-none absolute inset-0"
+          className="pointer-events-none absolute inset-0 isolate"
           transition={transition}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          variants={VARIANTS}
+          initial="hidden"
+          animate="visible"
+          exit="hidden"
         >
           {underlayElement}
         </motion.div>

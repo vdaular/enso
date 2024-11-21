@@ -6,6 +6,7 @@ import { Text } from '#/components/AriaComponents'
 import FocusRing from '#/components/styled/FocusRing'
 import { useHandleFocusMove } from '#/hooks/focusHooks'
 import { useFocusDirection } from '#/providers/FocusDirectionProvider'
+import type { Label as BackendLabel } from '#/services/Backend'
 import { lChColorToCssColor, type LChColor } from '#/services/Backend'
 import { twMerge } from '#/utilities/tailwindMerge'
 
@@ -28,7 +29,11 @@ interface InternalLabelProps extends Readonly<PropsWithChildren> {
   readonly draggable?: boolean
   readonly color: LChColor
   readonly title?: string
-  readonly onPress: (event: MouseEvent<HTMLButtonElement> | PressEvent) => void
+  readonly label?: BackendLabel
+  readonly onPress?: (
+    event: MouseEvent<HTMLButtonElement> | PressEvent,
+    label?: BackendLabel,
+  ) => void
   readonly onContextMenu?: (event: MouseEvent<HTMLElement>) => void
   readonly onDragStart?: (event: DragEvent<HTMLElement>) => void
 }
@@ -36,7 +41,7 @@ interface InternalLabelProps extends Readonly<PropsWithChildren> {
 /** An label that can be applied to an asset. */
 export default function Label(props: InternalLabelProps) {
   const { active = false, isDisabled = false, color, negated = false, draggable, title } = props
-  const { onPress, onDragStart, onContextMenu } = props
+  const { onPress, onDragStart, onContextMenu, label } = props
   const { children: childrenRaw } = props
   const focusDirection = useFocusDirection()
   const handleFocusMove = useHandleFocusMove(focusDirection)
@@ -67,7 +72,7 @@ export default function Label(props: InternalLabelProps) {
           style={{ backgroundColor: lChColorToCssColor(color) }}
           onClick={(event) => {
             event.stopPropagation()
-            onPress(event)
+            onPress?.(event, label)
           }}
           onDragStart={(e) => {
             onDragStart?.(e)

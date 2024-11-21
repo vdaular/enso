@@ -6,7 +6,9 @@ import * as aria from '#/components/aria'
 import * as mergeRefs from '#/utilities/mergeRefs'
 import * as twv from '#/utilities/tailwindVariants'
 
+import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import { forwardRef } from '#/utilities/react'
+import { memo } from 'react'
 import * as textProvider from './TextProvider'
 import * as visualTooltip from './useVisualTooltip'
 
@@ -120,107 +122,107 @@ export const TEXT_STYLE = twv.tv({
 
 /** Text component that supports truncation and show a tooltip on hover when text is truncated */
 // eslint-disable-next-line no-restricted-syntax
-export const Text = forwardRef(function Text(props: TextProps, ref: React.Ref<HTMLSpanElement>) {
-  const {
-    className,
-    variant,
-    font,
-    italic,
-    weight,
-    nowrap,
-    monospace,
-    transform,
-    truncate,
-    lineClamp = 1,
-    children,
-    color,
-    balance,
-    elementType: ElementType = 'span',
-    tooltip: tooltipElement = children,
-    tooltipTriggerRef,
-    tooltipDisplay = 'whenOverflowing',
-    tooltipPlacement,
-    tooltipOffset,
-    tooltipCrossOffset,
-    textSelection,
-    disableLineHeightCompensation = false,
-    ...ariaProps
-  } = props
+export const Text = memo(
+  forwardRef(function Text(props: TextProps, ref: React.Ref<HTMLSpanElement>) {
+    const {
+      className,
+      variant,
+      font,
+      italic,
+      weight,
+      nowrap,
+      monospace,
+      transform,
+      truncate,
+      lineClamp = 1,
+      children,
+      color,
+      balance,
+      elementType: ElementType = 'span',
+      tooltip: tooltipElement = children,
+      tooltipDisplay = 'whenOverflowing',
+      tooltipPlacement,
+      tooltipOffset,
+      tooltipCrossOffset,
+      textSelection,
+      disableLineHeightCompensation = false,
+      ...ariaProps
+    } = props
 
-  const textElementRef = React.useRef<HTMLElement>(null)
-  const textContext = textProvider.useTextContext()
+    const textElementRef = React.useRef<HTMLElement>(null)
+    const textContext = textProvider.useTextContext()
 
-  const textClasses = TEXT_STYLE({
-    variant,
-    font,
-    weight,
-    transform,
-    monospace,
-    italic,
-    nowrap,
-    truncate,
-    color,
-    balance,
-    textSelection,
-    disableLineHeightCompensation:
-      disableLineHeightCompensation === false ?
-        textContext.isInsideTextComponent
-      : disableLineHeightCompensation,
-    className,
-  })
+    const textClasses = TEXT_STYLE({
+      variant,
+      font,
+      weight,
+      transform,
+      monospace,
+      italic,
+      nowrap,
+      truncate,
+      color,
+      balance,
+      textSelection,
+      disableLineHeightCompensation:
+        disableLineHeightCompensation === false ?
+          textContext.isInsideTextComponent
+        : disableLineHeightCompensation,
+      className,
+    })
 
-  const isTooltipDisabled = () => {
-    if (tooltipDisplay === 'whenOverflowing') {
-      return !truncate
-    } else if (tooltipDisplay === 'always') {
-      return tooltipElement === false || tooltipElement == null
-    } else {
-      return false
-    }
-  }
-
-  const { tooltip, targetProps } = visualTooltip.useVisualTooltip({
-    isDisabled: isTooltipDisabled(),
-    targetRef: textElementRef,
-    triggerRef: tooltipTriggerRef,
-    display: tooltipDisplay,
-    children: tooltipElement,
-    ...(tooltipPlacement || tooltipOffset != null ?
-      {
-        overlayPositionProps: {
-          ...(tooltipPlacement && { placement: tooltipPlacement }),
-          ...(tooltipOffset != null && { offset: tooltipOffset }),
-          ...(tooltipCrossOffset != null && { crossOffset: tooltipCrossOffset }),
-        },
+    const isTooltipDisabled = useEventCallback(() => {
+      if (tooltipDisplay === 'whenOverflowing') {
+        return !truncate
+      } else if (tooltipDisplay === 'always') {
+        return tooltipElement === false || tooltipElement == null
+      } else {
+        return false
       }
-    : {}),
-  })
+    })
 
-  return (
-    <textProvider.TextProvider value={{ isInsideTextComponent: true }}>
-      <ElementType
-        // @ts-expect-error This is caused by the type-safe `elementType` type.
-        ref={(el) => {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          mergeRefs.mergeRefs(ref, textElementRef)(el)
-        }}
-        className={textClasses}
-        {...aria.mergeProps<React.HTMLAttributes<HTMLElement>>()(
-          ariaProps,
-          targetProps,
-          truncate === 'custom' ?
-            // eslint-disable-next-line @typescript-eslint/naming-convention,no-restricted-syntax
-            ({ style: { '--line-clamp': `${lineClamp}` } } as React.HTMLAttributes<HTMLElement>)
-          : {},
-        )}
-      >
-        {children}
-      </ElementType>
+    const { tooltip, targetProps } = visualTooltip.useVisualTooltip({
+      isDisabled: isTooltipDisabled(),
+      targetRef: textElementRef,
+      display: tooltipDisplay,
+      children: tooltipElement,
+      ...(tooltipPlacement || tooltipOffset != null || tooltipCrossOffset != null ?
+        {
+          overlayPositionProps: {
+            ...(tooltipPlacement && { placement: tooltipPlacement }),
+            ...(tooltipOffset != null && { offset: tooltipOffset }),
+            ...(tooltipCrossOffset != null && { crossOffset: tooltipCrossOffset }),
+          },
+        }
+      : {}),
+    })
 
-      {tooltip}
-    </textProvider.TextProvider>
-  )
-}) as unknown as React.FC<React.RefAttributes<HTMLSpanElement> & TextProps> & {
+    return (
+      <textProvider.TextProvider value={{ isInsideTextComponent: true }}>
+        <ElementType
+          // @ts-expect-error This is caused by the type-safe `elementType` type.
+          ref={(el) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            mergeRefs.mergeRefs(ref, textElementRef)(el)
+          }}
+          className={textClasses}
+          {...aria.mergeProps<React.HTMLAttributes<HTMLElement>>()(
+            ariaProps,
+            targetProps,
+            truncate === 'custom' ?
+              // eslint-disable-next-line @typescript-eslint/naming-convention,no-restricted-syntax
+              ({ style: { '--line-clamp': `${lineClamp}` } } as React.HTMLAttributes<HTMLElement>)
+            : {},
+          )}
+        >
+          {children}
+        </ElementType>
+
+        {tooltip}
+      </textProvider.TextProvider>
+    )
+  }),
+) as unknown as React.FC<React.RefAttributes<HTMLSpanElement> & TextProps> & {
   // eslint-disable-next-line @typescript-eslint/naming-convention
   Heading: typeof Heading
   // eslint-disable-next-line @typescript-eslint/naming-convention

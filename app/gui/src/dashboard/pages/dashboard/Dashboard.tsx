@@ -15,7 +15,6 @@ import * as searchParamsState from '#/hooks/searchParamsStateHooks'
 import * as authProvider from '#/providers/AuthProvider'
 import * as backendProvider from '#/providers/BackendProvider'
 import * as inputBindingsProvider from '#/providers/InputBindingsProvider'
-import * as localStorageProvider from '#/providers/LocalStorageProvider'
 import * as modalProvider from '#/providers/ModalProvider'
 import ProjectsProvider, {
   TabType,
@@ -104,7 +103,6 @@ function DashboardInner(props: DashboardProps) {
   const localBackend = backendProvider.useLocalBackend()
   const { modalRef } = modalProvider.useModalRef()
   const { updateModal, unsetModal, setModal } = modalProvider.useSetModal()
-  const { localStorage } = localStorageProvider.useLocalStorage()
   const inputBindings = inputBindingsProvider.useInputBindings()
   const [isHelpChatOpen, setIsHelpChatOpen] = React.useState(false)
 
@@ -207,7 +205,7 @@ function DashboardInner(props: DashboardProps) {
           }
         },
       }),
-    [inputBindings, modalRef, localStorage, updateModal, setPage, projectsStore],
+    [inputBindings, modalRef, updateModal, setPage, projectsStore],
   )
 
   React.useEffect(() => {

@@ -36,7 +36,9 @@ function Link(props: LinkProps, ref: React.ForwardedRef<HTMLAnchorElement>) {
   return (
     <FocusRing>
       <aria.Link
-        ref={mergeRefs(linkRef, ref)}
+        ref={(el) => {
+          mergeRefs(linkRef, ref)(el)
+        }}
         href={to}
         {...(openInBrowser && { target: '_blank' })}
         rel="noopener noreferrer"

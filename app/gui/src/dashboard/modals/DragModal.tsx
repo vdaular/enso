@@ -3,9 +3,8 @@ import * as React from 'react'
 
 import * as modalProvider from '#/providers/ModalProvider'
 
-import Modal from '#/components/Modal'
-
-import * as tailwindMerge from '#/utilities/tailwindMerge'
+import { useEventCallback } from '#/hooks/eventCallbackHooks'
+import { DIALOG_BACKGROUND } from '../components/AriaComponents'
 
 // =================
 // === Constants ===
@@ -45,8 +44,7 @@ export default function DragModal(props: DragModalProps) {
   const { unsetModal } = modalProvider.useSetModal()
   const [left, setLeft] = React.useState(event.pageX - (offsetPx ?? offsetXPx))
   const [top, setTop] = React.useState(event.pageY - (offsetPx ?? offsetYPx))
-  const onDragEndRef = React.useRef(onDragEndRaw)
-  onDragEndRef.current = onDragEndRaw
+  const onDragEndOuter = useEventCallback(onDragEndRaw)
 
   React.useEffect(() => {
     const onDrag = (dragEvent: MouseEvent) => {
@@ -56,8 +54,10 @@ export default function DragModal(props: DragModalProps) {
       }
     }
     const onDragEnd = () => {
-      onDragEndRef.current()
-      unsetModal()
+      React.startTransition(() => {
+        onDragEndOuter()
+        unsetModal()
+      })
     }
     // Update position (non-FF)
     document.addEventListener('drag', onDrag, { capture: true })
@@ -69,17 +69,19 @@ export default function DragModal(props: DragModalProps) {
       document.removeEventListener('dragover', onDrag, { capture: true })
       document.removeEventListener('dragend', onDragEnd, { capture: true })
     }
-  }, [offsetPx, offsetXPx, offsetYPx, unsetModal])
+  }, [offsetPx, offsetXPx, offsetYPx, onDragEndOuter, unsetModal])
 
   return (
-    <Modal className="pointer-events-none absolute size-full overflow-hidden">
+    <div className="pointer-events-none absolute size-full overflow-hidden">
       <div
         {...passthrough}
         style={{ left, top, ...style }}
-        className={tailwindMerge.twMerge('relative w-min', className)}
+        className={DIALOG_BACKGROUND({
+          className: ['relative z-10 w-min -translate-x-1/3 -translate-y-1/3', className],
+        })}
       >
         {children}
       </div>
-    </Modal>
+    </div>
   )
 }

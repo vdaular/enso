@@ -2,7 +2,6 @@
 import * as React from 'react'
 
 import * as reactQuery from '@tanstack/react-query'
-import * as reactQueryDevtools from '@tanstack/react-query-devtools'
 import * as errorBoundary from 'react-error-boundary'
 import { useShowDevtools } from './EnsoDevtoolsProvider'
 
@@ -28,8 +27,6 @@ export function ReactQueryDevtools() {
         return null
       }}
     >
-      <reactQueryDevtools.ReactQueryDevtools client={client} />
-
       {showDevtools && (
         <React.Suspense fallback={null}>
           <ReactQueryDevtoolsProduction client={client} />

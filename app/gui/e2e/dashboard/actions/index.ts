@@ -1,6 +1,5 @@
 /** @file Various actions, locators, and constants used in end-to-end tests. */
 import * as test from '@playwright/test'
-import * as path from 'path'
 
 import { TEXTS } from 'enso-common/src/text'
 

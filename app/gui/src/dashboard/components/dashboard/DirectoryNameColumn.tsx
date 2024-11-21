@@ -16,6 +16,7 @@ import SvgMask from '#/components/SvgMask'
 
 import * as backendModule from '#/services/Backend'
 
+import { useStore } from '#/hooks/storeHooks'
 import * as eventModule from '#/utilities/event'
 import * as indent from '#/utilities/indent'
 import * as object from '#/utilities/object'
@@ -39,11 +40,13 @@ export interface DirectoryNameColumnProps extends column.AssetColumnProps {
  */
 export default function DirectoryNameColumn(props: DirectoryNameColumnProps) {
   const { item, depth, selected, state, rowState, setRowState, isEditable } = props
-  const { backend, nodeMap, expandedDirectoryIds } = state
+  const { backend, nodeMap } = state
   const { getText } = textProvider.useText()
   const driveStore = useDriveStore()
   const toggleDirectoryExpansion = useToggleDirectoryExpansion()
-  const isExpanded = expandedDirectoryIds.includes(item.id)
+  const isExpanded = useStore(driveStore, (storeState) =>
+    storeState.expandedDirectoryIds.includes(item.id),
+  )
 
   const updateDirectoryMutation = useMutation(backendMutationOptions(backend, 'updateDirectory'))
 
@@ -68,8 +71,8 @@ export default function DirectoryNameColumn(props: DirectoryNameColumnProps) {
 
   return (
     <div
-      className={tailwindMerge.twMerge(
-        'group flex h-table-row min-w-max items-center gap-name-column-icon whitespace-nowrap rounded-l-full px-name-column-x py-name-column-y',
+      className={tailwindMerge.twJoin(
+        'group flex h-table-row w-auto min-w-48 max-w-96 items-center gap-name-column-icon whitespace-nowrap rounded-l-full px-name-column-x py-name-column-y contain-strict rounded-rows-child [contain-intrinsic-size:37px] [content-visibility:auto]',
         indent.indentClass(depth),
       )}
       onKeyDown={(event) => {
@@ -94,7 +97,7 @@ export default function DirectoryNameColumn(props: DirectoryNameColumnProps) {
         variant="custom"
         aria-label={isExpanded ? getText('collapse') : getText('expand')}
         tooltipPlacement="left"
-        className={tailwindMerge.twMerge(
+        className={tailwindMerge.twJoin(
           'm-0 hidden cursor-pointer border-0 transition-transform duration-arrow group-hover:m-name-column-icon group-hover:inline-block',
           isExpanded && 'rotate-90',
         )}
@@ -107,7 +110,7 @@ export default function DirectoryNameColumn(props: DirectoryNameColumnProps) {
         data-testid="asset-row-name"
         editable={rowState.isEditingName}
         className={tailwindMerge.twMerge(
-          'grow cursor-pointer bg-transparent font-naming',
+          'cursor-pointer bg-transparent font-naming',
           rowState.isEditingName ? 'cursor-text' : 'cursor-pointer',
         )}
         checkSubmittable={(newTitle) =>

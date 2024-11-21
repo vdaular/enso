@@ -20,8 +20,9 @@
   --color-invert-opacity: 100%;
   --color-invert: rgb(var(--color-invert-rgb) / var(--color-invert-opacity));
   --color-background-rgb: 255 255 255;
-  --color-background-opacity: 80%;
+  --color-background-opacity: 60%;
   --color-background: rgb(var(--color-background-rgb) / var(--color-background-opacity));
+  --color-background-hex: #fdfcfb;
 
   --color-dashboard-background-rgb: 239 234 228;
   --color-dashboard-background-opacity: 100%;
@@ -479,23 +480,6 @@
   border-right-width: 4px;
   border-left-width: 0;
 
-  /* Custom scrollbar for rounded corners */
-  :where(:is([class*='rounded-xl']))& {
-    --scrollbar-offset-edge: 8px;
-  }
-
-  :where(:is([class*='rounded-2xl']))& {
-    --scrollbar-offset-edge: 16px;
-  }
-
-  :where(:is([class*='rounded-3xl']))& {
-    --scrollbar-offset-edge: 24px;
-  }
-
-  :where(:is([class*='rounded-4xl']))& {
-    --scrollbar-offset-edge: 28px;
-  }
-
   &:hover {
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" style="color:rgb(0 0 0 / 0.25)" fill="currentColor" viewBox="0 0 5 5" preserveAspectRatio="xMidYMid meet"><path d="M0 0H5V2.5C5 3.88071 3.88071 5 2.5 5V5C1.11929 5 0 3.88071 0 2.5V0Z" /></svg>'),
       url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" style="color:rgb(0 0 0 / 0.25)" fill="currentColor" viewBox="0 0 5 5" preserveAspectRatio="xMidYMid meet"><path d="M0 2.5C0 1.11929 1.11929 0 2.5 0V0C3.88071 0 5 1.11929 5 2.5V5H0V2.5Z"/></svg>'),
@@ -521,23 +505,6 @@
   border-right-width: var(--scrollbar-offset-edge, 4px);
   border-top-width: 0;
   border-bottom-width: 4px;
-
-  /* Custom scrollbar for rounded corners */
-  :where(:is([class*='rounded-xl']))& {
-    --scrollbar-offset-edge: 8px;
-  }
-
-  :where(:is([class*='rounded-2xl']))& {
-    --scrollbar-offset-edge: 16px;
-  }
-
-  :where(:is([class*='rounded-3xl']))& {
-    --scrollbar-offset-edge: 24px;
-  }
-
-  :where(:is([class*='rounded-4xl']))& {
-    --scrollbar-offset-edge: 28px;
-  }
 
   &:hover {
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" style="color:rgb(0 0 0 / 0.25); transform: rotate(90deg)" fill="currentColor" viewBox="0 0 5 5" preserveAspectRatio="xMidYMid meet"><path d="M0 0H5V2.5C5 3.88071 3.88071 5 2.5 5V5C1.11929 5 0 3.88071 0 2.5V0Z" /></svg>'),

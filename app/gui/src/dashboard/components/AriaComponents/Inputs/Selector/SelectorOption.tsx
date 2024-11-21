@@ -5,6 +5,7 @@ import { forwardRef } from '#/utilities/react'
 import type { VariantProps } from '#/utilities/tailwindVariants'
 import { tv } from '#/utilities/tailwindVariants'
 import * as React from 'react'
+import { memo } from 'react'
 import { TEXT_STYLE } from '../../Text'
 
 /** Props for a {@link SelectorOption}. */
@@ -95,41 +96,43 @@ export const SELECTOR_OPTION_STYLES = tv({
   },
 })
 
-export const SelectorOption = forwardRef(function SelectorOption(
-  props: SelectorOptionProps,
-  ref: React.ForwardedRef<HTMLLabelElement>,
-) {
-  const {
-    label,
-    value,
-    size,
-    rounded,
-    variant,
-    className,
-    variants = SELECTOR_OPTION_STYLES,
-    ...radioProps
-  } = props
+export const SelectorOption = memo(
+  forwardRef(function SelectorOption(
+    props: SelectorOptionProps,
+    ref: React.ForwardedRef<HTMLLabelElement>,
+  ) {
+    const {
+      label,
+      value,
+      size,
+      rounded,
+      variant,
+      className,
+      variants = SELECTOR_OPTION_STYLES,
+      ...radioProps
+    } = props
 
-  const styles = variants({ size, rounded, variant })
+    const styles = variants({ size, rounded, variant })
 
-  return (
-    <AnimatedBackground.Item
-      value={value}
-      className={styles.base()}
-      animationClassName={styles.animation()}
-    >
-      <Radio
-        ref={ref}
-        {...radioProps}
+    return (
+      <AnimatedBackground.Item
         value={value}
-        className={(renderProps) =>
-          styles.radio({
-            className: typeof className === 'function' ? className(renderProps) : className,
-          })
-        }
+        className={styles.base()}
+        animationClassName={styles.animation()}
       >
-        {label}
-      </Radio>
-    </AnimatedBackground.Item>
-  )
-})
+        <Radio
+          ref={ref}
+          {...radioProps}
+          value={value}
+          className={(renderProps) =>
+            styles.radio({
+              className: typeof className === 'function' ? className(renderProps) : className,
+            })
+          }
+        >
+          {label}
+        </Radio>
+      </AnimatedBackground.Item>
+    )
+  }),
+)

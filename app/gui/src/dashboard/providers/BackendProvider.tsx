@@ -24,13 +24,20 @@ import type RemoteBackend from '#/services/RemoteBackend'
 export interface BackendContextType {
   readonly remoteBackend: RemoteBackend | null
   readonly localBackend: LocalBackend | null
-  readonly didLoadingProjectManagerFail: boolean
-  readonly reconnectToProjectManager: () => void
 }
 
 const BackendContext = React.createContext<BackendContextType>({
   remoteBackend: null,
   localBackend: null,
+})
+
+/** State contained in a `ProjectManagerContext`. */
+export interface ProjectManagerContextType {
+  readonly didLoadingProjectManagerFail: boolean
+  readonly reconnectToProjectManager: () => void
+}
+
+const ProjectManagerContext = React.createContext<ProjectManagerContextType>({
   didLoadingProjectManagerFail: false,
   reconnectToProjectManager: () => {},
 })
@@ -54,6 +61,7 @@ export default function BackendProvider(props: BackendProviderProps) {
     const onProjectManagerLoadingFailed = () => {
       setDidLoadingProjectManagerFail(true)
     }
+
     document.addEventListener(ProjectManagerEvents.loadingFailed, onProjectManagerLoadingFailed)
     return () => {
       document.removeEventListener(
@@ -69,15 +77,12 @@ export default function BackendProvider(props: BackendProviderProps) {
   })
 
   return (
-    <BackendContext.Provider
-      value={{
-        remoteBackend,
-        localBackend,
-        didLoadingProjectManagerFail,
-        reconnectToProjectManager,
-      }}
-    >
-      {children}
+    <BackendContext.Provider value={{ remoteBackend, localBackend }}>
+      <ProjectManagerContext.Provider
+        value={{ didLoadingProjectManagerFail, reconnectToProjectManager }}
+      >
+        {children}
+      </ProjectManagerContext.Provider>
     </BackendContext.Provider>
   )
 }
@@ -153,10 +158,10 @@ export function useBackendForProjectType(projectType: BackendType) {
 
 /** Whether connecting to the Project Manager failed. */
 export function useDidLoadingProjectManagerFail() {
-  return React.useContext(BackendContext).didLoadingProjectManagerFail
+  return React.useContext(ProjectManagerContext).didLoadingProjectManagerFail
 }
 
 /** Reconnect to the Project Manager. */
 export function useReconnectToProjectManager() {
-  return React.useContext(BackendContext).reconnectToProjectManager
+  return React.useContext(ProjectManagerContext).reconnectToProjectManager
 }

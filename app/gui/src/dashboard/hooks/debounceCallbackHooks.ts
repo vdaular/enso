@@ -1,22 +1,20 @@
-/**
- * @file
- *
- * This file contains the `useDebouncedCallback` hook which is used to debounce a callback function.
- */
+/** @file A hook to debounce a callback function. */
 import * as React from 'react'
 
 import { useEventCallback } from './eventCallbackHooks'
 import { useUnmount } from './unmountHooks'
 
-/** Wrap a callback into debounce function */
+/** Wrap a callback into a debounced function */
 export function useDebouncedCallback<Fn extends (...args: never[]) => unknown>(
   callback: Fn,
   delay: number,
   maxWait: number | null = null,
 ): DebouncedFunction<Fn> {
   const stableCallback = useEventCallback(callback)
+
   const timeoutIdRef = React.useRef<ReturnType<typeof setTimeout>>()
   const waitTimeoutIdRef = React.useRef<ReturnType<typeof setTimeout>>()
+
   const lastCallRef = React.useRef<{ args: Parameters<Fn> }>()
 
   const clear = useEventCallback(() => {

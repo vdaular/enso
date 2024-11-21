@@ -2,7 +2,7 @@
 import { type MutableRefObject, useRef } from 'react'
 
 /** A hook that returns a ref object whose `current` property is always in sync with the provided value. */
-export function useSyncRef<T>(value: T): Readonly<MutableRefObject<T>> {
+export function useSyncRef<T>(value: T): MutableRefObject<T> {
   const ref = useRef(value)
 
   /*

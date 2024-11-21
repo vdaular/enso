@@ -1,5 +1,4 @@
 /** @file A styled focus ring. */
-import * as React from 'react'
 
 import * as aria from '#/components/aria'
 

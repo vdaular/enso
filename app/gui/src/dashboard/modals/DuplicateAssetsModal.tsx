@@ -63,8 +63,8 @@ export default function DuplicateAssetsModal(props: DuplicateAssetsModalProps) {
   const [conflictingFiles, setConflictingFiles] = React.useState(conflictingFilesRaw)
   const [conflictingProjects, setConflictingProjects] = React.useState(conflictingProjectsRaw)
   const [didUploadNonConflicting, setDidUploadNonConflicting] = React.useState(false)
-  const siblingFileNames = React.useRef(new Set<string>())
-  const siblingProjectNames = React.useRef(new Set<string>())
+  const [siblingFileNames] = React.useState(new Set<string>())
+  const [siblingProjectNames] = React.useState(new Set<string>())
   const count = conflictingFiles.length + conflictingProjects.length
   const firstConflict = conflictingFiles[0] ?? conflictingProjects[0]
   const otherFilesCount = Math.max(0, conflictingFiles.length - 1)
@@ -85,15 +85,15 @@ export default function DuplicateAssetsModal(props: DuplicateAssetsModalProps) {
 
   React.useEffect(() => {
     for (const name of siblingFileNamesRaw) {
-      siblingFileNames.current.add(name)
+      siblingFileNames.add(name)
     }
     for (const name of siblingProjectNamesRaw) {
-      siblingProjectNames.current.add(name)
+      siblingProjectNames.add(name)
     }
     // Note that because the props are `Iterable`s, they may be different each time
     // even if their contents are identical. However, as this component should never
     // be re-rendered with different props, the dependency list should not matter anyway.
-  }, [siblingFileNamesRaw, siblingProjectNamesRaw])
+  }, [siblingFileNames, siblingFileNamesRaw, siblingProjectNames, siblingProjectNamesRaw])
 
   const findNewName = (conflict: ConflictingAsset, commit = true) => {
     let title = conflict.file.name
@@ -104,9 +104,9 @@ export default function DuplicateAssetsModal(props: DuplicateAssetsModalProps) {
         while (true) {
           i += 1
           const candidateTitle = `${basename} ${i}.${extension}`
-          if (!siblingFileNames.current.has(candidateTitle)) {
+          if (!siblingFileNames.has(candidateTitle)) {
             if (commit) {
-              siblingFileNames.current.add(candidateTitle)
+              siblingFileNames.add(candidateTitle)
             }
             title = candidateTitle
             break
@@ -121,9 +121,9 @@ export default function DuplicateAssetsModal(props: DuplicateAssetsModalProps) {
         while (true) {
           i += 1
           const candidateTitle = `${title} ${i}`
-          if (!siblingProjectNames.current.has(candidateTitle)) {
+          if (!siblingProjectNames.has(candidateTitle)) {
             if (commit) {
-              siblingProjectNames.current.add(candidateTitle)
+              siblingProjectNames.add(candidateTitle)
             }
             title = `${candidateTitle}.${extension}`
             break

@@ -4,7 +4,8 @@ import * as React from 'react'
 
 import invariant from 'tiny-invariant'
 
-import * as eventCallbackHooks from '#/hooks/eventCallbackHooks'
+import type { StoreApi } from '#/utilities/zustand'
+import { createStore, useStore } from '#/utilities/zustand'
 
 /** DialogStackItem represents an item in the dialog stack. */
 export interface DialogStackItem {
@@ -20,72 +21,72 @@ export interface DialogStackContextType {
   readonly slice: (currentId: string) => void
 }
 
-const DialogStackContext = React.createContext<DialogStackContextType | null>(null)
+const DialogStackContext = React.createContext<StoreApi<DialogStackContextType> | null>(null)
 
 /** DialogStackProvider is a React component that provides the dialog stack context to its children. */
 export function DialogStackProvider(props: React.PropsWithChildren) {
   const { children } = props
 
-  const [stack, setStack] = React.useState<DialogStackItem[]>([])
+  const [store] = React.useState(() =>
+    createStore<DialogStackContextType>((set) => ({
+      stack: [],
+      dialogsStack: [],
+      add: (item) => {
+        set((state) => {
+          const nextStack = [...state.stack, item]
 
-  const addToStack = eventCallbackHooks.useEventCallback((item: DialogStackItem) => {
-    setStack((currentStack) => [...currentStack, item])
-  })
+          return {
+            stack: nextStack,
+            dialogsStack: nextStack.filter((stackItem) =>
+              ['dialog-fullscreen', 'dialog'].includes(stackItem.type),
+            ),
+          }
+        })
+      },
+      slice: (currentId) => {
+        set((state) => {
+          const lastItem = state.stack.at(-1)
+          if (lastItem?.id === currentId) {
+            return { stack: state.stack.slice(0, -1) }
+          } else {
+            // eslint-disable-next-line no-restricted-properties
+            console.warn(`
+              DialogStackProvider: sliceFromStack: currentId ${currentId} does not match the last item in the stack. \
+              This is no-op but it might be a sign of a bug in the application. \
+              Usually, this means that the underlaying component was closed manually or the stack was not \
+              updated properly.
+          `)
 
-  const sliceFromStack = eventCallbackHooks.useEventCallback((currentId: string) => {
-    setStack((currentStack) => {
-      const lastItem = currentStack.at(-1)
-
-      if (lastItem?.id === currentId) {
-        return currentStack.slice(0, -1)
-      } else {
-        // eslint-disable-next-line no-restricted-properties
-        console.warn(`
-DialogStackProvider: sliceFromStack: currentId ${currentId} does not match the last item in the stack. \
-This is no-op but it might be a sign of a bug in the application. \
-Usually, this means that the underlaying component was closed manually or the stack was not \
-updated properly.`)
-
-        return currentStack
-      }
-    })
-  })
-
-  const value = React.useMemo<DialogStackContextType>(
-    () => ({
-      stack,
-      dialogsStack: stack.filter((item) => ['dialog-fullscreen', 'dialog'].includes(item.type)),
-      add: addToStack,
-      slice: sliceFromStack,
-    }),
-    [stack, addToStack, sliceFromStack],
+            return { stack: state.stack }
+          }
+        })
+      },
+    })),
   )
 
-  return <DialogStackContext.Provider value={value}>{children}</DialogStackContext.Provider>
+  return <DialogStackContext.Provider value={store}>{children}</DialogStackContext.Provider>
 }
 
 /** DialogStackRegistrar is a React component that registers a dialog in the dialog stack. */
 export function DialogStackRegistrar(props: React.PropsWithChildren<DialogStackItem>) {
-  const { children, id: idRaw, type: typeRaw } = props
-  const idRef = React.useRef(idRaw)
-  const typeRef = React.useRef(typeRaw)
+  const { children, id, type } = props
 
-  const context = React.useContext(DialogStackContext)
+  const store = React.useContext(DialogStackContext)
+  invariant(store, 'DialogStackRegistrar must be used within a DialogStackProvider')
 
-  invariant(context, 'DialogStackRegistrar must be used within a DialogStackProvider')
-
-  const { add, slice } = context
+  const { add, slice } = useStore(store, (state) => ({ add: state.add, slice: state.slice }))
 
   React.useEffect(() => {
-    const id = idRef.current
-    const type = typeRef.current
-
-    add({ id, type })
+    React.startTransition(() => {
+      add({ id, type })
+    })
 
     return () => {
-      slice(id)
+      React.startTransition(() => {
+        slice(id)
+      })
     }
-  }, [add, slice])
+  }, [add, slice, id, type])
 
   return children
 }
@@ -97,14 +98,33 @@ export interface UseDialogStackStateProps {
 
 /** useDialogStackState is a custom hook that provides the state of the dialog stack. */
 export function useDialogStackState(props: UseDialogStackStateProps) {
-  const ctx = React.useContext(DialogStackContext)
+  const store = React.useContext(DialogStackContext)
+  invariant(store, 'useDialogStackState must be used within a DialogStackProvider')
 
-  invariant(ctx, 'useDialogStackState must be used within a DialogStackProvider')
-
-  const { id } = props
-
-  const isLatest = ctx.stack.at(-1)?.id === id
-  const index = ctx.stack.findIndex((item) => item.id === id)
+  const isLatest = useIsLatestDialogStackItem(props.id)
+  const index = useDialogStackIndex(props.id)
 
   return { isLatest, index }
+}
+
+/**
+ * Hook that returns true if the given id is the latest item in the dialog stack.
+ */
+export function useIsLatestDialogStackItem(id: string) {
+  const store = React.useContext(DialogStackContext)
+  invariant(store, 'useIsLatestDialogStackItem must be used within a DialogStackProvider')
+
+  return useStore(store, (state) => state.stack.at(-1)?.id === id, { unsafeEnableTransition: true })
+}
+
+/**
+ * Hook that returns the index of the given id in the dialog stack.
+ */
+export function useDialogStackIndex(id: string) {
+  const store = React.useContext(DialogStackContext)
+  invariant(store, 'useDialogStackIndex must be used within a DialogStackProvider')
+
+  return useStore(store, (state) => state.stack.findIndex((item) => item.id === id), {
+    unsafeEnableTransition: true,
+  })
 }

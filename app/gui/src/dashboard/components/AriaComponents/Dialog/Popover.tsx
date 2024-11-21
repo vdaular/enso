@@ -64,6 +64,8 @@ export const POPOVER_STYLES = twv.tv({
   defaultVariants: { rounded: 'xxlarge', size: 'small' },
 })
 
+const SUSPENSE_LOADER_PROPS = { minHeight: 'h32' } as const
+
 /**
  * A popover is an overlay element positioned relative to a trigger.
  * It can be used to display additional content or actions.*
@@ -98,6 +100,9 @@ export function Popover(props: PopoverProps) {
     onInteractOutside: close,
   })
 
+  const dialogContextValue = React.useMemo(() => ({ close, dialogId }), [close, dialogId])
+  const popoverStyle = React.useMemo(() => ({ zIndex: '' }), [])
+
   return (
     <aria.Popover
       className={(values) =>
@@ -111,10 +116,7 @@ export function Popover(props: PopoverProps) {
       }
       UNSTABLE_portalContainer={root}
       placement={placement}
-      style={{
-        // Unset the default z-index set by react-aria-components.
-        zIndex: '',
-      }}
+      style={popoverStyle}
       shouldCloseOnInteractOutside={() => false}
       {...ariaPopoverProps}
     >
@@ -125,9 +127,9 @@ export function Popover(props: PopoverProps) {
             ref={dialogRef}
             className={POPOVER_STYLES({ ...opts, size, rounded }).dialog()}
           >
-            <dialogProvider.DialogProvider value={{ close, dialogId }}>
+            <dialogProvider.DialogProvider value={dialogContextValue}>
               <errorBoundary.ErrorBoundary>
-                <suspense.Suspense loaderProps={{ minHeight: 'h32' }}>
+                <suspense.Suspense loaderProps={SUSPENSE_LOADER_PROPS}>
                   {typeof children === 'function' ? children({ ...opts, close }) : children}
                 </suspense.Suspense>
               </errorBoundary.ErrorBoundary>

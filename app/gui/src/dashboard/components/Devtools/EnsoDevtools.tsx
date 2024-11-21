@@ -47,7 +47,6 @@ import {
 import { useLocalStorage } from '#/providers/LocalStorageProvider'
 import * as backend from '#/services/Backend'
 import LocalStorage, { type LocalStorageData } from '#/utilities/LocalStorage'
-import { unsafeEntries } from 'enso-common/src/utilities/data/object'
 
 /** A component that provides a UI for toggling paywall features. */
 export function EnsoDevtools() {
@@ -280,7 +279,7 @@ export function EnsoDevtools() {
               variant="icon"
               icon={TrashIcon}
               onPress={() => {
-                for (const [key] of unsafeEntries(LocalStorage.keyMetadata)) {
+                for (const key of LocalStorage.getAllKeys()) {
                   localStorage.delete(key)
                 }
               }}
@@ -288,7 +287,7 @@ export function EnsoDevtools() {
           </div>
 
           <div className="flex flex-col gap-0.5">
-            {unsafeEntries(LocalStorage.keyMetadata).map(([key]) => (
+            {LocalStorage.getAllKeys().map((key) => (
               <div key={key} className="flex w-full items-center justify-between gap-1">
                 <Text variant="body">
                   {key

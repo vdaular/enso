@@ -72,7 +72,7 @@ export function useStore<State, Slice>(
 export function useTearingTransitionStore<State, Slice>(
   store: StoreApi<State>,
   selector: (state: State) => Slice,
-  areEqual: AreEqual<Slice> = 'object',
+  areEqual: AreEqual<Slice> = 'shallow',
 ) {
   const state = store.getState()
 
@@ -93,10 +93,12 @@ export function useTearingTransitionStore<State, Slice>(
       if (Object.is(prev[2], nextState) && prev[1] === store) {
         return prev
       }
+
       const nextSlice = selector(nextState)
       if (equalityFunction(prev[0], nextSlice) && prev[1] === store) {
         return prev
       }
+
       return [nextSlice, store, nextState]
     },
     undefined,

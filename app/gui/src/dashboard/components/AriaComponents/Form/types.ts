@@ -71,7 +71,7 @@ interface FormPropsWithOptions<Schema extends components.TSchema, SubmitResult =
   extends components.OnSubmitCallbacks<Schema, SubmitResult> {
   readonly schema: Schema | ((schema: typeof components.schema) => Schema)
   readonly formOptions?: Omit<
-    components.UseFormProps<Schema, SubmitResult>,
+    components.UseFormOptions<Schema, SubmitResult>,
     'defaultValues' | 'onSubmit' | 'onSubmitFailed' | 'onSubmitSuccess' | 'onSubmitted' | 'schema'
   >
   /**
@@ -81,7 +81,7 @@ interface FormPropsWithOptions<Schema extends components.TSchema, SubmitResult =
    * it is recommended to provide default values and specify all fields defined in the schema.
    * Otherwise Typescript fails to infer the correct type for the form values.
    */
-  readonly defaultValues?: components.UseFormProps<Schema>['defaultValues']
+  readonly defaultValues?: components.UseFormOptions<Schema>['defaultValues']
   readonly form?: never
 }
 

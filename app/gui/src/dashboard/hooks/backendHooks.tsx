@@ -202,6 +202,8 @@ const INVALIDATION_MAP: Partial<
   createDirectory: ['listDirectory'],
   createSecret: ['listDirectory'],
   updateSecret: ['listDirectory'],
+  updateProject: ['listDirectory'],
+  updateDirectory: ['listDirectory'],
   createDatalink: ['listDirectory', 'getDatalink'],
   uploadFileEnd: ['listDirectory'],
   copyAsset: ['listDirectory', 'listAssetVersions'],
@@ -209,7 +211,6 @@ const INVALIDATION_MAP: Partial<
   undoDeleteAsset: ['listDirectory'],
   updateAsset: ['listDirectory', 'listAssetVersions'],
   closeProject: ['listDirectory', 'listAssetVersions'],
-  updateDirectory: ['listDirectory'],
 }
 
 /** The type of the corresponding mutation for the given backend method. */
@@ -318,6 +319,10 @@ export function listDirectoryQueryOptions(options: ListDirectoryQueryOptions) {
         recentProjects: category.type === 'recent',
       },
     ] as const,
+    // Setting stale time to Infinity to attaching a ton of
+    // setTimeouts to the query. Improves performance.
+    // Anyways, refetching is handled by another query.
+    staleTime: Infinity,
     queryFn: async () => {
       try {
         return await backend.listDirectory(
@@ -1174,12 +1179,20 @@ export function useUploadFileMutation(backend: Backend, options: UploadFileMutat
       toastAndLog('uploadLargeFileError', error)
     },
   } = options
-  const uploadFileStartMutation = useMutation(backendMutationOptions(backend, 'uploadFileStart'))
+  const uploadFileStartMutation = useMutation(
+    useMemo(() => backendMutationOptions(backend, 'uploadFileStart'), [backend]),
+  )
   const uploadFileChunkMutation = useMutation(
-    backendMutationOptions(backend, 'uploadFileChunk', { retry: chunkRetries }),
+    useMemo(
+      () => backendMutationOptions(backend, 'uploadFileChunk', { retry: chunkRetries }),
+      [backend, chunkRetries],
+    ),
   )
   const uploadFileEndMutation = useMutation(
-    backendMutationOptions(backend, 'uploadFileEnd', { retry: endRetries }),
+    useMemo(
+      () => backendMutationOptions(backend, 'uploadFileEnd', { retry: endRetries }),
+      [backend, endRetries],
+    ),
   )
   const [variables, setVariables] =
     useState<[params: backendModule.UploadFileRequestParams, file: File]>()

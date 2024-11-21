@@ -8,15 +8,19 @@ import LabelsColumnHeading from '#/components/dashboard/columnHeading/LabelsColu
 import ModifiedColumnHeading from '#/components/dashboard/columnHeading/ModifiedColumnHeading'
 import NameColumnHeading from '#/components/dashboard/columnHeading/NameColumnHeading'
 import SharedWithColumnHeading from '#/components/dashboard/columnHeading/SharedWithColumnHeading'
+import { memo } from 'react'
 
 export const COLUMN_HEADING: Readonly<
-  Record<columnUtils.Column, (props: column.AssetColumnHeadingProps) => React.JSX.Element>
+  Record<
+    columnUtils.Column,
+    React.MemoExoticComponent<(props: column.AssetColumnHeadingProps) => React.JSX.Element>
+  >
 > = {
-  [columnUtils.Column.name]: NameColumnHeading,
-  [columnUtils.Column.modified]: ModifiedColumnHeading,
-  [columnUtils.Column.sharedWith]: SharedWithColumnHeading,
-  [columnUtils.Column.labels]: LabelsColumnHeading,
-  [columnUtils.Column.accessedByProjects]: AccessedByProjectsColumnHeading,
-  [columnUtils.Column.accessedData]: AccessedDataColumnHeading,
-  [columnUtils.Column.docs]: DocsColumnHeading,
+  [columnUtils.Column.name]: memo(NameColumnHeading),
+  [columnUtils.Column.modified]: memo(ModifiedColumnHeading),
+  [columnUtils.Column.sharedWith]: memo(SharedWithColumnHeading),
+  [columnUtils.Column.labels]: memo(LabelsColumnHeading),
+  [columnUtils.Column.accessedByProjects]: memo(AccessedByProjectsColumnHeading),
+  [columnUtils.Column.accessedData]: memo(AccessedDataColumnHeading),
+  [columnUtils.Column.docs]: memo(DocsColumnHeading),
 }

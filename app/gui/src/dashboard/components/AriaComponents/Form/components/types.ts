@@ -64,7 +64,7 @@ export interface OnSubmitCallbacks<Schema extends TSchema, SubmitResult = void> 
 }
 
 /** Props for the useForm hook. */
-export interface UseFormProps<Schema extends TSchema, SubmitResult = void>
+export interface UseFormOptions<Schema extends TSchema, SubmitResult = void>
   extends Omit<
       reactHookForm.UseFormProps<FieldValues<Schema>>,
       'handleSubmit' | 'resetOptions' | 'resolver'

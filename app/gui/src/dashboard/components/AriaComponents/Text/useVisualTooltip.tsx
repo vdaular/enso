@@ -69,19 +69,16 @@ export function useVisualTooltip(props: VisualTooltipProps): VisualTooltipReturn
     maxWidth,
   } = props
 
-  const {
-    containerPadding = 0,
-    offset = DEFAULT_OFFSET,
-    crossOffset = 0,
-    placement = 'bottom',
-  } = overlayPositionProps
+  const [isTooltipDisabled, setIsTooltipDisabled] = React.useState(true)
 
-  const popoverRef = React.useRef<HTMLDivElement>(null)
   const id = React.useId()
+
+  const disabled = isDisabled || isTooltipDisabled
 
   const state = aria.useTooltipTriggerState({
     closeDelay: DEFAULT_DELAY,
     delay: DEFAULT_DELAY,
+    isDisabled: disabled,
   })
 
   const handleHoverChange = eventCallback.useEventCallback((isHovered: boolean) => {
@@ -95,11 +92,15 @@ export function useVisualTooltip(props: VisualTooltipProps): VisualTooltipReturn
       }
     }
 
-    if (shouldDisplay()) {
-      state.open()
-    } else {
-      state.close()
-    }
+    React.startTransition(() => {
+      setIsTooltipDisabled(!shouldDisplay())
+
+      if (shouldDisplay()) {
+        state.open()
+      } else {
+        state.close()
+      }
+    })
   })
 
   const { hoverProps: targetHoverProps } = aria.useHover({
@@ -107,12 +108,82 @@ export function useVisualTooltip(props: VisualTooltipProps): VisualTooltipReturn
     onHoverChange: handleHoverChange,
   })
 
+  return {
+    targetProps: aria.mergeProps<React.HTMLAttributes<HTMLElement>>()(targetHoverProps, { id }),
+    tooltip:
+      state.isOpen ?
+        <TooltipInner
+          id={id}
+          overlayPositionProps={overlayPositionProps}
+          className={className}
+          variant={variant}
+          rounded={rounded}
+          size={size}
+          maxWidth={maxWidth}
+          children={children}
+          testId={testId}
+          state={state}
+          targetRef={targetRef}
+          triggerRef={triggerRef}
+          disabled={disabled}
+          handleHoverChange={handleHoverChange}
+        />
+      : null,
+  } as const
+}
+
+/** Props for {@link TooltipInner}. */
+interface TooltipInnerProps
+  extends Pick<ariaComponents.TooltipProps, 'maxWidth' | 'rounded' | 'size' | 'variant'> {
+  readonly id: string
+  readonly disabled: boolean
+  readonly handleHoverChange: (isHovered: boolean) => void
+  readonly state: aria.TooltipTriggerState
+  readonly targetRef: React.RefObject<HTMLElement>
+  readonly triggerRef: React.RefObject<HTMLElement>
+  readonly children: React.ReactNode
+  readonly className?: string | undefined
+  readonly testId?: string | undefined
+  readonly overlayPositionProps: Pick<
+    aria.AriaPositionProps,
+    'containerPadding' | 'crossOffset' | 'offset' | 'placement'
+  >
+}
+
+/** The inner component of the tooltip. */
+function TooltipInner(props: TooltipInnerProps) {
+  const {
+    id,
+    disabled,
+    handleHoverChange,
+    state,
+    targetRef,
+    triggerRef,
+    className,
+    variant,
+    rounded,
+    size,
+    maxWidth,
+    children,
+    testId,
+    overlayPositionProps,
+  } = props
+
+  const {
+    containerPadding = 0,
+    offset = DEFAULT_OFFSET,
+    crossOffset = 0,
+    placement = 'bottom',
+  } = overlayPositionProps
+
+  const popoverRef = React.useRef<HTMLDivElement>(null)
+
   const { hoverProps: tooltipHoverProps } = aria.useHover({
-    isDisabled,
+    isDisabled: disabled,
     onHoverChange: handleHoverChange,
   })
 
-  const { tooltipProps } = aria.useTooltipTrigger({}, state, targetRef)
+  const { tooltipProps } = aria.useTooltipTrigger({ isDisabled: disabled }, state, targetRef)
 
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const { overlayProps, updatePosition } = aria.useOverlayPosition({
@@ -162,10 +233,7 @@ export function useVisualTooltip(props: VisualTooltipProps): VisualTooltipReturn
     </Portal>
   )
 
-  return {
-    targetProps: aria.mergeProps<React.HTMLAttributes<HTMLElement>>()(targetHoverProps, { id }),
-    tooltip: state.isOpen ? createTooltipElement() : null,
-  } as const
+  return createTooltipElement()
 }
 
 const DISPLAY_STRATEGIES: Record<DisplayStrategy, (target: HTMLElement) => boolean> = {

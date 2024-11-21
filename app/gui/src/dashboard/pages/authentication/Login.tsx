@@ -119,6 +119,7 @@ export default function Login() {
 
               <Form form={form} gap="medium">
                 <Input
+                  form={form}
                   autoFocus
                   required
                   data-testid="email-input"
@@ -135,6 +136,7 @@ export default function Login() {
 
                 <div className="flex w-full flex-col">
                   <Password
+                    form={form}
                     required
                     data-testid="password-input"
                     name="password"

@@ -72,6 +72,8 @@ export function useMonitorDependencies(
       console.groupEnd()
     }
   }
+  // Unavoidable. The ref must be updated only after logging is complete.
+  // eslint-disable-next-line react-compiler/react-compiler
   oldDependenciesRef.current = dependencies
 }
 
@@ -82,13 +84,15 @@ export function useMonitorDependencies(
 /** A modified `useEffect` that logs the old and new values of changed dependencies. */
 export function useDebugEffect(
   effect: React.EffectCallback,
-  deps: React.DependencyList,
+  dependencies: React.DependencyList,
   description?: string,
   dependencyDescriptions?: readonly string[],
 ) {
-  useMonitorDependencies(deps, description, dependencyDescriptions)
+  useMonitorDependencies(dependencies, description, dependencyDescriptions)
+  // Unavoidable as this is a wrapped hook.
+  // eslint-disable-next-line react-compiler/react-compiler
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  React.useEffect(effect, deps)
+  React.useEffect(effect, dependencies)
 }
 
 // === useDebugMemo ===
@@ -96,13 +100,15 @@ export function useDebugEffect(
 /** A modified `useMemo` that logs the old and new values of changed dependencies. */
 export function useDebugMemo<T>(
   factory: () => T,
-  deps: React.DependencyList,
+  dependencies: React.DependencyList,
   description?: string,
   dependencyDescriptions?: readonly string[],
 ) {
-  useMonitorDependencies(deps, description, dependencyDescriptions)
+  useMonitorDependencies(dependencies, description, dependencyDescriptions)
+  // Unavoidable as this is a wrapped hook.
+  // eslint-disable-next-line react-compiler/react-compiler
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  return React.useMemo<T>(factory, deps)
+  return React.useMemo<T>(factory, dependencies)
 }
 
 // === useDebugCallback ===
@@ -110,11 +116,13 @@ export function useDebugMemo<T>(
 /** A modified `useCallback` that logs the old and new values of changed dependencies. */
 export function useDebugCallback<T extends (...args: never[]) => unknown>(
   callback: T,
-  deps: React.DependencyList,
+  dependencies: React.DependencyList,
   description?: string,
   dependencyDescriptions?: readonly string[],
 ) {
-  useMonitorDependencies(deps, description, dependencyDescriptions)
+  useMonitorDependencies(dependencies, description, dependencyDescriptions)
+  // Unavoidable as this is a wrapped hook.
+  // eslint-disable-next-line react-compiler/react-compiler
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  return React.useCallback<T>(callback, deps)
+  return React.useCallback<T>(callback, dependencies)
 }

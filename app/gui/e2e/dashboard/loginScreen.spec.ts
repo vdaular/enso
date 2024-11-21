@@ -1,14 +1,7 @@
 /** @file Test the login flow. */
 import * as test from '@playwright/test'
 
-import {
-  INVALID_PASSWORD,
-  mockAll,
-  passAgreementsDialog,
-  TEXT,
-  VALID_EMAIL,
-  VALID_PASSWORD,
-} from './actions'
+import { INVALID_PASSWORD, mockAll, TEXT, VALID_EMAIL, VALID_PASSWORD } from './actions'
 
 // =============
 // === Tests ===

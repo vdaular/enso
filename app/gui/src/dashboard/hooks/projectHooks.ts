@@ -39,6 +39,8 @@ const CLOUD_OPENING_INTERVAL_MS = 5_000
  */
 const ACTIVE_SYNC_INTERVAL_MS = 100
 
+const DEFAULT_INTERVAL_MS = 120_000
+
 /** Options for {@link createGetProjectDetailsQuery}. */
 export interface CreateOpenedProjectQueryOptions {
   readonly assetId: backendModule.Asset<backendModule.AssetType.project>['id']
@@ -92,24 +94,36 @@ export function createGetProjectDetailsQuery(options: CreateOpenedProjectQueryOp
     networkMode: backend.type === backendModule.BackendType.remote ? 'online' : 'always',
     refetchInterval: ({ state }) => {
       const states = [backendModule.ProjectState.opened, backendModule.ProjectState.closed]
+      const openingStates = [
+        backendModule.ProjectState.openInProgress,
+        backendModule.ProjectState.closing,
+      ]
 
       if (state.status === 'error') {
         return false
       }
+
+      if (state.data == null) {
+        return false
+      }
+
       if (isLocal) {
-        if (state.data?.state.type === backendModule.ProjectState.opened) {
+        if (states.includes(state.data.state.type)) {
           return OPENED_INTERVAL_MS
-        } else {
+        } else if (openingStates.includes(state.data.state.type)) {
           return ACTIVE_SYNC_INTERVAL_MS
+        } else {
+          return DEFAULT_INTERVAL_MS
         }
+      }
+
+      // Cloud project
+      if (states.includes(state.data.state.type)) {
+        return OPENED_INTERVAL_MS
+      } else if (openingStates.includes(state.data.state.type)) {
+        return CLOUD_OPENING_INTERVAL_MS
       } else {
-        if (state.data == null) {
-          return ACTIVE_SYNC_INTERVAL_MS
-        } else if (states.includes(state.data.state.type)) {
-          return OPENED_INTERVAL_MS
-        } else {
-          return CLOUD_OPENING_INTERVAL_MS
-        }
+        return DEFAULT_INTERVAL_MS
       }
     },
   })
@@ -299,6 +313,7 @@ export function useOpenProject() {
         ...openingProjectMutation.options,
         scope: { id: project.id },
       })
+
       addLaunchedProject(project)
     }
   })

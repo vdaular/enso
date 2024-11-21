@@ -103,9 +103,11 @@ export default function ProjectIcon(props: ProjectIconProps) {
 
   const isOtherUserUsingProject =
     isCloud && itemProjectState.openedBy != null && itemProjectState.openedBy !== user.email
+
   const { data: users } = useBackendQuery(backend, 'listUsers', [], {
     enabled: isOtherUserUsingProject,
   })
+
   const userOpeningProject = useMemo(
     () =>
       !isOtherUserUsingProject ? null : (
@@ -113,6 +115,7 @@ export default function ProjectIcon(props: ProjectIconProps) {
       ),
     [isOtherUserUsingProject, itemProjectState.openedBy, users],
   )
+
   const userOpeningProjectTooltip =
     userOpeningProject == null ? null : getText('xIsUsingTheProject', userOpeningProject.name)
 
@@ -138,7 +141,7 @@ export default function ProjectIcon(props: ProjectIconProps) {
 
   const spinnerState = ((): SpinnerState => {
     if (!isOpened) {
-      return 'initial'
+      return 'loading-slow'
     } else if (isError) {
       return 'initial'
     } else if (status == null) {
@@ -197,7 +200,7 @@ export default function ProjectIcon(props: ProjectIconProps) {
           />
           <StatelessSpinner
             state={spinnerState}
-            className={tailwindMerge.twMerge(
+            className={tailwindMerge.twJoin(
               'pointer-events-none absolute inset-0',
               isRunningInBackground && 'text-green',
             )}

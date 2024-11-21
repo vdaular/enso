@@ -3,10 +3,6 @@ import { useText } from '#/providers/TextProvider'
 import SettingsAriaInput from './AriaInput'
 import type { SettingsContext, SettingsInputData } from './data'
 
-// =====================
-// === SettingsInput ===
-// =====================
-
 /** Props for a {@link SettingsInput}. */
 export interface SettingsInputProps<T extends Record<keyof T, string>> {
   readonly context: SettingsContext

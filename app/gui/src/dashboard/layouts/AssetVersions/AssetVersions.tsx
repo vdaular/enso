@@ -1,21 +1,22 @@
 /** @file A list of previous versions of an asset. */
 import * as React from 'react'
 
-import * as toastAndLogHooks from '#/hooks/toastAndLogHooks'
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
 
-import * as textProvider from '#/providers/TextProvider'
-
-import AssetVersion from '#/layouts/AssetVersions/AssetVersion'
-
-import type Backend from '#/services/Backend'
-import * as backendService from '#/services/Backend'
+import * as uniqueString from 'enso-common/src/utilities/uniqueString'
 
 import { Result } from '#/components/Result'
+import * as toastAndLogHooks from '#/hooks/toastAndLogHooks'
+import AssetVersion from '#/layouts/AssetVersions/AssetVersion'
+import * as textProvider from '#/providers/TextProvider'
+import type Backend from '#/services/Backend'
 import type { AnyAsset } from '#/services/Backend'
+import * as backendService from '#/services/Backend'
 import * as dateTime from '#/utilities/dateTime'
-import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
-import * as uniqueString from 'enso-common/src/utilities/uniqueString'
-import { assetVersionsQueryOptions } from './useAssetVersions.ts'
+import { noop } from '#/utilities/functions'
+import { useStore } from '#/utilities/zustand'
+import { assetPanelStore } from '../AssetPanel/AssetPanelState'
+import { assetVersionsQueryOptions } from './useAssetVersions'
 
 // ==============================
 // === AddNewVersionVariables ===
@@ -34,14 +35,17 @@ interface AddNewVersionVariables {
 /** Props for a {@link AssetVersions}. */
 export interface AssetVersionsProps {
   readonly backend: Backend
-  readonly item: AnyAsset | null
 }
 
 /**
  * Display a list of previous versions of an asset.
  */
 export default function AssetVersions(props: AssetVersionsProps) {
-  const { item, backend } = props
+  const { backend } = props
+
+  const { item } = useStore(assetPanelStore, (state) => ({ item: state.assetPanelProps.item }), {
+    unsafeEnableTransition: true,
+  })
 
   const { getText } = textProvider.useText()
 
@@ -82,13 +86,7 @@ function AssetVersionsInternal(props: AssetVersionsInternalProps) {
     readonly backendService.S3ObjectVersion[]
   >([])
 
-  const versionsQuery = useSuspenseQuery(
-    assetVersionsQueryOptions({
-      assetId: item.id,
-      backend,
-      onError: (backendError) => toastAndLog('listVersionsError', backendError),
-    }),
-  )
+  const versionsQuery = useSuspenseQuery(assetVersionsQueryOptions({ assetId: item.id, backend }))
 
   const latestVersion = versionsQuery.data.find((version) => version.isLatest)
 
@@ -140,7 +138,7 @@ function AssetVersionsInternal(props: AssetVersionsInternalProps) {
               item={item}
               backend={backend}
               latestVersion={latestVersion}
-              doRestore={() => {}}
+              doRestore={noop}
             />
           )),
           ...versionsQuery.data.map((version, i) => (

@@ -4,6 +4,7 @@ import * as React from 'react'
 import * as detect from 'enso-common/src/detect'
 
 import FindIcon from '#/assets/find.svg'
+import { unsafeWriteValue } from '#/utilities/write'
 
 import * as backendHooks from '#/hooks/backendHooks'
 
@@ -17,16 +18,17 @@ import FocusArea from '#/components/styled/FocusArea'
 import FocusRing from '#/components/styled/FocusRing'
 import SvgMask from '#/components/SvgMask'
 
+import { useEventCallback } from '#/hooks/eventCallbackHooks'
+import { useSyncRef } from '#/hooks/syncRefHooks'
 import type Backend from '#/services/Backend'
-
-import { useSuggestions } from '#/providers/DriveProvider'
+import type { Label as BackendLabel } from '#/services/Backend'
 import * as array from '#/utilities/array'
 import AssetQuery from '#/utilities/AssetQuery'
 import * as eventModule from '#/utilities/event'
 import * as string from '#/utilities/string'
 import * as tailwindMerge from '#/utilities/tailwindMerge'
+import { createStore, useStore } from '#/utilities/zustand'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEventCallback } from '../hooks/eventCallbackHooks'
 
 // =============
 // === Types ===
@@ -49,6 +51,7 @@ enum QuerySource {
 
 /** A suggested query. */
 export interface Suggestion {
+  readonly key: string
   readonly render: () => React.ReactNode
   readonly addToQuery: (query: AssetQuery) => AssetQuery
   readonly deleteFromQuery: (query: AssetQuery) => AssetQuery
@@ -64,6 +67,25 @@ interface InternalTagsProps {
   readonly querySource: React.MutableRefObject<QuerySource>
   readonly query: AssetQuery
   readonly setQuery: React.Dispatch<React.SetStateAction<AssetQuery>>
+}
+
+export const searchbarSuggestionsStore = createStore<{
+  readonly suggestions: readonly Suggestion[]
+  readonly setSuggestions: (suggestions: readonly Suggestion[]) => void
+}>((set) => ({
+  suggestions: [],
+  setSuggestions: (suggestions) => {
+    set({ suggestions })
+  },
+}))
+
+/**
+ * Sets the suggestions.
+ */
+export function useSetSuggestions() {
+  return useStore(searchbarSuggestionsStore, (state) => state.setSuggestions, {
+    unsafeEnableTransition: true,
+  })
 }
 
 /** Tags (`name:`, `modified:`, etc.) */
@@ -102,7 +124,7 @@ function Tags(props: InternalTagsProps) {
                   size="xsmall"
                   className="min-w-12"
                   onPress={() => {
-                    querySource.current = QuerySource.internal
+                    unsafeWriteValue(querySource, 'current', QuerySource.internal)
                     setQuery(query.add({ [key]: [[]] }))
                   }}
                 >
@@ -130,13 +152,18 @@ export interface AssetSearchBarProps {
 /** A search bar containing a text input, and a list of suggestions. */
 function AssetSearchBar(props: AssetSearchBarProps) {
   const { backend, isCloud, query, setQuery } = props
-  const { getText } = textProvider.useText()
   const { modalRef } = modalProvider.useModalRef()
   /** A cached query as of the start of tabbing. */
   const baseQuery = React.useRef(query)
-  const rawSuggestions = useSuggestions()
+
+  const rawSuggestions = useStore(searchbarSuggestionsStore, (state) => state.suggestions, {
+    unsafeEnableTransition: true,
+  })
+
   const [suggestions, setSuggestions] = React.useState(rawSuggestions)
-  const suggestionsRef = React.useRef(rawSuggestions)
+
+  const suggestionsRef = useSyncRef(suggestions)
+
   const [selectedIndex, setSelectedIndex] = React.useState<number | null>(null)
   const [areSuggestionsVisible, privateSetAreSuggestionsVisible] = React.useState(false)
   const areSuggestionsVisibleRef = React.useRef(areSuggestionsVisible)
@@ -150,6 +177,13 @@ function AssetSearchBar(props: AssetSearchBarProps) {
       areSuggestionsVisibleRef.current = value
     })
   })
+
+  React.useEffect(() => {
+    if (querySource.current !== QuerySource.tabbing) {
+      setSuggestions(rawSuggestions)
+      unsafeWriteValue(suggestionsRef, 'current', rawSuggestions)
+    }
+  }, [rawSuggestions, suggestionsRef])
 
   React.useEffect(() => {
     if (querySource.current !== QuerySource.tabbing) {
@@ -172,23 +206,19 @@ function AssetSearchBar(props: AssetSearchBarProps) {
     }
   }, [query])
 
-  React.useEffect(() => {
-    if (querySource.current !== QuerySource.tabbing) {
-      setSuggestions(rawSuggestions)
-      suggestionsRef.current = rawSuggestions
-    }
-  }, [rawSuggestions])
+  const selectedIndexDeps = useSyncRef({ query, setQuery, suggestions })
 
   React.useEffect(() => {
+    const deps = selectedIndexDeps.current
     if (
       querySource.current === QuerySource.internal ||
       querySource.current === QuerySource.tabbing
     ) {
-      let newQuery = query
-      const suggestion = selectedIndex == null ? null : suggestions[selectedIndex]
+      let newQuery = deps.query
+      const suggestion = selectedIndex == null ? null : deps.suggestions[selectedIndex]
       if (suggestion != null) {
         newQuery = suggestion.addToQuery(baseQuery.current)
-        setQuery(newQuery)
+        deps.setQuery(newQuery)
       }
       searchRef.current?.focus()
       const end = searchRef.current?.value.length ?? 0
@@ -197,9 +227,7 @@ function AssetSearchBar(props: AssetSearchBarProps) {
         searchRef.current.value = newQuery.toString()
       }
     }
-    // This effect MUST only run when `selectedIndex` changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedIndex])
+  }, [selectedIndex, selectedIndexDeps])
 
   React.useEffect(() => {
     const onSearchKeyDown = (event: KeyboardEvent) => {
@@ -270,7 +298,7 @@ function AssetSearchBar(props: AssetSearchBarProps) {
       root?.removeEventListener('keydown', onSearchKeyDown)
       document.removeEventListener('keydown', onKeyDown)
     }
-  }, [setQuery, modalRef, setAreSuggestionsVisible])
+  }, [setQuery, modalRef, setAreSuggestionsVisible, suggestionsRef])
 
   // Reset `querySource` after all other effects have run.
   React.useEffect(() => {
@@ -282,6 +310,30 @@ function AssetSearchBar(props: AssetSearchBarProps) {
       querySource.current = QuerySource.external
     }
   }, [query, setQuery])
+
+  const onSearchFieldKeyDown = useEventCallback((event: aria.KeyboardEvent) => {
+    event.continuePropagation()
+  })
+
+  const searchFieldOnChange = useEventCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    if (querySource.current !== QuerySource.internal) {
+      querySource.current = QuerySource.typing
+      setQuery(AssetQuery.fromString(event.target.value))
+    }
+  })
+
+  const searchInputOnKeyDown = useEventCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (
+      event.key === 'Enter' &&
+      !event.shiftKey &&
+      !event.altKey &&
+      !event.metaKey &&
+      !event.ctrlKey
+    ) {
+      // Clone the query to refresh results.
+      setQuery(query.clone())
+    }
+  })
 
   return (
     <FocusArea direction="horizontal">
@@ -328,54 +380,77 @@ function AssetSearchBar(props: AssetSearchBarProps) {
               src={FindIcon}
               className="absolute left-2 top-[50%] z-1 mt-[1px] -translate-y-1/2 text-primary/40"
             />
-            <FocusRing placement="before">
-              <aria.SearchField
-                aria-label={getText('assetSearchFieldLabel')}
-                className="relative grow before:text before:absolute before:-inset-x-1 before:my-auto before:rounded-full before:transition-all"
-                value={query.query}
-                onKeyDown={(event) => {
-                  event.continuePropagation()
-                }}
-              >
-                <aria.Input
-                  type="search"
-                  ref={searchRef}
-                  size={1}
-                  placeholder={
-                    isCloud ?
-                      detect.isOnMacOS() ?
-                        getText('remoteBackendSearchPlaceholderMacOs')
-                      : getText('remoteBackendSearchPlaceholder')
-                    : getText('localBackendSearchPlaceholder')
-                  }
-                  className="focus-child peer text relative z-1 w-full bg-transparent placeholder-primary/40"
-                  onChange={(event) => {
-                    if (querySource.current !== QuerySource.internal) {
-                      querySource.current = QuerySource.typing
-                      setQuery(AssetQuery.fromString(event.target.value))
-                    }
-                  }}
-                  onKeyDown={(event) => {
-                    if (
-                      event.key === 'Enter' &&
-                      !event.shiftKey &&
-                      !event.altKey &&
-                      !event.metaKey &&
-                      !event.ctrlKey
-                    ) {
-                      // Clone the query to refresh results.
-                      setQuery(query.clone())
-                    }
-                  }}
-                />
-              </aria.SearchField>
-            </FocusRing>
+
+            <AssetSearchBarInput
+              query={query}
+              isCloud={isCloud}
+              onSearchFieldKeyDown={onSearchFieldKeyDown}
+              searchRef={searchRef}
+              searchFieldOnChange={searchFieldOnChange}
+              searchInputOnKeyDown={searchInputOnKeyDown}
+            />
           </aria.Label>
         </div>
       )}
     </FocusArea>
   )
 }
+
+/** Props for a {@link AssetSearchBarInput}. */
+interface AssetSearchBarInputProps {
+  readonly query: AssetQuery
+  readonly isCloud: boolean
+  readonly onSearchFieldKeyDown: (event: aria.KeyboardEvent) => void
+  readonly searchRef: React.RefObject<HTMLInputElement>
+  readonly searchFieldOnChange: (event: React.ChangeEvent<HTMLInputElement>) => void
+  readonly searchInputOnKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => void
+}
+
+/**
+ * Renders the search field.
+ */
+// eslint-disable-next-line no-restricted-syntax
+const AssetSearchBarInput = React.memo(function AssetSearchBarInput(
+  props: AssetSearchBarInputProps,
+) {
+  const {
+    query,
+    isCloud,
+    onSearchFieldKeyDown,
+    searchRef,
+    searchFieldOnChange,
+    searchInputOnKeyDown,
+  } = props
+  const { getText } = textProvider.useText()
+  return (
+    <>
+      <FocusRing placement="before">
+        <aria.SearchField
+          aria-label={getText('assetSearchFieldLabel')}
+          className="relative grow before:text before:absolute before:-inset-x-1 before:my-auto before:rounded-full before:transition-all"
+          value={query.query}
+          onKeyDown={onSearchFieldKeyDown}
+        >
+          <aria.Input
+            type="search"
+            ref={searchRef}
+            size={1}
+            placeholder={
+              isCloud ?
+                detect.isOnMacOS() ?
+                  getText('remoteBackendSearchPlaceholderMacOs')
+                : getText('remoteBackendSearchPlaceholder')
+              : getText('localBackendSearchPlaceholder')
+            }
+            className="focus-child peer text relative z-1 w-full bg-transparent placeholder-primary/40"
+            onChange={searchFieldOnChange}
+            onKeyDown={searchInputOnKeyDown}
+          />
+        </aria.SearchField>
+      </FocusRing>
+    </>
+  )
+})
 
 /**
  * Props for a {@link AssetSearchBarPopover}.
@@ -416,12 +491,12 @@ function AssetSearchBarPopover(props: AssetSearchBarPopoverProps) {
 
   return (
     <>
-      <AnimatePresence>
+      <AnimatePresence mode="wait" custom={suggestions.length}>
         {areSuggestionsVisible && (
           <motion.div
-            initial={{ gridTemplateRows: '0fr', opacity: 0 }}
-            animate={{ gridTemplateRows: '1fr', opacity: 1 }}
-            exit={{ gridTemplateRows: '0fr', opacity: 0 }}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
             className={ariaComponents.DIALOG_BACKGROUND({
               className:
                 'absolute left-0 right-0 top-0 z-1 grid w-full overflow-hidden rounded-default border-0.5 border-primary/20 -outline-offset-1 outline-primary',
@@ -449,7 +524,7 @@ function AssetSearchBarPopover(props: AssetSearchBarPopoverProps) {
                 <div className="flex max-h-search-suggestions-list flex-col overflow-y-auto overflow-x-hidden pb-0.5 pl-0.5">
                   {suggestions.map((suggestion, index) => (
                     <SuggestionRenderer
-                      key={index}
+                      key={suggestion.key}
                       index={index}
                       selectedIndex={selectedIndex}
                       selectedIndices={selectedIndices}
@@ -515,12 +590,12 @@ const SuggestionRenderer = React.memo(function SuggestionRenderer(props: Suggest
         }
       }}
       className={tailwindMerge.twMerge(
-        'flex cursor-pointer rounded-l-default rounded-r-sm px-[7px] py-0.5 text-left transition-[background-color] hover:bg-primary/5',
+        'flex w-full cursor-pointer rounded-l-default rounded-r-sm px-[7px] py-0.5 text-left transition-[background-color] hover:bg-primary/5',
         selectedIndices.has(index) && 'bg-primary/10',
         index === selectedIndex && 'bg-selected-frame',
       )}
       onPress={(event) => {
-        querySource.current = QuerySource.internal
+        unsafeWriteValue(querySource, 'current', QuerySource.internal)
         setQuery(
           selectedIndices.has(index) ?
             suggestion.deleteFromQuery(event.shiftKey ? query : baseQuery.current)
@@ -566,6 +641,25 @@ const Labels = React.memo(function Labels(props: LabelsProps) {
 
   const labels = backendHooks.useBackendQuery(backend, 'listTags', []).data ?? []
 
+  const labelOnPress = useEventCallback(
+    (event: aria.PressEvent | React.MouseEvent<HTMLButtonElement>, label?: BackendLabel) => {
+      if (label == null) {
+        return
+      }
+      unsafeWriteValue(querySource, 'current', QuerySource.internal)
+      setQuery((oldQuery) => {
+        const newQuery = oldQuery.withToggled(
+          'labels',
+          'negativeLabels',
+          label.value,
+          event.shiftKey,
+        )
+        unsafeWriteValue(baseQuery, 'current', newQuery)
+        return newQuery
+      })
+    },
+  )
+
   return (
     <>
       {isCloud && labels.length !== 0 && (
@@ -580,23 +674,12 @@ const Labels = React.memo(function Labels(props: LabelsProps) {
                 <Label
                   key={label.id}
                   color={label.color}
+                  label={label}
                   active={
                     negated || query.labels.some((term) => array.shallowEqual(term, [label.value]))
                   }
                   negated={negated}
-                  onPress={(event) => {
-                    querySource.current = QuerySource.internal
-                    setQuery((oldQuery) => {
-                      const newQuery = oldQuery.withToggled(
-                        'labels',
-                        'negativeLabels',
-                        label.value,
-                        event.shiftKey,
-                      )
-                      baseQuery.current = newQuery
-                      return newQuery
-                    })
-                  }}
+                  onPress={labelOnPress}
                 >
                   {label.value}
                 </Label>

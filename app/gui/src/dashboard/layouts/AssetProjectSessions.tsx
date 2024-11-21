@@ -7,19 +7,24 @@ import type Backend from '#/services/Backend'
 
 import { Result } from '#/components/Result'
 import { useText } from '#/providers/TextProvider'
-import { AssetType, BackendType, type AnyAsset, type ProjectAsset } from '#/services/Backend'
+import { AssetType, BackendType, type ProjectAsset } from '#/services/Backend'
+import { useStore } from '#/utilities/zustand'
+import { assetPanelStore } from './AssetPanel'
 
 /** Props for a {@link AssetProjectSessions}. */
 export interface AssetProjectSessionsProps {
   readonly backend: Backend
-  readonly item: AnyAsset | null
 }
 
 /** A list of previous versions of an asset. */
 export default function AssetProjectSessions(props: AssetProjectSessionsProps) {
-  const { backend, item } = props
+  const { backend } = props
 
   const { getText } = useText()
+
+  const { item } = useStore(assetPanelStore, (state) => ({ item: state.assetPanelProps.item }), {
+    unsafeEnableTransition: true,
+  })
 
   if (backend.type === BackendType.local) {
     return <Result status="info" centered title={getText('assetProjectSessions.localBackend')} />

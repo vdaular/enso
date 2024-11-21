@@ -227,6 +227,27 @@ export default function App(props: AppProps) {
     },
   })
 
+  const queryClient = props.queryClient
+
+  // Force all queries to be stale
+  // We don't use the `staleTime` option because it's not performant
+  // and triggers unnecessary setTimeouts.
+  reactQuery.useQuery({
+    queryKey: ['refresh'],
+    queryFn: () => {
+      queryClient
+        .getQueryCache()
+        .getAll()
+        .forEach((query) => {
+          query.isStale = () => true
+        })
+
+      return null
+    },
+    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+    refetchInterval: 2 * 60 * 1000,
+  })
+
   // Both `BackendProvider` and `InputBindingsProvider` depend on `LocalStorageProvider`.
   // Note that the `Router` must be the parent of the `AuthProvider`, because the `AuthProvider`
   // will redirect the user between the login/register pages and the dashboard.
@@ -279,9 +300,11 @@ function AppRouter(props: AppRouterProps) {
   const httpClient = useHttpClient()
   const logger = useLogger()
   const navigate = router.useNavigate()
+
   const { getText } = textProvider.useText()
   const { localStorage } = localStorageProvider.useLocalStorage()
   const { setModal } = modalProvider.useSetModal()
+
   const navigator2D = navigator2DProvider.useNavigator2D()
 
   const localBackend = React.useMemo(

@@ -5,11 +5,8 @@ import * as modalProvider from '#/providers/ModalProvider'
 
 import ContextMenu from '#/components/ContextMenu'
 import ContextMenus from '#/components/ContextMenus'
+import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import { useSyncRef } from '#/hooks/syncRefHooks'
-
-// ======================
-// === contextMenuRef ===
-// ======================
 
 /**
  * Return a ref that attaches a context menu event listener.
@@ -22,11 +19,11 @@ export function useContextMenuRef(
   options: { enabled?: boolean } = {},
 ) {
   const { setModal } = modalProvider.useSetModal()
-  const createEntriesRef = React.useRef(createEntries)
-  createEntriesRef.current = createEntries
+  const stableCreateEntries = useEventCallback(createEntries)
   const optionsRef = useSyncRef(options)
   const cleanupRef = React.useRef(() => {})
-  const contextMenuRef = React.useMemo(
+
+  return React.useMemo(
     () => (element: HTMLElement | null) => {
       cleanupRef.current()
       if (element == null) {
@@ -36,7 +33,7 @@ export function useContextMenuRef(
           const { enabled = true } = optionsRef.current
           if (enabled) {
             const position = { pageX: event.pageX, pageY: event.pageY }
-            const children = createEntriesRef.current(position)
+            const children = stableCreateEntries(position)
             if (children != null) {
               event.preventDefault()
               event.stopPropagation()
@@ -64,7 +61,6 @@ export function useContextMenuRef(
         }
       }
     },
-    [key, label, optionsRef, setModal],
+    [stableCreateEntries, key, label, optionsRef, setModal],
   )
-  return contextMenuRef
 }

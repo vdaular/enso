@@ -186,51 +186,56 @@ function TwoFa() {
       }),
   })
 
-  const { field } = Form.useField({ name: 'display' })
-
   return (
     <>
       <div className="flex w-full flex-col gap-4">
         <Selector name="display" items={['qr', 'text']} aria-label={getText('display')} />
 
-        {field.value === 'qr' && (
-          <>
-            <Alert variant="neutral" icon={ShieldCheck}>
-              <Text.Group>
-                <Text variant="subtitle" weight="bold">
-                  {getText('scanQR')}
-                </Text>
+        <Form.FieldValue name="display">
+          {(display) =>
+            display === 'qr' && (
+              <>
+                <Alert key="alert" variant="neutral" icon={ShieldCheck}>
+                  <Text.Group>
+                    <Text variant="subtitle" weight="bold">
+                      {getText('scanQR')}
+                    </Text>
 
-                <Text>{getText('scanQRDescription')}</Text>
-              </Text.Group>
-            </Alert>
+                    <Text>{getText('scanQRDescription')}</Text>
+                  </Text.Group>
+                </Alert>
 
-            <div className="self-center">
-              <LazyQRCode
-                value={data.url}
-                bgColor="transparent"
-                fgColor="rgb(0 0 0 / 60%)"
-                size={192}
-                className="rounded-2xl border-0.5 border-primary p-4"
-              />
-            </div>
-          </>
-        )}
+                <div className="self-center">
+                  <LazyQRCode
+                    value={data.url}
+                    bgColor="transparent"
+                    fgColor="rgb(0 0 0 / 60%)"
+                    size={192}
+                    className="rounded-2xl border-0.5 border-primary p-4"
+                  />
+                </div>
+              </>
+            )
+          }
+        </Form.FieldValue>
+        <Form.FieldValue name="display">
+          {(display) =>
+            display === 'text' && (
+              <>
+                <Alert key="alert" variant="neutral" icon={ShieldCheck}>
+                  <Text.Group>
+                    <Text variant="subtitle" weight="bold">
+                      {getText('copyLink')}
+                    </Text>
+                    <Text>{getText('copyLinkDescription')}</Text>
+                  </Text.Group>
+                </Alert>
 
-        {field.value === 'text' && (
-          <>
-            <Alert variant="neutral" icon={ShieldCheck}>
-              <Text.Group>
-                <Text variant="subtitle" weight="bold">
-                  {getText('copyLink')}
-                </Text>
-                <Text>{getText('copyLinkDescription')}</Text>
-              </Text.Group>
-            </Alert>
-
-            <CopyBlock copyText={data.url} />
-          </>
-        )}
+                <CopyBlock copyText={data.url} />
+              </>
+            )
+          }
+        </Form.FieldValue>
 
         <OTPInput
           className="max-w-96"
