@@ -18,13 +18,21 @@ export async function readEnvironmentFromFile() {
   const filePath = path.join(url.fileURLToPath(new URL('../..', import.meta.url)), fileName)
   const buildInfo = await (async () => {
     try {
-      return await import('../../../build.json', { with: { type: 'json' } })
+      const build = await import('../../../build.json', { with: { type: 'json' } })
+      // Handle importing json file regardless of CommonJS/ESM integation settings.
+      return 'default' in build ? build.default : build
     } catch {
       return { commit: '', version: '', engineVersion: '', name: '' }
     }
   })()
+  console.info('Build info: ' + JSON.stringify(buildInfo))
+  discardUndefinedEnv('ENSO_IDE_VERSION')
+  discardUndefinedEnv('ENSO_CLOUD_DASHBOARD_VERSION')
+  discardUndefinedEnv('ENSO_CLOUD_DASHBOARD_COMMIT_HASH')
+
   try {
     const file = await fs.readFile(filePath, { encoding: 'utf-8' })
+    console.info(`Reading environment from file: ${filePath}`)
     /** @type {readonly (readonly [string, string])[]} */
     let entries = file.split('\n').flatMap(line => {
       if (/^\s*$|^.s*#/.test(line)) {
@@ -36,10 +44,14 @@ export async function readEnvironmentFromFile() {
     })
     if (isProduction) {
       entries = entries.filter(kv => {
-        const [k] = kv
-        return process.env[k] == null
+        const [k, v] = kv
+        return v !== 'undefined' && process.env[k] == null
       })
     }
+
+    const foundVars = entries.map(([k, _]) => k).join(', ')
+    console.info(`Found variables: ${foundVars}`)
+
     const variables = Object.fromEntries(entries)
     if (!isProduction || entries.length > 0) {
       Object.assign(process.env, variables)
@@ -49,6 +61,16 @@ export async function readEnvironmentFromFile() {
   } catch {
     process.env.ENSO_CLOUD_DASHBOARD_VERSION ??= buildInfo.version
     process.env.ENSO_CLOUD_DASHBOARD_COMMIT_HASH ??= buildInfo.commit
+  }
+}
+
+/**
+ * Discard environment variable value when is an "undefined" string.
+ * @param {string} name Name of an env variable.
+ */
+function discardUndefinedEnv(name) {
+  if (process.env[name] === 'undefined') {
+    delete process.env[name]
   }
 }
 

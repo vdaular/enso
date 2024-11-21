@@ -292,7 +292,9 @@ impl Processor {
         let context = self.context();
         let target = self.target::<Target>();
         let job = self.resolve_build_job(job);
+        let info = self.write_build_info_file();
         async move {
+            info.await?;
             let job = job.await?;
             target?.build(context, job).await
         }
@@ -517,6 +519,16 @@ impl Processor {
         .boxed()
     }
 
+    pub fn write_build_info_file(&self) -> BoxFuture<'static, Result> {
+        let build_info_get = self.js_build_info();
+        let build_info_path = self.context.inner.repo_root.join(&*enso_build::ide::web::BUILD_INFO);
+        async move {
+            let build_info = build_info_get.await?;
+            build_info_path.write_as_json(&build_info)
+        }
+        .boxed()
+    }
+
     pub fn handle_ide(&self, ide: arg::ide::Target) -> BoxFuture<'static, Result> {
         match ide.command {
             arg::ide::Command::Build { params } => self.build_ide(params).void_ok().boxed(),
@@ -559,19 +571,11 @@ impl Processor {
             sign_artifacts,
         } = params;
 
-        let build_info_get = self.js_build_info();
-        let build_info_path = self.context.inner.repo_root.join(&*enso_build::ide::web::BUILD_INFO);
-
-        let build_info = async move {
-            let build_info = build_info_get.await?;
-            build_info_path.write_as_json(&build_info)
-        };
-
+        let info = self.write_build_info_file();
         let gui = self.get(gui);
-
         let input = ide::BuildInput {
             gui: async move {
-                build_info.await?;
+                info.await?;
                 gui.await
             }
             .boxed(),

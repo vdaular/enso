@@ -89,9 +89,9 @@ pub mod env {
     // GUI-specific environment variables
     define_env_var! {
         /// License key for the AG Grid library.
-        VITE_ENSO_AG_GRID_LICENSE_KEY, String;
+        ENSO_IDE_AG_GRID_LICENSE_KEY, String;
         /// The Mapbox API token for the GeoMap visualization.
-        VITE_ENSO_MAPBOX_API_TOKEN, String;
+        ENSO_IDE_MAPBOX_API_TOKEN, String;
     }
 }
 

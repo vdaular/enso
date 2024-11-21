@@ -28,7 +28,8 @@ const entrypoint =
 
 // NOTE(Frizi): This rename is for the sake of forward compatibility with not yet merged config refactor on bazel branch,
 // and because Vite's HTML env replacements only work with import.meta.env variables, not defines.
-process.env.ENSO_IDE_VERSION = process.env.ENSO_CLOUD_DASHBOARD_VERSION
+process.env.ENSO_IDE_VERSION ??= process.env.ENSO_CLOUD_DASHBOARD_VERSION
+console.info(`Building IDE version: ${process.env.ENSO_IDE_VERSION}`)
 
 const isCI = process.env.CI === 'true'
 
