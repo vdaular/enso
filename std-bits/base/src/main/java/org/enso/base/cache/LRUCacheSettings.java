@@ -71,7 +71,7 @@ public class LRUCacheSettings {
           "Unable to parse environment variable "
               + MAX_FILE_SIZE_ENV_VAR
               + ": {}, falling back to default",
-          e);
+          e.getMessage());
       return DEFAULT_MAX_FILE_SIZE;
     }
   }
@@ -92,7 +92,7 @@ public class LRUCacheSettings {
           "Unable to parse environment variable "
               + TOTAL_CACHE_SIZE_ENV_VAR
               + ": {}, falling back to default",
-          e);
+          e.getMessage());
       return new TotalCacheLimit.Percentage(DEFAULT_TOTAL_CACHE_SIZE_FREE_SPACE_PERCENTAGE);
     }
   }
