@@ -605,6 +605,29 @@ watchEffect(() => {
   defaultColDef.value.sortable = !isTruncated.value
 })
 
+const colTypeMap = computed(() => {
+  const colMap: Map<string, string> = new Map()
+  if (typeof props.data === 'object' && !('error' in props.data)) {
+    const valueTypes = 'value_type' in props.data ? props.data.value_type : []
+    const headers = 'header' in props.data ? props.data.header : []
+    headers?.forEach((header, index) => {
+      if (valueTypes[index]) {
+        colMap.set(header, valueTypes[index].constructor)
+      }
+    })
+  }
+  return colMap
+})
+
+const getColumnValueToEnso = (columnName: string) => {
+  const columnType = colTypeMap.value.get(columnName) ?? ''
+  const isNumber = ['Integer', 'Float', 'Decimal', 'Byte']
+  if (isNumber.indexOf(columnType) != -1) {
+    return (item: string, module: Ast.MutableModule) => Ast.tryNumberToEnso(Number(item), module)!
+  }
+  return (item: string) => Ast.TextLiteral.new(item)
+}
+
 function checkSortAndFilter(e: SortChangedEvent) {
   const gridApi = e.api
   const columnApi = e.columnApi
@@ -657,6 +680,7 @@ config.setToolbar(
     isDisabled: () => !isCreateNodeEnabled.value,
     isFilterSortNodeEnabled,
     createNodes: config.createNodes,
+    getColumnValueToEnso,
   }),
 )
 </script>

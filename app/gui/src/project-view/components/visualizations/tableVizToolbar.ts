@@ -24,6 +24,9 @@ export interface SortFilterNodesButtonOptions {
   isDisabled: ToValue<boolean>
   isFilterSortNodeEnabled: ToValue<boolean>
   createNodes: (...options: NodeCreationOptions[]) => void
+  getColumnValueToEnso: (
+    columnName: string,
+  ) => (columnValue: string, module: Ast.MutableModule) => Ast.Owned<Ast.MutableAst>
 }
 
 export interface FormatMenuOptions {
@@ -38,6 +41,7 @@ function useSortFilterNodesButton({
   isDisabled,
   isFilterSortNodeEnabled,
   createNodes,
+  getColumnValueToEnso,
 }: SortFilterNodesButtonOptions): ComputedRef<ToolbarItem | undefined> {
   const sortPatternPattern = computed(() => Pattern.parseExpression('(..Name __ __ )')!)
 
@@ -73,7 +77,8 @@ function useSortFilterNodesButton({
         boolToInclude,
       ])
     }
-    const itemList = items.map((i) => Ast.TextLiteral.new(i))
+    const valueFormatter = getColumnValueToEnso(columnName)
+    const itemList = items.map((i) => valueFormatter(i, module))
     return filterPattern.value.instantiateCopied([
       Ast.TextLiteral.new(columnName),
       Ast.parseExpression('..Is_In')!,
@@ -122,7 +127,7 @@ function useSortFilterNodesButton({
     const sortModelValue = toValue(sortModel)
     if (Object.keys(filterModelValue).length) {
       for (const [columnName, columnFilter] of Object.entries(filterModelValue)) {
-        const items = columnFilter.values.map((item) => `${item}`)
+        const items = columnFilter.values
         const filterPatterns =
           sortModelValue.length ?
             getAstPatternFilterAndSort(columnName, items)
