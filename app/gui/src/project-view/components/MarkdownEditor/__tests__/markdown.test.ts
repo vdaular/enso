@@ -106,6 +106,19 @@ test.each([
     markdown: '[Unclosed',
     expectedLinks: [],
   },
+  {
+    markdown: '<https://example.com>',
+    expectedLinks: [
+      {
+        text: 'https://example.com',
+        href: 'https://example.com',
+      },
+    ],
+  },
+  {
+    markdown: '<example.com>',
+    expectedLinks: [],
+  },
 ])('Link decoration: $markdown', ({ markdown, expectedLinks }) => {
   expect(links(markdown)).toEqual(expectedLinks)
   expect(images(markdown)).toEqual([])

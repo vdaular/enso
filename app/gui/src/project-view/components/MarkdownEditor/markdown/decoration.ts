@@ -141,17 +141,32 @@ class TreeViewDecorator implements PluginValue {
 // === Links ===
 
 /** Parse a link or image */
-function parseLinkLike(node: SyntaxNode, doc: Text) {
-  const textOpen = node.firstChild // [ or ![
-  if (!textOpen) return
-  const textClose = textOpen.nextSibling // ]
-  if (!textClose) return
-  const urlNode = findNextSiblingNamed(textClose, 'URL')
-  if (!urlNode) return
+function parseLinkLike(nodeRef: SyntaxNodeRef, doc: Text) {
+  const cursor = nodeRef.node.cursor()
+  if (!cursor.firstChild()) return
+  const textFrom = cursor.to // [ or ![
+  if (!cursor.nextSibling()) return
+  const textTo = cursor.from // ]
+  do {
+    if (!cursor.nextSibling()) return
+  } while (cursor.name !== 'URL')
+  const url = doc.sliceString(cursor.from, cursor.to)
   return {
-    textFrom: textOpen.to,
-    textTo: textClose.from,
-    url: doc.sliceString(urlNode.from, urlNode.to),
+    textFrom,
+    textTo,
+    url,
+  }
+}
+
+function parseAutolink(nodeRef: SyntaxNodeRef, doc: Text) {
+  const cursor = nodeRef.node.cursor()
+  if (!cursor.firstChild()) return // <
+  if (!cursor.nextSibling()) return
+  if (cursor.name !== 'URL') return
+  return {
+    textFrom: cursor.from,
+    textTo: cursor.to,
+    url: doc.sliceString(cursor.from, cursor.to),
   }
 }
 
@@ -160,20 +175,21 @@ function decorateLink(
   doc: Text,
   emitDecoration: (from: number, to: number, deco: Decoration) => void,
 ) {
-  if (nodeRef.name === 'Link') {
-    const parsed = parseLinkLike(nodeRef.node, doc)
-    if (!parsed) return
-    const { textFrom, textTo, url } = parsed
-    if (textFrom === textTo) return
-    emitDecoration(
-      textFrom,
-      textTo,
-      Decoration.mark({
-        tagName: 'a',
-        attributes: { href: url },
-      }),
-    )
-  }
+  const parsed =
+    nodeRef.name === 'Link' ? parseLinkLike(nodeRef, doc)
+    : nodeRef.name === 'Autolink' ? parseAutolink(nodeRef, doc)
+    : undefined
+  if (!parsed) return
+  const { textFrom, textTo, url } = parsed
+  if (textFrom === textTo) return
+  emitDecoration(
+    textFrom,
+    textTo,
+    Decoration.mark({
+      tagName: 'a',
+      attributes: { href: url },
+    }),
+  )
 }
 
 // === Images ===
@@ -201,7 +217,7 @@ function decorateImageWithRendered(
   vueHost: VueHost,
 ) {
   if (nodeRef.name === 'Image') {
-    const parsed = parseLinkLike(nodeRef.node, doc)
+    const parsed = parseLinkLike(nodeRef, doc)
     if (!parsed) return
     const { textFrom, textTo, url } = parsed
     const text = doc.sliceString(textFrom, textTo)
@@ -264,14 +280,6 @@ class ImageWidget extends WidgetType {
   override destroy() {
     this.vueHostRegistration?.unregister()
     this.container = undefined
-  }
-}
-
-function findNextSiblingNamed(node: SyntaxNode, name: string) {
-  for (let sibling = node.nextSibling; sibling != null; sibling = sibling.nextSibling) {
-    if (sibling.name === name) {
-      return sibling
-    }
   }
 }
 

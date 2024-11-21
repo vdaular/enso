@@ -139,11 +139,9 @@ defineExpose({
   /*noinspection CssNoGenericFontName*/
   font-family: var(--font-mono);
 }
-
-/* === Editing-mode === */
-
-/* There are currently no style overrides for editing mode, so this is commented out to appease the Vue linter. */
-/* :global(.MarkdownEditor):global(.editing) :global(.cm-line):global(.cm-has-cursor) {} */
+.url {
+  color: royalblue;
+}
 
 /* === View-mode === */
 
@@ -158,10 +156,12 @@ defineExpose({
   .url {
     display: none;
   }
-  a > .link {
+  a .url {
     display: inline;
+  }
+  a {
     cursor: pointer;
-    color: #555;
+    color: blue;
     &:hover {
       text-decoration: underline;
     }
