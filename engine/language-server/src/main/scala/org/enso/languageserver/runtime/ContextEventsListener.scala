@@ -200,7 +200,7 @@ final class ContextEventsListener(
     val computedExpressions = expressionUpdates.map { update =>
       ContextRegistryProtocol.ExpressionUpdate(
         update.expressionId,
-        update.expressionType,
+        update.expressionTypes.getOrElse(Vector()),
         update.methodCall.map(toProtocolMethodCall),
         update.profilingInfo.map(toProtocolProfilingInfo),
         update.fromCache,

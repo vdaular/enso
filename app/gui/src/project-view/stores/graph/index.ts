@@ -658,7 +658,7 @@ export const { injectFn: useGraphStore, provideFn: provideGraphStore } = createC
         profilingInfo: update.profilingInfo ?? [],
         fromCache: update.fromCache ?? false,
         payload: update.payload ?? { type: 'Value' },
-        ...(update.type ? { type: update.type } : {}),
+        type: update.type ?? [],
         ...(update.methodCall ? { methodCall: update.methodCall } : {}),
       }
       proj.computedValueRegistry.processUpdates([update_])

@@ -98,16 +98,16 @@ final class ExecutionCallbacks implements IdExecutionService.Callbacks {
   @Override
   public void updateCachedResult(IdExecutionService.Info info) {
     Object result = info.getResult();
-    String resultType = typeOf(result);
+    String[] resultTypes = typeOf(result);
     UUID nodeId = info.getId();
-    String cachedType = cache.getType(nodeId);
+    String[] cachedTypes = cache.getType(nodeId);
     FunctionCallInfo call = functionCallInfoById(nodeId);
     FunctionCallInfo cachedCall = cache.getCall(nodeId);
     ProfilingInfo[] profilingInfo = new ProfilingInfo[] {new ExecutionTime(info.getElapsedTime())};
 
     ExpressionValue expressionValue =
         new ExpressionValue(
-            nodeId, result, resultType, cachedType, call, cachedCall, profilingInfo, false);
+            nodeId, result, resultTypes, cachedTypes, call, cachedCall, profilingInfo, false);
     syncState.setExpressionUnsync(nodeId);
     syncState.setVisualizationUnsync(nodeId);
 
@@ -119,7 +119,7 @@ final class ExecutionCallbacks implements IdExecutionService.Callbacks {
       cache.offer(nodeId, result);
       cache.putCall(nodeId, call);
     }
-    cache.putType(nodeId, resultType);
+    cache.putType(nodeId, resultTypes);
 
     callOnComputedCallback(expressionValue);
     executeOneshotExpressions(nodeId, result, info);
@@ -214,20 +214,22 @@ final class ExecutionCallbacks implements IdExecutionService.Callbacks {
     return calls.get(nodeId);
   }
 
-  private String typeOf(Object value) {
-    String resultType;
+  private String[] typeOf(Object value) {
     if (value instanceof UnresolvedSymbol) {
-      resultType = Constants.UNRESOLVED_SYMBOL;
-    } else {
-      var typeOfNode = TypeOfNode.getUncached();
-      Object typeResult = value == null ? null : typeOfNode.findTypeOrError(value);
-      if (typeResult instanceof Type t) {
-        resultType = getTypeQualifiedName(t);
-      } else {
-        resultType = null;
-      }
+      return new String[] {Constants.UNRESOLVED_SYMBOL};
     }
-    return resultType;
+
+    var typeOfNode = TypeOfNode.getUncached();
+    Type[] allTypes = value == null ? null : typeOfNode.findAllTypesOrNull(value);
+    if (allTypes != null) {
+      String[] result = new String[allTypes.length];
+      for (var i = 0; i < allTypes.length; i++) {
+        result[i] = getTypeQualifiedName(allTypes[i]);
+      }
+      return result;
+    }
+
+    return null;
   }
 
   @CompilerDirectives.TruffleBoundary

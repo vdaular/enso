@@ -212,22 +212,11 @@ class RuntimeExecutionEnvironmentTest
     )
     context.receiveNIgnoreStdLib(3) should contain theSameElementsAs Seq(
       Api.Response(requestId, Api.SetExecutionEnvironmentResponse(contextId)),
-      Api.Response(
-        None,
-        Api.ExpressionUpdates(
-          contextId,
-          Set(
-            Api.ExpressionUpdate(
-              idRes,
-              Some(ConstantsGen.NOTHING),
-              Some(IF_ENABLED_METH_CALL),
-              Vector(Api.ProfilingInfo.ExecutionTime(0)),
-              false,
-              true,
-              Api.ExpressionUpdate.Payload.Value()
-            )
-          )
-        )
+      TestMessages.update(
+        contextId,
+        idRes,
+        ConstantsGen.NOTHING,
+        IF_ENABLED_METH_CALL
       ),
       context.executionComplete(contextId)
     )
@@ -334,22 +323,11 @@ class RuntimeExecutionEnvironmentTest
     )
     context.receiveNIgnoreStdLib(3) should contain theSameElementsAs Seq(
       Api.Response(requestId, Api.SetExecutionEnvironmentResponse(contextId)),
-      Api.Response(
-        None,
-        Api.ExpressionUpdates(
-          contextId,
-          Set(
-            Api.ExpressionUpdate(
-              idRes,
-              Some(ConstantsGen.INTEGER),
-              Some(IF_ENABLED_METH_CALL),
-              Vector(Api.ProfilingInfo.ExecutionTime(0)),
-              false,
-              true,
-              Api.ExpressionUpdate.Payload.Value()
-            )
-          )
-        )
+      TestMessages.update(
+        contextId,
+        idRes,
+        ConstantsGen.INTEGER,
+        IF_ENABLED_METH_CALL
       ),
       context.executionComplete(contextId)
     )

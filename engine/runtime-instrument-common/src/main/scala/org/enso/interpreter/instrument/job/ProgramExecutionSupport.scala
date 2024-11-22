@@ -198,14 +198,14 @@ object ProgramExecutionSupport {
         val notExecuted =
           methodCallsCache.getNotExecuted(executionFrame.cache.getCalls)
         notExecuted.forEach { expressionId =>
-          val expressionType = executionFrame.cache.getType(expressionId)
-          val expressionCall = executionFrame.cache.getCall(expressionId)
+          val expressionTypes = executionFrame.cache.getType(expressionId)
+          val expressionCall  = executionFrame.cache.getCall(expressionId)
           onCachedMethodCallCallback.accept(
             new ExpressionValue(
               expressionId,
               null,
-              expressionType,
-              expressionType,
+              expressionTypes,
+              expressionTypes,
               expressionCall,
               expressionCall,
               Array(ExecutionTime.empty()),
@@ -391,7 +391,7 @@ object ProgramExecutionSupport {
           expressionId
         )
       ) ||
-      Types.isPanic(value.getType)
+      Types.isPanic(value.getTypes)
     ) {
       val payload = value.getValue match {
         case sentinel: PanicSentinel =>
@@ -503,7 +503,7 @@ object ProgramExecutionSupport {
               Set(
                 Api.ExpressionUpdate(
                   value.getExpressionId,
-                  Option(value.getType),
+                  Option(value.getTypes).map(_.toVector),
                   methodCall,
                   value.getProfilingInfo.map { case e: ExecutionTime =>
                     Api.ProfilingInfo.ExecutionTime(e.getNanoTimeElapsed)
@@ -757,7 +757,7 @@ object ProgramExecutionSupport {
       !value.wasCached() && !value.getValue.isInstanceOf[DataflowError]
     for {
       call <-
-        if (Types.isPanic(value.getType) || notCachedAndNotDataflowError)
+        if (Types.isPanic(value.getTypes) || notCachedAndNotDataflowError)
           Option(value.getCallInfo)
         else Option(value.getCallInfo).orElse(Option(value.getCachedCallInfo))
       methodPointer <- toMethodPointer(call.functionPointer)

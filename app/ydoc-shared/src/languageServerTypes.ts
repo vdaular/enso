@@ -195,7 +195,7 @@ export interface ExpressionUpdate {
   /** The id of updated expression. */
   expressionId: ExpressionId
   /** The updated type of the expression. */
-  type?: string
+  type: string[]
   /** The updated method call info. */
   methodCall?: MethodCall
   /** Profiling information about the expression. */

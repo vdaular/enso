@@ -108,20 +108,18 @@ object Runtime {
     /** An update about the computed expression.
       *
       * @param expressionId the expression id
-      * @param expressionType the type of expression
+      * @param expressionTypes the type of expression
       * @param methodCall the underlying method call of this expression
-      * @param profilingInfo profiling information about the execution of this
-      * expression
-      * @param fromCache whether or not the value for this expression came
-      * from the cache
-      * @param typeChanged whether or not the type of the value or method definition
+      * @param profilingInfo profiling information about the execution of this expression
+      * @param fromCache whether the value for this expression came from the cache
+      * @param typeChanged whether the type of the value or method definition
       * has changed from the one that was cached, if any
       * @param payload an extra information about the computed value
       */
     @named("expressionUpdate")
     case class ExpressionUpdate(
       expressionId: ExpressionId,
-      expressionType: Option[String],
+      expressionTypes: Option[Vector[String]],
       methodCall: Option[MethodCall],
       profilingInfo: Vector[ProfilingInfo],
       fromCache: Boolean,

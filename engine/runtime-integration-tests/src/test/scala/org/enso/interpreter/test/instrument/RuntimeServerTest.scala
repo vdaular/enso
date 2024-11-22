@@ -7704,21 +7704,13 @@ object RuntimeServerTest {
           fromCache: Boolean   = false,
           typeChanged: Boolean = true
         ): Api.Response =
-          Api.Response(
-            Api.ExpressionUpdates(
-              contextId,
-              Set(
-                Api.ExpressionUpdate(
-                  Main.idMainX,
-                  Some(ConstantsGen.INTEGER),
-                  None,
-                  Vector(Api.ProfilingInfo.ExecutionTime(0)),
-                  fromCache,
-                  typeChanged,
-                  Api.ExpressionUpdate.Payload.Value()
-                )
-              )
-            )
+          TestMessages.update(
+            contextId,
+            Main.idMainX,
+            ConstantsGen.INTEGER,
+            fromCache,
+            typeChanged,
+            methodCall = None
           )
 
         def pendingZ(): Api.ExpressionUpdate =
@@ -7748,29 +7740,19 @@ object RuntimeServerTest {
           fromCache: Boolean   = false,
           typeChanged: Boolean = true
         ): Api.Response =
-          Api.Response(
-            Api.ExpressionUpdates(
-              contextId,
-              Set(
-                Api.ExpressionUpdate(
-                  Main.idMainY,
-                  Some(ConstantsGen.INTEGER),
-                  Some(
-                    Api.MethodCall(
-                      Api.MethodPointer(
-                        "Enso_Test.Test.Main",
-                        ConstantsGen.NUMBER,
-                        "foo"
-                      )
-                    )
-                  ),
-                  Vector(Api.ProfilingInfo.ExecutionTime(0)),
-                  fromCache,
-                  typeChanged,
-                  Api.ExpressionUpdate.Payload.Value()
-                )
+          TestMessages.update(
+            contextId,
+            Main.idMainY,
+            ConstantsGen.INTEGER,
+            Api.MethodCall(
+              Api.MethodPointer(
+                "Enso_Test.Test.Main",
+                ConstantsGen.NUMBER,
+                "foo"
               )
-            )
+            ),
+            fromCache,
+            typeChanged
           )
 
         def mainZ(
@@ -7778,29 +7760,19 @@ object RuntimeServerTest {
           fromCache: Boolean   = false,
           typeChanged: Boolean = true
         ): Api.Response =
-          Api.Response(
-            Api.ExpressionUpdates(
-              contextId,
-              Set(
-                Api.ExpressionUpdate(
-                  Main.idMainZ,
-                  Some(ConstantsGen.INTEGER),
-                  Some(
-                    Api.MethodCall(
-                      Api.MethodPointer(
-                        "Standard.Base.Data.Numbers",
-                        ConstantsGen.INTEGER,
-                        "+"
-                      )
-                    )
-                  ),
-                  Vector(Api.ProfilingInfo.ExecutionTime(0)),
-                  fromCache,
-                  typeChanged,
-                  Api.ExpressionUpdate.Payload.Value()
-                )
+          TestMessages.update(
+            contextId,
+            Main.idMainZ,
+            ConstantsGen.INTEGER,
+            Api.MethodCall(
+              Api.MethodPointer(
+                "Standard.Base.Data.Numbers",
+                ConstantsGen.INTEGER,
+                "+"
               )
-            )
+            ),
+            fromCache,
+            typeChanged
           )
 
         def fooY(
@@ -7808,29 +7780,19 @@ object RuntimeServerTest {
           fromCache: Boolean   = false,
           typeChanged: Boolean = true
         ): Api.Response =
-          Api.Response(
-            Api.ExpressionUpdates(
-              contextId,
-              Set(
-                Api.ExpressionUpdate(
-                  Main.idFooY,
-                  Some(ConstantsGen.INTEGER),
-                  Some(
-                    Api.MethodCall(
-                      Api.MethodPointer(
-                        "Standard.Base.Data.Numbers",
-                        ConstantsGen.INTEGER,
-                        "+"
-                      )
-                    )
-                  ),
-                  Vector(Api.ProfilingInfo.ExecutionTime(0)),
-                  fromCache,
-                  typeChanged,
-                  Api.ExpressionUpdate.Payload.Value()
-                )
+          TestMessages.update(
+            contextId,
+            Main.idFooY,
+            ConstantsGen.INTEGER,
+            Api.MethodCall(
+              Api.MethodPointer(
+                "Standard.Base.Data.Numbers",
+                ConstantsGen.INTEGER,
+                "+"
               )
-            )
+            ),
+            fromCache,
+            typeChanged
           )
 
         def fooZ(
@@ -7838,29 +7800,19 @@ object RuntimeServerTest {
           fromCache: Boolean   = false,
           typeChanged: Boolean = true
         ): Api.Response =
-          Api.Response(
-            Api.ExpressionUpdates(
-              contextId,
-              Set(
-                Api.ExpressionUpdate(
-                  Main.idFooZ,
-                  Some(ConstantsGen.INTEGER),
-                  Some(
-                    Api.MethodCall(
-                      Api.MethodPointer(
-                        "Standard.Base.Data.Numbers",
-                        ConstantsGen.INTEGER,
-                        "*"
-                      )
-                    )
-                  ),
-                  Vector(Api.ProfilingInfo.ExecutionTime(0)),
-                  fromCache,
-                  typeChanged,
-                  Api.ExpressionUpdate.Payload.Value()
-                )
+          TestMessages.update(
+            contextId,
+            Main.idFooZ,
+            ConstantsGen.INTEGER,
+            Api.MethodCall(
+              Api.MethodPointer(
+                "Standard.Base.Data.Numbers",
+                ConstantsGen.INTEGER,
+                "*"
               )
-            )
+            ),
+            fromCache,
+            typeChanged
           )
       }
     }
@@ -7893,53 +7845,29 @@ object RuntimeServerTest {
       object Update {
 
         def mainY(contextId: UUID) =
-          Api.Response(
-            Api.ExpressionUpdates(
-              contextId,
-              Set(
-                Api.ExpressionUpdate(
-                  idMainY,
-                  Some(ConstantsGen.INTEGER),
-                  Some(
-                    Api.MethodCall(
-                      Api.MethodPointer(
-                        "Enso_Test.Test.Main",
-                        "Enso_Test.Test.Main",
-                        "foo"
-                      )
-                    )
-                  ),
-                  Vector(Api.ProfilingInfo.ExecutionTime(0)),
-                  false,
-                  true,
-                  Api.ExpressionUpdate.Payload.Value()
-                )
+          TestMessages.update(
+            contextId,
+            idMainY,
+            ConstantsGen.INTEGER,
+            Api.MethodCall(
+              Api.MethodPointer(
+                "Enso_Test.Test.Main",
+                "Enso_Test.Test.Main",
+                "foo"
               )
             )
           )
 
         def mainZ(contextId: UUID) =
-          Api.Response(
-            Api.ExpressionUpdates(
-              contextId,
-              Set(
-                Api.ExpressionUpdate(
-                  idMainZ,
-                  Some(ConstantsGen.INTEGER),
-                  Some(
-                    Api.MethodCall(
-                      Api.MethodPointer(
-                        "Enso_Test.Test.Main",
-                        "Enso_Test.Test.Main",
-                        "bar"
-                      )
-                    )
-                  ),
-                  Vector(Api.ProfilingInfo.ExecutionTime(0)),
-                  false,
-                  true,
-                  Api.ExpressionUpdate.Payload.Value()
-                )
+          TestMessages.update(
+            contextId,
+            idMainZ,
+            ConstantsGen.INTEGER,
+            Api.MethodCall(
+              Api.MethodPointer(
+                "Enso_Test.Test.Main",
+                "Enso_Test.Test.Main",
+                "bar"
               )
             )
           )

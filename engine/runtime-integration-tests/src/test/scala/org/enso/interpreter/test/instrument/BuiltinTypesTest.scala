@@ -547,4 +547,68 @@ class BuiltinTypesTest
     )
   }
 
+  it should "send updates of an intersection type" in {
+    val contextId  = UUID.randomUUID()
+    val requestId  = UUID.randomUUID()
+    val moduleName = "Enso_Test.Test.Main"
+
+    val metadata = new Metadata
+    val id_x     = metadata.addItem(46, 3, "aa")
+
+    val code =
+      """from Standard.Base import all
+        |
+        |main =
+        |    x = foo
+        |    x
+        |
+        |foo : Text & Integer
+        |foo = (42 : Text & Integer)
+        |
+        |Text.from that:Integer = that.to_text
+        |""".stripMargin.linesIterator.mkString("\n")
+    val contents = metadata.appendToCode(code)
+    val mainFile = context.writeMain(contents)
+
+    // create context
+    context.send(Api.Request(requestId, Api.CreateContextRequest(contextId)))
+    context.receive shouldEqual Some(
+      Api.Response(requestId, Api.CreateContextResponse(contextId))
+    )
+
+    // open file
+    context.send(
+      Api.Request(requestId, Api.OpenFileRequest(mainFile, contents))
+    )
+    context.receive shouldEqual Some(
+      Api.Response(Some(requestId), Api.OpenFileResponse)
+    )
+
+    // push main
+    context.send(
+      Api.Request(
+        requestId,
+        Api.PushContextRequest(
+          contextId,
+          Api.StackItem.ExplicitCall(
+            Api.MethodPointer(moduleName, moduleName, "main"),
+            None,
+            Vector()
+          )
+        )
+      )
+    )
+    context.receiveNIgnoreStdLib(3) should contain theSameElementsAs Seq(
+      Api.Response(requestId, Api.PushContextResponse(contextId)),
+      TestMessages.updateMultiType(
+        contextId,
+        id_x,
+        Vector(ConstantsGen.TEXT, ConstantsGen.INTEGER),
+        methodCall =
+          Some(Api.MethodCall(Api.MethodPointer(moduleName, moduleName, "foo")))
+      ),
+      context.executionComplete(contextId)
+    )
+  }
+
 }

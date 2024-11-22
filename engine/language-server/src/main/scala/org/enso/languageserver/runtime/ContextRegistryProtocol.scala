@@ -176,15 +176,15 @@ object ContextRegistryProtocol {
   /** An update about computed expression.
     *
     * @param expressionId the id of updated expression
-    * @param `type` the updated type of expression
+    * @param type the updated type of expression
     * @param methodCall the updated method call
     * @param profilingInfo profiling information about the expression
-    * @param fromCache whether or not the expression's value came from the cache
+    * @param fromCache whether the expression's value came from the cache
     * @param payload an extra information about the computed value
     */
   case class ExpressionUpdate(
     expressionId: UUID,
-    `type`: Option[String],
+    `type`: Vector[String],
     methodCall: Option[MethodCall],
     profilingInfo: Vector[ProfilingInfo],
     fromCache: Boolean,

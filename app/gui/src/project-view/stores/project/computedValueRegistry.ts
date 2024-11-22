@@ -73,8 +73,9 @@ function updateInfo(info: ExpressionInfo, update: ExpressionUpdate) {
 
 function combineInfo(info: ExpressionInfo | undefined, update: ExpressionUpdate): ExpressionInfo {
   const isPending = update.payload.type === 'Pending'
+  const updateSingleValueType = update.type.at(0) // TODO: support multi-value (aka intersection) types
   return {
-    typename: update.type ?? (isPending ? info?.typename : undefined),
+    typename: updateSingleValueType ?? (isPending ? info?.typename : undefined),
     methodCall: update.methodCall ?? (isPending ? info?.methodCall : undefined),
     payload: update.payload,
     profilingInfo: update.profilingInfo,

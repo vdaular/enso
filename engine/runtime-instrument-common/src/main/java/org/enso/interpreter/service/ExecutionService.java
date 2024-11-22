@@ -661,8 +661,8 @@ public final class ExecutionService {
   public static final class ExpressionValue {
     private final UUID expressionId;
     private final Object value;
-    private final String type;
-    private final String cachedType;
+    private final String[] types;
+    private final String[] cachedTypes;
     private final FunctionCallInfo callInfo;
     private final FunctionCallInfo cachedCallInfo;
     private final ProfilingInfo[] profilingInfo;
@@ -673,8 +673,8 @@ public final class ExecutionService {
      *
      * @param expressionId the id of the expression being computed.
      * @param value the value returned by computing the expression.
-     * @param type the type of the returned value.
-     * @param cachedType the cached type of the value.
+     * @param types the type of the returned value.
+     * @param cachedTypes the cached type of the value.
      * @param callInfo the function call data.
      * @param cachedCallInfo the cached call data.
      * @param profilingInfo the profiling information associated with this node
@@ -683,16 +683,16 @@ public final class ExecutionService {
     public ExpressionValue(
         UUID expressionId,
         Object value,
-        String type,
-        String cachedType,
+        String[] types,
+        String[] cachedTypes,
         FunctionCallInfo callInfo,
         FunctionCallInfo cachedCallInfo,
         ProfilingInfo[] profilingInfo,
         boolean wasCached) {
       this.expressionId = expressionId;
       this.value = value;
-      this.type = type;
-      this.cachedType = cachedType;
+      this.types = types;
+      this.cachedTypes = cachedTypes;
       this.callInfo = callInfo;
       this.cachedCallInfo = cachedCallInfo;
       this.profilingInfo = profilingInfo;
@@ -707,11 +707,11 @@ public final class ExecutionService {
           + expressionId
           + ", value="
           + (value == null ? "null" : new MaskedString(value.toString()).applyMasking())
-          + ", type='"
-          + type
+          + ", types='"
+          + Arrays.toString(types)
           + '\''
-          + ", cachedType='"
-          + cachedType
+          + ", cachedTypes='"
+          + Arrays.toString(cachedTypes)
           + '\''
           + ", callInfo="
           + callInfo
@@ -734,15 +734,15 @@ public final class ExecutionService {
     /**
      * @return the type of the returned value.
      */
-    public String getType() {
-      return type;
+    public String[] getTypes() {
+      return types;
     }
 
     /**
      * @return the cached type of the value.
      */
-    public String getCachedType() {
-      return cachedType;
+    public String[] getCachedTypes() {
+      return cachedTypes;
     }
 
     /**
@@ -784,7 +784,7 @@ public final class ExecutionService {
      * @return {@code true} when the type differs from the cached value.
      */
     public boolean isTypeChanged() {
-      return !Objects.equals(type, cachedType);
+      return !Arrays.equals(types, cachedTypes);
     }
 
     /**

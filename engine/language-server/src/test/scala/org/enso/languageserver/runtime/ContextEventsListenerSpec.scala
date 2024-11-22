@@ -64,7 +64,7 @@ class ContextEventsListenerSpec
           Set(
             Api.ExpressionUpdate(
               Suggestions.method.externalId.get,
-              Some(Suggestions.method.returnType),
+              Some(Vector(Suggestions.method.returnType)),
               Some(methodCall),
               Vector(),
               false,
@@ -86,7 +86,7 @@ class ContextEventsListenerSpec
               Vector(
                 ContextRegistryProtocol.ExpressionUpdate(
                   Suggestions.method.externalId.get,
-                  Some(Suggestions.method.returnType),
+                  Vector(Suggestions.method.returnType),
                   Some(toProtocolMethodCall(methodCall)),
                   Vector(),
                   false,
@@ -135,7 +135,7 @@ class ContextEventsListenerSpec
               Vector(
                 ContextRegistryProtocol.ExpressionUpdate(
                   Suggestions.method.externalId.get,
-                  None,
+                  Vector(),
                   None,
                   Vector(),
                   false,
@@ -173,7 +173,7 @@ class ContextEventsListenerSpec
               Vector(
                 ContextRegistryProtocol.ExpressionUpdate(
                   Suggestions.method.externalId.get,
-                  None,
+                  Vector(),
                   None,
                   Vector(),
                   false,
@@ -229,7 +229,7 @@ class ContextEventsListenerSpec
             Vector(
               ContextRegistryProtocol.ExpressionUpdate(
                 Suggestions.method.externalId.get,
-                None,
+                Vector(),
                 None,
                 Vector(),
                 false,
@@ -238,7 +238,7 @@ class ContextEventsListenerSpec
               ),
               ContextRegistryProtocol.ExpressionUpdate(
                 Suggestions.local.externalId.get,
-                None,
+                Vector(),
                 None,
                 Vector(),
                 false,

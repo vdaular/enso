@@ -1,5 +1,6 @@
 package org.enso.interpreter.instrument;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -45,10 +46,10 @@ public class RuntimeCacheTest {
   public void cacheTypes() {
     var cache = new RuntimeCache();
     var key = UUID.randomUUID();
-    var obj = "Number";
+    var obj = new String[] {"Number"};
 
     assertNull(cache.putType(key, obj));
-    assertEquals(obj, cache.putType(key, obj));
+    assertArrayEquals(obj, cache.putType(key, obj));
 
     cache.removeType(key);
     assertNull(cache.putType(key, obj));
