@@ -15,7 +15,7 @@ const isProd = process.env.PROD === 'true'
 
 const TIMEOUT_MS =
   DEBUG ? 100_000_000
-  : isCI ? 60_000
+  : isCI ? 25_000
   : 15_000
 
 // We tend to use less CPU on CI to reduce the number of failures due to timeouts.
