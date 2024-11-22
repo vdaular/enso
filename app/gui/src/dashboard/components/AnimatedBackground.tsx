@@ -114,7 +114,7 @@ AnimatedBackground.Item = memo(function AnimatedBackgroundItem(props: AnimatedBa
   const isActive = isSelected ?? activeValue === value
 
   return (
-    <div className={twJoin('relative', className)}>
+    <div className={twJoin('relative *:isolate', className)}>
       <AnimatedBackgroundItemUnderlay
         isActive={isActive}
         underlayElement={underlayElement}
@@ -122,7 +122,7 @@ AnimatedBackground.Item = memo(function AnimatedBackgroundItem(props: AnimatedBa
         transition={transition}
       />
 
-      <div className="isolate contents">{children}</div>
+      <div className="isolate contents *:isolate">{children}</div>
     </div>
   )
 })

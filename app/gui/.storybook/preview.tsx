@@ -9,6 +9,8 @@ import { useLayoutEffect, useState } from 'react'
 import invariant from 'tiny-invariant'
 import UIProviders from '../src/dashboard/components/UIProviders'
 
+import { QueryClientProvider } from '@tanstack/react-query'
+import { createQueryClient } from 'enso-common/src/queryClient'
 import { MotionGlobalConfig } from 'framer-motion'
 import z from 'zod'
 import '../src/dashboard/tailwind.css'
@@ -68,6 +70,11 @@ const reactPreview: ReactPreview = {
         <div id="enso-portal-root" className="enso-portal-root" />
       </>
     ),
+
+    (Story, context) => {
+      const [queryClient] = useState(() => createQueryClient())
+      return <QueryClientProvider client={queryClient}>{Story(context)}</QueryClientProvider>
+    },
   ],
 }
 
