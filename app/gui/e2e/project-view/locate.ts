@@ -121,6 +121,16 @@ export function bottomDock(page: Page) {
   return page.getByTestId('bottomDock')
 }
 
+/** Button to add an item to a vector */
+export function addItemButton(page: Locator | Page) {
+  return page.getByRole('button', { name: 'new item' })
+}
+
+/** Button to delete a specific item from a vector */
+export function deleteItemButton(page: Locator | Page) {
+  return page.getByRole('button', { name: 'Remove item' })
+}
+
 export const navBreadcrumb = componentLocator('.NavBreadcrumb')
 export const componentBrowserInput = componentLocator('.ComponentEditor')
 

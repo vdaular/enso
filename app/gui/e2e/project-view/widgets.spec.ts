@@ -105,7 +105,7 @@ test('Multi-selection widget', async ({ page }) => {
   await dropDown.expectVisibleWithOptions(['Column A', 'Column B'])
   await expect(dropDown.rootWidget).toHaveClass(/multiSelect/)
   const vector = node.locator('.WidgetVector')
-  const vectorItems = vector.locator('.item .WidgetPort input')
+  const vectorItems = vector.getByTestId('list-item-content').locator('.WidgetPort input')
   await expect(vector).toBeVisible()
   await expect(dropDown.selectedItems).toHaveCount(0)
   await expect(vectorItems).toHaveCount(0)
@@ -121,7 +121,7 @@ test('Multi-selection widget', async ({ page }) => {
   // Add-item button opens dropdown, after closing with escape.
   await page.keyboard.press('Escape')
   await dropDown.expectNotVisible()
-  await vector.locator('.add-item').click()
+  await locate.addItemButton(vector).click()
   await expect(dropDown.items).toHaveCount(2)
   await expect(dropDown.selectedItems).toHaveCount(1)
 
@@ -180,7 +180,7 @@ test('Multi-selection widget: Item edits', async ({ page }) => {
     .graphNodeByBinding(page, 'selected')
     .locator('.WidgetTopLevelArgument')
     .filter({ has: page.getByText('columns') })
-  const vectorItems = columnsArg.locator('.WidgetVector .item .WidgetPort input')
+  const vectorItems = columnsArg.getByTestId('list-item-content').locator('.WidgetPort input')
   const dropDown = new DropDownLocator(columnsArg)
   await dropDown.clickWidget()
   await dropDown.clickOption('Column A')
@@ -193,6 +193,46 @@ test('Multi-selection widget: Item edits', async ({ page }) => {
   await vectorItems.first().fill('Something Else')
   await expect(dropDown.selectedItem('Column A')).toBeHidden()
   await expect(dropDown.selectedItem('Column B')).toExist()
+})
+
+test('Editing list', async ({ page }) => {
+  await actions.goToGraph(page)
+  const node = locate.graphNodeByBinding(page, 'autoscoped')
+  const vector = node.locator('.WidgetVector')
+  const vectorItems = vector.locator('.item')
+  const vectorElements = vector.getByTestId('list-item-content')
+  await expect(vectorElements).toHaveText(['..Group_By'])
+  await node.click()
+
+  // Test add
+  await locate.addItemButton(node).click()
+  await locate.addItemButton(node).click()
+  await expect(vectorElements).toHaveText(['..Group_By', '_', '_'])
+
+  // Test drag: remove item
+  await vectorItems.nth(1).locator('[draggable]').dragTo(locate.graphEditor(page))
+  await expect(vectorElements).toHaveText(['..Group_By', '_'])
+
+  // Test drag: reorder items
+  await vectorItems.nth(1).locator('[draggable]').hover()
+  await page.mouse.down()
+  await vectorItems
+    .nth(1)
+    .locator('[draggable]')
+    .hover({ position: { x: 10, y: 10 } })
+  await expect(vectorElements).toHaveText(['..Group_By'])
+  await vectorElements.first().hover({ position: { x: 10, y: 10 }, force: true })
+  await page.mouse.up()
+  await expect(vectorElements).toHaveText(['_', '..Group_By'])
+
+  // Test delete
+  await locate.deleteItemButton(vectorItems.first()).click()
+  await expect(vectorElements).toHaveText(['..Group_By'])
+
+  // Test delete: last item
+  await locate.deleteItemButton(vectorItems).click()
+  await expect(vectorItems).not.toExist()
+  await expect(vector).toExist()
 })
 
 async function dataReadNodeWithMethodCallInfo(page: Page): Promise<Locator> {
@@ -374,7 +414,7 @@ test('Manage aggregates in `aggregate` node', async ({ page }) => {
   // Add first aggregate
   const columnsArg = topLevelArgs.filter({ has: page.getByText('columns') })
 
-  await columnsArg.locator('.add-item').click()
+  await locate.addItemButton(columnsArg).click()
   await expect(columnsArg.locator('.WidgetToken')).toContainText([
     'Aggregate_Column',
     '.',
@@ -423,7 +463,10 @@ test('Manage aggregates in `aggregate` node', async ({ page }) => {
   )
 
   // Set column
-  const firstItem = columnsArg.locator('.item > .WidgetPort > .WidgetSelection').nth(0)
+  const firstItem = columnsArg
+    .getByTestId('list-item-content')
+    .locator('.WidgetPort > .WidgetSelection')
+    .nth(0)
   const firstItemDropdown = new DropDownLocator(firstItem)
   await firstItemDropdown.clickWidget()
   await firstItemDropdown.expectVisibleWithOptions(['column 1', 'column 2'])
@@ -436,7 +479,7 @@ test('Manage aggregates in `aggregate` node', async ({ page }) => {
   await expect(columnsArg.locator('.WidgetText > input').first()).toHaveValue('column 1')
 
   // Add another aggregate
-  await columnsArg.locator('.add-item').click()
+  await locate.addItemButton(columnsArg).click()
   await expect(columnsArg.locator('.WidgetToken')).toContainText([
     'Aggregate_Column',
     '.',
@@ -462,7 +505,10 @@ test('Manage aggregates in `aggregate` node', async ({ page }) => {
   )
 
   // Set new aggregate's column
-  const secondItem = columnsArg.locator('.item > .WidgetPort > .WidgetSelection').nth(1)
+  const secondItem = columnsArg
+    .getByTestId('list-item-content')
+    .nth(1)
+    .locator('.WidgetPort > .WidgetSelection')
   const secondItemDropdown = new DropDownLocator(secondItem)
   await secondItemDropdown.clickWidget()
   await secondItemDropdown.expectVisibleWithOptions(['column 1', 'column 2'])
@@ -533,7 +579,7 @@ test('Autoscoped constructors', async ({ page }) => {
   await node.click()
   await expect(topLevelArgs).toHaveCount(3)
 
-  const groupBy = node.locator('.item').nth(0)
+  const groupBy = node.getByTestId('list-item-content').first()
   await expect(groupBy).toBeVisible()
   await expect(groupBy.locator('.WidgetArgumentName')).toContainText(['column', 'new_name'])
 })

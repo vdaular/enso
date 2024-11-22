@@ -34,6 +34,7 @@
 - [Table Input Widget is now matched for Table.input method instead of
   Table.new. Values must be string literals, and their content is parsed to the
   suitable type][11612].
+- [New design for vector-editing widget][11620]
 
 [11151]: https://github.com/enso-org/enso/pull/11151
 [11271]: https://github.com/enso-org/enso/pull/11271
@@ -55,6 +56,7 @@
 [11564]: https://github.com/enso-org/enso/pull/11564
 [11597]: https://github.com/enso-org/enso/pull/11597
 [11612]: https://github.com/enso-org/enso/pull/11612
+[11620]: https://github.com/enso-org/enso/pull/11620
 
 #### Enso Standard Library
 

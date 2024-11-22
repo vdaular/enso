@@ -238,7 +238,7 @@ const innerWidgetInput = computed<WidgetInput>(() => {
 
 const parentSelectionArrow = injectSelectionArrow(true)
 const arrowSuppressed = ref(false)
-const showArrow = computed(() => isHovered.value && !arrowSuppressed.value)
+const showArrow = computed(() => !arrowSuppressed.value && (tree.extended || isHovered.value))
 provideSelectionArrow(
   proxyRefs({
     id: computed(() => {
@@ -464,7 +464,11 @@ declare module '@/providers/widgetRegistry' {
   >
     <NodeWidget :input="innerWidgetInput" />
     <Teleport v-if="showArrow" defer :disabled="!arrowLocation" :to="arrowLocation">
-      <SvgIcon name="arrow_right_head_only" class="arrow widgetOutOfLayout" />
+      <SvgIcon
+        name="arrow_right_head_only"
+        class="arrow widgetOutOfLayout"
+        :class="{ hovered: isHovered }"
+      />
     </Teleport>
     <Teleport v-if="tree.nodeElement" :to="tree.nodeElement">
       <div ref="dropdownElement" :style="floatingStyles" class="widgetOutOfLayout floatingElement">
@@ -515,6 +519,9 @@ svg.arrow {
   opacity: 0.5;
   /* Prevent the parent from receiving a pointerout event if the mouse is over the arrow, which causes flickering. */
   pointer-events: none;
+  &.hovered {
+    opacity: 0.9;
+  }
 }
 
 .activityElement {
