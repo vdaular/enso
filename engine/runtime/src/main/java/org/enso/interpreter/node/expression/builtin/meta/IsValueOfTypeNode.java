@@ -52,7 +52,7 @@ public abstract class IsValueOfTypeNode extends Node {
       TypeOfNode typeOfNode,
       IsSameObjectNode isSameObject,
       CountingConditionProfile isSameObjectProfile) {
-    Object tpeOfPayload = typeOfNode.execute(payload);
+    Object tpeOfPayload = typeOfNode.findTypeOrError(payload);
     if (isSameObjectProfile.profile(isSameObject.execute(expectedType, tpeOfPayload))) {
       return true;
     } else if (TypesGen.isType(tpeOfPayload)) {

@@ -178,7 +178,7 @@ non-sealed abstract class SingleTypeCheckNode extends AbstractTypeCheckNode {
     if (v instanceof UnresolvedConstructor) {
       return null;
     }
-    if (typeOfNode.execute(v) instanceof Type from) {
+    if (typeOfNode.findTypeOrError(v) instanceof Type from) {
       if (previous != null && previous.length == 1 && previous[0] == from) {
         return previous;
       } else {

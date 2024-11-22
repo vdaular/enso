@@ -20,7 +20,6 @@ import org.enso.interpreter.runtime.EnsoContext;
 import org.enso.interpreter.runtime.callable.UnresolvedConversion;
 import org.enso.interpreter.runtime.callable.argument.CallArgumentInfo;
 import org.enso.interpreter.runtime.callable.function.Function;
-import org.enso.interpreter.runtime.data.Type;
 import org.enso.interpreter.runtime.data.hash.EnsoHashMap;
 import org.enso.interpreter.runtime.data.text.Text;
 import org.enso.interpreter.runtime.error.DataflowError;
@@ -57,7 +56,7 @@ abstract class IndirectInvokeConversionNode extends Node {
       int thatArgumentPosition);
 
   static boolean hasType(TypeOfNode typeOfNode, Object value) {
-    return typeOfNode.execute(value) instanceof Type;
+    return typeOfNode.hasType(value);
   }
 
   @Specialization(guards = {"hasType(typeOfNode, that)"})
@@ -81,7 +80,7 @@ abstract class IndirectInvokeConversionNode extends Node {
         conversionResolverNode.expectNonNull(
             that,
             InvokeConversionNode.extractType(this, self),
-            (Type) typeOfNode.execute(that),
+            typeOfNode.findTypeOrNull(that),
             conversion);
     return indirectInvokeFunctionNode.execute(
         function,

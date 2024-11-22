@@ -4,7 +4,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-import com.oracle.truffle.api.interop.InteropLibrary;
 import org.enso.interpreter.node.expression.foreign.HostValueToEnsoNode;
 import org.enso.interpreter.runtime.EnsoContext;
 import org.enso.interpreter.runtime.callable.argument.ArgumentDefinition;
@@ -23,9 +22,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class CatchPanicNodeTest {
-
-  private static final InteropLibrary interop = InteropLibrary.getUncached();
-
   private static Context context;
   private static CatchPanicNode catchPanicNode;
   private static HostValueToEnsoNode hostValueToEnsoNode;
@@ -110,7 +106,7 @@ public class CatchPanicNodeTest {
                     var args =
                         Function.ArgumentsHelper.getPositionalArguments(frame.getArguments());
                     assertEquals("One argument expected", 1, args.length);
-                    var argType = TypeOfNode.getUncached().execute(args[0]);
+                    var argType = TypeOfNode.getUncached().findTypeOrError(args[0]);
                     if (argType == ctx.getBuiltins().caughtPanic().getType()) {
                       assertThat(args[0].toString(), Matchers.containsString("Thrown"));
                       return text;
@@ -147,7 +143,7 @@ public class CatchPanicNodeTest {
                     var args =
                         Function.ArgumentsHelper.getPositionalArguments(frame.getArguments());
                     assertEquals("One argument expected", 1, args.length);
-                    var argType = TypeOfNode.getUncached().execute(args[0]);
+                    var argType = TypeOfNode.getUncached().findTypeOrError(args[0]);
                     if (argType == ctx.getBuiltins().caughtPanic().getType()) {
                       assertThat(args[0].toString(), Matchers.containsString("Thrown"));
                       return text;
@@ -184,7 +180,7 @@ public class CatchPanicNodeTest {
                     var args =
                         Function.ArgumentsHelper.getPositionalArguments(frame.getArguments());
                     assertEquals("One argument expected", 1, args.length);
-                    var argType = TypeOfNode.getUncached().execute(args[0]);
+                    var argType = TypeOfNode.getUncached().findTypeOrError(args[0]);
                     if (argType == ctx.getBuiltins().caughtPanic().getType()) {
                       assertThat(args[0].toString(), Matchers.containsString("Thrown"));
                       return text;
@@ -221,7 +217,7 @@ public class CatchPanicNodeTest {
                     var args =
                         Function.ArgumentsHelper.getPositionalArguments(frame.getArguments());
                     assertEquals("One argument expected", 1, args.length);
-                    var argType = TypeOfNode.getUncached().execute(args[0]);
+                    var argType = TypeOfNode.getUncached().findTypeOrError(args[0]);
                     if (argType == ctx.getBuiltins().caughtPanic().getType()) {
                       assertThat(args[0].toString(), Matchers.containsString("Thrown"));
                       return text;
@@ -258,7 +254,7 @@ public class CatchPanicNodeTest {
                     var args =
                         Function.ArgumentsHelper.getPositionalArguments(frame.getArguments());
                     assertEquals("One argument expected", 1, args.length);
-                    var argType = TypeOfNode.getUncached().execute(args[0]);
+                    var argType = TypeOfNode.getUncached().findTypeOrError(args[0]);
                     if (argType == ctx.getBuiltins().caughtPanic().getType()) {
                       assertThat(args[0].toString(), Matchers.containsString("Thrown"));
                       return text;
@@ -300,7 +296,7 @@ public class CatchPanicNodeTest {
                     var args =
                         Function.ArgumentsHelper.getPositionalArguments(frame.getArguments());
                     assertEquals("One argument expected", 1, args.length);
-                    var argType = TypeOfNode.getUncached().execute(args[0]);
+                    var argType = TypeOfNode.getUncached().findTypeOrError(args[0]);
                     if (argType == ctx.getBuiltins().caughtPanic().getType()) {
                       assertThat(args[0].toString(), Matchers.containsString("Thrown"));
                       return text;

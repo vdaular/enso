@@ -69,8 +69,8 @@ public final class EqualsNode extends Node {
   public EqualsAndInfo execute(VirtualFrame frame, Object self, Object other) {
     var areEqual = node.execute(frame, self, other);
     if (!areEqual.isTrue()) {
-      var selfType = types.execute(self);
-      var otherType = types.execute(other);
+      var selfType = types.findTypeOrNull(self);
+      var otherType = types.findTypeOrNull(other);
       if (selfType != otherType) {
         if (convert == null) {
           CompilerDirectives.transferToInterpreter();
@@ -101,8 +101,7 @@ public final class EqualsNode extends Node {
     abstract EqualsAndInfo executeWithConversion(VirtualFrame frame, Object self, Object that);
 
     static Type findType(TypeOfNode typeOfNode, Object obj) {
-      var rawType = typeOfNode.execute(obj);
-      return rawType instanceof Type type ? type : null;
+      return typeOfNode.findTypeOrNull(obj);
     }
 
     static Type findTypeUncached(Object obj) {

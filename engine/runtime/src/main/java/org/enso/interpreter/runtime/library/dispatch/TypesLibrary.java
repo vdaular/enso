@@ -68,4 +68,17 @@ public abstract class TypesLibrary extends Library {
   public Type getType(Object receiver) {
     return null;
   }
+
+  /**
+   * Returns all the receiver types. Default implementation delegates to {@link
+   * #getType(java.lang.Object)} and returns array with one element of that type
+   *
+   * @param receiver the typed object
+   * @return the corresponding types for the {@code receiver}
+   */
+  public Type[] allTypes(Object receiver) {
+    var t = getType(receiver);
+    assert t != null : "null type for " + receiver;
+    return new Type[] {t};
+  }
 }

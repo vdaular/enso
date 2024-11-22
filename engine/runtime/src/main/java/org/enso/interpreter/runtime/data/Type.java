@@ -166,6 +166,7 @@ public final class Type extends EnsoObject {
    * @param ctx contexts to get Any type (common super class) from
    * @return a compilation constant array with all types this type represents
    */
+  @ExportMessage.Ignore
   public final Type[] allTypes(EnsoContext ctx) {
     var types = new Type[3];
     var realCount = fillInTypes(this, types, ctx);

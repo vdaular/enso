@@ -124,7 +124,7 @@ abstract class EqualsAtomNode extends Node {
   @TruffleBoundary
   private static boolean orderingOrNullOrError(
       Node where, EnsoContext ctx, Object obj, Function fn) {
-    var type = TypeOfNode.getUncached().execute(obj);
+    var type = TypeOfNode.getUncached().findTypeOrError(obj);
     if (type == ctx.getBuiltins().ordering().getType()) {
       return true;
     }

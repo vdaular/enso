@@ -21,7 +21,7 @@ public class GetQualifiedTypeNameNode extends Node {
     var maybeType =
         switch (value) {
           case Type type -> type;
-          default -> typeOfNode.execute(value);
+          default -> typeOfNode.findTypeOrError(value);
         };
     if (maybeType instanceof Type type) {
       return Text.create(getQualifiedName(type));

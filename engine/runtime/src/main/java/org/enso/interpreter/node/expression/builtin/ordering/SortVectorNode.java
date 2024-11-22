@@ -672,11 +672,11 @@ public abstract class SortVectorNode extends Node {
     }
 
     private boolean isPrimitiveValue(Object object) {
-      return isBuiltinType(typeOfNode.execute(object));
+      return isBuiltinType(typeOfNode.findTypeOrError(object));
     }
 
     private String getQualifiedTypeName(Object object) {
-      var typeObj = typeOfNode.execute(object);
+      var typeObj = typeOfNode.findTypeOrError(object);
       return toTextNode.execute(typeObj).toString();
     }
 
@@ -686,7 +686,7 @@ public abstract class SortVectorNode extends Node {
       } else if (isNan(object)) {
         return 100;
       } else {
-        var type = typeOfNode.execute(object);
+        var type = typeOfNode.findTypeOrError(object);
         return getBuiltinTypeCost(type);
       }
     }

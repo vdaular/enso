@@ -93,8 +93,7 @@ final class BinaryOperatorNode extends ExpressionNode {
         VirtualFrame frame, String symbol, Object self, Object that);
 
     static Type findType(TypeOfNode typeOfNode, Object obj) {
-      var rawType = typeOfNode.execute(obj);
-      return rawType instanceof Type type ? type : null;
+      return typeOfNode.findTypeOrNull(obj);
     }
 
     static Type findTypeUncached(Object obj) {

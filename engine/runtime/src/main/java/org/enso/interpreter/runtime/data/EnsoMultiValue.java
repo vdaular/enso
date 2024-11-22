@@ -68,6 +68,7 @@ public final class EnsoMultiValue extends EnsoObject {
     return types[0];
   }
 
+  @ExportMessage
   public final Type[] allTypes() {
     return types.clone();
   }

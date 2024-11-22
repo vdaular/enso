@@ -580,7 +580,7 @@ object ProgramExecutionSupport {
         Array[Object](
           visualization.id,
           expressionId,
-          Try(TypeOfNode.getUncached.execute(expressionValue))
+          Try(TypeOfNode.getUncached.findTypeOrError(expressionValue))
             .getOrElse(expressionValue.getClass)
         )
       )
@@ -640,8 +640,7 @@ object ProgramExecutionSupport {
           Option(error.getMessage).getOrElse(error.getClass.getSimpleName)
         if (!TypesGen.isPanicSentinel(expressionValue)) {
           val typeOfNode =
-            Option(TypeOfNode.getUncached.execute(expressionValue))
-              .getOrElse(expressionValue.getClass)
+            TypeOfNode.getUncached.findTypeOrError(expressionValue)
           ctx.executionService.getLogger.log(
             Level.WARNING,
             "Execution of visualization [{0}] on value [{1}] of [{2}] failed. {3} | {4} | {5}",

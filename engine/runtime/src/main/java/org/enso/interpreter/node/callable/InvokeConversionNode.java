@@ -101,7 +101,7 @@ public abstract class InvokeConversionNode extends BaseNode {
   }
 
   static boolean hasType(TypeOfNode typeOfNode, Object value) {
-    return typeOfNode.execute(value) instanceof Type;
+    return typeOfNode.hasType(value);
   }
 
   static boolean isDataflowError(Object value) {
@@ -119,7 +119,7 @@ public abstract class InvokeConversionNode extends BaseNode {
       Object[] arguments,
       @Shared("typeOfNode") @Cached TypeOfNode dispatch,
       @Shared("conversionResolverNode") @Cached ConversionResolverNode resolveNode) {
-    var thatType = (Type) dispatch.execute(that);
+    var thatType = dispatch.findTypeOrNull(that);
     if (thatType == self) {
       return that;
     } else {
