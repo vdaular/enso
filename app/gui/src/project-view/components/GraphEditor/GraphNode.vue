@@ -292,6 +292,7 @@ const dragPointer = usePointer(
   { pointerCapturedBy: 'target' },
 )
 const isDragged = computed(() => dragPointer.dragging && significantMove.value)
+watch(isDragged, () => graph.db.moveNodeToTop(nodeId.value))
 
 const isRecordingOverridden = computed({
   get() {
