@@ -50,7 +50,7 @@ object Ydoc {
     val generator = Tracked.inputChanged[Seq[File], Seq[File]](store) {
       case (changed, _) =>
         val resourceYdocServerJs =
-          ydocServerResourceManaged / "org" / "enso" / "ydoc" / "ydoc.cjs"
+          ydocServerResourceManaged / "org" / "enso" / "ydoc" / "server" / "ydoc.cjs"
 
         if (changed) {
           val command = s"$pnpmCommand -r compile"

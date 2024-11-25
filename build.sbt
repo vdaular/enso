@@ -385,6 +385,7 @@ lazy val enso = (project in file("."))
     `test-utils`,
     `text-buffer`,
     `version-output`,
+    `ydoc-polyfill`,
     `ydoc-server`,
     `zio-wrapper`
   )
@@ -649,7 +650,7 @@ lazy val componentModulesIds =
     "org.netbeans.api" % "org-netbeans-modules-sampler" % netbeansApiVersion,
     (`runtime-language-arrow` / projectID).value,
     (`syntax-rust-definition` / projectID).value,
-    (`ydoc-server` / projectID).value,
+    (`ydoc-polyfill` / projectID).value,
     (`profiling-utils` / projectID).value
   )
 }
@@ -738,7 +739,7 @@ lazy val componentModulesPaths =
     (`language-server-deps-wrapper` / Compile / exportedModuleBin).value,
     (`directory-watcher-wrapper` / Compile / exportedModuleBin).value,
     (`jna-wrapper` / Compile / exportedModuleBin).value,
-    (`ydoc-server` / Compile / exportedModuleBin).value,
+    (`ydoc-polyfill` / Compile / exportedModuleBin).value,
     (`library-manager` / Compile / exportedModuleBin).value,
     (`logging-config` / Compile / exportedModuleBin).value,
     (`logging-utils` / Compile / exportedModuleBin).value,
@@ -1724,7 +1725,7 @@ lazy val `project-manager` = (project in file("lib/scala/project-manager"))
     Test / addModules := Seq(
       (`syntax-rust-definition` / javaModuleName).value,
       (`profiling-utils` / javaModuleName).value,
-      (`ydoc-server` / javaModuleName).value
+      (`ydoc-polyfill` / javaModuleName).value
     ),
     Test / moduleDependencies := {
       GraalVM.modules ++ GraalVM.langsPkgs ++ logbackPkg ++ helidon ++ Seq(
@@ -1735,7 +1736,7 @@ lazy val `project-manager` = (project in file("lib/scala/project-manager"))
     Test / internalModuleDependencies := Seq(
       (`profiling-utils` / Compile / exportedModule).value,
       (`syntax-rust-definition` / Compile / exportedModule).value,
-      (`ydoc-server` / Compile / exportedModule).value
+      (`ydoc-polyfill` / Compile / exportedModule).value
     ),
     Test / javaOptions ++= testLogProviderOptions,
     Test / test := (Test / test).dependsOn(buildEngineDistribution).value
@@ -1783,7 +1784,7 @@ lazy val `project-manager` = (project in file("lib/scala/project-manager"))
   .dependsOn(testkit % Test)
   .dependsOn(`runtime-version-manager-test` % Test)
   .dependsOn(`logging-service-logback` % "test->test")
-  .dependsOn(`ydoc-server` % Test)
+  .dependsOn(`ydoc-polyfill` % Test)
   .dependsOn(`profiling-utils` % Test)
 
 lazy val `json-rpc-server` = project
@@ -1885,13 +1886,49 @@ lazy val searcher = project
   .dependsOn(testkit % Test)
   .dependsOn(`polyglot-api`)
 
+lazy val `ydoc-polyfill` = project
+  .in(file("lib/java/ydoc-polyfill"))
+  .enablePlugins(JPMSPlugin)
+  .configs(Test)
+  .settings(
+    customFrgaalJavaCompilerSettings("21"),
+    javaModuleName := "org.enso.ydoc.polyfill",
+    Compile / exportJars := true,
+    crossPaths := false,
+    autoScalaLibrary := false,
+    Test / fork := true,
+    commands += WithDebugCommand.withDebug,
+    Compile / moduleDependencies ++= {
+      GraalVM.modules ++ GraalVM.jsPkgs ++ GraalVM.chromeInspectorPkgs ++ helidon ++ Seq(
+        "org.slf4j" % "slf4j-api" % slf4jVersion
+      )
+    },
+    Compile / internalModuleDependencies := Seq(
+      (`syntax-rust-definition` / Compile / exportedModule).value
+    ),
+    libraryDependencies ++= Seq(
+      "org.graalvm.truffle"  % "truffle-api"                 % graalMavenPackagesVersion % "provided",
+      "org.graalvm.polyglot" % "inspect-community"           % graalMavenPackagesVersion % "runtime",
+      "org.graalvm.polyglot" % "js-community"                % graalMavenPackagesVersion % "runtime",
+      "org.slf4j"            % "slf4j-api"                   % slf4jVersion,
+      "io.helidon.webclient" % "helidon-webclient-websocket" % helidonVersion,
+      "io.helidon.webserver" % "helidon-webserver-websocket" % helidonVersion,
+      "junit"                % "junit"                       % junitVersion              % Test,
+      "com.github.sbt"       % "junit-interface"             % junitIfVersion            % Test
+    ),
+    libraryDependencies ++= {
+      GraalVM.modules ++ GraalVM.jsPkgs ++ GraalVM.chromeInspectorPkgs ++ helidon
+    }
+  )
+  .dependsOn(`syntax-rust-definition`)
+
 lazy val `ydoc-server` = project
   .in(file("lib/java/ydoc-server"))
   .enablePlugins(JPMSPlugin)
   .configs(Test)
   .settings(
     customFrgaalJavaCompilerSettings("21"),
-    javaModuleName := "org.enso.ydoc",
+    javaModuleName := "org.enso.ydoc.server",
     Compile / exportJars := true,
     crossPaths := false,
     autoScalaLibrary := false,
@@ -1903,8 +1940,8 @@ lazy val `ydoc-server` = project
       )
     },
     Compile / internalModuleDependencies := Seq(
-      (`syntax-rust-definition` / Compile / exportedModule).value,
-      (`profiling-utils` / Compile / exportedModule).value
+      (`ydoc-polyfill` / Compile / exportedModule).value,
+      (`syntax-rust-definition` / Compile / exportedModule).value
     ),
     libraryDependencies ++= Seq(
       "org.graalvm.truffle"        % "truffle-api"                 % graalMavenPackagesVersion % "provided",
@@ -1912,8 +1949,9 @@ lazy val `ydoc-server` = project
       "org.graalvm.polyglot"       % "inspect-community"           % graalMavenPackagesVersion % "runtime",
       "org.graalvm.polyglot"       % "js-community"                % graalMavenPackagesVersion % "runtime",
       "org.slf4j"                  % "slf4j-api"                   % slf4jVersion,
-      "io.helidon.webclient"       % "helidon-webclient-websocket" % helidonVersion,
-      "io.helidon.webserver"       % "helidon-webserver-websocket" % helidonVersion,
+      "io.helidon.common"          % "helidon-common"              % helidonVersion,
+      "io.helidon.webclient"       % "helidon-webclient-websocket" % helidonVersion            % Test,
+      "io.helidon.webserver"       % "helidon-webserver-websocket" % helidonVersion            % Test,
       "junit"                      % "junit"                       % junitVersion              % Test,
       "com.github.sbt"             % "junit-interface"             % junitIfVersion            % Test,
       "com.fasterxml.jackson.core" % "jackson-databind"            % jacksonVersion            % Test
@@ -1936,8 +1974,7 @@ lazy val `ydoc-server` = project
     // would result in an sbt caught in an infinite recursion.
     //
     Compile / run / javaOptions ++= {
-      val mp =
-        (Compile / modulePath).value ++ (`profiling-utils` / Compile / modulePath).value
+      val mp        = (Compile / modulePath).value
       val jar       = (Compile / exportedProductJars).value.head
       val modName   = javaModuleName.value
       val allMp     = mp ++ Seq(jar.data.absolutePath)
@@ -1969,7 +2006,7 @@ lazy val `ydoc-server` = project
       .buildNativeImage(
         "ydoc",
         staticOnLinux = false,
-        mainClass     = Some("org.enso.ydoc.Main")
+        mainClass     = Some("org.enso.ydoc.server.Main")
       )
       .value,
     buildNativeImage := NativeImage
@@ -1979,7 +2016,7 @@ lazy val `ydoc-server` = project
       )
       .value
   )
-  .dependsOn(`syntax-rust-definition`)
+  .dependsOn(`ydoc-polyfill`)
   .dependsOn(`logging-service-logback`)
 
 lazy val `persistance` = (project in file("lib/java/persistance"))
@@ -2257,7 +2294,7 @@ lazy val `language-server` = (project in file("engine/language-server"))
       (`language-server-deps-wrapper` / Compile / exportedModule).value,
       (`directory-watcher-wrapper` / Compile / exportedModule).value,
       (`engine-runner-common` / Compile / exportedModule).value,
-      (`ydoc-server` / Compile / exportedModule).value,
+      (`ydoc-polyfill` / Compile / exportedModule).value,
       (`logging-utils` / Compile / exportedModule).value,
       (`logging-utils-akka` / Compile / exportedModule).value,
       (`logging-service` / Compile / exportedModule).value,
@@ -2342,7 +2379,7 @@ lazy val `language-server` = (project in file("engine/language-server"))
       (`runtime-instrument-repl-debugger` / Compile / exportedModule).value,
       (`runtime-instrument-id-execution` / Compile / exportedModule).value,
       (`runtime-language-epb` / Compile / exportedModule).value,
-      (`ydoc-server` / Compile / exportedModule).value,
+      (`ydoc-polyfill` / Compile / exportedModule).value,
       (`syntax-rust-definition` / Compile / exportedModule).value,
       (`profiling-utils` / Compile / exportedModule).value,
       (`logging-service-logback` / Compile / exportedModule).value,
@@ -2394,7 +2431,7 @@ lazy val `language-server` = (project in file("engine/language-server"))
       javaModuleName.value,
       (`syntax-rust-definition` / javaModuleName).value,
       (`profiling-utils` / javaModuleName).value,
-      (`ydoc-server` / javaModuleName).value,
+      (`ydoc-polyfill` / javaModuleName).value,
       (`library-manager` / javaModuleName).value
     ),
     Test / addReads := {
@@ -2449,7 +2486,7 @@ lazy val `language-server` = (project in file("engine/language-server"))
   .dependsOn(`logging-service-logback` % "test->test")
   .dependsOn(`library-manager-test` % Test)
   .dependsOn(`runtime-version-manager-test` % Test)
-  .dependsOn(`ydoc-server`)
+  .dependsOn(`ydoc-polyfill`)
 
 lazy val cleanInstruments = taskKey[Unit](
   "Cleans fragile class files to force a full recompilation and preserve" +
@@ -2866,7 +2903,7 @@ lazy val `runtime-integration-tests` =
         (`runtime-instrument-repl-debugger` / Compile / exportedModule).value,
         (`runtime-instrument-id-execution` / Compile / exportedModule).value,
         (`runtime-language-epb` / Compile / exportedModule).value,
-        (`ydoc-server` / Compile / exportedModule).value,
+        (`ydoc-polyfill` / Compile / exportedModule).value,
         (`syntax-rust-definition` / Compile / exportedModule).value,
         (`profiling-utils` / Compile / exportedModule).value,
         (`logging-service-logback` / Compile / exportedModule).value,
@@ -2916,7 +2953,7 @@ lazy val `runtime-integration-tests` =
         "scala.library",
         (`runtime` / javaModuleName).value,
         (`runtime-test-instruments` / javaModuleName).value,
-        (`ydoc-server` / javaModuleName).value,
+        (`ydoc-polyfill` / javaModuleName).value,
         (`runtime-instrument-common` / javaModuleName).value,
         (`text-buffer` / javaModuleName).value,
         (`logging-service-logback` / Test / javaModuleName).value,
@@ -3031,7 +3068,7 @@ lazy val `runtime-benchmarks` =
         (`runtime-instrument-id-execution` / Compile / exportedModule).value,
         (`runtime-language-epb` / Compile / exportedModule).value,
         (`runtime-language-arrow` / Compile / exportedModule).value,
-        (`ydoc-server` / Compile / exportedModule).value,
+        (`ydoc-polyfill` / Compile / exportedModule).value,
         (`benchmarks-common` / Compile / exportedModule).value,
         (`syntax-rust-definition` / Compile / exportedModule).value,
         (`profiling-utils` / Compile / exportedModule).value,
@@ -4049,7 +4086,7 @@ lazy val `std-benchmarks` = (project in file("std-bits/benchmarks"))
     }.evaluated
   )
   .dependsOn(`bench-processor`)
-  .dependsOn(`ydoc-server`)
+  .dependsOn(`ydoc-polyfill`)
   .dependsOn(`runtime-language-arrow`)
   .dependsOn(`syntax-rust-definition`)
   .dependsOn(`profiling-utils`)

@@ -80,7 +80,6 @@ class MainModule(serverConfig: LanguageServerConfig, logLevel: Level) {
     logLevel
   )
 
-  private val ydocSupervisor    = new ComponentSupervisor()
   private val contextSupervisor = new ComponentSupervisor()
   private val utcClock          = Clock.systemUTC()
 
@@ -434,8 +433,7 @@ class MainModule(serverConfig: LanguageServerConfig, logLevel: Level) {
       suggestionsRepo,
       builder,
       contextSupervisor,
-      zioRuntime,
-      ydocSupervisor
+      zioRuntime
     )(system.dispatcher)
 
   private val jsonRpcControllerFactory = new JsonConnectionControllerFactory(
@@ -509,7 +507,6 @@ class MainModule(serverConfig: LanguageServerConfig, logLevel: Level) {
     suggestionsRepo.close()
     contextSupervisor.close()
     runtimeEventsMonitor.close()
-    ydocSupervisor.close()
     log.info("Stopped Language Server")
   }
 

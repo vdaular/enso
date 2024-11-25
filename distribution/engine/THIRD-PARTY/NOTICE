@@ -1,16 +1,6 @@
 Enso
 Copyright 2020 - 2024 New Byte Order sp. z o. o.
 
-'logback-classic', licensed under the GNU Lesser General Public License, is distributed with the engine.
-The license file can be found at `licenses/GNU_Lesser_General_Public_License`.
-Copyright notices related to this dependency can be found in the directory `ch.qos.logback.logback-classic-1.3.7`.
-
-
-'logback-core', licensed under the GNU Lesser General Public License, is distributed with the engine.
-The license file can be found at `licenses/GNU_Lesser_General_Public_License`.
-Copyright notices related to this dependency can be found in the directory `ch.qos.logback.logback-core-1.3.7`.
-
-
 'shapeless_2.13', licensed under the Apache 2, is distributed with the engine.
 The license file can be found at `licenses/APACHE2.0`.
 Copyright notices related to this dependency can be found in the directory `com.chuusai.shapeless_2.13-2.3.10`.
@@ -369,16 +359,6 @@ Copyright notices related to this dependency can be found in the directory `io.h
 'directory-watcher', licensed under the Apache-2.0, is distributed with the engine.
 The license file can be found at `licenses/APACHE2.0`.
 Copyright notices related to this dependency can be found in the directory `io.methvin.directory-watcher-0.18.0`.
-
-
-'sentry', licensed under the MIT, is distributed with the engine.
-The license file can be found at `licenses/MIT`.
-Copyright notices related to this dependency can be found in the directory `io.sentry.sentry-6.28.0`.
-
-
-'sentry-logback', licensed under the MIT, is distributed with the engine.
-The license file can be found at `licenses/MIT`.
-Copyright notices related to this dependency can be found in the directory `io.sentry.sentry-logback-6.28.0`.
 
 
 'jakarta.inject-api', licensed under the The Apache Software License, Version 2.0, is distributed with the engine.
