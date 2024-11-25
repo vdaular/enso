@@ -137,7 +137,7 @@ public final class PanicException extends AbstractTruffleException {
       }
     } catch (Error | Exception e) {
       logger().atError().log("Cannot compute message for " + payload, e);
-      throw UnsupportedMessageException.create(e);
+      throw UnsupportedMessageException.create(e instanceof AbstractTruffleException ? e : null);
     }
     var scope = ctx.getBuiltins().panic().getDefinitionScope();
     return UnresolvedSymbol.build("to_display_text", scope);
