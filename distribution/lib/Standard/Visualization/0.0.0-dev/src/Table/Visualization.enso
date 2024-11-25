@@ -199,8 +199,10 @@ make_json_for_table dataframe all_rows_count include_index_col is_db_table =
     links       = ["get_child_node_action", "get_row"]
     number_of_nothing = if is_db_table then Nothing else columns.map c-> c.count_nothing
     number_of_whitespace= if is_db_table then Nothing else columns.map c-> whitespace_count c
-    data_quality_pairs = JS_Object.from_pairs [["number_of_nothing", number_of_nothing], ["number_of_whitespace", number_of_whitespace]]
-    pairs       = [header, value_type, data, all_rows, has_index_col, links, ["data_quality_pairs", data_quality_pairs] ,["type", "Table"]]
+    nothing_p = JS_Object.from_pairs [["name", "Number of nothings"], ["percentage_value", number_of_nothing]]
+    whitespace_p = JS_Object.from_pairs [["name", "Number of untrimmed whitespace"], ["percentage_value",number_of_whitespace]]
+    data_quality_metrics =  [nothing_p, whitespace_p]
+    pairs       = [header, value_type, data, all_rows, has_index_col, links, ["data_quality_metrics", data_quality_metrics] ,["type", "Table"]]
     JS_Object.from_pairs pairs
 
 ## PRIVATE

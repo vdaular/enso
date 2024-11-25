@@ -13,8 +13,7 @@ export class TableVisualisationTooltip implements ITooltipComp {
    */
   init(
     params: ITooltipParams & {
-      numberOfNothing: number
-      numberOfWhitespace: number
+      dataQualityMetrics: Record<string, number>[]
       total: number
       showDataQuality: boolean
     },
@@ -32,7 +31,6 @@ export class TableVisualisationTooltip implements ITooltipComp {
     })
 
     const getPercentage = (value: number) => ((value / params.total) * 100).toFixed(2)
-    const getDisplay = (value: number) => (value > 0 ? 'block' : 'none')
     const createIndicator = (value: number) => {
       const color =
         value < 33 ? 'green'
@@ -41,20 +39,29 @@ export class TableVisualisationTooltip implements ITooltipComp {
       return `<div style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${color}; margin-left: 5px;"></div>`
     }
 
-    const dataQualityTemplate = `
-            <div style="display: ${getDisplay(params.numberOfNothing)};">
-                Nulls/Nothing: ${getPercentage(params.numberOfNothing)}% ${createIndicator(+getPercentage(params.numberOfWhitespace))}
-            </div>
-            <div style="display: ${getDisplay(params.numberOfWhitespace)};">
-                Trailing/Leading Whitespace: ${getPercentage(params.numberOfWhitespace)}% ${createIndicator(+getPercentage(params.numberOfWhitespace))}
-            </div>
-        `
+    const getDataQualityTemplate = () => {
+      let template = ''
+      params.dataQualityMetrics.forEach((obj) => {
+        const key = Object.keys(obj)[0]
+        const value = key ? obj[key] : null
+        if (key && value) {
+          const metricTemplate = `<div>
+          ${key}: ${getPercentage(value)}% ${createIndicator(+getPercentage(value))}
+      </div>`
+          template = template + metricTemplate
+        } else {
+          console.warn(
+            'Data quality metric is missing a valid key-value pair. Ensure each object in data_quality_pairs contains a single valid key with a numeric value.',
+          )
+        }
+      })
+      return template
+    }
 
     this.eGui.innerHTML = `
             <div><b>Column value type:</b> ${params.value}</div>
             <div style="display: ${params.showDataQuality ? 'block' : 'none'};"">
-                <b>Data Quality Indicators</b>
-                ${dataQualityTemplate}
+                ${getDataQualityTemplate()}
             </div>
         `
   }
