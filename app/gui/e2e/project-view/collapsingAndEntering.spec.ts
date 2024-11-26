@@ -4,9 +4,11 @@ import { expect } from './customExpect'
 import { mockCollapsedFunctionInfo } from './expressionUpdates'
 import { CONTROL_KEY } from './keyboard'
 import * as locate from './locate'
+import { edgesFromNode, edgesToNode } from './locate'
 import { mockSuggestion } from './suggestionUpdates'
 
 const MAIN_FILE_NODES = 12
+const EDGE_PARTS = 2
 
 const COLLAPSE_SHORTCUT = `${CONTROL_KEY}+G`
 
@@ -219,6 +221,8 @@ async function expectInsideFunc1(page: Page) {
   await expect(locate.graphNodeByBinding(page, 'f2')).toExist()
   await expect(locate.graphNodeByBinding(page, 'result')).toExist()
   await expect(locate.outputNode(page)).toHaveCount(1)
+  await expect(await edgesFromNode(page, locate.inputNode(page))).toHaveCount(EDGE_PARTS)
+  await expect(await edgesToNode(page, locate.outputNode(page))).toHaveCount(EDGE_PARTS)
 }
 
 async function expectInsideFunc2(page: Page) {
@@ -227,6 +231,8 @@ async function expectInsideFunc2(page: Page) {
   await expect(locate.inputNode(page)).toHaveCount(1)
   await expect(locate.graphNodeByBinding(page, 'r')).toExist()
   await expect(locate.outputNode(page)).toHaveCount(1)
+  await expect(await edgesFromNode(page, locate.inputNode(page))).toHaveCount(EDGE_PARTS)
+  await expect(await edgesToNode(page, locate.outputNode(page))).toHaveCount(EDGE_PARTS)
 }
 
 async function enterToFunc2(page: Page) {

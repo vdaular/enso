@@ -158,14 +158,22 @@ export const warningsVisualization = visualizationLocator('.WarningsVisualizatio
 
 /** All edges going from a node with given binding. */
 export async function edgesFromNodeWithBinding(page: Page, binding: string) {
-  const node = graphNodeByBinding(page, binding).first()
+  return edgesFromNode(page, graphNodeByBinding(page, binding).first())
+}
+
+/** All edges going from a node. */
+export async function edgesFromNode(page: Page, node: Locator) {
   const nodeId = await node.getAttribute('data-node-id')
   return page.locator(`[data-source-node-id="${nodeId}"]`)
 }
 
 /** All edges going to a node with given binding. */
 export async function edgesToNodeWithBinding(page: Page, binding: string) {
-  const node = graphNodeByBinding(page, binding).first()
+  return edgesToNode(page, graphNodeByBinding(page, binding).first())
+}
+
+/** All edges going to a node. */
+export async function edgesToNode(page: Page, node: Locator) {
   const nodeId = await node.getAttribute('data-node-id')
   return page.locator(`[data-target-node-id="${nodeId}"]`)
 }

@@ -1,6 +1,7 @@
 import { asNodeId, GraphDb } from '@/stores/graph/graphDatabase'
 import { Ast } from '@/util/ast'
 import assert from 'assert'
+import * as iter from 'enso-common/src/utilities/data/iter'
 import { expect, test } from 'vitest'
 import { watchEffect } from 'vue'
 import type { AstId } from 'ydoc-shared/ast'
@@ -37,7 +38,8 @@ test('Reading graph from definition', () => {
   const code = `function a =
     node1 = a + 4
     node2 = node1 + 4
-    node3 = node2 + 1`
+    node3 = node2 + 1
+    node3`
   const spans = {
     functionName: [0, 8] as [number, number],
     parameter: [9, 10] as [number, number],
@@ -51,13 +53,13 @@ test('Reading graph from definition', () => {
     node2RParam: [51, 52] as [number, number],
     node3Id: [57, 62] as [number, number],
     node3Content: [65, 74] as [number, number],
+    output: [79, 84] as [number, number],
   }
 
   const { ast, id, eid, getSpan } = parseWithSpans(code, spans)
 
   const db = GraphDb.Mock()
-  const expressions = Array.from(ast.statements())
-  const func = expressions[0]
+  const func = iter.first(ast.statements())
   assert(func instanceof Ast.FunctionDef)
   db.updateExternalIds(ast)
   db.updateNodes(func, { watchEffect })
@@ -68,6 +70,7 @@ test('Reading graph from definition', () => {
     eid('node1Content'),
     eid('node2Content'),
     eid('node3Content'),
+    eid('output'),
   ])
   expect(db.getExpressionNodeId(id('node1Content'))).toBe(eid('node1Content'))
   expect(db.getExpressionNodeId(id('node1LParam'))).toBe(eid('node1Content'))
@@ -96,9 +99,11 @@ test('Reading graph from definition', () => {
     id('parameter'),
     id('node1Id'),
     id('node2Id'),
+    id('node3Id'),
   ])
   expect(Array.from(db.connections.lookup(id('parameter')))).toEqual([id('node1LParam')])
   expect(Array.from(db.connections.lookup(id('node1Id')))).toEqual([id('node2LParam')])
+  expect(Array.from(db.connections.lookup(id('node3Id')))).toEqual([id('output')])
   expect(db.getOutputPortIdentifier(id('parameter'))).toBe('a')
   expect(db.getOutputPortIdentifier(id('node1Id'))).toBe('node1')
   expect(Array.from(db.nodeDependents.lookup(asNodeId(eid('node1Content'))))).toEqual([
@@ -107,5 +112,7 @@ test('Reading graph from definition', () => {
   expect(Array.from(db.nodeDependents.lookup(asNodeId(eid('node2Content'))))).toEqual([
     eid('node3Content'),
   ])
-  expect(Array.from(db.nodeDependents.lookup(asNodeId(eid('node3Content'))))).toEqual([])
+  expect(Array.from(db.nodeDependents.lookup(asNodeId(eid('node3Content'))))).toEqual([
+    eid('output'),
+  ])
 })
