@@ -59,5 +59,9 @@ tsconfig.json
 /test/ @jdunkerley @radeusgd @GregoryTravis @AdRiley @marthasharkey
 /tools/http-test-helper/ @radeusgd @jdunkerley @GregoryTravis @AdRiley @marthasharkey
 
+# Licenses
+/distribution/engine/
+/tools/legal-review/
+
 # The default project template is owned by the libraries team
 /lib/scala/pkg/src/main/resources/default/src/ @radeusgd @jdunkerley @GregoryTravis @AdRiley @marthasharkey
