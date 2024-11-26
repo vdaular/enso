@@ -9,7 +9,7 @@ import { graphNodeByBinding } from './locate'
 /** Prepare the graph for the tests. We add the table type to the `aggregated` node. */
 async function initGraph(page: Page) {
   await actions.goToGraph(page)
-  await mockExpressionUpdate(page, 'aggregated', { type: 'Standard.Table.Table.Table' })
+  await mockExpressionUpdate(page, 'aggregated', { type: ['Standard.Table.Table.Table'] })
 }
 
 /**

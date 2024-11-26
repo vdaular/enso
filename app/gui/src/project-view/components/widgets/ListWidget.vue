@@ -445,6 +445,7 @@ function deleteItem(index: number) {
           <template v-else>
             <li
               :ref="patchBoundingClientRectScaling"
+              data-testid="dragPlaceholder"
               class="placeholder"
               :style="{ '--placeholder-width': entry.width + 'px' }"
             ></li>

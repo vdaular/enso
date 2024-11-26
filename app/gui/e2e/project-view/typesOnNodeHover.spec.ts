@@ -42,10 +42,10 @@ test('shows the correct type when hovering a node', async ({ page }) => {
   await actions.goToGraph(page)
 
   // Note that the types don't have to make sense, they just have to be applied.
-  await mockExpressionUpdate(page, 'five', { type: DUMMY_INT_TYPE.full })
-  await mockExpressionUpdate(page, 'ten', { type: DUMMY_STRING_TYPE.full })
-  await mockExpressionUpdate(page, 'sum', { type: DUMMY_FLOAT_TYPE.full })
-  await mockExpressionUpdate(page, 'prod', { type: DUMMY_INT_TYPE.full })
+  await mockExpressionUpdate(page, 'five', { type: [DUMMY_INT_TYPE.full] })
+  await mockExpressionUpdate(page, 'ten', { type: [DUMMY_STRING_TYPE.full] })
+  await mockExpressionUpdate(page, 'sum', { type: [DUMMY_FLOAT_TYPE.full] })
+  await mockExpressionUpdate(page, 'prod', { type: [DUMMY_INT_TYPE.full] })
 
   await assertTypeLabelOnNodeByBinding(page, 'five', DUMMY_INT_TYPE)
   await assertTypeLabelOnNodeByBinding(page, 'ten', DUMMY_STRING_TYPE)

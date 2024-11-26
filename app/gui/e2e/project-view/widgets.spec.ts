@@ -216,12 +216,17 @@ test('Editing list', async ({ page }) => {
   // Test drag: reorder items
   await vectorItems.nth(1).locator('[draggable]').hover()
   await page.mouse.down()
-  await vectorItems
-    .nth(1)
-    .locator('[draggable]')
-    .hover({ position: { x: 10, y: 10 } })
-  await expect(vectorElements).toHaveText(['..Group_By'])
+  // `dragenter` / `dragleave` events are not dispatched reliably without multiple mouse movements
   await vectorElements.first().hover({ position: { x: 10, y: 10 }, force: true })
+  await vectorElements.first().hover({ position: { x: 20, y: 10 }, force: true })
+  await vectorElements.first().hover({ position: { x: 30, y: 10 }, force: true })
+  await locate.graphEditor(page).hover({ position: { x: 100, y: 300 } })
+  await expect(vectorElements).toHaveText(['..Group_By'])
+  await expect(vector.getByTestId('dragPlaceholder')).toHaveCount(0)
+  await vectorElements.first().hover({ position: { x: 10, y: 10 }, force: true })
+  await vectorElements.first().hover({ position: { x: 20, y: 10 }, force: true })
+  await vectorElements.first().hover({ position: { x: 30, y: 10 }, force: true })
+  await expect(vector.getByTestId('dragPlaceholder')).toHaveCount(1)
   await page.mouse.up()
   await expect(vectorElements).toHaveText(['_', '..Group_By'])
 
@@ -579,7 +584,7 @@ test('Autoscoped constructors', async ({ page }) => {
   await node.click()
   await expect(topLevelArgs).toHaveCount(3)
 
-  const groupBy = node.getByTestId('list-item-content').first()
+  const groupBy = node.getByTestId('list-item-content')
   await expect(groupBy).toBeVisible()
   await expect(groupBy.locator('.WidgetArgumentName')).toContainText(['column', 'new_name'])
 })
