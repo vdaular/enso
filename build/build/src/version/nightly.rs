@@ -148,6 +148,27 @@ impl From<Nightly> for Version {
     }
 }
 
+/// Describes what kind of Ydoc server should be dispatched.
+#[derive(
+    clap::ValueEnum,
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Eq,
+    Hash,
+    strum::EnumString,
+    strum::EnumIter,
+    strum::AsRefStr
+)]
+#[strum(serialize_all = "lowercase")]
+pub enum YdocVariant {
+    /// Node.js Ydoc.
+    Nodejs,
+    /// Polyglot Ydoc.
+    Polyglot,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

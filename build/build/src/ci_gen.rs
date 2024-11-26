@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+use crate::ci::input;
 use crate::ci_gen::job::plain_job;
 use crate::ci_gen::job::with_packaging_steps;
 use crate::ci_gen::job::RunsOn;
@@ -38,7 +39,6 @@ use ide_ci::actions::workflow::definition::WorkflowDispatchInput;
 use ide_ci::actions::workflow::definition::WorkflowDispatchInputType;
 use ide_ci::actions::workflow::definition::WorkflowToWrite;
 use ide_ci::cache::goodie::graalvm;
-use strum::IntoEnumIterator;
 
 
 // ==============
@@ -81,8 +81,6 @@ pub const PR_CHECKED_TARGETS: [(OS, Arch); 3] =
 pub const DEFAULT_BRANCH_NAME: &str = "develop";
 
 pub const RELEASE_CONCURRENCY_GROUP: &str = "release";
-
-pub const DESIGNATOR_INPUT_NAME: &str = "designator";
 
 pub const PROMOTE_WORKFLOW_PATH: &str = "./.github/workflows/promote.yml";
 
@@ -450,7 +448,7 @@ pub struct PromoteReleaseJob;
 
 impl JobArchetype for PromoteReleaseJob {
     fn job(&self, target: Target) -> Job {
-        let command = format!("release promote {}", get_input_expression(DESIGNATOR_INPUT_NAME));
+        let command = format!("release promote {}", get_input_expression(input::name::DESIGNATOR));
         let mut job = RunStepsBuilder::new(command)
             .customize(|step| vec![step.with_id(Self::PROMOTE_STEP_ID)])
             .build_job("Promote release", target);
@@ -489,8 +487,10 @@ pub fn changelog() -> Result<Workflow> {
 }
 
 pub fn nightly() -> Result<Workflow> {
+    let workflow_dispatch =
+        WorkflowDispatch::default().with_input(input::name::YDOC, input::ydoc());
     let on = Event {
-        workflow_dispatch: Some(default()),
+        workflow_dispatch: Some(workflow_dispatch),
         // 2am (UTC) every day.
         schedule: vec![Schedule::new("0 2 * * *")?],
         ..default()
@@ -499,7 +499,8 @@ pub fn nightly() -> Result<Workflow> {
     let mut workflow = Workflow { on, name: "Nightly Release".into(), ..default() };
 
     let job = workflow_call_job("Promote nightly", PROMOTE_WORKFLOW_PATH)
-        .with_with(DESIGNATOR_INPUT_NAME, Designation::Nightly.as_ref());
+        .with_with(input::name::DESIGNATOR, Designation::Nightly.as_ref())
+        .with_with(input::name::YDOC, get_input_expression(input::name::YDOC));
     workflow.add_job(job);
     Ok(workflow)
 }
@@ -522,7 +523,14 @@ fn add_release_steps(workflow: &mut Workflow) -> Result {
             let runtime_requirements = [&prepare_job_id, &backend_job_id];
             let upload_runtime_job_id =
                 workflow.add_dependent(target, job::DeployRuntime, runtime_requirements);
-            packaging_job_ids.push(upload_runtime_job_id);
+            let upload_ydoc_job_id =
+                workflow.add_dependent(target, job::DeployYdoc, runtime_requirements);
+            let dispatch_build_image_job_id =
+                workflow.add_dependent(target, job::DispatchBuildImage, [
+                    &upload_runtime_job_id,
+                    &upload_ydoc_job_id,
+                ]);
+            packaging_job_ids.push(dispatch_build_image_job_id);
         }
     }
 
@@ -557,17 +565,15 @@ pub fn workflow_call_job(name: impl Into<String>, path: impl Into<String>) -> Jo
     }
 }
 
-pub fn call_release_job(version_input_expr: &str) -> Job {
-    workflow_call_job("Release", RELEASE_WORKFLOW_PATH).with_with("version", version_input_expr)
-}
-
 pub fn release() -> Result<Workflow> {
     let version_input = WorkflowDispatchInput::new_string(
         "What version number this release should get.",
         true,
         None::<String>,
     );
-    let workflow_dispatch = WorkflowDispatch::default().with_input("version", version_input);
+    let workflow_dispatch = WorkflowDispatch::default()
+        .with_input("version", version_input)
+        .with_input("ydoc", input::ydoc());
     let workflow_call = WorkflowCall::try_from(workflow_dispatch.clone())?;
     let on = Event {
         workflow_dispatch: Some(workflow_dispatch),
@@ -589,16 +595,10 @@ pub fn release() -> Result<Workflow> {
     Ok(workflow)
 }
 
-
 pub fn promote() -> Result<Workflow> {
-    let designator = WorkflowDispatchInput::new_choice(
-        "What kind of release should be promoted.",
-        true,
-        Designation::iter().map(|d| d.as_ref().to_string()),
-        None::<String>,
-    )?;
-    let workflow_dispatch =
-        WorkflowDispatch::default().with_input(DESIGNATOR_INPUT_NAME, designator);
+    let workflow_dispatch = WorkflowDispatch::default()
+        .with_input(input::name::DESIGNATOR, input::designator())
+        .with_input(input::name::YDOC, input::ydoc());
     let on = Event {
         workflow_call: Some(WorkflowCall::try_from(workflow_dispatch.clone())?),
         workflow_dispatch: Some(workflow_dispatch),
@@ -609,7 +609,9 @@ pub fn promote() -> Result<Workflow> {
 
 
     let version_input = format!("needs.{promote_job_id}.outputs.{ENSO_VERSION}");
-    let mut release_job = call_release_job(&wrap_expression(version_input));
+    let mut release_job = workflow_call_job("Release", RELEASE_WORKFLOW_PATH)
+        .with_with("version", wrap_expression(version_input))
+        .with_with(input::name::YDOC, get_input_expression(input::name::YDOC));
     release_job.needs(&promote_job_id);
     workflow.add_job(release_job);
 

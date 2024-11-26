@@ -17,16 +17,16 @@ pub const NAME: &str = "runtime";
 pub const REGION: &str = "eu-west-1";
 
 /// Build the Runtime Docker image from the Engine package.
-#[instrument(fields(%dockerfile, %engine_package_root))]
+#[instrument(fields(%docker_context, %engine_package_root))]
 pub async fn build_runtime_image(
-    dockerfile: generated::RepoRootToolsCiDocker,
-    engine_package_root: generated::EnginePackage,
+    docker_context: &generated::RepoRootToolsCiDockerEngine,
+    engine_package_root: &generated::EnginePackage,
     tag: String,
 ) -> Result<ImageId> {
-    let mut opts = BuildOptions::new(&engine_package_root);
-    opts.file = Some(dockerfile.dockerfile.to_path_buf());
+    let mut opts = BuildOptions::new(engine_package_root);
+    opts.file = Some(docker_context.dockerfile.to_path_buf());
     opts.tags.push(tag);
-    opts.add_build_context_local("docker-tools", &dockerfile);
+    opts.add_build_context_local("docker-tools", docker_context);
     let id = Docker.build(opts).await?;
     Ok(id)
 }
@@ -42,18 +42,19 @@ mod tests {
     /// The engine must be already built.
     #[tokio::test]
     #[ignore]
-    async fn test_name() -> Result {
+    async fn test_runtime() -> Result {
         setup_logging().ok();
-        let tag = "test_runtime_image";
+        let tag = "runtime:0.0.0-dev";
         info!("Current directory: {}", ide_ci::env::current_dir()?.display());
         let root = deduce_repository_path()?;
         let root = root.absolutize()?;
         info!("Repository root: {}", root.display());
         let engine_package = generated::EnginePackage::new_root(
-            root.join("built-distribution/enso-engine-2023.1.1-dev-linux-amd64/enso-2023.1.1-dev"),
+            root.join("built-distribution/enso-engine-0.0.0-dev-linux-amd64/enso-0.0.0-dev"),
         );
-        let dockerfile = generated::RepoRootToolsCiDocker::new_root(root.join("tools/ci/docker"));
-        let id = build_runtime_image(dockerfile, engine_package, tag.to_string()).await?;
+        let dockerfile =
+            generated::RepoRootToolsCiDockerEngine::new_root(root.join("tools/ci/docker/engine"));
+        let id = build_runtime_image(&dockerfile, &engine_package, tag.to_string()).await?;
         info!("Built image: {}", id);
         Ok(())
     }

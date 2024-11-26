@@ -9,6 +9,7 @@ use ide_ci::programs::docker;
 // ==============
 
 pub mod runtime;
+pub mod ydoc;
 
 
 

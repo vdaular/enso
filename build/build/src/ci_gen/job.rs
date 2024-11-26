@@ -1,7 +1,6 @@
-use core::panic;
-
 use crate::prelude::*;
 
+use crate::ci_gen::input;
 use crate::ci_gen::not_default_branch;
 use crate::ci_gen::runs_on;
 use crate::ci_gen::secret;
@@ -15,7 +14,9 @@ use crate::engine::env;
 use crate::ide::web::env::ENSO_IDE_AG_GRID_LICENSE_KEY;
 use crate::ide::web::env::ENSO_IDE_MAPBOX_API_TOKEN;
 
+use core::panic;
 use ide_ci::actions::workflow::definition::cancel_workflow_action;
+use ide_ci::actions::workflow::definition::get_input_expression;
 use ide_ci::actions::workflow::definition::shell;
 use ide_ci::actions::workflow::definition::Access;
 use ide_ci::actions::workflow::definition::Job;
@@ -458,6 +459,47 @@ impl JobArchetype for DeployRuntime {
                     .with_env("AWS_DEFAULT_REGION", crate::aws::ecr::runtime::REGION)]
             })
             .build_job("Upload Runtime to ECR", target)
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct DeployYdoc;
+
+impl JobArchetype for DeployYdoc {
+    fn job(&self, target: Target) -> Job {
+        let run_command =
+            format!("release deploy-ydoc-{}", get_input_expression(input::name::YDOC));
+        RunStepsBuilder::new(run_command)
+            .customize(|step| {
+                vec![step
+                    .with_secret_exposed_as(secret::CI_PRIVATE_TOKEN, ide_ci::github::GITHUB_TOKEN)
+                    .with_env("ENSO_BUILD_ECR_REPOSITORY", crate::aws::ecr::ydoc::NAME)
+                    .with_secret_exposed_as(
+                        secret::ECR_PUSH_RUNTIME_ACCESS_KEY_ID,
+                        "AWS_ACCESS_KEY_ID",
+                    )
+                    .with_secret_exposed_as(
+                        secret::ECR_PUSH_RUNTIME_SECRET_ACCESS_KEY,
+                        "AWS_SECRET_ACCESS_KEY",
+                    )
+                    .with_env("AWS_DEFAULT_REGION", crate::aws::ecr::ydoc::REGION)]
+            })
+            .cleaning(RELEASE_CLEANING_POLICY)
+            .build_job("Upload Ydoc to ECR", target)
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct DispatchBuildImage;
+
+impl JobArchetype for DispatchBuildImage {
+    fn job(&self, target: Target) -> Job {
+        RunStepsBuilder::new("release dispatch-build-image")
+            .customize(|step| {
+                vec![step
+                    .with_secret_exposed_as(secret::CI_PRIVATE_TOKEN, ide_ci::github::GITHUB_TOKEN)]
+            })
+            .build_job("Dispatch Cloud build-image workflow", target)
     }
 }
 

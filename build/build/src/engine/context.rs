@@ -336,6 +336,9 @@ impl RunContext {
         if self.config.build_native_runner {
             tasks.push("engine-runner/buildNativeImage");
         }
+        if self.config.build_native_ydoc {
+            tasks.push("ydoc-server/buildNativeImage");
+        }
         if self.config.build_project_manager_package() {
             tasks.push("buildProjectManagerDistribution");
         }

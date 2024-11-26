@@ -1,14 +1,12 @@
-import java.io.File
-import java.nio.file.Path
-
 import sbt._
 import sbt.Keys._
 import sbt.internal.util.ManagedLogger
 import sbtassembly.AssemblyKeys.assembly
 import sbtassembly.AssemblyPlugin.autoImport.assemblyOutputPath
 
+import java.io.File
+import java.nio.file.{Files, Path, Paths}
 import scala.sys.process._
-import java.nio.file.Paths
 
 object NativeImage {
 
@@ -194,12 +192,7 @@ object NativeImage {
           Seq(s"--initialize-at-run-time=$classes")
         }
 
-      val runtimeCp = (LocalProject("runtime") / Runtime / fullClasspath).value
-      val runnerCp =
-        (LocalProject("engine-runner") / Runtime / fullClasspath).value
-      val ourCp      = (Runtime / fullClasspath).value
-      val cpToSearch = (ourCp ++ runtimeCp ++ runnerCp).distinct
-
+      val ourCp  = (Runtime / fullClasspath).value
       val auxCp  = additionalCp.value
       val fullCp = ourCp.map(_.data.getAbsolutePath) ++ auxCp
       val cpStr  = fullCp.mkString(File.pathSeparator)
@@ -333,6 +326,9 @@ object NativeImage {
     if (targetDir == null) {
       new File(artifactName).getAbsoluteFile()
     } else {
+      if (!targetDir.exists()) {
+        Files.createDirectories(targetDir.toPath)
+      }
       new File(targetDir, artifactName)
     }
   }

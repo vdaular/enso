@@ -2002,13 +2002,15 @@ lazy val `ydoc-server` = project
   .settings(
     NativeImage.smallJdk := None,
     NativeImage.additionalCp := Seq.empty,
-    rebuildNativeImage := NativeImage
-      .buildNativeImage(
-        "ydoc",
-        staticOnLinux = false,
-        mainClass     = Some("org.enso.ydoc.server.Main")
-      )
-      .value,
+    rebuildNativeImage := Def.taskDyn {
+      NativeImage
+        .buildNativeImage(
+          "ydoc",
+          staticOnLinux = false,
+          targetDir     = target.value / "native-image",
+          mainClass     = Some("org.enso.ydoc.server.Main")
+        )
+    }.value,
     buildNativeImage := NativeImage
       .incrementalNativeImageBuild(
         rebuildNativeImage,

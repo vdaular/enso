@@ -1,14 +1,21 @@
 //! Module that allows to create an Enso Cloud compatible credentials file from
 //! a configuration stored in environment variables.
 
-pub mod env;
+use crate::prelude::*;
 
 use anyhow::Ok;
-use tempfile::NamedTempFile;
-
-use crate::prelude::*;
 use std::fs::File;
 use std::io::Write;
+use tempfile::NamedTempFile;
+
+
+// ==============
+// === Export ===
+// ==============
+
+pub mod env;
+
+
 
 pub fn build_auth_config_from_environment() -> Result<AuthConfig> {
     let web_client_id = env::ci_config::ENSO_CLOUD_COGNITO_USER_POOL_WEB_CLIENT_ID.get()?;

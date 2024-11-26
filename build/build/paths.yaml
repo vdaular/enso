@@ -35,6 +35,7 @@
       client/:
       common/:
       icons/:
+    ydoc-server-nodejs/:
   build/:
     prettier/:
   built-distribution/:
@@ -91,6 +92,10 @@
     runtime-benchmarks/:
       bench-report.xml:
   lib/:
+    java/:
+      ydoc-server/:
+        target/:
+          native-image/:
     rust/:
       parser/:
         generate-java/:
@@ -110,8 +115,14 @@
   tools/:
     ci/:
       docker/:
-        docker-entrypoint.sh:
-        Dockerfile:
+        engine/:
+          docker-entrypoint.sh:
+          Dockerfile:
+        ydoc-server-nodejs/:
+          Dockerfile:
+          ydoc-server-entrypoint.sh:
+        ydoc-server-polyglot/:
+          Dockerfile:
     simple-library-server/:
   std-bits/:
     benchmarks/:

@@ -199,6 +199,8 @@ pub struct BuildConfigurationFlags {
     pub build_engine_package: bool,
     /// Build the NI Engine Runner.
     pub build_native_runner: bool,
+    /// Build the Ydoc Native Image
+    pub build_native_ydoc: bool,
     /// Build the experimental Espresso+NI Engine Runner.
     pub build_espresso_runner: bool,
     pub build_launcher_package: bool,
@@ -306,6 +308,7 @@ impl Default for BuildConfigurationFlags {
             build_engine_package: false,
             build_launcher_package: false,
             build_native_runner: false,
+            build_native_ydoc: false,
             build_espresso_runner: false,
             build_project_manager_package: false,
             build_launcher_bundle: false,
