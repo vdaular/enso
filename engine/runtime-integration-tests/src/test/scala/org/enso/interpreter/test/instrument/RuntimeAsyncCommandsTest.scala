@@ -191,7 +191,7 @@ class RuntimeAsyncCommandsTest
         |
         |main =
         |    IO.println "started"
-        |    loop 100
+        |    loop 200
         |""".stripMargin.linesIterator.mkString("\n")
     val contents = metadata.appendToCode(code)
     val mainFile = context.writeMain(contents)
