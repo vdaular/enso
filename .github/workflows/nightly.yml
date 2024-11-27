@@ -15,6 +15,13 @@ on:
         options:
           - nodejs
           - polyglot
+  workflow_call:
+    inputs:
+      ydoc:
+        description: What kind of Ydoc image to build.
+        required: false
+        type: string
+        default: nodejs
 jobs:
   promote-nightly:
     name: Promote nightly

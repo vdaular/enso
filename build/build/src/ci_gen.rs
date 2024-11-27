@@ -489,7 +489,9 @@ pub fn changelog() -> Result<Workflow> {
 pub fn nightly() -> Result<Workflow> {
     let workflow_dispatch =
         WorkflowDispatch::default().with_input(input::name::YDOC, input::ydoc());
+    let workflow_call = WorkflowCall::try_from(workflow_dispatch.clone())?;
     let on = Event {
+        workflow_call: Some(workflow_call),
         workflow_dispatch: Some(workflow_dispatch),
         // 2am (UTC) every day.
         schedule: vec![Schedule::new("0 2 * * *")?],
