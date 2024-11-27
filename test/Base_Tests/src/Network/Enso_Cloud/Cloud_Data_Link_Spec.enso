@@ -79,7 +79,7 @@ add_specs suite_builder setup:Cloud_Tests_Setup =
         group_builder.specify "should be able to read a local datalink to an Enso File" <|
             my_target_enso_file = "Hello Enso Cloud File!".write (test_root.get / "my-file.txt") . should_succeed
             datalink = transform_datalink (enso_project.data / "datalinks" / "example-enso-file.datalink") content->
-                content.replace "enso://PLACEHOLDER_ORG_NAME/PLACEHOLDER_PATH" my_target_enso_file.path
+                content.replace "enso://Teams/PLACEHOLDER_TEAM_NAME/PLACEHOLDER_PATH" my_target_enso_file.path
             datalink.read . should_equal "Hello Enso Cloud File!"
 
         group_builder.specify "should be able to read a datalink in the Cloud to Enso File" <|

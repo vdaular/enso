@@ -284,6 +284,14 @@ impl JobArchetype for StandardLibraryTests {
             graalvm::Edition::Enterprise =>
                 job.env(env::GRAAL_EDITION, graalvm::Edition::Enterprise),
         }
+
+        // If running extra cloud tests, enable reporting all tests. These tests run on a nightly
+        // schedule, and so the normal test reporter is not available to them. Thus we want to see
+        // the full log in the CI to be able to tell which tests have been run.
+        if should_enable_cloud_tests {
+            job.env(crate::libraries_tests::env::REPORT_ALL_TESTS, "1");
+        }
+
         job
     }
 
@@ -371,6 +379,7 @@ impl JobArchetype for SnowflakeTests {
             .build_job(job_name, RunnerLabel::LinuxLatest)
             .with_permission(Permission::Checks, Access::Write);
         job.env(env::GRAAL_EDITION, GRAAL_EDITION_FOR_EXTRA_TESTS);
+        job.env(crate::libraries_tests::env::REPORT_ALL_TESTS, "1");
         job
     }
 

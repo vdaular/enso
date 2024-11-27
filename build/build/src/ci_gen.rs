@@ -159,11 +159,13 @@ pub fn not_default_branch() -> String {
     format!("github.ref != 'refs/heads/{DEFAULT_BRANCH_NAME}'")
 }
 
-/// Expression piece that evaluates to `true` if we are **not** building a fork.
+/// Expression piece that evaluates to `true` if we are **not** building a PR from a fork.
 ///
 /// As fork builds are run with different permissions, sometimes we need to skip some steps.
+/// If we are not on a PR build, the first condition makes this expression evaluate to `true`.
+/// If it is a PR run, we check if the PR is in the same repository as the base branch.
 pub fn not_a_fork() -> String {
-    "github.event.pull_request.head.repo.full_name == github.repository".into()
+    "(github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)".into()
 }
 
 pub fn release_concurrency() -> Concurrency {

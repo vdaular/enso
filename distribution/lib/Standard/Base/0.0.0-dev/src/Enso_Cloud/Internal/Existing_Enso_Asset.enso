@@ -68,10 +68,17 @@ type Existing_Enso_Asset
 
     ## PRIVATE
        Fetches the basic information about a file from the Cloud endpoint.
-    get_file_description self -> JS_Object =
+
+       Arguments:
+       - want_presigned_url: Whether to request presigned URL in the response.
+         The cloud does not include the presigned URL in the response by default. 
+         It should only be asked for when needed.
+    get_file_description self want_presinged_url:Boolean=False -> JS_Object =
         if self.asset_type != Enso_Asset_Type.File then
             Panic.throw (Illegal_Argument.Error "`get_file_description` can only be called on File assets.")
-        Utils.http_request_as_json HTTP_Method.Get self.internal_uri
+        base_uri = URI.from self.internal_uri
+        uri = if want_presinged_url then base_uri.add_query_argument "presigned" "true" else base_uri
+        Utils.http_request_as_json HTTP_Method.Get uri
 
     ## PRIVATE
        Fetches the basic information about an existing file from the Cloud.

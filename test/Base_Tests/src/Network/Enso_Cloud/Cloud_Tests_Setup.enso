@@ -124,7 +124,7 @@ type Cloud_Tests_Setup
     get_expired_token_failures_count self -> Integer = case self of
         Cloud_Tests_Setup.Mock _ _ ->
             uri = self.httpbin_uri / "COUNT-EXPIRED-TOKEN-FAILURES"
-            HTTP.fetch uri . decode_as_json
+            HTTP.fetch uri cache_policy=..No_Cache . decode_as_json
         _ -> Panic.throw (Illegal_State.Error "This method is only valid for Mock setup.")
 
     ## Runs the action with overridden credentials, clearing caches before and

@@ -1,3 +1,11 @@
+pub mod env {
+    ide_ci::define_env_var! {
+        /// Whether to display all test results in the CI output.
+        /// (By default successful tests are hidden.)
+        REPORT_ALL_TESTS, String;
+    }
+}
+
 pub mod s3 {
     /// Environment variables used inside of the S3 tests.
     pub mod env {
