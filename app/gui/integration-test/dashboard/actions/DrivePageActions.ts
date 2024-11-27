@@ -343,6 +343,14 @@ export default class DrivePageActions extends PageActions {
     })
   }
 
+  /** Show the Docs tab of the Asset Panel. */
+  toggleDocsAssetPanel() {
+    return this.step('Toggle docs asset panel', async (page) => {
+      await this.showAssetPanel()
+      await page.getByTestId('asset-panel-tab-docs').click()
+    })
+  }
+
   /** Interact with the container element of the assets table. */
   withAssetsTable(callback: baseActions.LocatorCallback) {
     return this.step('Interact with drive table', async (page) => {

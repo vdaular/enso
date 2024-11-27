@@ -43,6 +43,7 @@ function printScamWarning() {
 
 printScamWarning()
 let scamWarningHandle = 0
+
 window.addEventListener('resize', () => {
   window.clearTimeout(scamWarningHandle)
   scamWarningHandle = window.setTimeout(printScamWarning, SCAM_WARNING_TIMEOUT)
@@ -61,6 +62,7 @@ function main() {
   const url = new URL(location.href)
   const isInAuthenticationFlow = url.searchParams.has('code') && url.searchParams.has('state')
   const authenticationUrl = location.href
+
   if (isInAuthenticationFlow) {
     history.replaceState(null, '', localStorage.getItem(INITIAL_URL_KEY))
   }

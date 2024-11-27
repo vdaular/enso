@@ -31,7 +31,7 @@ test.test('extra columns should stick to right side of assets table', ({ page })
           const assetsTableRight = await assetsTable.evaluate(
             (element) => element.getBoundingClientRect().right,
           )
-          test.expect(extraColumnsRight).toEqual(assetsTableRight)
+          test.expect(extraColumnsRight).toEqual(assetsTableRight - 12)
         })
         .toPass({ timeout: PASS_TIMEOUT })
     }),
@@ -72,9 +72,9 @@ test.test('extra columns should stick to top of scroll container', async ({ page
         ) {
           scrollableParent = scrollableParent.parentElement
         }
-        return scrollableParent?.getBoundingClientRect().top
+        return scrollableParent?.getBoundingClientRect().top ?? 0
       })
-      test.expect(extraColumnsTop).toEqual(assetsTableTop)
+      test.expect(extraColumnsTop).toEqual(assetsTableTop + 2)
     })
     .toPass({ timeout: PASS_TIMEOUT })
 })

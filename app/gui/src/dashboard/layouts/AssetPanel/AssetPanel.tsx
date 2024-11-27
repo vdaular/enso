@@ -21,7 +21,7 @@ import { AssetDocs } from '../AssetDocs'
 import AssetProjectSessions from '../AssetProjectSessions'
 import AssetProperties from '../AssetProperties'
 import AssetVersions from '../AssetVersions/AssetVersions'
-import type { Category } from '../CategorySwitcher/Category'
+import { isLocalCategory, type Category } from '../CategorySwitcher/Category'
 import {
   assetPanelStore,
   useIsAssetPanelExpanded,
@@ -78,7 +78,7 @@ export function AssetPanel(props: AssetPanelProps) {
             initial={{ opacity: 0, x: ASSET_SIDEBAR_COLLAPSED_WIDTH }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: ASSET_SIDEBAR_COLLAPSED_WIDTH }}
-            className="absolute bottom-0 right-0 top-0 flex flex-col bg-background-hex"
+            className="absolute bottom-0 right-0 top-0 flex flex-col"
             onClick={(event) => {
               // Prevent deselecting Assets Table rows.
               event.stopPropagation()
@@ -115,6 +115,7 @@ const InternalAssetPanelTabs = memo(function InternalAssetPanelTabs(
   })
 
   const isReadonly = category.type === 'trash'
+  const isLocal = isLocalCategory(category)
 
   const { getText } = useText()
 
@@ -156,7 +157,6 @@ const InternalAssetPanelTabs = memo(function InternalAssetPanelTabs(
       <AnimatePresence initial={!isExpanded} mode="sync">
         {isExpanded && (
           <motion.div
-            custom={ASSET_PANEL_WIDTH}
             initial="initial"
             animate="animate"
             exit="exit"
@@ -207,28 +207,34 @@ const InternalAssetPanelTabs = memo(function InternalAssetPanelTabs(
           getTranslation={getTranslation}
         />
 
-        <AssetPanelTabs.TabList className="">
+        <AssetPanelTabs.TabList>
           <AssetPanelTabs.Tab
             id="settings"
             icon={inspectIcon}
-            label={getText('properties')}
+            label={isLocal ? getText('assetProperties.localBackend') : getText('properties')}
             isExpanded={isExpanded}
             onPress={expandTab}
+            isDisabled={isLocal}
           />
           <AssetPanelTabs.Tab
             id="versions"
             icon={versionsIcon}
-            label={getText('versions')}
+            label={
+              isLocal ? getText('assetVersions.localAssetsDoNotHaveVersions') : getText('versions')
+            }
             isExpanded={isExpanded}
-            isDisabled={isHidden}
             onPress={expandTab}
+            isDisabled={isLocal}
           />
           <AssetPanelTabs.Tab
             id="sessions"
             icon={sessionsIcon}
-            label={getText('projectSessions')}
+            label={
+              isLocal ? getText('assetProjectSessions.localBackend') : getText('projectSessions')
+            }
             isExpanded={isExpanded}
             onPress={expandTab}
+            isDisabled={isLocal}
           />
           <AssetPanelTabs.Tab
             id="docs"

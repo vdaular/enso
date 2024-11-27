@@ -1,11 +1,10 @@
 /** @file Test copying, moving, cutting and pasting. */
-import * as test from '@playwright/test'
+import { test } from '@playwright/test'
 
 import * as actions from './actions'
 
-test.test.beforeEach(({ page }) => actions.mockAllAndLogin({ page }))
-
-test.test('edit name', async ({ page }) => {
+test('edit name (double click)', async ({ page }) => {
+  await actions.mockAllAndLogin({ page })
   const assetRows = actions.locateAssetRows(page)
   const row = assetRows.nth(0)
   const newName = 'foo bar baz'
@@ -18,7 +17,41 @@ test.test('edit name', async ({ page }) => {
   await test.expect(row).toHaveText(new RegExp('^' + newName))
 })
 
-test.test('edit name (keyboard)', async ({ page }) => {
+test('edit name (context menu)', async ({ page }) => {
+  await actions.mockAllAndLogin({
+    page,
+    setupAPI: (api) => {
+      api.addAsset(api.createDirectory('foo'))
+    },
+  })
+
+  const assetRows = actions.locateAssetRows(page)
+  const row = assetRows.nth(0)
+  const newName = 'foo bar baz'
+
+  await actions.locateAssetRowName(row).click({ button: 'right' })
+  await actions
+    .locateContextMenus(page)
+    .getByText(/Rename/)
+    .click()
+
+  const input = page.getByTestId('asset-row-name')
+
+  await test.expect(input).toBeVisible()
+  await test.expect(input).toBeFocused()
+
+  await input.fill(newName)
+
+  await test.expect(input).toHaveValue(newName)
+
+  await input.press('Enter')
+
+  await test.expect(row).toHaveText(new RegExp('^' + newName))
+})
+
+test('edit name (keyboard)', async ({ page }) => {
+  await actions.mockAllAndLogin({ page })
+
   const assetRows = actions.locateAssetRows(page)
   const row = assetRows.nth(0)
   const newName = 'foo bar baz quux'
@@ -31,7 +64,9 @@ test.test('edit name (keyboard)', async ({ page }) => {
   await test.expect(row).toHaveText(new RegExp('^' + newName))
 })
 
-test.test('cancel editing name', async ({ page }) => {
+test('cancel editing name (double click)', async ({ page }) => {
+  await actions.mockAllAndLogin({ page })
+
   const assetRows = actions.locateAssetRows(page)
   const row = assetRows.nth(0)
   const newName = 'foo bar baz'
@@ -46,7 +81,9 @@ test.test('cancel editing name', async ({ page }) => {
   await test.expect(row).toHaveText(new RegExp('^' + oldName))
 })
 
-test.test('cancel editing name (keyboard)', async ({ page }) => {
+test('cancel editing name (keyboard)', async ({ page }) => {
+  await actions.mockAllAndLogin({ page })
+
   const assetRows = actions.locateAssetRows(page)
   const row = assetRows.nth(0)
   const newName = 'foo bar baz quux'
@@ -60,7 +97,9 @@ test.test('cancel editing name (keyboard)', async ({ page }) => {
   await test.expect(row).toHaveText(new RegExp('^' + oldName))
 })
 
-test.test('change to blank name', async ({ page }) => {
+test('change to blank name (double click)', async ({ page }) => {
+  await actions.mockAllAndLogin({ page })
+
   const assetRows = actions.locateAssetRows(page)
   const row = assetRows.nth(0)
 
@@ -74,7 +113,9 @@ test.test('change to blank name', async ({ page }) => {
   await test.expect(row).toHaveText(new RegExp('^' + oldName))
 })
 
-test.test('change to blank name (keyboard)', async ({ page }) => {
+test('change to blank name (keyboard)', async ({ page }) => {
+  await actions.mockAllAndLogin({ page })
+
   const assetRows = actions.locateAssetRows(page)
   const row = assetRows.nth(0)
 

@@ -38,6 +38,15 @@
             user-scalable = no"
     />
     <title>Enso %ENSO_IDE_VERSION%</title>
+
+    <script type="module">
+      import { platform } from '../common/src/detect.ts'
+
+      const currentPlatform = platform()
+
+      document.documentElement.setAttribute('data-version', '%ENSO_IDE_VERSION%')
+      document.documentElement.classList.add(currentPlatform.toLowerCase())
+    </script>
   </head>
   <body>
     <div id="enso-spotlight" class="enso-spotlight"></div>

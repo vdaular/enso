@@ -44,7 +44,7 @@ const UNDERLAY_ELEMENT = (
 
 /** Display a tab. */
 export const AssetPanelTab = memo(function AssetPanelTab(props: AssetPanelTabProps) {
-  const { id, icon, label, isExpanded } = props
+  const { id, icon, label, isExpanded, isDisabled = false } = props
 
   const tabRef = useRef<HTMLDivElement>(null)
 
@@ -59,8 +59,9 @@ export const AssetPanelTab = memo(function AssetPanelTab(props: AssetPanelTabPro
       ref={tabRef}
       id={id}
       aria-label={label}
-      className="aspect-square w-full cursor-pointer"
+      className="aspect-square w-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
       data-testid={`asset-panel-tab-${id}`}
+      isDisabled={isDisabled}
     >
       {({ isSelected, isHovered }) => {
         const isActive = isSelected && isExpanded
@@ -83,7 +84,7 @@ export const AssetPanelTab = memo(function AssetPanelTab(props: AssetPanelTabPro
                   variants={{ active: { opacity: 1 }, inactive: { opacity: 0 } }}
                   initial="inactive"
                   animate={!isActive && isHovered ? 'active' : 'inactive'}
-                  className="absolute inset-x-1.5 inset-y-1.5 rounded-full bg-invert transition-colors duration-300"
+                  className="absolute inset-x-1.5 inset-y-1.5 rounded-full bg-background transition-colors duration-300"
                 />
 
                 <div
@@ -128,6 +129,7 @@ export const AssetPanelTabPanel = memo(function AssetPanelTabPanel(props: AssetP
               // eslint-disable-next-line @typescript-eslint/no-magic-numbers
               exit={{ x: 16, filter: 'blur(4px)', opacity: 0 }}
               className="flex h-full w-full flex-col overflow-y-auto scroll-offset-edge-3xl"
+              data-testid={`asset-panel-tab-panel-${id}`}
             >
               <Suspense loaderProps={SUSPENSE_LOADER_PROPS}>
                 <div className="pointer-events-auto flex h-fit min-h-full w-full shrink-0 px-4 py-5">

@@ -12,11 +12,30 @@ import * as uniqueString from 'enso-common/src/utilities/uniqueString'
 
 import * as actions from './actions'
 
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import LATEST_GITHUB_RELEASES from './latestGithubReleases.json' with { type: 'json' }
 
 // =================
 // === Constants ===
 // =================
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
+const MOCK_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+  <defs>
+    <pattern id="checkerboard" width="20" height="20" patternUnits="userSpaceOnUse">
+      <rect width="10" height="10" fill="white"/>
+      <rect x="10" y="0" width="10" height="10" fill="black"/>
+      <rect x="0" y="10" width="10" height="10" fill="black"/>
+      <rect x="10" y="10" width="10" height="10" fill="white"/>
+    </pattern>
+  </defs>
+  <rect width="100" height="100" fill="url(#checkerboard)"/>
+</svg>
+`
 
 /** The HTTP status code representing a response with an empty body. */
 const HTTP_STATUS_NO_CONTENT = 204
@@ -175,7 +194,17 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
         description: null,
         labels: [],
         parentId: defaultDirectoryId,
-        permissions: [],
+        permissions: [
+          {
+            user: {
+              organizationId: defaultOrganizationId,
+              userId: defaultUserId,
+              name: defaultUsername,
+              email: defaultEmail,
+            },
+            permission: permissions.PermissionAction.own,
+          },
+        ],
         parentsPath: '',
         virtualParentsPath: '',
       },
@@ -983,6 +1012,7 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
 
       return json
     })
+
     await post(remoteBackendPaths.CREATE_DIRECTORY_PATH + '*', (_route, request) => {
       const body: backend.CreateDirectoryRequestBody = request.postDataJSON()
       const title = body.title
@@ -1009,6 +1039,27 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
         projectState: null,
       })
       return json
+    })
+
+    await get(remoteBackendPaths.getProjectContentPath(GLOB_PROJECT_ID), (route) => {
+      const content = readFileSync(join(__dirname, './mock/enso-demo.main'), 'utf8')
+
+      return route.fulfill({
+        body: content,
+        contentType: 'text/plain',
+      })
+    })
+
+    await get(remoteBackendPaths.getProjectAssetPath(GLOB_PROJECT_ID, '*'), (route) => {
+      return route.fulfill({
+        // This is a mock SVG image. Just a square with a black background.
+        body: '/mock/svg.svg',
+        contentType: 'text/plain',
+      })
+    })
+
+    await page.route('mock/svg.svg', (route) => {
+      return route.fulfill({ body: MOCK_SVG, contentType: 'image/svg+xml' })
     })
 
     await page.route('*', async (route) => {

@@ -9,7 +9,6 @@ import { useStore } from '#/utilities/zustand'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import * as ast from 'ydoc-shared/ast'
-import { normalizedMarkdownToStandard } from 'ydoc-shared/ast/documentation'
 import { splitFileContents } from 'ydoc-shared/ensoFile'
 import { versionContentQueryOptions } from '../AssetDiffView/useFetchVersionContent'
 import { assetPanelStore } from '../AssetPanel'
@@ -49,12 +48,12 @@ export function AssetDocsContent(props: AssetDocsContentProps) {
   const { data: docs } = useSuspenseQuery({
     ...versionContentQueryOptions({ backend, projectId: item.id, metadata: false }),
     select: (data) => {
-      const withoutMeta = splitFileContents(data)
-      const module = ast.parseModule(withoutMeta.code)
+      const { code } = splitFileContents(data)
+      const module = ast.parseModule(code)
 
       for (const statement of module.statements()) {
         if (statement instanceof ast.MutableFunctionDef && statement.name.code() === 'main') {
-          return normalizedMarkdownToStandard(statement.mutableDocumentationMarkdown().toJSON())
+          return statement.mutableDocumentationMarkdown().toJSON()
         }
       }
 
@@ -71,5 +70,11 @@ export function AssetDocsContent(props: AssetDocsContentProps) {
     return <Result status="info" title={getText('assetDocs.noDocs')} centered />
   }
 
-  return <MarkdownViewer text={docs} imgUrlResolver={resolveProjectAssetPath} />
+  return (
+    <MarkdownViewer
+      testId="asset-docs-content"
+      text={docs}
+      imgUrlResolver={resolveProjectAssetPath}
+    />
+  )
 }

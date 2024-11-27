@@ -9,7 +9,7 @@ import {
 } from 'react'
 
 import CloseIcon from '#/assets/cross.svg'
-import { Button, Input, Text } from '#/components/AriaComponents'
+import { Button, Form, Input, Text } from '#/components/AriaComponents'
 import FocusRing from '#/components/styled/FocusRing'
 import { twJoin, twMerge } from '#/utilities/tailwindMerge'
 
@@ -185,60 +185,70 @@ export default function Autocomplete<T>(props: AutocompleteProps<T>) {
           : '',
         )}
       >
-        <FocusRing within>
-          <div className="relative z-1 flex flex-1 items-center gap-2 rounded-full px-2">
-            {canEditText ?
-              <Input
-                name="autocomplete"
-                type={type}
-                ref={inputRef}
-                autoFocus={autoFocus}
-                size="custom"
-                variant="custom"
-                value={text ?? ''}
-                autoComplete="off"
-                {...(placeholder == null ? {} : { placeholder })}
-                onFocus={() => {
+        <Form
+          className="w-full"
+          schema={(z) =>
+            z.object({
+              autocomplete: z.string(),
+            })
+          }
+        >
+          <FocusRing within>
+            <div className="relative z-1 flex w-full flex-1 items-center gap-2 overflow-hidden rounded-full px-2">
+              {canEditText ?
+                <Input
+                  className="w-full"
+                  name="autocomplete"
+                  type={type}
+                  ref={inputRef}
+                  autoFocus={autoFocus}
+                  size="custom"
+                  variant="custom"
+                  value={text ?? ''}
+                  autoComplete="off"
+                  {...(placeholder == null ? {} : { placeholder })}
+                  onFocus={() => {
+                    setIsDropdownVisible(true)
+                  }}
+                  onBlur={() => {
+                    window.setTimeout(() => {
+                      setIsDropdownVisible(false)
+                    })
+                  }}
+                  onChange={(event) => {
+                    setIsDropdownVisible(true)
+                    setText(event.currentTarget.value === '' ? null : event.currentTarget.value)
+                  }}
+                />
+              : <Text
+                  tabIndex={-1}
+                  truncate="1"
+                  tooltipPlacement="left"
+                  onClick={() => {
+                    setIsDropdownVisible(true)
+                  }}
+                  onBlur={() => {
+                    window.setTimeout(() => {
+                      setIsDropdownVisible(false)
+                    })
+                  }}
+                >
+                  {itemsToString?.(values) ?? (values[0] != null ? children(values[0]) : ZWSP)}
+                </Text>
+              }
+              <Button
+                size="medium"
+                variant="icon"
+                icon={CloseIcon}
+                onPress={() => {
+                  setValues([])
                   setIsDropdownVisible(true)
-                }}
-                onBlur={() => {
-                  window.setTimeout(() => {
-                    setIsDropdownVisible(false)
-                  })
-                }}
-                onChange={(event) => {
-                  setIsDropdownVisible(true)
-                  setText(event.currentTarget.value === '' ? null : event.currentTarget.value)
+                  setText?.('')
                 }}
               />
-            : <Text
-                tabIndex={-1}
-                truncate="1"
-                tooltipPlacement="left"
-                onClick={() => {
-                  setIsDropdownVisible(true)
-                }}
-                onBlur={() => {
-                  window.setTimeout(() => {
-                    setIsDropdownVisible(false)
-                  })
-                }}
-              >
-                {itemsToString?.(values) ?? (values[0] != null ? children(values[0]) : ZWSP)}
-              </Text>
-            }
-            <Button
-              size="medium"
-              variant="icon"
-              icon={CloseIcon}
-              onPress={() => {
-                setValues([])
-                // setIsDropdownVisible(true)
-                setText?.('')
-              }}
-            />
-          </div>
-        </FocusRing>
+            </div>
+          </FocusRing>
+        </Form>
         <div
           className={twMerge(
             'relative z-1 grid h-max w-full rounded-b-xl transition-grid-template-rows duration-200',

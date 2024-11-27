@@ -155,7 +155,7 @@ const AnimatedBackgroundItemUnderlay = memo(function AnimatedBackgroundItemUnder
     <AnimatePresence initial={!isActive}>
       {isActive && (
         <motion.div
-          layout="position"
+          layout
           layoutId={`background-${layoutId}`}
           className="pointer-events-none absolute inset-0 isolate"
           transition={transition}

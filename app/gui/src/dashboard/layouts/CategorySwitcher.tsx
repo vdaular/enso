@@ -406,6 +406,7 @@ function CategorySwitcher(props: CategorySwitcherProps) {
             <ariaComponents.Button
               size="medium"
               variant="icon"
+              extraClickZone={false}
               icon={SettingsIcon}
               aria-label={getText('changeLocalRootDirectoryInSettings')}
               className="opacity-0 transition-opacity group-hover:opacity-100"
@@ -438,6 +439,7 @@ function CategorySwitcher(props: CategorySwitcherProps) {
                 <ariaComponents.Button
                   size="medium"
                   variant="icon"
+                  extraClickZone={false}
                   icon={Minus2Icon}
                   aria-label={getText('removeDirectoryFromFavorites')}
                   className="hidden group-hover:block"

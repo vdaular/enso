@@ -121,7 +121,7 @@ export const OTPInput = forwardRef(function OTPInput<
             name,
             maxLength,
             noScriptCSSFallback: null,
-            containerClassName: classes.base(),
+            containerClassName: classes.base({ className }),
             onClick: () => {
               if (innerOtpInputRef.current) {
                 // Check if the input is not already focused

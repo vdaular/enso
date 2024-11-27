@@ -48,13 +48,17 @@ export const TEXT_STYLE = twv.tv({
     // leading should always be after the text size to make sure it is not stripped by twMerge
     variant: {
       custom: '',
-      body: 'text-xs leading-[20px] before:h-[1px] after:h-[3px] font-medium',
+      body: 'text-xs leading-[20px] before:h-[2px] after:h-[2px] macos:before:h-[1px] macos:after:h-[3px] font-medium',
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      'body-sm': 'text-[10.5px] leading-[16px] before:h-[0.5px] after:h-[2.5px] font-medium',
-      h1: 'text-xl leading-[29px] before:h-0.5 after:h-[5px] font-bold',
-      subtitle: 'text-[13.5px] leading-[19px] before:h-[1px] after:h-[3px] font-bold',
-      caption: 'text-[8.5px] leading-[12px] before:h-[0.5px] after:h-[1.5px]',
-      overline: 'text-[8.5px] leading-[16px] before:h-[0.5px] after:h-[1.5px] uppercase',
+      'body-sm':
+        'text-[10.5px] leading-[16px] before:h-[1.5px] after:h-[1.5px] macos:before:h-[0.5px] macos:after:h-[2.5px] font-medium',
+      h1: 'text-xl leading-[29px] before:h-0.5 after:h-[5px] macos:before:h-[3px] macos:after:h-[3px] font-bold',
+      subtitle:
+        'text-[13.5px] leading-[19px] before:h-[2px] after:h-[2px] macos:before:h-[1px] macos:after:h-[3px] font-bold',
+      caption:
+        'text-[8.5px] leading-[12px] before:h-[1px] after:h-[1px] macos:before:h-[0.5px] macos:after:h-[1.5px]',
+      overline:
+        'text-[8.5px] leading-[16px] before:h-[1px] after:h-[1px] macos:before:h-[0.5px] macos:after:h-[1.5px] uppercase',
     },
     weight: {
       custom: '',

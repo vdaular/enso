@@ -13,7 +13,7 @@ export interface UseAutoFocusProps {
   readonly disabled?: boolean | undefined
 }
 
-const FOCUS_TRYOUT_DELAY = 300
+const FOCUS_TRYOUT_DELAY = 1_000
 const FOCUS_DELAY = 100
 
 /**

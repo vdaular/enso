@@ -4,10 +4,10 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import type { RendererObject } from 'marked'
 import { marked } from 'marked'
 import { useMemo } from 'react'
-import { BUTTON_STYLES, TEXT_STYLE } from '../AriaComponents'
+import { BUTTON_STYLES, TEXT_STYLE, type TestIdProps } from '../AriaComponents'
 
 /** Props for a {@link MarkdownViewer}. */
-export interface MarkdownViewerProps {
+export interface MarkdownViewerProps extends TestIdProps {
   /** Markdown markup to parse and display. */
   readonly text: string
   readonly imgUrlResolver: (relativePath: string) => Promise<string>
@@ -56,7 +56,7 @@ const defaultRenderer: RendererObject = {
  * Parses markdown passed in as a `text` prop into HTML and displays it.
  */
 export function MarkdownViewer(props: MarkdownViewerProps) {
-  const { text, imgUrlResolver, renderer = defaultRenderer } = props
+  const { text, imgUrlResolver, renderer = defaultRenderer, testId } = props
 
   const markedInstance = useMemo(
     () => marked.use({ renderer: Object.assign({}, defaultRenderer, renderer), async: true }),
@@ -75,7 +75,12 @@ export function MarkdownViewer(props: MarkdownViewerProps) {
         },
       }),
   })
-
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  return <div className="select-text" dangerouslySetInnerHTML={{ __html: markdownToHtml }} />
+  return (
+    <div
+      className="select-text"
+      data-testid={testId}
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      dangerouslySetInnerHTML={{ __html: markdownToHtml }}
+    />
+  )
 }

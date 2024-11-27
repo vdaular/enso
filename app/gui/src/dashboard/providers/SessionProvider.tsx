@@ -62,7 +62,7 @@ const SIX_HOURS_MS = 21_600_000
 function createSessionQuery(userSession: (() => Promise<cognito.UserSession | null>) | null) {
   return reactQuery.queryOptions({
     queryKey: ['userSession'],
-    queryFn: async () => userSession?.() ?? null,
+    queryFn: () => userSession?.().catch(() => null) ?? null,
     refetchOnWindowFocus: true,
     refetchIntervalInBackground: true,
   })

@@ -1,5 +1,5 @@
 /** @file Tests for the asset panel. */
-import * as test from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 import * as backend from '#/services/Backend'
 
@@ -22,19 +22,18 @@ const EMAIL = 'baz.quux@email.com'
 // === Tests ===
 // =============
 
-test.test('open and close asset panel', ({ page }) =>
+test('open and close asset panel', ({ page }) =>
   actions
     .mockAllAndLogin({ page })
     .withAssetPanel(async (assetPanel) => {
-      await test.expect(assetPanel).toBeVisible()
+      await expect(assetPanel).toBeVisible()
     })
     .toggleAssetPanel()
     .withAssetPanel(async (assetPanel) => {
-      await test.expect(assetPanel).not.toBeVisible()
-    }),
-)
+      await expect(assetPanel).not.toBeVisible()
+    }))
 
-test.test('asset panel contents', ({ page }) =>
+test('asset panel contents', ({ page }) =>
   actions
     .mockAllAndLogin({
       page,
@@ -64,5 +63,21 @@ test.test('asset panel contents', ({ page }) =>
       // `getByText` is required so that this assertion works if there are multiple permissions.
       // This is not visible; "Shared with" should only be visible on the Enterprise plan.
       // await test.expect(actions.locateAssetPanelPermissions(page).getByText(USERNAME)).toBeVisible()
-    }),
-)
+    }))
+
+test('Asset Panel Documentation view', ({ page }) => {
+  return actions
+    .mockAllAndLogin({
+      page,
+      setupAPI: (api) => {
+        api.addProject('project', { description: DESCRIPTION })
+      },
+    })
+    .driveTable.clickRow(0)
+    .toggleDocsAssetPanel()
+    .withAssetPanel(async (assetPanel) => {
+      await expect(assetPanel.getByTestId('asset-panel-tab-panel-docs')).toBeVisible()
+      await expect(assetPanel.getByTestId('asset-docs-content')).toBeVisible()
+      await expect(assetPanel.getByTestId('asset-docs-content')).toHaveText(/Project Goal/)
+    })
+})

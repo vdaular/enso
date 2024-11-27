@@ -45,6 +45,8 @@ const sharedConfig: Partial<ReactStorybookConfig> = {
       if (window.parent !== window) {
         window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = window.parent.__REACT_DEVTOOLS_GLOBAL_HOOK__
       }
+
+      document.documentElement.classList.add('macos')
     </script>
     ${head}
     `

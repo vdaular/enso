@@ -8,6 +8,7 @@
  */
 import { defineConfig } from '@playwright/test'
 import net from 'net'
+import path from 'path'
 
 const DEBUG = process.env.DEBUG_TEST === 'true'
 const isCI = process.env.CI === 'true'
@@ -21,6 +22,8 @@ const TIMEOUT_MS =
 // We tend to use less CPU on CI to reduce the number of failures due to timeouts.
 // Instead of using workers on CI, we use shards to run tests in parallel.
 const WORKERS = isCI ? 2 : '35%'
+
+const dirName = path.dirname(new URL(import.meta.url).pathname)
 
 async function findFreePortInRange(min: number, max: number) {
   for (let i = 0; i < 50; i++) {
@@ -122,7 +125,7 @@ export default defineConfig({
       use: {
         baseURL: `http://localhost:${ports.dashboard}`,
         actionTimeout: TIMEOUT_MS,
-        storageState: './playwright/.auth/user.json',
+        storageState: path.join(dirName, './playwright/.auth/user.json'),
       },
     },
     {

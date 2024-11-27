@@ -960,6 +960,7 @@
   "assetDocs.notProject": "Please select a project to view its docs.",
   "assetDocs.noDocs": "No docs available for this asset.",
   "assetProperties.notSelected": "Select a single asset to view its properties.",
+  "assetProperties.localBackend": "Properties are not available for local assets.",
   "assetVersions.localAssetsDoNotHaveVersions": "Local assets do not have versions.",
   "assetVersions.notSelected": "Select a single asset to view its versions.",
   "assetProjectSessions.noSessions": "No sessions yet! Open the project to start a session.",

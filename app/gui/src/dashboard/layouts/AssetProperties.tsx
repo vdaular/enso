@@ -74,6 +74,10 @@ export default function AssetProperties(props: AssetPropertiesProps) {
 
   const { getText } = useText()
 
+  if (backend.type === BackendType.local) {
+    return <Result status="info" centered title={getText('assetProperties.localBackend')} />
+  }
+
   if (item == null || path == null) {
     return <Result status="info" title={getText('assetProperties.notSelected')} centered />
   }

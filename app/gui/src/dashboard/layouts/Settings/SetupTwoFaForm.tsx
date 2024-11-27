@@ -136,7 +136,7 @@ export function SetupTwoFaForm() {
             otp: z.string().min(6).max(6),
           })
         }
-        defaultValues={{ enabled: false, display: 'qr' }}
+        defaultValues={{ enabled: false, display: 'QR' }}
         onSubmit={async ({ enabled, otp }) => {
           if (enabled) {
             return cognito.verifyTotpToken(otp).then((res) => {
@@ -188,12 +188,12 @@ function TwoFa() {
 
   return (
     <>
-      <div className="flex w-full flex-col gap-4">
-        <Selector name="display" items={['qr', 'text']} aria-label={getText('display')} />
+      <div className="flex w-full flex-col gap-4 overflow-hidden">
+        <Selector name="display" items={['QR', 'Text']} aria-label={getText('display')} />
 
         <Form.FieldValue name="display">
           {(display) =>
-            display === 'qr' && (
+            display === 'QR' && (
               <>
                 <Alert key="alert" variant="neutral" icon={ShieldCheck}>
                   <Text.Group>
@@ -218,9 +218,10 @@ function TwoFa() {
             )
           }
         </Form.FieldValue>
+
         <Form.FieldValue name="display">
           {(display) =>
-            display === 'text' && (
+            display === 'Text' && (
               <>
                 <Alert key="alert" variant="neutral" icon={ShieldCheck}>
                   <Text.Group>
@@ -238,7 +239,6 @@ function TwoFa() {
         </Form.FieldValue>
 
         <OTPInput
-          className="max-w-96"
           label={getText('verificationCode')}
           name="otp"
           maxLength={6}

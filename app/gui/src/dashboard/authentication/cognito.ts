@@ -221,12 +221,9 @@ export class Cognito {
    * Will refresh the {@link UserSession} if it has expired.
    */
   async userSession() {
-    const currentSession = await results.Result.wrapAsync(() => amplify.Auth.currentSession())
-    const amplifySession = currentSession.mapErr(intoCurrentSessionErrorType)
-
-    return amplifySession
-      .map((session) => parseUserSession(session, this.amplifyConfig.userPoolWebClientId))
-      .unwrapOr(null)
+    return amplify.Auth.currentSession()
+      .then((result) => parseUserSession(result, this.amplifyConfig.userPoolWebClientId))
+      .catch(() => null)
   }
 
   /**
