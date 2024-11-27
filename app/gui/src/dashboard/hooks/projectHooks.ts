@@ -32,12 +32,12 @@ const OPENED_INTERVAL_MS = 30_000
  * Interval when we open a cloud project.
  * Since opening a cloud project is a long operation, we want to check the status less often.
  */
-const CLOUD_OPENING_INTERVAL_MS = 5_000
+const CLOUD_OPENING_INTERVAL_MS = 2_500
 /**
  * Interval when we open a local project or when we want to sync the project status as soon as
  * possible.
  */
-const ACTIVE_SYNC_INTERVAL_MS = 100
+const LOCAL_OPENING_INTERVAL_MS = 100
 
 const DEFAULT_INTERVAL_MS = 120_000
 
@@ -92,12 +92,17 @@ export function createGetProjectDetailsQuery(options: CreateOpenedProjectQueryOp
     refetchOnWindowFocus: true,
     refetchOnMount: true,
     networkMode: backend.type === backendModule.BackendType.remote ? 'online' : 'always',
-    refetchInterval: ({ state }) => {
-      const states = [backendModule.ProjectState.opened, backendModule.ProjectState.closed]
+    refetchInterval: ({ state }): number | false => {
+      const staticStates = [backendModule.ProjectState.opened, backendModule.ProjectState.closed]
+
       const openingStates = [
+        backendModule.ProjectState.provisioned,
+        backendModule.ProjectState.scheduled,
         backendModule.ProjectState.openInProgress,
         backendModule.ProjectState.closing,
       ]
+
+      const createdStates = [backendModule.ProjectState.created, backendModule.ProjectState.new]
 
       if (state.status === 'error') {
         return false
@@ -107,24 +112,35 @@ export function createGetProjectDetailsQuery(options: CreateOpenedProjectQueryOp
         return false
       }
 
+      const currentState = state.data.state.type
+
       if (isLocal) {
-        if (states.includes(state.data.state.type)) {
+        if (createdStates.includes(currentState)) {
+          return LOCAL_OPENING_INTERVAL_MS
+        }
+
+        if (staticStates.includes(state.data.state.type)) {
           return OPENED_INTERVAL_MS
-        } else if (openingStates.includes(state.data.state.type)) {
-          return ACTIVE_SYNC_INTERVAL_MS
-        } else {
-          return DEFAULT_INTERVAL_MS
+        }
+
+        if (openingStates.includes(state.data.state.type)) {
+          return LOCAL_OPENING_INTERVAL_MS
         }
       }
 
-      // Cloud project
-      if (states.includes(state.data.state.type)) {
-        return OPENED_INTERVAL_MS
-      } else if (openingStates.includes(state.data.state.type)) {
+      if (createdStates.includes(currentState)) {
         return CLOUD_OPENING_INTERVAL_MS
-      } else {
-        return DEFAULT_INTERVAL_MS
       }
+
+      // Cloud project
+      if (staticStates.includes(state.data.state.type)) {
+        return OPENED_INTERVAL_MS
+      }
+      if (openingStates.includes(state.data.state.type)) {
+        return CLOUD_OPENING_INTERVAL_MS
+      }
+
+      return DEFAULT_INTERVAL_MS
     },
   })
 }
