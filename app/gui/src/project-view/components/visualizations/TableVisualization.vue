@@ -616,6 +616,26 @@ const getColumnValueToEnso = (columnName: string) => {
   if (isNumber.indexOf(columnType) != -1) {
     return (item: string, module: Ast.MutableModule) => Ast.tryNumberToEnso(Number(item), module)!
   }
+  const createDateTimePattern = (pattern: string, numberOfParts: number) => {
+    const dateOrTimePattern = Pattern.parseExpression(pattern)
+    return (item: string, module: Ast.MutableModule) => {
+      const dateTimeParts = item.match(/\d+/g)!.map(Number)
+      const dateTimePartsNumeric = []
+      for (let i = 0; i < numberOfParts; i++) {
+        dateTimePartsNumeric.push(Ast.tryNumberToEnso(Number(dateTimeParts[i] ?? 0), module)!)
+      }
+      return dateOrTimePattern.instantiateCopied(dateTimePartsNumeric)
+    }
+  }
+  if (columnType === 'Date') {
+    return createDateTimePattern('(Date.new __ __ __)', 3)
+  }
+  if (columnType === 'Time') {
+    return createDateTimePattern('(Time_Of_Day.new __ __ __ __ __ __)', 6)
+  }
+  if (columnType === 'Date_Time') {
+    return (item: string) => Ast.parseExpression(`(Date_Time.parse '${item}')`)!
+  }
   return (item: string) => Ast.TextLiteral.new(item)
 }
 
