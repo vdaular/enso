@@ -567,7 +567,7 @@ public class ExecCompilerTest {
           ex.getMessage().toLowerCase(),
           AllOf.allOf(containsString("type"), containsString("error")));
       var typeError = ex.getGuestObject();
-      assertEquals("Expected type", "First_Type", typeError.getMember("expected").toString());
+      assertEquals("Expected type", "First_Type", typeError.getMember("expected").asString());
       assertEquals("Got wrong value", 42, typeError.getMember("actual").asInt());
     }
   }

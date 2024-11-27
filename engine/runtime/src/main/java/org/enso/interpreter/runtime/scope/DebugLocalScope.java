@@ -16,7 +16,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import org.enso.compiler.pass.analyse.FramePointer;
+import org.enso.interpreter.EnsoLanguage;
 import org.enso.interpreter.node.EnsoRootNode;
+import org.enso.interpreter.runtime.EnsoContext;
 import org.enso.interpreter.runtime.callable.function.Function;
 import org.enso.interpreter.runtime.data.EnsoObject;
 import org.enso.interpreter.runtime.error.DataflowError;
@@ -176,12 +178,17 @@ public class DebugLocalScope extends EnsoObject {
   @ExportMessage
   @TruffleBoundary
   Object readMember(String member, @CachedLibrary("this") InteropLibrary interop)
-      throws UnknownIdentifierException {
+      throws UnknownIdentifierException, UnsupportedMessageException {
     if (!allBindings.containsKey(member)) {
       throw UnknownIdentifierException.create(member);
     }
     FramePointer framePtr = allBindings.get(member);
     var value = getValue(frame, framePtr);
+    if (value != null) {
+      var ensoLang = EnsoLanguage.get(interop);
+      var ensoCtx = EnsoContext.get(interop);
+      value = ensoLang.getLanguageView(ensoCtx, value);
+    }
     return value != null ? value : DataflowError.UNINITIALIZED;
   }
 
