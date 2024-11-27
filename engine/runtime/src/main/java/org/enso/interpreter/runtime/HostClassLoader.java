@@ -61,6 +61,12 @@ final class HostClassLoader extends URLClassLoader implements AutoCloseable {
     if (!isRuntimeModInBootLayer && name.startsWith("org.graalvm")) {
       return polyglotClassLoader.loadClass(name);
     }
+    if (name.startsWith("org.slf4j")) {
+      // Delegating to system class loader ensures that log classes are not loaded again
+      // and do not require special setup. In other words, it is using log configuration that
+      // has been setup by the runner that started the process. See #11641.
+      return polyglotClassLoader.loadClass(name);
+    }
     try {
       l = findClass(name);
       if (resolve) {
