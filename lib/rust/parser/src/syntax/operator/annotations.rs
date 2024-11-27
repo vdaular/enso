@@ -86,7 +86,7 @@ where Inner:
                         left_precedence:  None,
                         right_precedence: ModifiedPrecedence::new(
                             following_spacing.unwrap_or_default(),
-                            Precedence::annotation(),
+                            Precedence::Negation,
                             false,
                         ),
                         associativity:    Associativity::Left,

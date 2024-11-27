@@ -1053,6 +1053,14 @@ fn type_signatures() {
 fn type_annotations() {
     test_block!("val = x : Int",
         ,(Assignment::new("val", sexp![(TypeAnnotated (Ident x) ":" (Ident Int))])));
+    test_block!("val = x : A : B : C",
+        ,(Assignment::new("val", sexp![
+          (TypeAnnotated
+           (TypeAnnotated
+            (TypeAnnotated (Ident x)
+             ":" (Ident A))
+            ":" (Ident B))
+           ":" (Ident C))])));
     test_block!("val = foo (x : Int)",
         ,(Assignment::new("val", sexp![
           (App (Ident foo)

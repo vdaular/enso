@@ -42,13 +42,13 @@ where Inner: OperatorConsumer<'s> + OperandConsumer<'s>
                         Spacing::of_token(&name)
                     };
                     let precedence =
-                        ModifiedPrecedence::new(spacing, token::Precedence::application(), false);
+                        ModifiedPrecedence::new(spacing, token::Precedence::Application, false);
                     let right_precedence = ModifiedPrecedence::new(
                         // Named applications always have unspaced right-precedence; if it reads
                         // from left to right as a named application, a following operator can't
                         // cause the interpretation to change.
                         Spacing::Unspaced,
-                        token::Precedence::application(),
+                        token::Precedence::Application,
                         false,
                     );
                     let operator = Operator {
@@ -105,7 +105,7 @@ impl<Inner: Finish> Finish for InsertApps<Inner> {
 }
 
 fn application<'s>(spacing: Spacing) -> Operator<'s> {
-    let precedence = ModifiedPrecedence::new(spacing, token::Precedence::application(), false);
+    let precedence = ModifiedPrecedence::new(spacing, token::Precedence::Application, false);
     Operator {
         left_precedence:  Some(precedence),
         right_precedence: precedence,

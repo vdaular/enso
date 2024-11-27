@@ -83,7 +83,7 @@ type Table_Column_Helper
          specified types will also be selected (i.e. ignore size, precision).
     select_by_type : Vector Value_Type -> Boolean -> Vector
     select_by_type self types:Vector strict:Boolean=False =
-        parsed_types = types.map t->t:Value_Type
+        parsed_types = types.map t-> t:Value_Type
         selected_columns = if strict then self.columns.filter c-> parsed_types.contains c.value_type else
             self.columns.filter c-> parsed_types.any t-> c.value_type.is_same_type t
         if selected_columns.length == 0 then Error.throw (No_Output_Columns.Error "No columns of the specified types were found.") else

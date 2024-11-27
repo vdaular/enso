@@ -686,16 +686,22 @@ fn analyze_operator(token: &str) -> token::Variant {
 pub fn analyze_non_syntactic_operator(token: &str) -> OperatorProperties {
     match token {
         "-" => OperatorProperties::value()
-            .with_unary_prefix_mode(token::Precedence::unary_minus())
-            .with_binary_infix_precedence(15),
-        "!" => OperatorProperties::value().with_binary_infix_precedence(3),
-        "||" | "\\\\" | "&&" => OperatorProperties::value().with_binary_infix_precedence(4),
-        ">>" | "<<" => OperatorProperties::functional().with_binary_infix_precedence(5),
-        "|>" | "|>>" => OperatorProperties::functional().with_binary_infix_precedence(6),
-        "<|" | "<<|" =>
-            OperatorProperties::functional().with_binary_infix_precedence(6).as_right_associative(),
-        "<=" | ">=" => OperatorProperties::value().with_binary_infix_precedence(14),
-        "==" | "!=" => OperatorProperties::value().with_binary_infix_precedence(5),
+            .with_unary_prefix_mode(token::Precedence::Negation)
+            .with_binary_infix_precedence(token::Precedence::Addition),
+        "!" => OperatorProperties::value().with_binary_infix_precedence(token::Precedence::Not),
+        "||" | "\\\\" | "&&" =>
+            OperatorProperties::value().with_binary_infix_precedence(token::Precedence::Logical),
+        ">>" | "<<" => OperatorProperties::functional()
+            .with_binary_infix_precedence(token::Precedence::Equality),
+        "|>" | "|>>" => OperatorProperties::functional()
+            .with_binary_infix_precedence(token::Precedence::Functional),
+        "<|" | "<<|" => OperatorProperties::functional()
+            .with_binary_infix_precedence(token::Precedence::Functional)
+            .as_right_associative(),
+        "<=" | ">=" =>
+            OperatorProperties::value().with_binary_infix_precedence(token::Precedence::Inequality),
+        "==" | "!=" =>
+            OperatorProperties::value().with_binary_infix_precedence(token::Precedence::Equality),
         _ => analyze_user_operator(token),
     }
 }
@@ -725,14 +731,14 @@ fn analyze_user_operator(token: &str) -> OperatorProperties {
         }
     }
     let binary = match precedence_char.unwrap() {
-        '!' => 10,
-        '|' => 11,
-        '&' => 13,
-        '<' | '>' => 14,
-        '+' | '-' => 15,
-        '*' | '/' | '%' => 16,
-        '^' => 17,
-        _ => 18,
+        '!' => token::Precedence::Not,
+        '|' => token::Precedence::BitwiseOr,
+        '&' => token::Precedence::BitwiseAnd,
+        '<' | '>' => token::Precedence::Inequality,
+        '+' | '-' => token::Precedence::Addition,
+        '*' | '/' | '%' => token::Precedence::Multiplication,
+        '^' => token::Precedence::Exponentiation,
+        _ => token::Precedence::OtherUserOperator,
     };
     operator = operator.with_binary_infix_precedence(binary);
     if !has_right_arrow && !has_left_arrow {
