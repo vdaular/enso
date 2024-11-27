@@ -10,7 +10,7 @@ import {
 } from './projectManager'
 
 /**
- * Setup for all E2E tests.
+ * Setup for all Project View's Integration tests.
  *
  * It runs mocked project manager server.
  */

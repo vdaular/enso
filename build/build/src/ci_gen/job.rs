@@ -18,6 +18,7 @@ use core::panic;
 use ide_ci::actions::workflow::definition::cancel_workflow_action;
 use ide_ci::actions::workflow::definition::get_input_expression;
 use ide_ci::actions::workflow::definition::shell;
+use ide_ci::actions::workflow::definition::step::Argument;
 use ide_ci::actions::workflow::definition::Access;
 use ide_ci::actions::workflow::definition::Job;
 use ide_ci::actions::workflow::definition::JobArchetype;
@@ -587,19 +588,27 @@ impl JobArchetype for PackageIde {
             } else {
                 shell(TEST_COMMAND)
             };
-            let mut test_step = test_step
+            let test_step = test_step
                 .with_env("DEBUG", "pw:browser log:")
                 .with_secret_exposed_as(secret::ENSO_CLOUD_TEST_ACCOUNT_USERNAME, "ENSO_TEST_USER")
                 .with_secret_exposed_as(
                     secret::ENSO_CLOUD_TEST_ACCOUNT_PASSWORD,
                     "ENSO_TEST_USER_PASSWORD",
                 );
-            // Make E2E tests optional on Windows, as we have an ongoing issue with the runner.
-            // TODO[ib]: remove once the issue is resolved.
-            if target.0 == OS::Windows {
-                test_step.continue_on_error = Some(true);
-            }
             steps.push(test_step);
+
+            let upload_test_traces_step = Step {
+                r#if: Some("failure()".into()),
+                name: Some("Upload Test Traces".into()),
+                uses: Some("actions/upload-artifact@v4".into()),
+                with: Some(Argument::Other(BTreeMap::from_iter([
+                    ("name".into(), format!("test-traces-{}-{}", target.0, target.1).into()),
+                    ("path".into(), "app/ide-desktop/client/test-traces".into()),
+                    ("compression-level".into(), 0.into()), // The traces are in zip already.
+                ]))),
+                ..Default::default()
+            };
+            steps.push(upload_test_traces_step);
 
             // After the E2E tests run, they create a credentials file in user home directory.
             // If that file is not cleaned up, future runs of our tests may randomly get

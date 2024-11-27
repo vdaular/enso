@@ -1,4 +1,4 @@
-/** @file Vite configuration for dashboard e2e tests' server. */
+/** @file Vite configuration for dashboard integration tests' server. */
 import { fileURLToPath } from 'node:url'
 
 import { defineConfig, mergeConfig } from 'vite'
@@ -21,10 +21,10 @@ export default mergeConfig(
     resolve: {
       alias: {
         '@stripe/stripe-js/pure': fileURLToPath(
-          new URL('./e2e/dashboard/mock/stripe.ts', import.meta.url),
+          new URL('./integration-test/dashboard/mock/stripe.ts', import.meta.url),
         ),
         '@stripe/react-stripe-js': fileURLToPath(
-          new URL('./e2e/dashboard/mock/react-stripe.tsx', import.meta.url),
+          new URL('./integration-test/dashboard/mock/react-stripe.tsx', import.meta.url),
         ),
       },
       extensions: [

@@ -7,7 +7,7 @@ import { edgesFromNodeWithBinding, edgesToNodeWithBinding } from './locate'
 
 /**
  * Every edge consists of multiple parts.
- * See e2e/edgeRendering.spec.ts for explanation.
+ * See edgeRendering.spec.ts for explanation.
  */
 const EDGE_PARTS = 2
 

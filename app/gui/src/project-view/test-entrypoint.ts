@@ -1,5 +1,5 @@
 /***
- * This is a web entrypoint file for the GUI application running in e2e tests (playwright). It is
+ * This is a web entrypoint file for the GUI application running in integration tests (playwright). It is
  * not included in normal application distribution. The goal of separate entrypoint is to allow
  * providing mocks for connections with engine and to avoid running dashboard.
  */

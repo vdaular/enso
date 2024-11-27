@@ -9,7 +9,7 @@
 import { defineConfig } from '@playwright/test'
 import net from 'net'
 
-const DEBUG = process.env.DEBUG_E2E === 'true'
+const DEBUG = process.env.DEBUG_TEST === 'true'
 const isCI = process.env.CI === 'true'
 const isProd = process.env.PROD === 'true'
 
@@ -101,7 +101,7 @@ export default defineConfig({
     // Setup project
     {
       name: 'Setup Dashboard',
-      testDir: './e2e/dashboard',
+      testDir: './integration-test/dashboard',
       testMatch: /.*\.setup\.ts/,
       timeout: TIMEOUT_MS,
       use: {
@@ -111,7 +111,7 @@ export default defineConfig({
     },
     {
       name: 'Dashboard',
-      testDir: './e2e/dashboard',
+      testDir: './integration-test/dashboard',
       testMatch: /.*\.spec\.ts/,
       dependencies: ['Setup Dashboard'],
       expect: {
@@ -127,7 +127,7 @@ export default defineConfig({
     },
     {
       name: 'Auth',
-      testDir: './e2e/dashboard/auth',
+      testDir: './integration-test/dashboard/auth',
       expect: {
         toHaveScreenshot: { threshold: 0 },
         timeout: TIMEOUT_MS,
@@ -140,13 +140,15 @@ export default defineConfig({
     },
     {
       name: 'Setup Tests for Project View',
-      testMatch: /e2e\/project-view\/setup\.ts/,
+      testMatch: /integration-test\/project-view\/setup\.ts/,
     },
     {
       name: 'Project View',
       dependencies: ['Setup Tests for Project View'],
-      testDir: './e2e/project-view',
+      testDir: './integration-test/project-view',
       timeout: 60000,
+      repeatEach: 3,
+      retries: 0,
       expect: {
         timeout: 5000,
         toHaveScreenshot: { threshold: 0 },
@@ -159,7 +161,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      env: { E2E: 'true' },
+      env: { INTEGRATION_TEST: 'true' },
       command:
         isCI || isProd ?
           `corepack pnpm build && corepack pnpm exec vite preview --port ${ports.projectView} --strictPort`

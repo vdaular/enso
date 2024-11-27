@@ -31,8 +31,8 @@ tsconfig.json
 
 # GUI/Dashboard
 /app @Frizi @farmaazon @vitvakatu @kazcw @AdRiley @PabloBuchu @indiv0 @somebody1234 @MrFlashAccount
-/app/gui/e2e/dashboard @PabloBuchu @indiv0 @somebody1234 @MrFlashAccount
-/app/gui/e2e/project-view @Frizi @farmaazon @vitvakatu @kazcw @AdRiley 
+/app/gui/integration-test/dashboard @PabloBuchu @indiv0 @somebody1234 @MrFlashAccount
+/app/gui/integration-test/project-view @Frizi @farmaazon @vitvakatu @kazcw @AdRiley 
 /app/gui/src/dashboard @PabloBuchu @indiv0 @somebody1234 @MrFlashAccount
 /app/gui/src/project-view @Frizi @farmaazon @vitvakatu @kazcw @AdRiley 
 /app/ide-desktop/ @PabloBuchu @indiv0 @somebody1234 @MrFlashAccount

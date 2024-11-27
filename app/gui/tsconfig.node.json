@@ -8,7 +8,7 @@
     "playwright.config.*",
     "eslint.config.js",
     "tailwind.config.js",
-    "e2e/**/*",
+    "integration-test/**/*",
     "src/dashboard/hooks/eventCallbackHooks.ts",
     "src/dashboard/modules/payments/constants.ts",
     "src/dashboard/services/Backend.ts",

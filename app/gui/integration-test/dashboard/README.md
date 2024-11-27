@@ -1,4 +1,4 @@
-# End-to-end tests
+# Integration tests
 
 ## Running tests
 
@@ -6,20 +6,20 @@ Execute all commands from the parent directory.
 
 ```sh
 # Run tests normally
-pnpm run test:e2e
+pnpm run test:integration
 # Open UI to run tests
-pnpm run test:e2e:debug
+pnpm run test:integration:debug
 # Run tests in a specific file only
-pnpm run test:e2e -- e2e/file-name-here.spec.ts
-pnpm run test:e2e:debug -- e2e/file-name-here.spec.ts
+pnpm run test:integration -- integration-test/file-name-here.spec.ts
+pnpm run test:integration:debug -- integration-test/file-name-here.spec.ts
 # Compile the entire app before running the tests.
 # DOES NOT hot reload the tests.
 # Prefer not using this when you are trying to fix a test;
 # prefer using this when you just want to know which tests are failing (if any).
-PROD=1 pnpm run test:e2e
-PROD=1 pnpm run test:e2e:debug
-PROD=1 pnpm run test:e2e -- e2e/file-name-here.spec.ts
-PROD=1 pnpm run test:e2e:debug -- e2e/file-name-here.spec.ts
+PROD=1 pnpm run test:integration
+PROD=1 pnpm run test:integration:debug
+PROD=1 pnpm run test:integration -- integration-test/file-name-here.spec.ts
+PROD=1 pnpm run test:integration:debug -- integration-test/file-name-here.spec.ts
 ```
 
 ## Getting started

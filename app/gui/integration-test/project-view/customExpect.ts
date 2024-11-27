@@ -13,8 +13,7 @@ export const expect = baseExpect.extend({
     try {
       await expect(locator.first()).toBeVisible()
       pass = true
-    } catch (e) {
-      console.log(e)
+    } catch {
       pass = false
     }
 

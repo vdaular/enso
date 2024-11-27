@@ -388,8 +388,8 @@ export function getProjectRoot(subtreePath: string): string | null {
 
 /** Get the directory that stores Enso projects. */
 export function getProjectsDirectory(): string {
-  if (process.env.ENSO_TEST != null && process.env.ENSO_TEST !== '') {
-    return pathModule.join(os.tmpdir(), 'enso-test-projects', process.env.ENSO_TEST)
+  if (process.env.ENSO_TEST_PROJECTS_DIR) {
+    return process.env.ENSO_TEST_PROJECTS_DIR
   } else {
     const documentsPath = desktopEnvironment.DOCUMENTS
     if (documentsPath === undefined) {

@@ -64,7 +64,7 @@ export function AddPaymentMethodForm<
   const cardElement =
     // FIXME[sb]: I do not understand why `useWatch` is not sufficient for Playwright.
     // (The value is always `undefined` with `useWatch` alone)
-    // It is worth noting that E2E tests previously worked without requiring this change - as of:
+    // It is worth noting that integration tests previously worked without requiring this change - as of:
     // 1500849c32f70f5f4d95240b7e31377c649dc25b
     Form.useWatch({ control: form.control, name: 'cardElement' }) ?? form.getValues().cardElement
 

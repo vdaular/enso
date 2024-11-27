@@ -1,13 +1,14 @@
 /** @file Commonly used functions for electron tests */
 
-import { _electron, expect, type Page, test } from '@playwright/test'
+import { _electron, ElectronApplication, expect, type Page, test } from '@playwright/test'
 import { TEXTS } from 'enso-common/src/text'
-import fs from 'node:fs/promises'
+import * as random from 'lib0/random'
 import os from 'node:os'
 import pathModule from 'node:path'
 
 const LOADING_TIMEOUT = 10000
 const TEXT = TEXTS.english
+export const CONTROL_KEY = os.platform() === 'darwin' ? 'Meta' : 'Control'
 
 /**
  * Tests run on electron executable.
@@ -16,21 +17,32 @@ const TEXT = TEXTS.english
  */
 export function electronTest(
   name: string,
-  body: (args: { page: Page; projectsDir: string }) => Promise<void> | void,
+  body: (args: {
+    page: Page
+    app: ElectronApplication
+    projectsDir: string
+  }) => Promise<void> | void,
 ) {
   test(name, async () => {
+    const uuid = random.uuidv4()
+    const projectsDir = pathModule.join(os.tmpdir(), 'enso-test-projects', `${name}-${uuid}`)
+    console.log('Running Application; projects dir is', projectsDir)
     const app = await _electron.launch({
       executablePath: process.env.ENSO_TEST_EXEC_PATH ?? '',
       args: process.env.ENSO_TEST_APP_ARGS != null ? process.env.ENSO_TEST_APP_ARGS.split(',') : [],
-      env: { ...process.env, ['ENSO_TEST']: name },
+      env: { ...process.env, ENSO_TEST: name, ENSO_TEST_PROJECTS_DIR: projectsDir },
     })
     const page = await app.firstWindow()
+    await app.context().tracing.start({ screenshots: true, snapshots: true, sources: true })
     // Wait until page will be finally loaded: we expect login screen.
     // There's bigger timeout, because the page may load longer on CI machines.
     await expect(page.getByText('Login to your account')).toBeVisible({ timeout: LOADING_TIMEOUT })
-    const projectsDir = pathModule.join(os.tmpdir(), 'enso-test-projects', name)
-    await body({ page, projectsDir })
-    await app.close()
+    try {
+      await body({ page, app, projectsDir })
+    } finally {
+      await app.context().tracing.stop({ path: `test-traces/${name}.zip` })
+      await app.close()
+    }
   })
 }
 
@@ -61,22 +73,4 @@ export async function loginAsTestUser(page: Page) {
     .click()
 
   await page.getByTestId('form-submit-button').click()
-}
-
-/**
- * Find the most recently edited Enso project in `projectsDir` and return its absolute path.
- * There can be multiple projects, as the directory can be reused by subsequent test runs.
- * We precisely know the naming schema for new projects, and we use this knowledge to
- * find the project that was created most recently.
- */
-export async function findMostRecentlyCreatedProject(projectsDir: string): Promise<string | null> {
-  const dirContent = await fs.readdir(projectsDir)
-  const sorted = dirContent.sort((a, b) => {
-    // Project names always end with a number, so we can sort them by that number.
-    const numA = parseInt(a.match(/\d+/)![0], 10)
-    const numB = parseInt(b.match(/\d+/)![0], 10)
-    return numA - numB
-  })
-  const last = sorted.pop()
-  return last != null ? pathModule.join(projectsDir, last) : null
 }

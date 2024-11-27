@@ -105,7 +105,7 @@ const sourceRect = computed<Rect | undefined>(() => {
 
 /**
  * Edges which do not have `sourceRect` and `targetPos` initialized are marked by a special
- * `broken-edge` data-testid, for debugging and e2e test purposes.
+ * `broken-edge` data-testid, for debugging and integration test purposes.
  */
 const edgeIsBroken = computed(
   () =>

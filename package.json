@@ -34,6 +34,7 @@
     "ci:prettier": "prettier --check --cache .",
     "ci:lint": "corepack pnpm run -r --parallel lint --output-file eslint_report.json --format json",
     "ci:test": "corepack pnpm run -r --parallel test",
+    "ci:unit-test": "corepack pnpm run -r --parallel test:unit",
     "ci:typecheck": "corepack pnpm run -r typecheck",
     "ci:chromatic:react": "corepack pnpm run -r --filter enso-gui chromatic:react",
     "ci:chromatic:vue": "corepack pnpm run -r --filter enso-gui chromatic:vue"

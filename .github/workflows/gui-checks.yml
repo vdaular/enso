@@ -70,7 +70,7 @@ jobs:
       - name: 🧪 Unit Tests
         id: unit-tests
         continue-on-error: true
-        run: pnpm run ci:test
+        run: pnpm run ci:unit-test
 
       - name: 📝 Annotate Code Linting Results
         if: always()
@@ -146,7 +146,7 @@ jobs:
 
       - name: 🎭 Playwright Tests
         working-directory: app/gui
-        run: pnpm run e2e --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+        run: pnpm run test:integration --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
 
       - name: ⬆️ Upload blob report to GitHub Actions Artifacts
         if: ${{ !cancelled() }}

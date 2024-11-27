@@ -14,7 +14,7 @@ import wasm from 'vite-plugin-wasm'
 import tailwindConfig from './tailwind.config'
 
 const dynHostnameWsUrl = (port: number) => JSON.stringify(`ws://__HOSTNAME__:${port}`)
-const projectManagerUrl = dynHostnameWsUrl(process.env.E2E === 'true' ? 30536 : 30535)
+const projectManagerUrl = dynHostnameWsUrl(process.env.INTEGRATION_TEST === 'true' ? 30536 : 30535)
 const IS_CLOUD_BUILD = process.env.CLOUD_BUILD === 'true'
 const YDOC_SERVER_URL =
   process.env.ENSO_POLYGLOT_YDOC_SERVER ? JSON.stringify(process.env.ENSO_POLYGLOT_YDOC_SERVER)
@@ -24,7 +24,9 @@ const YDOC_SERVER_URL =
 await readEnvironmentFromFile()
 
 const entrypoint =
-  process.env.E2E === 'true' ? './src/project-view/e2e-entrypoint.ts' : './src/entrypoint.ts'
+  process.env.INTEGRATION_TEST === 'true' ?
+    './src/project-view/test-entrypoint.ts'
+  : './src/entrypoint.ts'
 
 // NOTE(Frizi): This rename is for the sake of forward compatibility with not yet merged config refactor on bazel branch,
 // and because Vite's HTML env replacements only work with import.meta.env variables, not defines.
