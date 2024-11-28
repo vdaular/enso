@@ -1184,7 +1184,8 @@ public class TypeInferenceTest extends CompilerTests {
     ModuleContext moduleContext =
         compilerRunner.buildModuleContext(
             moduleName, Option.apply(new FreshNameSupply()), Option.empty(), compilerConfig, false);
-    Module processedModule = passManager.runPassesOnModule(rawModule, moduleContext);
+    Module processedModule =
+        compilerRunner.runPassesOnModule(rawModule, passManager, moduleContext);
     return processedModule;
   }
 }

@@ -69,7 +69,10 @@ object Patterns extends IRPass {
       case method: definition.Method.Explicit =>
         val resolution = method.methodReference.typePointer
           .flatMap(
-            _.getMetadata(MethodDefinitions)
+            _.getMetadata(
+              MethodDefinitions.INSTANCE,
+              classOf[BindingsMap.Resolution]
+            )
           )
           .map(_.target)
         val newBody = doExpression(method.body, bindings, resolution)

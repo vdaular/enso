@@ -1,4 +1,4 @@
-package org.enso.interpreter.util;
+package org.enso.scala.wrapper;
 
 import java.util.List;
 import java.util.Optional;

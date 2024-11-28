@@ -1,9 +1,13 @@
 package org.enso.compiler.pass
 
+import org.enso.common.{Asserts, CompilationStage}
 import org.slf4j.LoggerFactory
 import org.enso.compiler.context.{InlineContext, ModuleContext}
 import org.enso.compiler.core.ir.{Expression, Module}
-import org.enso.compiler.core.CompilerError
+import org.enso.compiler.core.{CompilerError, IR}
+import org.enso.compiler.pass.analyse.BindingAnalysis
+
+import scala.collection.mutable.ListBuffer
 
 // TODO [AA] In the future, the pass ordering should be _computed_ from the list
 //  of available passes, rather than just verified.
@@ -18,7 +22,7 @@ import org.enso.compiler.core.CompilerError
   */
 //noinspection DuplicatedCode
 class PassManager(
-  passes: List[PassGroup],
+  protected val passes: List[PassGroup],
   passConfiguration: PassConfiguration
 ) {
   private val logger = LoggerFactory.getLogger(classOf[PassManager])
@@ -57,21 +61,6 @@ class PassManager(
     passes
   }
 
-  /** Executes all pass groups on the [[Module]].
-    *
-    * @param ir the module to execute the compiler passes on
-    * @param moduleContext the module context in which the passes are executed
-    * @return the result of executing `passGroup` on `ir`
-    */
-  def runPassesOnModule(
-    ir: Module,
-    moduleContext: ModuleContext
-  ): Module = {
-    passes.foldLeft(ir)((ir, group) =>
-      runPassesOnModule(ir, moduleContext, group)
-    )
-  }
-
   /** Executes the provided `passGroup` on the [[Module]].
     *
     * @param ir the module to execute the compiler passes on
@@ -84,74 +73,31 @@ class PassManager(
     moduleContext: ModuleContext,
     passGroup: PassGroup
   ): Module = {
+    Asserts.assertInJvm(validateConsistency(ir, moduleContext))
+
     if (!passes.contains(passGroup)) {
       throw new CompilerError("Cannot run an unvalidated pass group.")
     }
-
-    val newContext =
-      moduleContext.copy(passConfiguration = Some(passConfiguration))
-
-    val passesWithIndex = passGroup.passes.zipWithIndex
 
     logger.debug(
       "runPassesOnModule[{}@{}]",
       moduleContext.getName(),
       moduleContext.module.getCompilationStage()
     )
-    var pendingMiniPasses: List[MiniPassFactory] = List()
-    def flushMiniPass(in: Module): Module = {
-      if (pendingMiniPasses.nonEmpty) {
-        val miniPasses = pendingMiniPasses.map(factory =>
-          factory.createForModuleCompilation(newContext)
-        )
-        val combinedPass = miniPasses.fold(null)(MiniIRPass.combine)
-        logger.trace("  flushing pending mini pass: {}", combinedPass)
-        pendingMiniPasses = List()
-        MiniIRPass.compile(classOf[Module], in, combinedPass)
-      } else {
-        in
-      }
-    }
-    val res = passesWithIndex.foldLeft(ir) {
-      case (intermediateIR, (pass, index)) => {
-        pass match {
-          case miniFactory: MiniPassFactory =>
-            logger.trace(
-              "  mini collected: {}",
-              pass
-            )
-            val combiningPreventedBy = pendingMiniPasses.find { p =>
-              p.invalidatedPasses.contains(miniFactory)
-            }
-            val irForRemainingMiniPasses = if (combiningPreventedBy.isDefined) {
-              logger.trace(
-                "  pass {} forces flush before {}",
-                combiningPreventedBy.orNull,
-                miniFactory
-              )
-              flushMiniPass(intermediateIR)
-            } else {
-              intermediateIR
-            }
-            pendingMiniPasses = pendingMiniPasses.appended(miniFactory)
-            irForRemainingMiniPasses
-          case megaPass: IRPass =>
-            // TODO [AA, MK] This is a possible race condition.
-            passConfiguration
-              .get(megaPass)
-              .foreach(c =>
-                c.shouldWriteToContext = isLastRunOf(index, megaPass, passGroup)
-              )
-            val flushedIR = flushMiniPass(intermediateIR)
-            logger.trace(
-              "  mega running: {}",
-              megaPass
-            )
-            megaPass.runModule(flushedIR, newContext)
-        }
-      }
-    }
-    flushMiniPass(res)
+
+    val newContext =
+      moduleContext.copy(passConfiguration = Some(passConfiguration))
+
+    runPasses[Module, ModuleContext](
+      ir,
+      newContext,
+      passGroup,
+      createMiniPass =
+        (factory, ctx) => factory.createForModuleCompilation(ctx),
+      miniPassCompile = (miniPass, ir) =>
+        MiniIRPass.compile[Module](classOf[Module], ir, miniPass),
+      megaPassCompile = (megaPass, ir, ctx) => megaPass.runModule(ir, ctx)
+    )
   }
 
   /** Executes all passes on the [[Expression]].
@@ -188,15 +134,80 @@ class PassManager(
     val newContext =
       inlineContext.copy(passConfiguration = Some(passConfiguration))
 
+    runPasses[Expression, InlineContext](
+      ir,
+      newContext,
+      passGroup,
+      createMiniPass =
+        (factory, ctx) => factory.createForInlineCompilation(ctx),
+      miniPassCompile = (miniPass, ir) =>
+        MiniIRPass.compile[Expression](classOf[Expression], ir, miniPass),
+      megaPassCompile = (megaPass, ir, ctx) => megaPass.runExpression(ir, ctx)
+    )
+  }
+
+  /** Runs all the passes in the given `passGroup` on `ir` with `context`.
+    * @param createMiniPass Function that creates a minipass.
+    * @param miniPassCompile Function that compiles IR with mini pass.
+    * @param megaPassCompile Function that compiles IR with mega pass.
+    * @tparam IRType Type of the [[IR]] that is being compiled.
+    * @tparam ContextType Type of the context for the compilation.
+    *                     Either [[ModuleContext]] or [[InlineContext]]
+    * @return Compiled IR. Might be the same reference as `ir` if no compilation was done.
+    */
+  private def runPasses[IRType <: IR, ContextType](
+    ir: IRType,
+    context: ContextType,
+    passGroup: PassGroup,
+    createMiniPass: (MiniPassFactory, ContextType) => MiniIRPass,
+    miniPassCompile: (MiniIRPass, IRType) => IRType,
+    megaPassCompile: (IRPass, IRType, ContextType) => IRType
+  ): IRType = {
+    val pendingMiniPasses: ListBuffer[MiniPassFactory] = ListBuffer()
+
+    def flushMiniPasses(in: IRType): IRType = {
+      if (pendingMiniPasses.nonEmpty) {
+        val miniPasses =
+          pendingMiniPasses.map(factory => createMiniPass(factory, context))
+        val combinedPass = miniPasses.fold(null)(MiniIRPass.combine)
+        pendingMiniPasses.clear()
+        if (combinedPass != null) {
+          logger.trace("  flushing pending mini pass: {}", combinedPass)
+          miniPassCompile(combinedPass, in)
+        } else {
+          in
+        }
+      } else {
+        in
+      }
+    }
+
     val passesWithIndex = passGroup.passes.zipWithIndex
-
-    passesWithIndex.foldLeft(ir) {
-      case (intermediateIR, (pass, index)) => {
-
+    val res = passesWithIndex.foldLeft(ir) {
+      case (intermediateIR, (pass, index)) =>
         pass match {
           case miniFactory: MiniPassFactory =>
-            val miniPass = miniFactory.createForInlineCompilation(newContext)
-            MiniIRPass.compile(classOf[Expression], intermediateIR, miniPass)
+            logger.trace(
+              "  mini collected: {}",
+              pass
+            )
+            val combiningPreventedByOpt = pendingMiniPasses.find { p =>
+              p.invalidatedPasses.contains(miniFactory)
+            }
+            val irForRemainingMiniPasses = combiningPreventedByOpt match {
+              case Some(combiningPreventedBy) =>
+                logger.trace(
+                  "  pass {} forces flush before (invalidates) {}",
+                  combiningPreventedBy,
+                  miniFactory
+                )
+                flushMiniPasses(intermediateIR)
+              case None =>
+                intermediateIR
+            }
+            pendingMiniPasses.addOne(miniFactory)
+            irForRemainingMiniPasses
+
           case megaPass: IRPass =>
             // TODO [AA, MK] This is a possible race condition.
             passConfiguration
@@ -204,11 +215,16 @@ class PassManager(
               .foreach(c =>
                 c.shouldWriteToContext = isLastRunOf(index, megaPass, passGroup)
               )
-            megaPass.runExpression(intermediateIR, newContext)
+            val flushedIR = flushMiniPasses(intermediateIR)
+            logger.trace(
+              "  mega running: {}",
+              megaPass
+            )
+            megaPassCompile(megaPass, flushedIR, context)
         }
-
-      }
     }
+
+    flushMiniPasses(res)
   }
 
   /** Determines whether the run at index `indexOfPassInGroup` is the last run
@@ -229,6 +245,51 @@ class PassManager(
     val totalLength = before.map(_.passes.length).sum
 
     ix - totalLength == indexOfPassInGroup
+  }
+
+  /** Validates consistency between the IR accessible via `moduleContext` and `ir`.
+    * There is no way to enforce this consistency statically.
+    * Should be called only iff assertions are enabled.
+    * @return true if they are consistent, otherwise throws [[AssertionError]].
+    */
+  private def validateConsistency(
+    ir: Module,
+    moduleContext: ModuleContext
+  ): Boolean = {
+    def hex(obj: Object): String = {
+      if (obj != null) {
+        val hexStr    = Integer.toHexString(System.identityHashCode(obj))
+        val className = obj.getClass.getSimpleName
+        s"$className@${hexStr}"
+      } else {
+        "null"
+      }
+    }
+
+    if (
+      moduleContext.module.getCompilationStage.isAtLeast(
+        CompilationStage.AFTER_PARSING
+      )
+    ) {
+      if (!(moduleContext.module.getIr eq ir)) {
+        throw new AssertionError(
+          "Mismatch of IR between ModuleContext and IR in module '" + moduleContext
+            .getName() + "'. " +
+          s"IR from moduleContext: ${hex(moduleContext.module.getIr)}, IR from module: ${hex(ir)}"
+        )
+      }
+      val bmFromCtx  = moduleContext.bindingsAnalysis()
+      val bmFromMeta = ir.passData.get(BindingAnalysis)
+      if (bmFromMeta.isDefined || bmFromCtx != null) {
+        Asserts.assertInJvm(
+          bmFromCtx eq bmFromMeta.get,
+          s"BindingsMap mismatch between ModuleContext and IR in module '" +
+          moduleContext.getName() + "'. " +
+          s"BindingsMap from moduleContext: ${hex(bmFromCtx)}, BindingsMap from IR: ${hex(bmFromMeta.get)}"
+        )
+      }
+    }
+    true
   }
 
   /** Updates the metadata in a copy of the IR when updating that metadata

@@ -724,7 +724,10 @@ class IrToTruffle(
         Some(scopeAssociatedType)
       case Some(tpePointer) =>
         tpePointer
-          .getMetadata(MethodDefinitions)
+          .getMetadata(
+            MethodDefinitions.INSTANCE,
+            classOf[BindingsMap.Resolution]
+          )
           .map { res =>
             res.target match {
               case binding @ BindingsMap.ResolvedType(_, _) =>
@@ -945,38 +948,40 @@ class IrToTruffle(
   }
 
   private def getTypeResolution(expr: IR): Option[Type] =
-    expr.getMetadata(MethodDefinitions).map { res =>
-      res.target match {
-        case binding @ BindingsMap.ResolvedType(_, _) =>
-          asType(binding)
-        case BindingsMap.ResolvedModule(module) =>
-          asAssociatedType(module.unsafeAsModule())
-        case BindingsMap.ResolvedConstructor(_, _) =>
-          throw new CompilerError(
-            "Impossible here, should be caught by MethodDefinitions pass."
-          )
-        case BindingsMap.ResolvedPolyglotSymbol(_, _) =>
-          throw new CompilerError(
-            "Impossible polyglot symbol, should be caught by MethodDefinitions pass."
-          )
-        case BindingsMap.ResolvedPolyglotField(_, _) =>
-          throw new CompilerError(
-            "Impossible polyglot field, should be caught by MethodDefinitions pass."
-          )
-        case _: BindingsMap.ResolvedModuleMethod =>
-          throw new CompilerError(
-            "Impossible module method here, should be caught by MethodDefinitions pass."
-          )
-        case _: BindingsMap.ResolvedExtensionMethod =>
-          throw new CompilerError(
-            "Impossible static method here, should be caught by MethodDefinitions pass."
-          )
-        case _: BindingsMap.ResolvedConversionMethod =>
-          throw new CompilerError(
-            "Impossible conversion method here, should be caught by MethodDefinitions pass."
-          )
+    expr
+      .getMetadata(MethodDefinitions.INSTANCE, classOf[BindingsMap.Resolution])
+      .map { res =>
+        res.target match {
+          case binding @ BindingsMap.ResolvedType(_, _) =>
+            asType(binding)
+          case BindingsMap.ResolvedModule(module) =>
+            asAssociatedType(module.unsafeAsModule())
+          case BindingsMap.ResolvedConstructor(_, _) =>
+            throw new CompilerError(
+              "Impossible here, should be caught by MethodDefinitions pass."
+            )
+          case BindingsMap.ResolvedPolyglotSymbol(_, _) =>
+            throw new CompilerError(
+              "Impossible polyglot symbol, should be caught by MethodDefinitions pass."
+            )
+          case BindingsMap.ResolvedPolyglotField(_, _) =>
+            throw new CompilerError(
+              "Impossible polyglot field, should be caught by MethodDefinitions pass."
+            )
+          case _: BindingsMap.ResolvedModuleMethod =>
+            throw new CompilerError(
+              "Impossible module method here, should be caught by MethodDefinitions pass."
+            )
+          case _: BindingsMap.ResolvedExtensionMethod =>
+            throw new CompilerError(
+              "Impossible static method here, should be caught by MethodDefinitions pass."
+            )
+          case _: BindingsMap.ResolvedConversionMethod =>
+            throw new CompilerError(
+              "Impossible conversion method here, should be caught by MethodDefinitions pass."
+            )
+        }
       }
-    }
 
   private def getTailStatus(
     expression: Expression
@@ -1137,7 +1142,8 @@ class IrToTruffle(
                     )
                   org.enso.common.Asserts.assertInJvm(
                     fun != null,
-                    s"exported symbol (static method) `${staticMethod.name}` needs to be registered first in the module "
+                    s"exported symbol (static method) `${staticMethod.name}` on type '${eigenTp.getName}' " +
+                    s"needs to be registered first in the module '${actualModule.getName.toString}'."
                   )
                   scopeBuilder.registerMethod(
                     scopeAssociatedType,

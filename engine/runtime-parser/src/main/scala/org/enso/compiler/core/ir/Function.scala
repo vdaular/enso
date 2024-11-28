@@ -135,6 +135,12 @@ object Function {
       } else this
     }
 
+    def copyWithArguments(
+      arguments: List[DefinitionArgument]
+    ): Lambda = {
+      copy(arguments = arguments)
+    }
+
     /** @inheritdoc */
     override def duplicate(
       keepLocations: Boolean   = true,

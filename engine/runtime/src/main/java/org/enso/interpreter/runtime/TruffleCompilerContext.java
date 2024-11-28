@@ -1,7 +1,7 @@
 package org.enso.interpreter.runtime;
 
-import static org.enso.interpreter.util.ScalaConversions.cons;
-import static org.enso.interpreter.util.ScalaConversions.nil;
+import static org.enso.scala.wrapper.ScalaConversions.cons;
+import static org.enso.scala.wrapper.ScalaConversions.nil;
 
 import com.oracle.truffle.api.TruffleFile;
 import com.oracle.truffle.api.TruffleLogger;
@@ -791,7 +791,9 @@ final class TruffleCompilerContext implements CompilerContext {
           var meta = module.getIr().passData();
           var pass = meta.get(BindingAnalysis$.MODULE$);
           emitIOException();
-          return (BindingsMap) pass.get();
+          if (pass.isDefined()) {
+            return (BindingsMap) pass.get();
+          }
         } catch (IOException ex) {
           var logger =
               TruffleLogger.getLogger(LanguageInfo.ID, org.enso.interpreter.runtime.Module.class);

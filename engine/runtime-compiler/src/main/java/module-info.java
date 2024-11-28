@@ -8,6 +8,7 @@ module org.enso.runtime.compiler {
   requires org.enso.runtime.parser;
   requires static org.enso.persistance;
   requires org.enso.syntax;
+  requires org.enso.scala.wrapper;
 
   requires org.openide.util.lookup.RELEASE180;
   requires org.slf4j;

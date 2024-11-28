@@ -2949,6 +2949,16 @@ lazy val `runtime-integration-tests` =
           (`runtime` / javaModuleName).value -> Seq(javaSrcDir, testClassesDir)
         )
       },
+      Test / addOpens := {
+        val compilerModName = (`runtime-compiler` / javaModuleName).value
+        // In the tests, we access a private field of org.enso.compiler.pass.PassManager via reflection.
+        Map(
+          compilerModName + "/org.enso.compiler.pass" -> Seq(
+            (`runtime` / javaModuleName).value,
+            "ALL-UNNAMED"
+          )
+        )
+      },
       // runtime-integration-tests does not have module descriptor on its own, so we have
       // to explicitly add some modules to the resolution.
       Test / addModules := Seq(
@@ -3232,7 +3242,8 @@ lazy val `runtime-compiler` =
         "org.yaml"             % "snakeyaml"               % snakeyamlVersion          % Test,
         "org.jline"            % "jline"                   % jlineVersion              % Test,
         "com.typesafe"         % "config"                  % typesafeConfigVersion     % Test,
-        "org.graalvm.polyglot" % "polyglot"                % graalMavenPackagesVersion % Test
+        "org.graalvm.polyglot" % "polyglot"                % graalMavenPackagesVersion % Test,
+        "org.hamcrest"         % "hamcrest-all"            % hamcrestVersion           % Test
       ),
       Compile / moduleDependencies ++= Seq(
         "org.slf4j"        % "slf4j-api"               % slf4jVersion,
@@ -3243,6 +3254,7 @@ lazy val `runtime-compiler` =
         (`pkg` / Compile / exportedModule).value,
         (`runtime-parser` / Compile / exportedModule).value,
         (`syntax-rust-definition` / Compile / exportedModule).value,
+        (`scala-libs-wrapper` / Compile / exportedModule).value,
         (`persistance` / Compile / exportedModule).value,
         (`editions` / Compile / exportedModule).value
       ),
@@ -3271,9 +3283,14 @@ lazy val `runtime-compiler` =
         javaModuleName.value
       ),
       Test / patchModules := {
+        // Patch test-classes into the runtime module. This is standard way to deal with the
+        // split package problem in unit tests. For example, Maven's surefire plugin does this.
         val testClassDir = (Test / productDirectories).value.head
+        // Patching with sources is useful for compilation, patching with compiled classes for runtime.
+        val javaSrcDir = (Test / javaSource).value
         Map(
           javaModuleName.value -> Seq(
+            javaSrcDir,
             testClassDir
           )
         )

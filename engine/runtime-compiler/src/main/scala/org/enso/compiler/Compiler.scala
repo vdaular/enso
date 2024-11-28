@@ -606,6 +606,7 @@ class Compiler(
         expr
       else
         injectSyntheticModuleExports(expr, module.getDirectModulesRefs)
+    context.updateModule(module, _.ir(exprWithModuleExports))
     val discoveredModule =
       recognizeBindings(exprWithModuleExports, moduleContext)
     if (context.wasLoadedFromCache(module)) {

@@ -93,6 +93,12 @@ object Name {
       } else this
     }
 
+    def copyWithTypePointer(
+      typePointer: Option[Name]
+    ) = {
+      copy(typePointer = typePointer)
+    }
+
     /** @inheritdoc */
     override def duplicate(
       keepLocations: Boolean   = true,

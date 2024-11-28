@@ -85,11 +85,11 @@ class GlobalNamesTest extends CompilerTest {
                  |
                  |""".stripMargin
     val parsed       = EnsoParser.compile(code)
-    val moduleMapped = passManager.runPassesOnModule(parsed, ctx, group1)
+    val moduleMapped = parsed.runPasses(passManager, group1, ctx)
     ModuleTestUtils.unsafeSetIr(both._2, moduleMapped)
 
     new ExportsResolution(null).run(List(both._2.asCompilerModule()))
-    val allPrecursors = passManager.runPassesOnModule(moduleMapped, ctx, group2)
+    val allPrecursors = moduleMapped.runPasses(passManager, group2, ctx)
     val ir            = allPrecursors.analyse
 
     val bodyExprs = ir

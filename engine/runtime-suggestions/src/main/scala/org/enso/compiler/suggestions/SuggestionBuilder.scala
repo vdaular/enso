@@ -131,7 +131,10 @@ final class SuggestionBuilder[A: IndexedSource](
             val (selfTypeOpt, isStatic) = typePtr match {
               case Some(typePtr) =>
                 val selfType = typePtr
-                  .getMetadata(MethodDefinitions)
+                  .getMetadata(
+                    MethodDefinitions.INSTANCE,
+                    classOf[BindingsMap.Resolution]
+                  )
                   .map(_.target.qualifiedName)
                 selfType -> m.isStatic
               case None =>
@@ -167,7 +170,10 @@ final class SuggestionBuilder[A: IndexedSource](
                 ) if !conversionMeth.isPrivate =>
             val selfType = typePtr.flatMap { typePointer =>
               typePointer
-                .getMetadata(MethodDefinitions)
+                .getMetadata(
+                  MethodDefinitions.INSTANCE,
+                  classOf[BindingsMap.Resolution]
+                )
                 .map(_.target.qualifiedName)
             }
             val conversion = buildConversion(

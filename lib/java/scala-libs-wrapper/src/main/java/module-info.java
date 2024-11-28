@@ -4,6 +4,8 @@ module org.enso.scala.wrapper {
   requires org.jline;
   requires org.slf4j;
 
+  exports org.enso.scala.wrapper;
+
   // "org.typelevel" % ("cats-core_" + scalaVer) % "2.10.0",
   exports cats;
   exports cats.arrow;

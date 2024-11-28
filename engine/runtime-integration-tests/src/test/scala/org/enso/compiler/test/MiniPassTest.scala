@@ -84,9 +84,8 @@ trait MiniPassTest extends CompilerTest {
     source: String,
     moduleCtx: ModuleContext
   ): Module = {
-    val module = parseModule(source)
-    val preprocessedModule =
-      megaPassManager.runPassesOnModule(module, moduleCtx)
+    val module             = parseModule(source)
+    val preprocessedModule = module.runPasses(megaPassManager, moduleCtx)
     megaPass.runModule(preprocessedModule, moduleCtx)
   }
 
@@ -94,10 +93,9 @@ trait MiniPassTest extends CompilerTest {
     source: String,
     moduleCtx: ModuleContext
   ): Module = {
-    val module   = parseModule(source)
-    val miniPass = miniPassFactory.createForModuleCompilation(moduleCtx)
-    val preprocessedModule =
-      megaPassManager.runPassesOnModule(module, moduleCtx)
+    val module             = parseModule(source)
+    val miniPass           = miniPassFactory.createForModuleCompilation(moduleCtx)
+    val preprocessedModule = module.runPasses(megaPassManager, moduleCtx)
     MiniIRPass.compile(classOf[Module], preprocessedModule, miniPass)
   }
 

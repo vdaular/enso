@@ -16,7 +16,7 @@ import org.enso.compiler.pass.resolve.GlobalNames$;
 import org.enso.compiler.pass.resolve.IgnoredBindings;
 import org.enso.compiler.pass.resolve.IgnoredBindings$;
 import org.enso.compiler.pass.resolve.MethodCalls$;
-import org.enso.compiler.pass.resolve.MethodDefinitions$;
+import org.enso.compiler.pass.resolve.MethodDefinitions;
 import org.enso.compiler.pass.resolve.ModuleAnnotations;
 import org.enso.compiler.pass.resolve.ModuleAnnotations$;
 import org.enso.compiler.pass.resolve.Patterns$;
@@ -54,7 +54,7 @@ import scala.Tuple2$;
 @Persistable(clazz = ModuleAnnotations$.class, id = 1212)
 @Persistable(clazz = GatherDiagnostics$.class, id = 1213)
 @Persistable(clazz = MethodCalls$.class, id = 1214)
-@Persistable(clazz = MethodDefinitions$.class, id = 1215)
+@Persistable(clazz = MethodDefinitions.class, id = 1215)
 @Persistable(clazz = GenericAnnotations$.class, id = 1216)
 @Persistable(clazz = ExpressionAnnotations$.class, id = 1217)
 @Persistable(clazz = FullyQualifiedNames$.class, id = 1218)

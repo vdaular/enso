@@ -875,7 +875,7 @@ object BindingsMap {
         case method: ir.module.scope.definition.Method.Explicit =>
           method.methodReference.methodName.name == this.method.name && method.methodReference.typePointer
             .forall(
-              _.getMetadata(MethodDefinitions)
+              _.getMetadata(MethodDefinitions.INSTANCE)
                 .contains(Resolution(ResolvedModule(module)))
             )
         case _ => false

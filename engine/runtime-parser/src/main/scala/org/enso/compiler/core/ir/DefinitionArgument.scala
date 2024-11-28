@@ -141,6 +141,12 @@ object DefinitionArgument {
       } else this
     }
 
+    def copyWithAscribedType(
+      ascribedType: Expression
+    ): Specified = {
+      copy(ascribedType = Some(ascribedType))
+    }
+
     override def withName(ir: Name): DefinitionArgument = copy(name = ir)
 
     /** @inheritdoc */

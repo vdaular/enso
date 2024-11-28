@@ -115,7 +115,10 @@ case object GlobalNames extends IRPass {
       case asc: Type.Ascription => asc
       case method: definition.Method =>
         val resolution = method.methodReference.typePointer.flatMap(
-          _.getMetadata(MethodDefinitions)
+          _.getMetadata(
+            MethodDefinitions.INSTANCE,
+            classOf[BindingsMap.Resolution]
+          )
         )
         method.mapExpressions(
           processExpression(_, bindings, List(), freshNameSupply, resolution)

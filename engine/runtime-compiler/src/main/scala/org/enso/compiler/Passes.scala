@@ -40,12 +40,12 @@ class Passes(config: CompilerConfig) {
 
   val globalTypingPasses = new PassGroup(
     List(
-      MethodDefinitions,
+      MethodDefinitions.INSTANCE,
       SectionsToBinOp.INSTANCE,
       OperatorToFunction,
       LambdaShorthandToLambda,
-      ImportSymbolAnalysis,
-      AmbiguousImportsAnalysis
+      ImportSymbolAnalysis.INSTANCE,
+      AmbiguousImportsAnalysis.INSTANCE
     ) ++ (if (config.privateCheckEnabled) {
             List(
               PrivateModuleAnalysis.INSTANCE,
