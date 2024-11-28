@@ -17,6 +17,7 @@ function setValue(value: string | undefined) {
 }
 
 const value = computed<number | undefined>(() => {
+  if (WidgetInput.isPlaceholder(props.input)) return undefined // We display the value as placeholder.
   const inputValue = WidgetInput.valueRepr(props.input)
   if (inputValue == null) return undefined
   const inputNumber = parseFloat(inputValue)

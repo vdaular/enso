@@ -34,7 +34,7 @@ export const widgetDefinition = defineWidget(
 <template>
   <div class="WidgetIcon">
     <SvgIcon
-      class="nodeCategoryIcon grab-handle draggable"
+      class="nodeCategoryIcon grab-handle"
       :name="props.input[DisplayIcon].icon"
       @click.right.stop.prevent="tree.emitOpenFullMenu()"
     />

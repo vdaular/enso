@@ -50,7 +50,7 @@ export namespace WidgetInput {
 
   /** Match input against a placeholder or specific AST node type. */
   export function placeholderOrAstMatcher<T extends Ast.Ast>(nodeType: new (...args: any[]) => T) {
-    return (input: WidgetInput): input is WidgetInput & { value: T } =>
+    return (input: WidgetInput): input is WidgetInput & { value: T | string | undefined } =>
       isPlaceholder(input) || input.value instanceof nodeType
   }
 

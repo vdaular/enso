@@ -38,15 +38,23 @@ function accepted() {
     edit.getVersion(props.input.value).setRawTextContent(editedContents.value)
     props.onUpdate({ edit })
   } else {
+    let value: Ast.Owned<Ast.MutableTextLiteral>
+    if (inputTextLiteral.value) {
+      value = Ast.copyIntoNewModule(inputTextLiteral.value)
+      value.setRawTextContent(editedContents.value)
+    } else {
+      value = makeNewLiteral(editedContents.value)
+    }
     props.onUpdate({
       portUpdate: {
-        value: makeNewLiteral(editedContents.value),
+        value,
         origin: props.input.portId,
       },
     })
   }
 }
 
+/** Widget Input as Text Literal; undefined if there's no value, or the value is not a Text literal. */
 const inputTextLiteral = computed((): Ast.TextLiteral | undefined => {
   if (props.input.value instanceof Ast.TextLiteral) return props.input.value
   const valueStr = WidgetInput.valueRepr(props.input)
@@ -64,10 +72,17 @@ function makeLiteralFromUserInput(value: string): Ast.Owned<Ast.MutableTextLiter
   }
 }
 
-const shownLiteral = computed(() => inputTextLiteral.value ?? emptyTextLiteral.value)
-const closeToken = computed(() => shownLiteral.value.close ?? shownLiteral.value.open)
+const openToken = computed(() => inputTextLiteral.value?.open ?? emptyTextLiteral.value.open)
+const closeToken = computed(() => inputTextLiteral.value?.close ?? openToken.value)
 
-const textContents = computed(() => shownLiteral.value.rawTextContent)
+const textContents = computed(() =>
+  props.input.value instanceof Ast.TextLiteral ? props.input.value.rawTextContent : '',
+)
+const placeholder = computed(() =>
+  WidgetInput.isPlaceholder(props.input) ?
+    inputTextLiteral.value?.rawTextContent ?? WidgetInput.valueRepr(props.input)
+  : '',
+)
 const editedContents = ref(textContents.value)
 watch(textContents, (value) => (editedContents.value = value))
 </script>
@@ -97,7 +112,7 @@ export const widgetDefinition = defineWidget(
 
 <template>
   <label ref="widgetRoot" class="WidgetText widgetRounded">
-    <NodeWidget v-if="shownLiteral.open" :input="WidgetInput.FromAst(shownLiteral.open)" />
+    <NodeWidget v-if="openToken" :input="WidgetInput.FromAst(openToken)" />
     <!-- Do not finish edit on blur here!
 
     It is tempting, but it breaks the cooperation with possible drop-down widget. Blur may be done on
@@ -107,6 +122,7 @@ export const widgetDefinition = defineWidget(
     <AutoSizedInput
       ref="input"
       v-model="editedContents"
+      :placeholder="placeholder"
       autoSelect
       @keydown.enter.stop="accepted"
       @keydown.tab.stop="accepted"

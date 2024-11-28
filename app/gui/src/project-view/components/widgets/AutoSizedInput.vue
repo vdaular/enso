@@ -142,6 +142,9 @@ defineExpose({
   &:focus {
     outline: none;
   }
+  &::placeholder {
+    font-style: italic;
+  }
 }
 
 .input::-webkit-outer-spin-button,

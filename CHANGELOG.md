@@ -37,6 +37,7 @@
 - [Visualizations on components are slightly transparent when not
   focused][11582].
 - [New design for vector-editing widget][11620]
+- [Default values on widgets are displayed in italic][11666].
 - [The `:` type operator can now be chained][11671]
 
 [11151]: https://github.com/enso-org/enso/pull/11151
@@ -59,6 +60,7 @@
 [11564]: https://github.com/enso-org/enso/pull/11564
 [11597]: https://github.com/enso-org/enso/pull/11597
 [11612]: https://github.com/enso-org/enso/pull/11612
+[11666]: https://github.com/enso-org/enso/pull/11666
 [11582]: https://github.com/enso-org/enso/pull/11582
 [11620]: https://github.com/enso-org/enso/pull/11620
 [11671]: https://github.com/enso-org/enso/pull/11671
