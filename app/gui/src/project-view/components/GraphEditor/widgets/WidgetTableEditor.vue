@@ -253,7 +253,7 @@ export const widgetDefinition = defineWidget(
     <Suspense>
       <AgGridTableView
         ref="grid"
-        class="grid"
+        class="inner"
         :defaultColDef="defaultColDef"
         :columnDefs="columnDefs"
         :rowData="rowData"
@@ -292,8 +292,29 @@ export const widgetDefinition = defineWidget(
   position: relative;
 }
 
-.grid {
+.inner {
   width: 100%;
   height: 100%;
+}
+
+:deep(.newColumnCell) {
+  display: none;
+}
+
+:deep(.rowIndexCell) {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* Those two classes are copied from AgGridTableView component.
+For some reason, Vue cannot load them there, probably because it is used also as Custom Element. */
+:deep(.inner) {
+  width: 100%;
+  height: 100%;
+}
+
+:deep(.ag-theme-alpine) {
+  --ag-grid-size: 3px;
+  --ag-list-item-height: 20px;
+  font-family: var(--font-mono);
 }
 </style>

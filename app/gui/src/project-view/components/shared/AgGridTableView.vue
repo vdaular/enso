@@ -252,7 +252,7 @@ const { AgGridVue } = await import('ag-grid-vue3')
     <AgGridVue
       v-bind="$attrs"
       ref="grid"
-      class="ag-theme-alpine grid"
+      class="ag-theme-alpine inner"
       :headerHeight="26"
       :getRowHeight="getRowHeight"
       :rowData="rowData"
@@ -285,7 +285,7 @@ const { AgGridVue } = await import('ag-grid-vue3')
 <style src="@ag-grid-community/styles/ag-grid.css" />
 <style src="@ag-grid-community/styles/ag-theme-alpine.css" />
 <style scoped>
-.grid {
+.inner {
   width: 100%;
   height: 100%;
 }
@@ -294,9 +294,5 @@ const { AgGridVue } = await import('ag-grid-vue3')
   --ag-grid-size: 3px;
   --ag-list-item-height: 20px;
   font-family: var(--font-mono);
-}
-
-.TableVisualization > .ag-theme-alpine > :deep(.ag-root-wrapper.ag-layout-normal) {
-  border-radius: 0 0 var(--radius-default) var(--radius-default);
 }
 </style>

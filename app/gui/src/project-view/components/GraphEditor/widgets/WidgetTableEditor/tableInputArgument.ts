@@ -299,7 +299,7 @@ export function useTableInputArgument(
     mainMenuItems: ['autoSizeThis', 'autoSizeAll'],
     contextMenuItems: [removeRowMenuItem],
     lockPosition: 'right',
-    cellStyle: { display: 'none' },
+    cellClass: 'newColumnCell',
   }))
 
   const rowIndexColumnDef = computed<ColumnDef>(() => ({
@@ -314,7 +314,7 @@ export function useTableInputArgument(
     },
     mainMenuItems: ['autoSizeThis', 'autoSizeAll'],
     contextMenuItems: [removeRowMenuItem],
-    cellStyle: { color: 'rgba(0, 0, 0, 0.4)' },
+    cellClass: 'rowIndexCell',
     lockPosition: 'left',
     rowDrag: ({ data }: { data: RowData | undefined }) =>
       data?.index != null && data.index < rowCount.value,
@@ -377,6 +377,7 @@ export function useTableInputArgument(
             'separator',
             'export',
           ],
+          cellClass: 'valueCell',
         }) satisfies ColumnDef,
     )
     cols.unshift(rowIndexColumnDef.value)

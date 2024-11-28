@@ -30,8 +30,8 @@ function generateTableOfOnes(rows: number, cols: number) {
   return ast
 }
 
-const expectedRowIndexColumnDef = { headerName: ROW_INDEX_HEADER }
-const expectedNewColumnDef = { cellStyle: { display: 'none' } }
+const expectedRowIndexColumnDef = { headerName: ROW_INDEX_HEADER, cellClass: 'rowIndexCell' }
+const expectedNewColumnDef = { cellClass: 'newColumnCell' }
 
 const CELLS_LIMIT_SQRT = Math.sqrt(CELLS_LIMIT)
 assert(CELLS_LIMIT_SQRT === Math.floor(CELLS_LIMIT_SQRT))

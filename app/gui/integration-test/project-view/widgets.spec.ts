@@ -626,7 +626,7 @@ test('Table widget', async ({ page }) => {
   await expect(widget.locator('.ag-text-field-input')).toHaveCount(0)
   await widget.locator('.ag-header-cell-text', { hasNotText: /#/ }).first().click()
   await expect(widget.locator('.ag-text-field-input')).toHaveCount(1)
-  await widget.locator('.ag-cell', { hasNotText: /0|1/ }).first().dblclick()
+  await widget.locator('.valueCell').first().dblclick()
   await expect(widget.locator('.ag-text-field-input')).toHaveCount(1)
   await widget.locator('.ag-header-cell-text', { hasNotText: /#/ }).first().click()
   await expect(widget.locator('.ag-text-field-input')).toHaveCount(1)
