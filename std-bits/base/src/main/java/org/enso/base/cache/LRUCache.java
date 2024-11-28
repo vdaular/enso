@@ -83,22 +83,36 @@ public class LRUCache<M> {
     this.diskSpaceGetter = diskSpaceGetter;
   }
 
+  /**
+   * IOExceptions thrown by the HTTP request are propagated; exceptions thrown while creating or
+   * accessing cache files are caught, and the request is re-issued without caching.
+   */
   public CacheResult<M> getResult(ItemBuilder<M> itemBuilder)
       throws IOException, InterruptedException, ResponseTooLargeException {
     String cacheKey = itemBuilder.makeCacheKey();
-    if (cache.containsKey(cacheKey)) {
-      return getResultForCacheEntry(cacheKey);
-    } else {
-      return makeRequestAndCache(cacheKey, itemBuilder);
+
+    try {
+      if (cache.containsKey(cacheKey)) {
+        return getResultForCacheEntry(cacheKey);
+      } else {
+        return makeRequestAndCache(cacheKey, itemBuilder);
+      }
+    } catch (LRUCacheException e) {
+      // Re-issue the request without caching.
+      // We don't re-attempt to store the cache file and entry. In some cases
+      // (such as a cache file deleted from the outside), we could, but this is
+      // a rare case so it seems unnecessary.
+      logger.log(
+          Level.WARNING,
+          "Error in cache file handling; will re-execute without caching: {}",
+          e.getMessage());
+      Item<M> rerequested = itemBuilder.buildItem();
+      return new CacheResult<>(rerequested.stream(), rerequested.metadata());
     }
   }
 
-  /**
-   * IOExceptions thrown by the HTTP request are propagated; IOExceptions thrown while storing the
-   * data in the cache are caught, and the request is re-issued without caching.
-   */
   private CacheResult<M> makeRequestAndCache(String cacheKey, ItemBuilder<M> itemBuilder)
-      throws IOException, InterruptedException, ResponseTooLargeException {
+      throws IOException, InterruptedException, LRUCacheException, ResponseTooLargeException {
     assert !cache.containsKey(cacheKey) : "Cache should not contain key " + cacheKey;
 
     Item<M> item = itemBuilder.buildItem();
@@ -134,21 +148,29 @@ public class LRUCache<M> {
 
       return getResultForCacheEntry(cacheKey);
     } catch (IOException e) {
-      logger.log(
-          Level.WARNING,
-          "Failure storing cache entry; will re-execute without caching: {}",
-          e.getMessage());
-      // Re-issue the request since we don't know if we've consumed any of the response.
-      Item<M> rerequested = itemBuilder.buildItem();
-      return new CacheResult<>(rerequested.stream(), rerequested.metadata());
+      // Throw this to re-issue the request since we don't know if we've consumed any of the
+      // response.
+      throw new LRUCacheException("Failure storing cache entry", e);
     }
   }
 
-  /** Mark cache entry used and return a stream reading from the cache file. */
-  private CacheResult<M> getResultForCacheEntry(String cacheKey) throws IOException {
+  /**
+   * Mark cache entry used and return a stream reading from the cache file.
+   *
+   * <p>If the file has been deleted, an LRUCacheException is thrown, causing .makeRequest to
+   * re-issue the request without caching.
+   */
+  private CacheResult<M> getResultForCacheEntry(String cacheKey)
+      throws IOException, LRUCacheException {
+    var cacheFile = cache.get(cacheKey).responseData;
+
+    if (!cacheFile.exists()) {
+      removeCacheEntry(cacheKey, cache.get(cacheKey));
+      throw new LRUCacheException("Missing cache file " + cacheFile.getPath());
+    }
+
     markCacheEntryUsed(cacheKey);
-    return new CacheResult<>(
-        new FileInputStream(cache.get(cacheKey).responseData), cache.get(cacheKey).metadata());
+    return new CacheResult<>(new FileInputStream(cacheFile), cache.get(cacheKey).metadata());
   }
 
   /**
@@ -217,8 +239,11 @@ public class LRUCache<M> {
 
   /** Remove a cache entry: from `cache`, `lastUsed`, and the filesystem. */
   private void removeCacheEntry(Map.Entry<String, CacheEntry<M>> toRemove) {
-    var key = toRemove.getKey();
-    var value = toRemove.getValue();
+    removeCacheEntry(toRemove.getKey(), toRemove.getValue());
+  }
+
+  /** Remove a cache entry: from `cache`, `lastUsed`, and the filesystem. */
+  private void removeCacheEntry(String key, CacheEntry<M> value) {
     cache.remove(key);
     lastUsed.remove(key);
     removeCacheFile(key, value);
@@ -306,6 +331,15 @@ public class LRUCache<M> {
   }
 
   /** Public for testing. */
+  public List<String> getFiles() {
+    return new ArrayList<>(
+        cache.values().stream()
+            .map(CacheEntry::responseData)
+            .map(f -> f.getPath())
+            .collect(Collectors.toList()));
+  }
+
+  /** Public for testing. */
   public LRUCacheSettings getSettings() {
     return settings;
   }
@@ -344,4 +378,21 @@ public class LRUCache<M> {
 
   private final Comparator<Map.Entry<String, CacheEntry<M>>> cacheEntryLRUComparator =
       Comparator.comparing(me -> lastUsed.get(me.getKey()));
+
+  /** Represents an internal error in creating or accessing the cache file. */
+  private static class LRUCacheException extends Exception {
+    public LRUCacheException(String errorMessage) {
+      super(errorMessage);
+    }
+
+    public LRUCacheException(String errorMessage, Throwable cause) {
+      super(errorMessage, cause);
+    }
+
+    public String getMessage() {
+      var cause = getCause();
+      var causeMessage = cause == null ? "" : ": " + cause.getMessage();
+      return super.getMessage() + causeMessage;
+    }
+  }
 }

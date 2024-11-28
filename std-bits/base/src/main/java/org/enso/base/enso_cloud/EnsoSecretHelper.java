@@ -176,14 +176,10 @@ public final class EnsoSecretHelper extends SecretValueResolver {
     }
   }
 
-  private static EnsoHTTPResponseCache getOrCreateCache() {
+  public static EnsoHTTPResponseCache getOrCreateCache() {
     if (cache == null) {
       cache = new EnsoHTTPResponseCache();
     }
-    return cache;
-  }
-
-  public static EnsoHTTPResponseCache getCache() {
     return cache;
   }
 
