@@ -52,7 +52,7 @@ export function useSearchParamsState<T = unknown>(
   const prefixedKey = `${appUtils.SEARCH_PARAMS_PREFIX}${key}`
 
   const lazyDefaultValueInitializer = lazyMemo.useLazyMemoHooks(defaultValue, [])
-  const predicateEventCallback = eventCallback.useEventCallback(predicate)
+  const stablePredicate = eventCallback.useEventCallback(predicate)
 
   const clear = eventCallback.useEventCallback((replace: boolean = false) => {
     searchParams.delete(prefixedKey)
@@ -75,7 +75,7 @@ export function useSearchParamsState<T = unknown>(
       : defaultValueFrom
   }, [prefixedKey, lazyDefaultValueInitializer, searchParams])
 
-  const isValueValid = predicateEventCallback(rawValue)
+  const isValueValid = stablePredicate(rawValue)
 
   const value = isValueValid ? rawValue : lazyDefaultValueInitializer()
 

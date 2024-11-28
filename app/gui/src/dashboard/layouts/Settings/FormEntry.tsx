@@ -30,6 +30,11 @@ export function SettingsFormEntry<T extends Record<keyof T, string>>(
     () => (typeof schemaRaw === 'function' ? schemaRaw(context) : schemaRaw),
     [context, schemaRaw],
   )
+  const isEditable = data.inputs.some((inputData) =>
+    typeof inputData.editable === 'boolean' ?
+      inputData.editable
+    : inputData.editable?.(context) ?? true,
+  )
 
   const form = Form.useForm({
     // @ts-expect-error This is SAFE, as the type `T` is statically known.
@@ -56,10 +61,12 @@ export function SettingsFormEntry<T extends Record<keyof T, string>>(
         {inputs.map((input) => (
           <SettingsInput key={input.name} context={context} data={input} />
         ))}
-        <ButtonGroup>
-          <Form.Submit isDisabled={!form.formState.isDirty}>{getText('save')}</Form.Submit>
-          <Form.Reset>{getText('cancel')}</Form.Reset>
-        </ButtonGroup>
+        {isEditable && (
+          <ButtonGroup>
+            <Form.Submit isDisabled={!form.formState.isDirty}>{getText('save')}</Form.Submit>
+            <Form.Reset>{getText('cancel')}</Form.Reset>
+          </ButtonGroup>
+        )}
         <Form.FormError />
       </Form>
     )

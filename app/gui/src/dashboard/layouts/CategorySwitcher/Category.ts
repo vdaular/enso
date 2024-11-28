@@ -178,7 +178,9 @@ export function canTransferBetweenCategories(from: Category, to: Category) {
       return to.type === 'trash' || to.type === 'cloud' || to.type === 'team' || to.type === 'user'
     }
     case 'trash': {
-      return to.type === 'cloud'
+      // In the future we want to be able to drag to certain categories to restore directly
+      // to specific home directories.
+      return false
     }
     case 'local':
     case 'local-directory': {
@@ -195,7 +197,6 @@ export function useTransferBetweenCategories(currentCategory: Category) {
   const { user } = useFullUserSession()
   const { data: organization = null } = useBackendQuery(remoteBackend, 'getOrganization', [])
   const deleteAssetMutation = useMutation(backendMutationOptions(backend, 'deleteAsset'))
-  const undoDeleteAssetMutation = useMutation(backendMutationOptions(backend, 'undoDeleteAsset'))
   const updateAssetMutation = useMutation(backendMutationOptions(backend, 'updateAsset'))
   const dispatchAssetEvent = useDispatchAssetEvent()
   return useEventCallback(
@@ -246,13 +247,6 @@ export function useTransferBetweenCategories(currentCategory: Category) {
           break
         }
         case 'trash': {
-          if (from === currentCategory) {
-            dispatchAssetEvent({ type: AssetEventType.restore, ids: new Set(keys) })
-          } else {
-            for (const id of keys) {
-              undoDeleteAssetMutation.mutate([id, '(unknown)'])
-            }
-          }
           break
         }
         case 'local':
