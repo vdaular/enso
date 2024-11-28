@@ -2,6 +2,7 @@
 import { StatelessSpinner, type SpinnerState } from '#/components/StatelessSpinner'
 
 import * as twv from '#/utilities/tailwindVariants'
+import { memo } from 'react'
 
 // =================
 // === Constants ===
@@ -61,7 +62,8 @@ export interface LoaderProps extends twv.VariantProps<typeof STYLES> {
 }
 
 /** A full-screen loading spinner. */
-export function Loader(props: LoaderProps) {
+// eslint-disable-next-line no-restricted-syntax
+export const Loader = memo(function Loader(props: LoaderProps) {
   const {
     className,
     size: sizeRaw = 'medium',
@@ -77,4 +79,4 @@ export function Loader(props: LoaderProps) {
       <StatelessSpinner size={size} state={state} className="text-current" />
     </div>
   )
-}
+})

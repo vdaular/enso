@@ -241,13 +241,13 @@ export interface HeadingProps extends Omit<TextProps, 'elementType'> {
 
 /** Heading component */
 // eslint-disable-next-line no-restricted-syntax
-const Heading = forwardRef(function Heading(
-  props: HeadingProps,
-  ref: React.Ref<HTMLHeadingElement>,
-) {
-  const { level = 1, ...textProps } = props
-  return <Text ref={ref} elementType={`h${level}`} variant="h1" balance {...textProps} />
-})
+const Heading = memo(
+  forwardRef(function Heading(props: HeadingProps, ref: React.Ref<HTMLHeadingElement>) {
+    const { level = 1, ...textProps } = props
+    return <Text ref={ref} elementType={`h${level}`} variant="h1" balance {...textProps} />
+  }),
+)
+
 Text.Heading = Heading
 
 /** Text group component. It's used to visually group text elements together */

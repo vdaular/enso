@@ -3,9 +3,9 @@
  *
  * This file contains the useMeasure hook, which is used to measure the size and position of an element.
  */
-import { frame } from 'framer-motion'
+import { frame, useMotionValue } from 'framer-motion'
 
-import { startTransition, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { unsafeMutable } from '../utilities/object'
 import { useDebouncedCallback } from './debounceCallbackHooks'
 import { useEventCallback } from './eventCallbackHooks'
@@ -33,7 +33,7 @@ type HTMLOrSVGElement = HTMLElement | SVGElement
 /**
  * A type that represents the result of the useMeasure hook.
  */
-type Result = [(element: HTMLOrSVGElement | null) => void, RectReadOnly, () => void]
+type Result = [(element: HTMLOrSVGElement | null) => void, RectReadOnly | null, () => void]
 
 /**
  * A type that represents the state of the useMeasure hook.
@@ -41,7 +41,7 @@ type Result = [(element: HTMLOrSVGElement | null) => void, RectReadOnly, () => v
 interface State {
   readonly element: HTMLOrSVGElement | null
   readonly scrollContainers: HTMLOrSVGElement[] | null
-  readonly lastBounds: RectReadOnly
+  readonly lastBounds: RectReadOnly | null
 }
 
 /**
@@ -53,19 +53,16 @@ export type OnResizeCallback = (bounds: RectReadOnly) => void
  * A type that represents the options for the useMeasure hook.
  */
 export interface Options {
-  readonly debounce?:
-    | number
-    | { readonly scroll: number; readonly resize: number; readonly frame: number }
+  readonly debounce?: number | { readonly scroll: number; readonly resize: number }
   readonly scroll?: boolean
   readonly offsetSize?: boolean
   readonly onResize?: OnResizeCallback
-  readonly maxWait?:
-    | number
-    | { readonly scroll: number; readonly resize: number; readonly frame: number }
+  readonly maxWait?: number | { readonly scroll: number; readonly resize: number }
   /**
    * Whether to use RAF to measure the element.
    */
   readonly useRAF?: boolean
+  readonly isDisabled?: boolean
 }
 
 /**
@@ -74,21 +71,29 @@ export interface Options {
 export function useMeasure(options: Options = {}): Result {
   const { onResize } = options
 
-  const [bounds, set] = useState<RectReadOnly>({
-    left: 0,
-    top: 0,
-    width: 0,
-    height: 0,
-    bottom: 0,
-    right: 0,
-    x: 0,
-    y: 0,
-  })
+  const [bounds, set] = useState<RectReadOnly | null>(null)
 
   const onResizeStableCallback = useEventCallback<OnResizeCallback>((nextBounds) => {
-    startTransition(() => {
-      set(nextBounds)
-    })
+    set(nextBounds)
+
+    onResize?.(nextBounds)
+  })
+
+  const [ref, forceRefresh] = useMeasureCallback({ ...options, onResize: onResizeStableCallback })
+
+  return [ref, bounds, forceRefresh] as const
+}
+
+/**
+ * Helper hook that uses motion primitive to optimize renders, works best with motion components
+ */
+export function useMeasureSignal(options: Options = {}) {
+  const { onResize } = options
+
+  const bounds = useMotionValue<RectReadOnly | null>(null)
+
+  const onResizeStableCallback = useEventCallback<OnResizeCallback>((nextBounds) => {
+    bounds.set(nextBounds)
 
     onResize?.(nextBounds)
   })
@@ -113,22 +118,14 @@ export function useMeasureCallback(options: Options & Required<Pick<Options, 'on
     onResize,
     maxWait = DEFAULT_MAX_WAIT,
     useRAF = true,
+    isDisabled = false,
   } = options
 
   // keep all state in a ref
   const state = useRef<State>({
     element: null,
     scrollContainers: null,
-    lastBounds: {
-      left: 0,
-      top: 0,
-      width: 0,
-      height: 0,
-      bottom: 0,
-      right: 0,
-      x: 0,
-      y: 0,
-    },
+    lastBounds: null,
   })
   // make sure to update state only as long as the component is truly mounted
   const mounted = useRef(false)
@@ -137,39 +134,49 @@ export function useMeasureCallback(options: Options & Required<Pick<Options, 'on
 
   const scrollMaxWait = typeof maxWait === 'number' ? maxWait : maxWait.scroll
   const resizeMaxWait = typeof maxWait === 'number' ? maxWait : maxWait.resize
-  const frameMaxWait = typeof maxWait === 'number' ? maxWait : maxWait.frame
 
   // set actual debounce values early, so effects know if they should react accordingly
   const scrollDebounce = typeof debounce === 'number' ? debounce : debounce.scroll
   const resizeDebounce = typeof debounce === 'number' ? debounce : debounce.resize
-  const frameDebounce = typeof debounce === 'number' ? debounce : debounce.frame
 
   const callback = useEventCallback(() => {
-    frame.read(() => {
-      if (!state.current.element) return
-      const { left, top, width, height, bottom, right, x, y } =
-        state.current.element.getBoundingClientRect()
-
-      const size = { left, top, width, height, bottom, right, x, y }
-
-      if (state.current.element instanceof HTMLElement && offsetSize) {
-        size.height = state.current.element.offsetHeight
-        size.width = state.current.element.offsetWidth
-      }
-
-      if (mounted.current && !areBoundsEqual(state.current.lastBounds, size)) {
-        unsafeMutable(state.current).lastBounds = size
-        onResizeStableCallback(size)
-      }
-    })
+    frame.read(measureCallback)
   })
 
-  const frameDebounceCallback = useDebouncedCallback(callback, frameDebounce, frameMaxWait)
-  const resizeDebounceCallback = useDebouncedCallback(callback, resizeDebounce, resizeMaxWait)
-  const scrollDebounceCallback = useDebouncedCallback(callback, scrollDebounce, scrollMaxWait)
+  const measureCallback = useEventCallback(() => {
+    const element = state.current.element
 
-  const [resizeObserver] = useState(() => new ResizeObserver(resizeDebounceCallback))
-  const [mutationObserver] = useState(() => new MutationObserver(resizeDebounceCallback))
+    if (!element || isDisabled) return
+
+    const { left, top, width, height, bottom, right, x, y } = element.getBoundingClientRect()
+
+    const size = { left, top, width, height, bottom, right, x, y }
+
+    if (element instanceof HTMLElement && offsetSize) {
+      size.height = element.offsetHeight
+      size.width = element.offsetWidth
+    }
+
+    if (mounted.current && !areBoundsEqual(state.current.lastBounds, size)) {
+      unsafeMutable(state.current).lastBounds = size
+      onResizeStableCallback(size)
+    }
+  })
+
+  const resizeDebounceCallback = useDebouncedCallback(
+    measureCallback,
+    resizeDebounce,
+    resizeMaxWait,
+  )
+
+  const scrollDebounceCallback = useDebouncedCallback(
+    measureCallback,
+    scrollDebounce,
+    scrollMaxWait,
+  )
+
+  const [resizeObserver] = useState(() => new ResizeObserver(measureCallback))
+  const [mutationObserver] = useState(() => new MutationObserver(measureCallback))
 
   const forceRefresh = useDebouncedCallback(callback, 0)
 
@@ -196,7 +203,9 @@ export function useMeasureCallback(options: Options & Required<Pick<Options, 'on
     })
 
     if (useRAF) {
-      frame.read(frameDebounceCallback, true)
+      frame.read(() => {
+        measureCallback()
+      }, true)
     }
 
     if (scroll && state.current.scrollContainers) {
@@ -214,12 +223,13 @@ export function useMeasureCallback(options: Options & Required<Pick<Options, 'on
     mounted.current = node != null
 
     if (!node || node === state.current.element) return
+
     removeListeners()
 
     unsafeMutable(state.current).element = node
     unsafeMutable(state.current).scrollContainers = findScrollContainers(node)
 
-    callback()
+    measureCallback()
 
     addListeners()
   })
@@ -302,6 +312,8 @@ const RECT_KEYS: readonly (keyof RectReadOnly)[] = [
  * @param b - Second RectReadOnly object
  * @returns boolean indicating whether the boundaries are equal
  */
-function areBoundsEqual(a: RectReadOnly, b: RectReadOnly): boolean {
+function areBoundsEqual(a: RectReadOnly | null, b: RectReadOnly | null): boolean {
+  if (a == null || b == null) return false
+
   return RECT_KEYS.every((key) => a[key] === b[key])
 }

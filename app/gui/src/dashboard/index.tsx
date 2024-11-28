@@ -21,7 +21,7 @@ import LoggerProvider, { type Logger } from '#/providers/LoggerProvider'
 
 import LoadingScreen from '#/pages/authentication/LoadingScreen'
 
-import { DevtoolsProvider, ReactQueryDevtools } from '#/components/Devtools'
+import { ReactQueryDevtools } from '#/components/Devtools'
 import { ErrorBoundary } from '#/components/ErrorBoundary'
 import { OfflineNotificationManager } from '#/components/OfflineNotificationManager'
 import { Suspense } from '#/components/Suspense'
@@ -32,7 +32,18 @@ import { MotionGlobalConfig } from 'framer-motion'
 
 export type { GraphEditorRunner } from '#/layouts/Editor'
 
-MotionGlobalConfig.skipAnimations = window.DISABLE_ANIMATIONS ?? false
+const ARE_ANIMATIONS_DISABLED =
+  window.DISABLE_ANIMATIONS === true ||
+  localStorage.getItem('disableAnimations') === 'true' ||
+  false
+
+MotionGlobalConfig.skipAnimations = ARE_ANIMATIONS_DISABLED
+
+if (ARE_ANIMATIONS_DISABLED) {
+  document.documentElement.classList.add('disable-animations')
+} else {
+  document.documentElement.classList.remove('disable-animations')
+}
 
 // =================
 // === Constants ===
@@ -116,15 +127,13 @@ export function run(props: DashboardProps) {
     reactDOM.createRoot(root).render(
       <React.StrictMode>
         <QueryClientProvider client={queryClient}>
-          <DevtoolsProvider>
+          <UIProviders locale="en-US" portalRoot={portalRoot}>
             <ErrorBoundary>
               <Suspense fallback={<LoadingScreen />}>
                 <OfflineNotificationManager>
                   <LoggerProvider logger={logger}>
                     <HttpClientProvider httpClient={httpClient}>
-                      <UIProviders locale="en-US" portalRoot={portalRoot}>
-                        <App {...props} supportsDeepLinks={actuallySupportsDeepLinks} />
-                      </UIProviders>
+                      <App {...props} supportsDeepLinks={actuallySupportsDeepLinks} />
                     </HttpClientProvider>
                   </LoggerProvider>
                 </OfflineNotificationManager>
@@ -132,7 +141,7 @@ export function run(props: DashboardProps) {
             </ErrorBoundary>
 
             <ReactQueryDevtools />
-          </DevtoolsProvider>
+          </UIProviders>
         </QueryClientProvider>
       </React.StrictMode>,
     )

@@ -5,7 +5,7 @@
 import type { PaywallFeatureName } from '#/hooks/billing'
 import * as zustand from '#/utilities/zustand'
 import { IS_DEV_MODE } from 'enso-common/src/detect'
-import * as React from 'react'
+import { MotionGlobalConfig } from 'framer-motion'
 
 /** Configuration for a paywall feature. */
 export interface PaywallDevtoolsFeatureConfiguration {
@@ -25,6 +25,8 @@ interface EnsoDevtoolsStore {
   readonly paywallFeatures: Record<PaywallFeatureName, PaywallDevtoolsFeatureConfiguration>
   readonly setPaywallFeature: (feature: PaywallFeatureName, isForceEnabled: boolean | null) => void
   readonly setEnableVersionChecker: (showVersionChecker: boolean | null) => void
+  readonly animationsDisabled: boolean
+  readonly setAnimationsDisabled: (animationsDisabled: boolean) => void
 }
 
 export const ensoDevtoolsStore = zustand.createStore<EnsoDevtoolsStore>((set) => ({
@@ -52,6 +54,20 @@ export const ensoDevtoolsStore = zustand.createStore<EnsoDevtoolsStore>((set) =>
   setEnableVersionChecker: (showVersionChecker) => {
     set({ showVersionChecker })
   },
+  animationsDisabled: localStorage.getItem('disableAnimations') === 'true',
+  setAnimationsDisabled: (animationsDisabled) => {
+    if (animationsDisabled) {
+      localStorage.setItem('disableAnimations', 'true')
+      MotionGlobalConfig.skipAnimations = true
+      document.documentElement.classList.add('disable-animations')
+    } else {
+      localStorage.setItem('disableAnimations', 'false')
+      MotionGlobalConfig.skipAnimations = false
+      document.documentElement.classList.remove('disable-animations')
+    }
+
+    set({ animationsDisabled })
+  },
 }))
 
 // ===============================
@@ -76,6 +92,20 @@ export function useSetEnableVersionChecker() {
   })
 }
 
+/** A function to get whether animations are disabled. */
+export function useAnimationsDisabled() {
+  return zustand.useStore(ensoDevtoolsStore, (state) => state.animationsDisabled, {
+    unsafeEnableTransition: true,
+  })
+}
+
+/** A function to set whether animations are disabled. */
+export function useSetAnimationsDisabled() {
+  return zustand.useStore(ensoDevtoolsStore, (state) => state.setAnimationsDisabled, {
+    unsafeEnableTransition: true,
+  })
+}
+
 /** A hook that provides access to the paywall devtools. */
 export function usePaywallDevtools() {
   return zustand.useStore(
@@ -95,17 +125,6 @@ export function useShowDevtools() {
   })
 }
 
-// =================================
-// === DevtoolsProvider ===
-// =================================
-
-/**
- * Provide the Enso devtools to the app.
- */
-export function DevtoolsProvider(props: { children: React.ReactNode }) {
-  React.useEffect(() => {
-    window.toggleDevtools = ensoDevtoolsStore.getState().toggleDevtools
-  }, [])
-
-  return <>{props.children}</>
+if (typeof window !== 'undefined') {
+  window.toggleDevtools = ensoDevtoolsStore.getState().toggleDevtools
 }

@@ -7,7 +7,7 @@ import * as twv from '#/utilities/tailwindVariants'
 
 export const DIALOG_BACKGROUND = twv.tv({
   base: 'backdrop-blur-md',
-  variants: { variant: { light: 'bg-white/80', dark: 'bg-primary/80' } },
+  variants: { variant: { light: 'bg-background/75', dark: 'bg-primary' } },
   defaultVariants: { variant: 'light' },
 })
 

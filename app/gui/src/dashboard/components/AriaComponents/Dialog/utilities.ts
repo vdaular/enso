@@ -65,3 +65,14 @@ export function useInteractOutside(props: UseInteractOutsideProps) {
     onInteractOutside: onInteractOutsideCb,
   })
 }
+
+/**
+ * Animates the scale of the element.
+ */
+export function animateScale(element: HTMLElement, scale: number) {
+  const duration = 200
+  element.animate(
+    [{ transform: 'scale(1)' }, { transform: `scale(${scale})` }, { transform: 'scale(1)' }],
+    { duration, iterations: 1, direction: 'alternate' },
+  )
+}

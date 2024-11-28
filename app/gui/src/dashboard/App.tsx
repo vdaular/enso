@@ -59,8 +59,6 @@ import ModalProvider, * as modalProvider from '#/providers/ModalProvider'
 import * as navigator2DProvider from '#/providers/Navigator2DProvider'
 import SessionProvider from '#/providers/SessionProvider'
 import * as textProvider from '#/providers/TextProvider'
-import type { Spring } from 'framer-motion'
-import { MotionConfig } from 'framer-motion'
 
 import ConfirmRegistration from '#/pages/authentication/ConfirmRegistration'
 import ForgotPassword from '#/pages/authentication/ForgotPassword'
@@ -104,16 +102,6 @@ import { InvitedToOrganizationModal } from '#/modals/InvitedToOrganizationModal'
 // ============================
 // === Global configuration ===
 // ============================
-
-const DEFAULT_TRANSITION_OPTIONS: Spring = {
-  type: 'spring',
-  // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-  stiffness: 200,
-  // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-  damping: 30,
-  mass: 1,
-  velocity: 0,
-}
 
 declare module '#/utilities/LocalStorage' {
   /** */
@@ -532,42 +520,40 @@ function AppRouter(props: AppRouterProps) {
 
   return (
     <FeatureFlagsProvider>
-      <MotionConfig reducedMotion="user" transition={DEFAULT_TRANSITION_OPTIONS}>
-        <RouterProvider navigate={navigate}>
-          <SessionProvider
-            saveAccessToken={authService.cognito.saveAccessToken.bind(authService.cognito)}
-            mainPageUrl={mainPageUrl}
-            userSession={userSession}
-            registerAuthEventListener={registerAuthEventListener}
-            refreshUserSession={refreshUserSession}
-          >
-            <BackendProvider remoteBackend={remoteBackend} localBackend={localBackend}>
-              <AuthProvider
-                shouldStartInOfflineMode={isAuthenticationDisabled}
-                authService={authService}
-                onAuthenticated={onAuthenticated}
-              >
-                <InputBindingsProvider inputBindings={inputBindings}>
-                  {/* Ideally this would be in `Drive.tsx`, but it currently must be all the way out here
-                   * due to modals being in `TheModal`. */}
-                  <DriveProvider>
-                    <errorBoundary.ErrorBoundary>
-                      <LocalBackendPathSynchronizer />
-                      <VersionChecker />
-                      {routes}
-                      <suspense.Suspense>
-                        <errorBoundary.ErrorBoundary>
-                          <devtools.EnsoDevtools />
-                        </errorBoundary.ErrorBoundary>
-                      </suspense.Suspense>
-                    </errorBoundary.ErrorBoundary>
-                  </DriveProvider>
-                </InputBindingsProvider>
-              </AuthProvider>
-            </BackendProvider>
-          </SessionProvider>
-        </RouterProvider>
-      </MotionConfig>
+      <RouterProvider navigate={navigate}>
+        <SessionProvider
+          saveAccessToken={authService.cognito.saveAccessToken.bind(authService.cognito)}
+          mainPageUrl={mainPageUrl}
+          userSession={userSession}
+          registerAuthEventListener={registerAuthEventListener}
+          refreshUserSession={refreshUserSession}
+        >
+          <BackendProvider remoteBackend={remoteBackend} localBackend={localBackend}>
+            <AuthProvider
+              shouldStartInOfflineMode={isAuthenticationDisabled}
+              authService={authService}
+              onAuthenticated={onAuthenticated}
+            >
+              <InputBindingsProvider inputBindings={inputBindings}>
+                {/* Ideally this would be in `Drive.tsx`, but it currently must be all the way out here
+                 * due to modals being in `TheModal`. */}
+                <DriveProvider>
+                  <errorBoundary.ErrorBoundary>
+                    <LocalBackendPathSynchronizer />
+                    <VersionChecker />
+                    {routes}
+                    <suspense.Suspense>
+                      <errorBoundary.ErrorBoundary>
+                        <devtools.EnsoDevtools />
+                      </errorBoundary.ErrorBoundary>
+                    </suspense.Suspense>
+                  </errorBoundary.ErrorBoundary>
+                </DriveProvider>
+              </InputBindingsProvider>
+            </AuthProvider>
+          </BackendProvider>
+        </SessionProvider>
+      </RouterProvider>
     </FeatureFlagsProvider>
   )
 }

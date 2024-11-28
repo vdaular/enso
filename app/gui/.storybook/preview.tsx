@@ -4,7 +4,7 @@
 import type { Preview as ReactPreview } from '@storybook/react'
 import type { Preview as VuePreview } from '@storybook/vue3'
 import isChromatic from 'chromatic/isChromatic'
-import { useLayoutEffect, useState } from 'react'
+import { StrictMode, useLayoutEffect, useState } from 'react'
 
 import invariant from 'tiny-invariant'
 import UIProviders from '../src/dashboard/components/UIProviders'
@@ -59,22 +59,34 @@ const reactPreview: ReactPreview = {
 
       return (
         <UIProviders locale="en-US" portalRoot={portalRoot}>
-          {Story(context)}
+          <Story {...context} />
         </UIProviders>
       )
     },
 
     (Story, context) => (
       <>
-        <div className="enso-dashboard">{Story(context)}</div>
+        <div className="enso-dashboard">
+          <Story {...context} />
+        </div>
         <div id="enso-portal-root" className="enso-portal-root" />
       </>
     ),
 
     (Story, context) => {
       const [queryClient] = useState(() => createQueryClient())
-      return <QueryClientProvider client={queryClient}>{Story(context)}</QueryClientProvider>
+      return (
+        <QueryClientProvider client={queryClient}>
+          <Story {...context} />
+        </QueryClientProvider>
+      )
     },
+
+    (Story, context) => (
+      <StrictMode>
+        <Story {...context} />
+      </StrictMode>
+    ),
   ],
 }
 
