@@ -225,7 +225,7 @@ type Snowflake_Dialect
         Base_Generator.default_fetch_types_query self expression context
 
     ## PRIVATE
-    generate_collate self collation_name:Text -> Text = Base_Generator.default_generate_collate collation_name
+    generate_collate self collation_name:Text -> Text = Base_Generator.default_generate_collate collation_name quote_char="'"
 
     ## PRIVATE
     check_aggregate_support : Aggregate_Column -> Boolean ! Unsupported_Database_Operation
@@ -259,8 +259,8 @@ type Snowflake_Dialect
             Dialect_Flag.Supports_Infinity -> True
             Dialect_Flag.Case_Sensitive_Text_Comparison -> True
             Dialect_Flag.Supports_Sort_Digits_As_Numbers -> False
-            Dialect_Flag.Case_Insensitive_Ordering -> False
-            Dialect_Flag.Order_By_Unicode_Normalization_By_Default -> False
+            Dialect_Flag.Case_Insensitive_Ordering -> True
+            Dialect_Flag.Order_By_Unicode_Normalization_By_Default -> True
             Dialect_Flag.Allows_Mixed_Type_Comparisons -> False
             Dialect_Flag.Supports_Unicode_Normalization -> False
             Dialect_Flag.NaN_Non_Comparable -> False
@@ -581,15 +581,12 @@ make_order_descriptor internal_column sort_direction text_ordering =
                     Case_Sensitivity.Default ->
                         Order_Descriptor.Value (Internals_Access.column_expression internal_column) sort_direction nulls_order=nulls collation=Nothing
                     Case_Sensitivity.Sensitive ->
-                        # Order_Descriptor.Value (Internals_Access.column_expression internal_column) sort_direction nulls_order=nulls collation="ucs_basic"
-                        Error.throw ("Feature unsupported due to bug. Please use `..Default` until https://github.com/enso-org/enso/issues/10835 is fixed.")
+                        Order_Descriptor.Value (Internals_Access.column_expression internal_column) sort_direction nulls_order=nulls collation=Nothing
                     Case_Sensitivity.Insensitive locale -> case locale == Locale.default of
                         False ->
                             Error.throw (Unsupported_Database_Operation.Error "Case insensitive ordering with custom locale")
                         True ->
-                            upper = SQL_Expression.Operation "UPPER" [Internals_Access.column_expression internal_column]
-                            folded_expression = SQL_Expression.Operation "LOWER" [upper]
-                            Order_Descriptor.Value folded_expression sort_direction nulls_order=nulls collation=Nothing
+                            Order_Descriptor.Value (Internals_Access.column_expression internal_column) sort_direction nulls_order=nulls collation="en-ci"
 
 ## PRIVATE
 round_bankers = Base_Generator.lift_binary_op "ROUND_BANKERS" x-> dp->

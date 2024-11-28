@@ -221,7 +221,7 @@ type SQLServer_Dialect
         Base_Generator.default_fetch_types_query self expression context
 
     ## PRIVATE
-    generate_collate self collation_name:Text -> Text = ' COLLATE ' + collation_name
+    generate_collate self collation_name:Text -> Text = Base_Generator.default_generate_collate collation_name quote_char=""
 
     ## PRIVATE
     check_aggregate_support : Aggregate_Column -> Boolean ! Unsupported_Database_Operation

@@ -726,7 +726,7 @@ default_fetch_types_query dialect expression context where_filter_always_false_l
     dialect.generate_sql (Query.Select [["typed_column", expression]] empty_context)
 
 ## PRIVATE
-default_generate_collate collation_name:Text -> Text = ' COLLATE "' + collation_name + '"'
+default_generate_collate collation_name:Text quote_char:Text='"' -> Text = ' COLLATE ' + quote_char + collation_name + quote_char
 
 ## PRIVATE
    Helper class for shortening the binder names generated for WITH clauses.
