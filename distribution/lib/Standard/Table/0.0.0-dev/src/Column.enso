@@ -40,6 +40,7 @@ from project.Internal.Storage import enso_to_java, java_to_enso
 polyglot java import org.enso.base.Time_Utils
 polyglot java import org.enso.table.data.column.operation.cast.CastProblemAggregator
 polyglot java import org.enso.table.data.column.operation.CountNothing
+polyglot java import org.enso.table.data.column.operation.CountUntrimmed
 polyglot java import org.enso.table.data.column.operation.unary.DatePartOperation
 polyglot java import org.enso.table.data.column.operation.unary.IsEmptyOperation
 polyglot java import org.enso.table.data.column.operation.unary.IsFiniteOperation
@@ -2212,6 +2213,19 @@ type Column
              example_count_nothing = Examples.text_column_2.count_nothing
     count_nothing : Integer
     count_nothing self = CountNothing.apply self.java_column
+
+    ## PRIVATE
+       Counts the number of text values with leading or trailing whitespace.
+       Used for data quality indicator in Table Viz.
+    count_untrimmed : Integer -> Integer | Nothing
+    count_untrimmed self sample_size:Integer=Column.default_sample_size =
+        if (self.value_type == Value_Type.Mixed || self.value_type.is_text).not then Nothing else
+            CountUntrimmed.apply self.java_column sample_size
+
+    ## PRIVATE
+       Default size for sampling data quality indicators.
+    default_sample_size -> Integer =
+        CountUntrimmed.DEFAULT_SAMPLE_SIZE
 
     ## GROUP Standard.Base.Metadata
        ICON metadata

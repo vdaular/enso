@@ -1,8 +1,12 @@
 package org.enso.table.data.column.storage;
 
 import java.util.BitSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import org.enso.base.CompareException;
 import org.enso.base.Text_Utils;
+import org.enso.table.data.column.operation.CountUntrimmed;
 import org.enso.table.data.column.operation.map.BinaryMapOperation;
 import org.enso.table.data.column.operation.map.MapOperationProblemAggregator;
 import org.enso.table.data.column.operation.map.MapOperationStorage;
@@ -15,11 +19,14 @@ import org.enso.table.data.column.operation.map.text.StringStringOp;
 import org.enso.table.data.column.storage.type.StorageType;
 import org.enso.table.data.column.storage.type.TextType;
 import org.graalvm.polyglot.Context;
+import org.slf4j.Logger;
 
 /** A column storing strings. */
 public final class StringStorage extends SpecializedStorage<String> {
+  private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(StringStorage.class);
 
   private final TextType type;
+  private Future<Long> untrimmedCount;
 
   /**
    * @param data the underlying data
@@ -29,6 +36,10 @@ public final class StringStorage extends SpecializedStorage<String> {
   public StringStorage(String[] data, int size, TextType type) {
     super(data, size, buildOps());
     this.type = type;
+
+    untrimmedCount =
+        CompletableFuture.supplyAsync(
+            () -> CountUntrimmed.compute(this, CountUntrimmed.DEFAULT_SAMPLE_SIZE, null));
   }
 
   @Override
@@ -44,6 +55,29 @@ public final class StringStorage extends SpecializedStorage<String> {
   @Override
   public TextType getType() {
     return type;
+  }
+
+  /**
+   * Counts the number of cells in the columns with whitespace. If the calculation fails then it
+   * returns null.
+   *
+   * @return the number of cells with whitespace
+   */
+  public Long cachedUntrimmedCount() throws InterruptedException {
+    if (untrimmedCount.isCancelled()) {
+      // Need to recompute the value, as was cancelled.
+      untrimmedCount =
+          CompletableFuture.completedFuture(
+              CountUntrimmed.compute(
+                  this, CountUntrimmed.DEFAULT_SAMPLE_SIZE, Context.getCurrent()));
+    }
+
+    try {
+      return untrimmedCount.get();
+    } catch (ExecutionException e) {
+      LOGGER.error("Failed to compute untrimmed count", e);
+      return null;
+    }
   }
 
   private static MapOperationStorage<String, SpecializedStorage<String>> buildOps() {
