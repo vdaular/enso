@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import SvgIcon from '@/components/SvgIcon.vue'
 import { Score, defineWidget, widgetProps } from '@/providers/widgetRegistry'
-import { injectWidgetTree } from '@/providers/widgetTree'
 import type { URLString } from '@/util/data/urlString'
 import type { Icon } from '@/util/iconName'
 import NodeWidget from '../NodeWidget.vue'
 
 const props = defineProps(widgetProps(widgetDefinition))
-const tree = injectWidgetTree()
 </script>
 
 <script lang="ts">
@@ -33,11 +31,7 @@ export const widgetDefinition = defineWidget(
 
 <template>
   <div class="WidgetIcon">
-    <SvgIcon
-      class="nodeCategoryIcon grab-handle"
-      :name="props.input[DisplayIcon].icon"
-      @click.right.stop.prevent="tree.emitOpenFullMenu()"
-    />
+    <SvgIcon class="nodeCategoryIcon grab-handle" :name="props.input[DisplayIcon].icon" />
     <NodeWidget v-if="props.input[DisplayIcon].showContents === true" :input="props.input" />
   </div>
 </template>

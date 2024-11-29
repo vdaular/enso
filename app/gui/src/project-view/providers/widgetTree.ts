@@ -18,7 +18,6 @@ const { provideFn, injectFn } = createContextStore(
     conditionalPorts: Ref<Set<Ast.AstId>>,
     extended: Ref<boolean>,
     hasActiveAnimations: Ref<boolean>,
-    emitOpenFullMenu: () => void,
   ) => {
     const graph = useGraphStore()
     const nodeSpanStart = computed(() => graph.moduleSource.getSpan(astRoot.value.id)![0])
@@ -35,7 +34,6 @@ const { provideFn, injectFn } = createContextStore(
       hasActiveAnimations,
       setCurrentEditRoot,
       currentEdit,
-      emitOpenFullMenu,
     })
   },
 )

@@ -1,12 +1,11 @@
 import type { NodeCreationOptions } from '@/composables/nodeCreation'
-import type { GraphStore, Node, NodeId } from '@/stores/graph'
+import type { Node } from '@/stores/graph'
 import { Ast } from '@/util/ast'
 import { Pattern } from '@/util/ast/match'
 import { nodeDocumentationText } from '@/util/ast/node'
 import { Vec2 } from '@/util/data/vec2'
-import type { ToValue } from '@/util/reactivity'
 import * as iter from 'enso-common/src/utilities/data/iter'
-import { computed, toValue } from 'vue'
+import { computed } from 'vue'
 import type { NodeMetadataFields } from 'ydoc-shared/ast'
 
 // MIME type in *vendor tree*; see https://www.rfc-editor.org/rfc/rfc6838#section-3.2
@@ -57,21 +56,11 @@ function getClipboard(): ExtendedClipboard {
 
 /** A composable for handling copying and pasting nodes in the GraphEditor. */
 export function useGraphEditorClipboard(
-  graphStore: GraphStore,
-  selected: ToValue<Set<NodeId>>,
   createNodes: (nodesOptions: Iterable<NodeCreationOptions>) => void,
 ) {
-  /** Copy the content of the selected node to the clipboard. */
-  async function copySelectionToClipboard() {
-    const nodes = new Array<Node>()
-    const ids = graphStore.pickInCodeOrder(toValue(selected))
-    for (const id of ids) {
-      const node = graphStore.db.nodeIdToNode.get(id)
-      if (!node) continue
-      nodes.push(node)
-    }
-    if (!nodes.length) return
-    return writeClipboard(nodesToClipboardData(nodes))
+  /** Copy the content of the specified nodes to the clipboard, in the order provided. */
+  async function copyNodesToClipboard(nodes: Node[]): Promise<void> {
+    if (nodes.length) await writeClipboard(nodesToClipboardData(nodes))
   }
 
   /** Read the clipboard and if it contains valid data, create nodes from the content. */
@@ -105,7 +94,7 @@ export function useGraphEditorClipboard(
   }
 
   return {
-    copySelectionToClipboard,
+    copyNodesToClipboard,
     createNodesFromClipboard,
   }
 }

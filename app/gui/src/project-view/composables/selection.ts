@@ -7,6 +7,7 @@ import type { Rect } from '@/util/data/rect'
 import { intersectionSize } from '@/util/data/set'
 import { Vec2 } from '@/util/data/vec2'
 import { dataAttribute, elementHierarchy } from '@/util/dom'
+import { identity } from '@vueuse/core'
 import * as iter from 'enso-common/src/utilities/data/iter'
 import * as set from 'lib0/set'
 import { computed, ref, shallowReactive, shallowRef } from 'vue'
@@ -18,6 +19,7 @@ interface BaseSelectionOptions<T> {
   isValid?: (element: T) => boolean
   onSelected?: (element: T) => void
   onDeselected?: (element: T) => void
+  toSorted?: (elements: Iterable<T>) => Iterable<T>
 }
 interface SelectionPackingOptions<T, PackedT> {
   /**
@@ -57,6 +59,7 @@ export function useSelection<T, PackedT>(
     isValid: () => true,
     onSelected: () => {},
     onDeselected: () => {},
+    toSorted: identity,
   }
   const PACKING_DEFAULTS: SelectionPackingOptions<T, T> = {
     pack: (element: T) => element,
@@ -76,7 +79,7 @@ type UseSelection<T, PackedT> = ReturnType<typeof useSelectionImpl<T, PackedT>>
 function useSelectionImpl<T, PackedT>(
   navigator: NavigatorComposable,
   elementRects: Map<T, Rect>,
-  { margin, isValid, onSelected, onDeselected }: Required<BaseSelectionOptions<T>>,
+  { margin, isValid, onSelected, onDeselected, toSorted }: Required<BaseSelectionOptions<T>>,
   { pack, unpack }: SelectionPackingOptions<T, PackedT>,
 ) {
   const anchor = shallowRef<Vec2>()
@@ -88,7 +91,9 @@ function useSelectionImpl<T, PackedT>(
   const unpackedRawSelected = computed(() =>
     set.from(iter.filterDefined(iter.map(rawSelected, unpack))),
   )
-  const selected = computed(() => set.from(iter.filter(unpackedRawSelected.value, isValid)))
+  const selected = computed(() =>
+    set.from(toSorted(iter.filter(unpackedRawSelected.value, isValid))),
+  )
   const isChanging = computed(() => anchor.value != null)
   const committedSelection = computed(() =>
     isChanging.value ? set.from(iter.filter(initiallySelected, isValid)) : selected.value,
@@ -224,6 +229,7 @@ function useSelectionImpl<T, PackedT>(
 
   return {
     // === Selected nodes ===
+    /** The valid currently-selected elements, in the order defined by `toSorted`, if provided. */
     selected,
     selectAll: () => {
       for (const id of elementRects.keys()) {

@@ -57,6 +57,11 @@ export function map<T, U>(it: Iterable<T>, f: (value: T) => U): IterableIterator
   return mapIterator(it[Symbol.iterator](), f)
 }
 
+export function filter<T, S extends T>(
+  iter: Iterable<T>,
+  include: (value: T) => value is S,
+): IterableIterator<S>
+export function filter<T>(iter: Iterable<T>, include: (value: T) => boolean): IterableIterator<T>
 /**
  * Return an {@link Iterable} that `yield`s only the values from the given source iterable
  * that pass the given predicate.
@@ -177,6 +182,15 @@ export function* filterDefined<T>(iterable: Iterable<T | undefined>): IterableIt
 export function every<T>(iter: Iterable<T>, f: (value: T) => boolean): boolean {
   for (const value of iter) if (!f(value)) return false
   return true
+}
+
+/**
+ * Returns whether the predicate returned `true` for any values yielded by the provided iterator. Short-circuiting.
+ * Returns `false` if the iterator doesn't yield any values.
+ */
+export function some<T>(iter: Iterable<T>, f: (value: T) => boolean): boolean {
+  for (const value of iter) if (f(value)) return true
+  return false
 }
 
 /** Return the first element returned by the iterable which meets the condition. */

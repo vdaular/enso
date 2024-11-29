@@ -2,6 +2,7 @@
 import { codeEditorBindings, documentationEditorBindings } from '@/bindings'
 import DropdownMenu from '@/components/DropdownMenu.vue'
 import MenuButton from '@/components/MenuButton.vue'
+import MenuPanel from '@/components/MenuPanel.vue'
 import SvgButton from '@/components/SvgButton.vue'
 import SvgIcon from '@/components/SvgIcon.vue'
 import { ref } from 'vue'
@@ -31,40 +32,47 @@ const toggleDocumentationEditorShortcut = documentationEditorBindings.bindings.t
     title="Additional Options"
   >
     <template #button><SvgIcon name="3_dot_menu" class="moreIcon" /></template>
-    <template #entries>
-      <div>
-        <div class="nonInteractive"><SvgIcon name="zoom" class="rowIcon" />Zoom</div>
-        <div class="zoomControl rightSide">
-          <SvgButton
-            class="zoomButton"
-            name="minus"
-            title="Decrease Zoom"
-            @click="emit('zoomOut')"
-          />
-          <span
-            class="zoomScaleLabel"
-            v-text="props.zoomLevel ? props.zoomLevel.toFixed(0) + '%' : '?'"
-          ></span>
-          <SvgButton class="zoomButton" name="add" title="Increase Zoom" @click="emit('zoomIn')" />
-          <div class="divider"></div>
-          <SvgButton
-            name="show_all"
-            class="showAllIcon"
-            title="Show All Components"
-            @click="emit('fitToAllClicked')"
-          />
+    <template #menu>
+      <MenuPanel>
+        <div>
+          <div class="nonInteractive"><SvgIcon name="zoom" class="rowIcon" />Zoom</div>
+          <div class="zoomControl rightSide">
+            <SvgButton
+              class="zoomButton"
+              name="minus"
+              title="Decrease Zoom"
+              @click="emit('zoomOut')"
+            />
+            <span
+              class="zoomScaleLabel"
+              v-text="props.zoomLevel ? props.zoomLevel.toFixed(0) + '%' : '?'"
+            ></span>
+            <SvgButton
+              class="zoomButton"
+              name="add"
+              title="Increase Zoom"
+              @click="emit('zoomIn')"
+            />
+            <div class="divider"></div>
+            <SvgButton
+              name="show_all"
+              class="showAllIcon"
+              title="Show All Components"
+              @click="emit('fitToAllClicked')"
+            />
+          </div>
         </div>
-      </div>
-      <MenuButton v-model="showCodeEditor" @click="open = false">
-        <SvgIcon name="bottom_panel" class="rowIcon" />
-        Code Editor
-        <div class="rightSide" v-text="toggleCodeEditorShortcut" />
-      </MenuButton>
-      <MenuButton v-model="showDocumentationEditor" @click="open = false">
-        <SvgIcon name="right_panel" class="rowIcon" />
-        Documentation Editor
-        <div class="rightSide" v-text="toggleDocumentationEditorShortcut" />
-      </MenuButton>
+        <MenuButton v-model="showCodeEditor" @click="open = false">
+          <SvgIcon name="bottom_panel" class="rowIcon" />
+          Code Editor
+          <div class="rightSide" v-text="toggleCodeEditorShortcut" />
+        </MenuButton>
+        <MenuButton v-model="showDocumentationEditor" @click="open = false">
+          <SvgIcon name="right_panel" class="rowIcon" />
+          Documentation Editor
+          <div class="rightSide" v-text="toggleDocumentationEditorShortcut" />
+        </MenuButton>
+      </MenuPanel>
     </template>
   </DropdownMenu>
 </template>
@@ -80,7 +88,7 @@ const toggleDocumentationEditorShortcut = documentationEditorBindings.bindings.t
   margin: 4px;
 }
 
-:deep(.DropdownMenuContent) {
+.MenuPanel {
   width: 250px;
   margin-top: 2px;
   padding: 4px;

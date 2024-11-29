@@ -1,6 +1,7 @@
 import { test, type Page } from '@playwright/test'
 import * as actions from './actions'
 import { expect } from './customExpect'
+import { CONTROL_KEY } from './keyboard'
 import * as locate from './locate'
 import { edgesToNodeWithBinding, graphNodeByBinding, outputPortCoordinates } from './locate'
 
@@ -97,8 +98,7 @@ test('Conditional ports: Enabled', async ({ page }) => {
   const node = graphNodeByBinding(page, 'filtered')
   const conditionalPort = node.locator('.WidgetPort').filter({ hasText: /^filter$/ })
 
-  await page.keyboard.down('Meta')
-  await page.keyboard.down('Control')
+  await page.keyboard.down(CONTROL_KEY)
 
   await expect(conditionalPort).toHaveClass(/enabled/)
   const outputPort = await outputPortCoordinates(graphNodeByBinding(page, 'final'))
@@ -109,6 +109,5 @@ test('Conditional ports: Enabled', async ({ page }) => {
   await conditionalPort.click({ force: true })
   await expect(node.locator('.WidgetToken')).toHaveText(['final'])
 
-  await page.keyboard.up('Meta')
-  await page.keyboard.up('Control')
+  await page.keyboard.up(CONTROL_KEY)
 })

@@ -24,6 +24,31 @@ test('Deleting selected node with delete key', async ({ page }) => {
   await expect(locate.graphNode(page)).toHaveCount(nodesCount - 1)
 })
 
+test('Deleting node with context menu', async ({ page }) => {
+  await actions.goToGraph(page)
+  const nodesCount = await locate.graphNode(page).count()
+  const deletedNode = locate.graphNodeByBinding(page, 'final')
+  await deletedNode.click({ button: 'right' })
+  await expect(locate.selectedNodes(page)).toHaveCount(1)
+  await page.getByRole('button', { name: 'Delete Component' }).click()
+  await expect(locate.graphNode(page)).toHaveCount(nodesCount - 1)
+})
+
+test('Deleting multiple nodes with context menu', async ({ page }) => {
+  await actions.goToGraph(page)
+  const nodesCount = await locate.graphNode(page).count()
+  const deletedNode1 = locate.graphNodeByBinding(page, 'final')
+  await deletedNode1.click()
+  const deletedNode2 = locate.graphNodeByBinding(page, 'sum')
+  await deletedNode2.click({ modifiers: ['Shift'] })
+  await deletedNode2.click({ button: 'right' })
+  await page
+    .locator('.ComponentContextMenu')
+    .getByRole('button', { name: 'Delete Selected Components' })
+    .click()
+  await expect(locate.graphNode(page)).toHaveCount(nodesCount - 2)
+})
+
 test('Graph can be empty', async ({ page }) => {
   await actions.goToGraph(page)
 

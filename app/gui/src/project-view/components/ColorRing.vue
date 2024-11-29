@@ -34,7 +34,7 @@ const FIXED_RANGE_WIDTH = 1 / 16
 
 const selectedColor = defineModel<string | undefined>()
 const props = defineProps<{
-  matchableColors: Set<string>
+  matchableColors: ReadonlySet<string>
   /** Angle, measured in degrees from the positive Y-axis, where the initially-selected color should be placed. */
   initialColorAngle?: number
 }>()

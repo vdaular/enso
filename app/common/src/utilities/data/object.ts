@@ -197,3 +197,9 @@ export function useObjectId() {
   }
   return { objectId }
 }
+
+/**
+ * Returns the union of `A` and `B`, with a type-level assertion that `A` and `B` don't have any keys in common; this
+ * can be used to splice together objects without the risk of collisions.
+ */
+export type DisjointKeysUnion<A, B> = keyof A & keyof B extends never ? A & B : never

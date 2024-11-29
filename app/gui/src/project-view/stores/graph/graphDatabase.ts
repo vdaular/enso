@@ -360,7 +360,7 @@ export class GraphDb {
         prefixes,
         conditionalPorts,
         argIndex,
-      } satisfies NodeDataFromAst
+      } satisfies AllNodeFieldsFromAst
     }
   }
 
@@ -514,7 +514,14 @@ export function nodeIdFromOuterAst(outerAst: Ast.Statement | Ast.Expression) {
   return root && asNodeId(root.externalId)
 }
 
-export interface NodeDataFromAst {
+/** Given a node, returns its {@link NodeId}. */
+export function nodeId({ rootExpr }: { rootExpr: Ast.Expression }): NodeId {
+  return asNodeId(rootExpr.externalId)
+}
+
+export type NodeDataFromAst = ComponentNodeData | InputNodeData | OutputNodeData
+
+interface AllNodeFieldsFromAst {
   type: NodeType
   /**
    * The statement or top-level expression.
@@ -540,7 +547,7 @@ export interface NodeDataFromAst {
    */
   innerExpr: Ast.Expression
   /**
-    Prefixes that are present in `rootExpr` but omitted in `innerExpr` to ensure a clean output.
+   Prefixes that are present in `rootExpr` but omitted in `innerExpr` to ensure a clean output.
    */
   prefixes: Record<'enableRecording', Ast.AstId[] | undefined>
   /** A child AST in a syntactic position to be a self-argument input to the node. */
@@ -551,12 +558,34 @@ export interface NodeDataFromAst {
   argIndex: number | undefined
 }
 
+export interface ComponentNodeData extends AllNodeFieldsFromAst {
+  type: 'component'
+  outerAst: Ast.Statement
+}
+
+export interface InputNodeData extends AllNodeFieldsFromAst {
+  type: 'input'
+  outerAst: Ast.Expression
+  argIndex: number
+}
+
+/** Type predicate for nodes of type `input`. */
+export function isInputNode(node: Node): node is Node & InputNodeData {
+  return node.type === 'input'
+}
+
+export interface OutputNodeData extends AllNodeFieldsFromAst {
+  type: 'output'
+  outerAst: Ast.Statement
+}
+
 export interface NodeDataFromMetadata {
   position: Vec2
   vis: Opt<VisualizationMetadata>
   colorOverride: Opt<string>
 }
 
-export interface Node extends NodeDataFromAst, NodeDataFromMetadata {
-  zIndex: number
-}
+export type Node = NodeDataFromAst &
+  NodeDataFromMetadata & {
+    zIndex: number
+  }

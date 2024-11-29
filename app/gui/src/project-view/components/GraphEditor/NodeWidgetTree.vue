@@ -23,9 +23,6 @@ const props = defineProps<{
   conditionalPorts: Set<Ast.AstId>
   extended: boolean
 }>()
-const emit = defineEmits<{
-  openFullMenu: []
-}>()
 const graph = useGraphStore()
 const rootPort = computed(() => {
   const input = WidgetInput.FromAst(props.ast)
@@ -104,7 +101,6 @@ const widgetTree = provideWidgetTree(
   toRef(props, 'conditionalPorts'),
   toRef(props, 'extended'),
   layoutTransitions.active,
-  () => emit('openFullMenu'),
 )
 
 const topLevelIcon = computed(() => iconOfNode(props.nodeId, graph.db))

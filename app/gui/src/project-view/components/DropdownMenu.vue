@@ -2,10 +2,11 @@
 import MenuButton from '@/components/MenuButton.vue'
 import SizeTransition from '@/components/SizeTransition.vue'
 import SvgIcon from '@/components/SvgIcon.vue'
+import { useUnrefHTMLElement } from '@/composables/events'
 import { injectInteractionHandler } from '@/providers/interactionHandler'
 import { endOnClickOutside } from '@/util/autoBlur'
 import { shift, useFloating, type Placement } from '@floating-ui/vue'
-import { ref, shallowRef } from 'vue'
+import { ref, shallowRef, useTemplateRef, type VueElement } from 'vue'
 
 const open = defineModel<boolean>('open', { default: false })
 const props = defineProps<{
@@ -15,7 +16,8 @@ const props = defineProps<{
 }>()
 
 const rootElement = shallowRef<HTMLElement>()
-const floatElement = shallowRef<HTMLElement>()
+const menuPanel = useTemplateRef<Element | VueElement | undefined | null>('menuPanel')
+const floatElement = useUnrefHTMLElement(menuPanel)
 const hovered = ref(false)
 
 injectInteractionHandler().setWhen(
@@ -49,9 +51,7 @@ const { floatingStyles } = useFloating(rootElement, floatElement, {
       class="arrow"
     />
     <SizeTransition height :duration="100">
-      <div v-if="open" ref="floatElement" class="DropdownMenuContent" :style="floatingStyles">
-        <slot name="entries" />
-      </div>
+      <slot v-if="open" ref="menuPanel" name="menu" :style="floatingStyles" />
     </SizeTransition>
   </div>
 </template>
@@ -61,18 +61,6 @@ const { floatingStyles } = useFloating(rootElement, floatElement, {
   position: relative;
   outline: 0;
   margin: -4px;
-}
-
-.DropdownMenuContent {
-  display: flex;
-  flex-direction: column;
-  border-radius: 13px;
-  background: var(--color-frame-bg);
-  backdrop-filter: var(--blur-app-bg);
-  margin: 0 -4px;
-  z-index: 1;
-  gap: 4px;
-  padding: 8px;
 }
 
 .arrow {

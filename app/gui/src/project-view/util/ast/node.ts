@@ -44,10 +44,9 @@ export function nodeFromAst(ast: Ast.Statement, isOutput: boolean): NodeDataFrom
   const { root, assignment } = nodeRootExpr(ast)
   if (!root) return
   const { innerExpr, matches } = prefixes.extractMatches(root)
-  const type = assignment == null && isOutput ? 'output' : 'component'
   const primaryApplication = primaryApplicationSubject(innerExpr)
   return {
-    type,
+    type: assignment == null && isOutput ? 'output' : 'component',
     outerAst: ast,
     pattern: assignment?.pattern,
     rootExpr: root,

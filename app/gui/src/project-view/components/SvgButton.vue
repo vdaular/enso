@@ -7,7 +7,7 @@ import type { Icon } from '@/util/iconName'
 const _props = defineProps<{
   name?: Icon | URLString | undefined
   label?: string | undefined
-  disabled?: boolean
+  disabled?: boolean | undefined
   title?: string | undefined
 }>()
 </script>

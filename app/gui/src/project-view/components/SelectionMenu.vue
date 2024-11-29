@@ -1,35 +1,34 @@
 <script setup lang="ts">
 import ColorPickerMenu from '@/components/ColorPickerMenu.vue'
-import ToggleIcon from '@/components/ToggleIcon.vue'
-import SvgButton from './SvgButton.vue'
+import SelectionButton from '@/components/SelectionButton.vue'
+import { injectSelectionButtons } from '@/providers/selectionButtons'
 
-const showColorPicker = defineModel<boolean>('showColorPicker', { required: true })
-const _props = defineProps<{ selectedComponents: number }>()
-const emit = defineEmits<{
-  collapseNodes: []
-  removeNodes: []
-}>()
+const { selectedNodeCount, buttons } = injectSelectionButtons()
+const { pickColorMulti } = buttons
 </script>
 
 <template>
-  <div class="SelectionMenu">
-    <span
-      v-text="`${selectedComponents} component${selectedComponents === 1 ? '' : 's'} selected`"
-    />
-    <SvgButton name="group" title="Group Selected Components" @click.stop="emit('collapseNodes')" />
-    <ToggleIcon
-      v-model="showColorPicker"
-      title="Color Selected Components"
-      icon="paint_palette"
-      :class="{
-        // Any `pointerdown` event outside the color picker will close it. Ignore clicks that occur while the color
-        // picker is open, so that it isn't toggled back open.
-        disableInput: showColorPicker,
-      }"
-    />
-    <SvgButton name="trash" title="Delete Selected Components" @click.stop="emit('removeNodes')" />
-    <ColorPickerMenu v-if="showColorPicker" class="submenu" @close="showColorPicker = false" />
-  </div>
+  <Transition>
+    <div v-if="selectedNodeCount > 1" class="SelectionMenu">
+      <span v-text="`${selectedNodeCount} components selected`" />
+      <SelectionButton button="collapse" />
+      <SelectionButton
+        button="pickColorMulti"
+        :class="{
+          // Any `pointerdown` event outside the color picker will close it. Ignore clicks that occur while the color
+          // picker is open, so that it isn't toggled back open.
+          disableInput: pickColorMulti.state,
+        }"
+      />
+      <SelectionButton button="copy" />
+      <SelectionButton button="deleteSelected" />
+      <ColorPickerMenu
+        v-if="pickColorMulti.state"
+        class="submenu"
+        @close="pickColorMulti.state = false"
+      />
+    </div>
+  </Transition>
 </template>
 
 <style scoped>
@@ -41,10 +40,7 @@ const emit = defineEmits<{
   backdrop-filter: var(--blur-app-bg);
   place-items: center;
   gap: 12px;
-  padding-left: 10px;
-  padding-right: 10px;
-  padding-top: 4px;
-  padding-bottom: 4px;
+  padding: 4px 10px;
 }
 
 .submenu {
@@ -62,5 +58,15 @@ const emit = defineEmits<{
 
 .disableInput {
   pointer-events: none;
+}
+
+.v-enter-active,
+.v-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.v-enter-from,
+.v-leave-to {
+  opacity: 0;
 }
 </style>

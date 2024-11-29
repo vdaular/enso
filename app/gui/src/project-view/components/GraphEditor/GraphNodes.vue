@@ -69,7 +69,6 @@ const graphNodeSelections = shallowRef<HTMLElement>()
       :node="node"
       :edited="id === graphStore.editedNodeInfo?.id"
       :graphNodeSelections="graphNodeSelections"
-      @delete="graphStore.deleteNodes([id])"
       @dragging="nodeIsDragged(id, $event)"
       @draggingCommited="dragging.finishDrag()"
       @draggingCancelled="dragging.cancelDrag()"

@@ -16,6 +16,7 @@ import { Rect } from '@/util/data/rect'
 import { Vec2 } from '@/util/data/vec2'
 import { qnLastSegment, tryQualifiedName } from '@/util/qualifiedName'
 import type { ToValue } from '@/util/reactivity'
+import { identity } from '@vueuse/core'
 import * as iter from 'enso-common/src/utilities/data/iter'
 import { nextTick, toValue } from 'vue'
 import { assert, assertNever } from 'ydoc-shared/util/assert'
@@ -81,10 +82,6 @@ export function useNodeCreation(
       : placement.type === 'fixed' ? placement.position
       : assertNever(placement)
     )
-  }
-
-  function identity<T>(value: T): T {
-    return value
   }
 
   function placeNodes(nodesOptions: Iterable<NodeCreationOptions>): NodeCreationOptions[] {

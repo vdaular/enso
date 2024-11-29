@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /** @file Provides a fullscreen mode to its slot, based on conditional teleport and conditional styling. */
 
-import { useFullscreenContext } from '@/providers/fullscreenContext'
+import { useGraphEditorLayers } from '@/providers/graphEditorLayers'
 import { Rect } from '@/util/data/rect'
 import { computed, ref, toRef, watch } from 'vue'
 
@@ -41,7 +41,7 @@ const emit = defineEmits<{
 
 const content = ref<HTMLElement>()
 
-const { fullscreenContainer } = useFullscreenContext()
+const { fullscreen: fullscreenContainer } = useGraphEditorLayers()
 
 const fullscreenSize: Keyframe = {
   top: 0,
