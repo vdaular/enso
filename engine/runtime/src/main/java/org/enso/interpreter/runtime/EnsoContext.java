@@ -272,8 +272,8 @@ public final class EnsoContext {
         with root nodes: {r}
         """
                   .replace("{n}", "" + n)
-                  .replace("{s}", "" + n.getEncapsulatingSourceSection())
-                  .replace("{r}", "" + n.getRootNode()));
+                  .replace("{s}", "" + (n != null ? n.getEncapsulatingSourceSection() : null))
+                  .replace("{r}", "" + (n != null ? n.getRootNode() : null)));
       ex.printStackTrace();
       checkUntil = System.currentTimeMillis() + 10000;
       var assertsOn = false;

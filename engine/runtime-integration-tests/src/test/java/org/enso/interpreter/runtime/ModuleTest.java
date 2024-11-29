@@ -1,9 +1,12 @@
 package org.enso.interpreter.runtime;
 
 import static org.enso.scala.wrapper.ScalaConversions.nil;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,6 +20,7 @@ import org.enso.compiler.data.BindingsMap$ModuleReference$Concrete;
 import org.enso.pkg.QualifiedName;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Engine;
+import org.graalvm.polyglot.PolyglotException;
 import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.io.IOAccess;
 import org.junit.After;
@@ -50,6 +54,17 @@ public class ModuleTest {
     f.delete();
     this.ctx.close();
     this.ctx = null;
+  }
+
+  @Test
+  public void noSuchModuleError() {
+    var b = ctx.getBindings(LanguageInfo.ID);
+    try {
+      var r = b.invokeMember(MethodNames.TopScope.GET_MODULE, "Does.Not.Exist.Module");
+      fail("Expecting failure, but got: " + r);
+    } catch (PolyglotException ex) {
+      assertThat(ex.getMessage(), containsString("Module_Does_Not_Exist"));
+    }
   }
 
   @Test
