@@ -226,6 +226,11 @@ add_specs suite_builder setup:Cloud_Tests_Setup = suite_builder.group "Enso Clou
         r.should_fail_with File_Error
         r.catch.should_be_a File_Error.Not_Found
 
+    group_builder.specify "read_many should work with Cloud files" <|
+        paths = [test_root.get / "test_file.json", test_root.get / "test-directory/another.txt"]
+        r = Data.read_many paths return=..As_Vector
+        r.should_equal [[1, 2, 3, "foo"], "Hello Another!"]
+
     group_builder.specify "should be able to open a file as input stream" <|
         test_file = test_root.get / "test_file.json"
         test_file.exists . should_be_true

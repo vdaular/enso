@@ -509,7 +509,7 @@ type No_Common_Type
        Create a human-readable version of the error.
     to_display_text : Text
     to_display_text self =
-        types = self.types.map .to_display_text . join ", "
+        types = self.types.distinct.map .to_display_text . join ", "
         prefix = "No common type was found for types: "+types
         location = case self.related_column_name of
             column_name : Text -> " when unifying column ["+column_name+"]"
@@ -517,8 +517,7 @@ type No_Common_Type
         suffix_type = case self of
             No_Common_Type.Error _ _ -> "."
             No_Common_Type.Warning_Convert_To_Text _ _ -> ", so the values were converted to text."
-        suffix_mixed = " If you want to have mixed types instead, please cast one of the columns to `Mixed` beforehand."
-        prefix + location + suffix_type + suffix_mixed
+        prefix + location + suffix_type
 
     ## PRIVATE
     to_text self -> Text =
@@ -889,3 +888,12 @@ type Mixing_Date_Time_Types
                 "Mixing Date and Date_Time values"+location+": the Date values have been automatically converted to Date_Time by adding a time of 00:00 in the default time-zone."
             Mixing_Date_Time_Types.Implicit_Time_Zone _ ->
                 "Mixing Date_Time values with and without timezone"+location+". A default timezone has been assumed where it was missing."
+
+## Indicates that a table with no rows has been returned.
+type No_Rows
+   ## PRIVATE
+      The message should be used to provide additional context.
+   private Warning message:Text
+
+   ## PRIVATE
+   to_display_text self -> Text = self.message

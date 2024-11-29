@@ -92,7 +92,11 @@ import project.System.System_Spec
 import project.System.Temporary_File_Spec
 
 import project.Random_Spec
-import project.Widget_Helpers_Spec
+
+## Workaround for bug https://github.com/enso-org/enso/issues/11707
+   The Standard.Table import should be removed once the bug is fixed.
+import Standard.Table
+
 
 main filter=Nothing =
     suite = Test.build suite_builder->
@@ -177,6 +181,5 @@ main filter=Nothing =
         Random_Spec.add_specs suite_builder
         XML_Spec.add_specs suite_builder
         Decimal_Spec.add_specs suite_builder
-        Widget_Helpers_Spec.add_specs suite_builder
 
     suite.run_with_filter filter

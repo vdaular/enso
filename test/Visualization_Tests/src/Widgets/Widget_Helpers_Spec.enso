@@ -12,7 +12,7 @@ main filter=Nothing =
 
 
 add_specs suite_builder =
-    suite_builder.group "Can run each helper" group_builder->
+    suite_builder.group "Widget_Helpers run" group_builder->
         group_builder.specify "make_regex_text_widget" <|
             w = make_regex_text_widget
             j = (Widgets.get_widget_json w) . to_text

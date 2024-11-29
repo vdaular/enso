@@ -201,7 +201,7 @@ add_specs suite_builder =
             r.should_be_a JS_Object
 
         group_builder.specify "can use URI or Text URLs in Data.read_many" <|
-            r = Data.read_many [URI.from url_get, url_get]
+            r = Data.read_many [URI.from url_get, url_get] return=..As_Vector
             r.should_be_a Vector
             r.at 0 . should_be_a JS_Object
             r.at 1 . should_be_a JS_Object

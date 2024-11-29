@@ -75,12 +75,12 @@ add_specs suite_builder =
 
     suite_builder.group "from_objects with JSON (single values)" group_builder->
         group_builder.specify "Generates a single-row table from a JSON object" <|
-            expected = Table.new [["Key", ["first", "last", "age"]], ["Value", ["Mary", "Smith", 23]]]
+            expected = Table.new [["first", ["Mary"]], ["last", ["Smith"]], ["age", [23]]]
             Table.from_objects (data.uniform_json.at 0) . should_equal expected
 
         group_builder.specify "works fine even if requested fields are duplicated" <|
-            expected = Table.new [["Key", ["first", "last", "age"]], ["Value", ["Mary", "Smith", 23]]]
-            Table.from_objects (data.uniform_json.at 0) ["Key", "Value", "Key", "Key"] . should_equal expected
+            expected = Table.new [["first", ["Mary"]], ["last", ["Smith"]]]
+            Table.from_objects (data.uniform_json.at 0) ["first", "last", "first", "first"] . should_equal expected
 
     suite_builder.group "from_objects with uniform JSON vector" group_builder->
         group_builder.specify "Generates a table from a vector of JSON objects" <|
@@ -472,4 +472,3 @@ main filter=Nothing =
     suite = Test.build suite_builder->
         add_specs suite_builder
     suite.run_with_filter filter
-

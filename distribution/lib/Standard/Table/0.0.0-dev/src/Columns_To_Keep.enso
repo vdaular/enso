@@ -1,5 +1,6 @@
 from Standard.Base import Text, Vector
 from Standard.Base.Metadata import Display, make_single_choice, Widget
+import Standard.Base.Errors.Common.Missing_Argument
 
 ## Specifies which columns to keep in a union operation.
 type Columns_To_Keep
@@ -19,7 +20,7 @@ type Columns_To_Keep
 
        If a table does not have a column that is specified in the list, it is
        padded with `Nothing` and a problem is reported.
-    In_List (column_names : Vector Text)
+    In_List (column_names : Vector Text = Missing_Argument.throw "column_names")
 
     ## PRIVATE
        Same as `In_Any`, but it will warn about columns that are not present in

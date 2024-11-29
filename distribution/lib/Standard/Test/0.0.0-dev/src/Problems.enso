@@ -39,7 +39,7 @@ test_problem_handling action expected_problems result_checker (unwrap_errors : B
         Test.with_clue "The warnings were "+warnings.to_text+'.\n' <|
             (if ignore_warning_cardinality then warnings.distinct else warnings)
                 . map unwrap_maybe
-                . should_equal_ignoring_order expected_problems frames_to_skip=5
+                . should_equal_ignoring_order expected_problems frames_to_skip=8
     test_advanced_problem_handling action error_checker warnings_checker result_checker frames_to_skip=1
 
 ## UNSTABLE
