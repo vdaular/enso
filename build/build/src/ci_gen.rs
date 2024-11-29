@@ -11,6 +11,8 @@ use crate::version::ENSO_RELEASE_MODE;
 use crate::version::ENSO_VERSION;
 
 use ide_ci::actions::workflow::definition::checkout_repo_step;
+use ide_ci::actions::workflow::definition::env_expression;
+use ide_ci::actions::workflow::definition::get_input;
 use ide_ci::actions::workflow::definition::get_input_expression;
 use ide_ci::actions::workflow::definition::is_non_windows_runner;
 use ide_ci::actions::workflow::definition::is_windows_runner;
@@ -489,11 +491,10 @@ pub fn changelog() -> Result<Workflow> {
 }
 
 pub fn nightly() -> Result<Workflow> {
-    let workflow_dispatch =
-        WorkflowDispatch::default().with_input(input::name::YDOC, input::ydoc());
-    let workflow_call = WorkflowCall::try_from(workflow_dispatch.clone())?;
+    let input_ydoc = input::ydoc();
+    let input_ydoc_default = input_ydoc.r#type.default().expect("Default Ydoc input is expected.");
+    let workflow_dispatch = WorkflowDispatch::default().with_input(input::name::YDOC, input_ydoc);
     let on = Event {
-        workflow_call: Some(workflow_call),
         workflow_dispatch: Some(workflow_dispatch),
         // 2am (UTC) every day.
         schedule: vec![Schedule::new("0 2 * * *")?],
@@ -501,10 +502,14 @@ pub fn nightly() -> Result<Workflow> {
     };
 
     let mut workflow = Workflow { on, name: "Nightly Release".into(), ..default() };
+    // Scheduled workflows do not support input parameters. Instead we provide env variable
+    // expression with default. Feature request is tracked by https://github.com/orgs/community/discussions/74698
+    let input_env_ydoc = format!("{} || {}", get_input(input::name::YDOC), input_ydoc_default);
+    workflow.env(input::env::Ydoc, wrap_expression(input_env_ydoc));
 
     let job = workflow_call_job("Promote nightly", PROMOTE_WORKFLOW_PATH)
         .with_with(input::name::DESIGNATOR, Designation::Nightly.as_ref())
-        .with_with(input::name::YDOC, get_input_expression(input::name::YDOC));
+        .with_with(input::name::YDOC, env_expression(&input::env::Ydoc));
     workflow.add_job(job);
     Ok(workflow)
 }

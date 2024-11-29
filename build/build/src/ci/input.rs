@@ -12,6 +12,25 @@ pub mod name {
     pub const YDOC: &str = "ydoc";
 }
 
+pub mod env {
+    use ide_ci::env::accessor::RawVariable;
+
+    #[derive(Clone, Copy, Debug, Default)]
+    pub struct Ydoc;
+
+    impl RawVariable for Ydoc {
+        fn name(&self) -> &str {
+            "ENV_INPUTS_YDOC"
+        }
+    }
+
+    impl From<Ydoc> for String {
+        fn from(val: Ydoc) -> Self {
+            val.name().to_owned()
+        }
+    }
+}
+
 pub fn designator() -> WorkflowDispatchInput {
     WorkflowDispatchInput::new_choice(
         "What kind of release should be promoted.",
