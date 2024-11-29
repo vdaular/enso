@@ -53,10 +53,14 @@ export type OnResizeCallback = (bounds: RectReadOnly) => void
  * A type that represents the options for the useMeasure hook.
  */
 export interface Options {
-  readonly debounce?: number | { readonly scroll: number; readonly resize: number }
+  readonly debounce?:
+    | number
+    | false
+    | { readonly scroll: number | false; readonly resize: number | false }
   readonly scroll?: boolean
   readonly offsetSize?: boolean
   readonly onResize?: OnResizeCallback
+  readonly onInitialMeasure?: OnResizeCallback
   readonly maxWait?: number | { readonly scroll: number; readonly resize: number }
   /**
    * Whether to use RAF to measure the element.
@@ -69,7 +73,7 @@ export interface Options {
  * Custom hook to measure the size and position of an element
  */
 export function useMeasure(options: Options = {}): Result {
-  const { onResize } = options
+  const { onResize, onInitialMeasure } = options
 
   const [bounds, set] = useState<RectReadOnly | null>(null)
 
@@ -79,7 +83,17 @@ export function useMeasure(options: Options = {}): Result {
     onResize?.(nextBounds)
   })
 
-  const [ref, forceRefresh] = useMeasureCallback({ ...options, onResize: onResizeStableCallback })
+  const onInitialMeasureStableCallback = useEventCallback<OnResizeCallback>((nextBounds) => {
+    set(nextBounds)
+
+    onInitialMeasure?.(nextBounds)
+  })
+
+  const [ref, forceRefresh] = useMeasureCallback({
+    ...options,
+    onResize: onResizeStableCallback,
+    onInitialMeasure: onInitialMeasureStableCallback,
+  })
 
   return [ref, bounds, forceRefresh] as const
 }
@@ -88,7 +102,7 @@ export function useMeasure(options: Options = {}): Result {
  * Helper hook that uses motion primitive to optimize renders, works best with motion components
  */
 export function useMeasureSignal(options: Options = {}) {
-  const { onResize } = options
+  const { onResize, onInitialMeasure } = options
 
   const bounds = useMotionValue<RectReadOnly | null>(null)
 
@@ -98,7 +112,17 @@ export function useMeasureSignal(options: Options = {}) {
     onResize?.(nextBounds)
   })
 
-  const [ref, forceRefresh] = useMeasureCallback({ ...options, onResize: onResizeStableCallback })
+  const onInitialMeasureStableCallback = useEventCallback<OnResizeCallback>((nextBounds) => {
+    bounds.set(nextBounds)
+
+    onInitialMeasure?.(nextBounds)
+  })
+
+  const [ref, forceRefresh] = useMeasureCallback({
+    ...options,
+    onResize: onResizeStableCallback,
+    onInitialMeasure: onInitialMeasureStableCallback,
+  })
 
   return [ref, bounds, forceRefresh] as const
 }
@@ -112,13 +136,14 @@ const DEFAULT_MAX_WAIT = 500
  */
 export function useMeasureCallback(options: Options & Required<Pick<Options, 'onResize'>>) {
   const {
-    debounce = 0,
+    debounce = false,
     scroll = false,
     offsetSize = false,
     onResize,
     maxWait = DEFAULT_MAX_WAIT,
     useRAF = true,
     isDisabled = false,
+    onInitialMeasure,
   } = options
 
   // keep all state in a ref
@@ -136,8 +161,10 @@ export function useMeasureCallback(options: Options & Required<Pick<Options, 'on
   const resizeMaxWait = typeof maxWait === 'number' ? maxWait : maxWait.resize
 
   // set actual debounce values early, so effects know if they should react accordingly
-  const scrollDebounce = typeof debounce === 'number' ? debounce : debounce.scroll
-  const resizeDebounce = typeof debounce === 'number' ? debounce : debounce.resize
+  const scrollDebounce =
+    typeof debounce === 'number' || debounce === false ? debounce : debounce.scroll
+  const resizeDebounce =
+    typeof debounce === 'number' || debounce === false ? debounce : debounce.resize
 
   const callback = useEventCallback(() => {
     frame.read(measureCallback)
@@ -146,7 +173,7 @@ export function useMeasureCallback(options: Options & Required<Pick<Options, 'on
   const measureCallback = useEventCallback(() => {
     const element = state.current.element
 
-    if (!element || isDisabled) return
+    if (!element) return
 
     const { left, top, width, height, bottom, right, x, y } = element.getBoundingClientRect()
 
@@ -158,8 +185,15 @@ export function useMeasureCallback(options: Options & Required<Pick<Options, 'on
     }
 
     if (mounted.current && !areBoundsEqual(state.current.lastBounds, size)) {
+      if (state.current.lastBounds == null) {
+        onInitialMeasure?.(size)
+      }
+
+      if (!isDisabled) {
+        onResizeStableCallback(size)
+      }
+
       unsafeMutable(state.current).lastBounds = size
-      onResizeStableCallback(size)
     }
   })
 

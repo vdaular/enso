@@ -147,12 +147,12 @@ const DIALOG_STYLES = tv({
 })
 
 const TRANSITION: Spring = {
+  type: 'spring',
   // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-  stiffness: 2_000,
+  stiffness: 1_200,
   // eslint-disable-next-line @typescript-eslint/no-magic-numbers
   damping: 90,
-  type: 'spring',
-  mass: 1,
+  mass: 3,
 }
 
 // ==============
@@ -247,6 +247,7 @@ function DialogContent(props: DialogContentProps) {
   } = props
 
   const dialogRef = React.useRef<HTMLDivElement>(null)
+  const scrollerRef = React.useRef<HTMLDivElement | null>()
   const dialogId = aria.useId()
 
   const titleId = `${dialogId}-title`
@@ -254,16 +255,17 @@ function DialogContent(props: DialogContentProps) {
   const isFullscreen = type === 'fullscreen'
 
   const [isScrolledToTop, setIsScrolledToTop] = React.useState(true)
+
   const [isLayoutDisabled, setIsLayoutDisabled] = React.useState(true)
 
   const [contentDimensionsRef, dimensions] = useMeasure({
     isDisabled: isLayoutDisabled,
-    useRAF: true,
+    useRAF: false,
   })
 
   const [headerDimensionsRef, headerDimensions] = useMeasure({
     isDisabled: isLayoutDisabled,
-    useRAF: true,
+    useRAF: false,
   })
 
   utlities.useInteractOutside({
@@ -283,6 +285,7 @@ function DialogContent(props: DialogContentProps) {
 
   /** Handles the scroll event on the dialog content. */
   const handleScroll = useEventCallback((ref: HTMLDivElement | null) => {
+    scrollerRef.current = ref
     React.startTransition(() => {
       if (ref && ref.scrollTop > 0) {
         setIsScrolledToTop(false)
@@ -320,19 +323,36 @@ function DialogContent(props: DialogContentProps) {
     fitContent,
   })
 
-  const dialogHeight =
-    dimensions == null || headerDimensions == null ?
-      null
-    : dimensions.height + headerDimensions.height
+  const dialogHeight = () => {
+    if (isFullscreen) {
+      return ''
+    }
+
+    if (dimensions == null || headerDimensions == null) {
+      return ''
+    }
+
+    return dimensions.height + headerDimensions.height
+  }
 
   return (
     <>
       <MotionDialog
         layout
         transition={TRANSITION}
-        style={dialogHeight != null ? { height: dialogHeight } : undefined}
+        style={{ height: dialogHeight() }}
         id={dialogId}
-        ref={() =>
+        onLayoutAnimationStart={() => {
+          if (scrollerRef.current) {
+            scrollerRef.current.style.overflowY = 'clip'
+          }
+        }}
+        onLayoutAnimationComplete={() => {
+          if (scrollerRef.current) {
+            scrollerRef.current.style.overflowY = ''
+          }
+        }}
+        ref={(ref: HTMLDivElement | null) => {
           mergeRefs.mergeRefs(dialogRef, (element) => {
             if (element) {
               // This is a workaround for the `data-testid` attribute not being
@@ -344,8 +364,8 @@ function DialogContent(props: DialogContentProps) {
               // this will allow us to set the `data-testid` attribute on the dialog
               element.dataset.testId = testId
             }
-          })
-        }
+          })(ref)
+        }}
         className={styles.base()}
         aria-labelledby={titleId}
         {...ariaDialogProps}

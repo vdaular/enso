@@ -7,7 +7,8 @@ import { useUnmount } from './unmountHooks'
 /** Wrap a callback into a debounced function */
 export function useDebouncedCallback<Fn extends (...args: never[]) => unknown>(
   callback: Fn,
-  delay: number,
+  /** The delay in milliseconds. Set to `false` to disable debouncing. */
+  delay: number | false,
   maxWait: number | null = null,
 ): DebouncedFunction<Fn> {
   const stableCallback = useEventCallback(callback)
@@ -49,7 +50,7 @@ export function useDebouncedCallback<Fn extends (...args: never[]) => unknown>(
 
     lastCallRef.current = { args }
 
-    if (delay === 0) {
+    if (delay === false) {
       execute()
     } else {
       // plan regular execution
