@@ -387,6 +387,7 @@ function toField(
 
   return {
     field: name,
+    headerName: name, // AGGrid would demangle it its own way if not specified.
     headerComponentParams: {
       template,
       setAriaSort: () => {},
