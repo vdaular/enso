@@ -646,9 +646,12 @@ pub fn typical_check_triggers() -> Event {
 }
 
 pub fn gui() -> Result<Workflow> {
-    let on = typical_check_triggers();
-    let mut workflow = Workflow { name: "GUI Packaging".into(), on, ..default() };
-    workflow.add(PRIMARY_TARGET, job::CancelWorkflow);
+    let mut workflow = Workflow {
+        name: "GUI Packaging".into(),
+        on: typical_check_triggers(),
+        concurrency: Some(concurrency()),
+        ..default()
+    };
 
     for target in PR_CHECKED_TARGETS {
         let project_manager_job = workflow.add(target, job::BuildBackend);
@@ -670,10 +673,22 @@ pub fn gui_tests() -> Result<Workflow> {
     Ok(workflow)
 }
 
+fn concurrency() -> Concurrency {
+    let github_workflow = wrap_expression("github.workflow");
+    let github_ref = wrap_expression("github.ref");
+    Concurrency::Map {
+        group:              format!("{github_workflow}-{github_ref}"),
+        cancel_in_progress: wrap_expression(not_default_branch()),
+    }
+}
+
 pub fn backend() -> Result<Workflow> {
-    let on = typical_check_triggers();
-    let mut workflow = Workflow { name: "Engine CI".into(), on, ..default() };
-    workflow.add(PRIMARY_TARGET, job::CancelWorkflow);
+    let mut workflow = Workflow {
+        name: "Engine CI".into(),
+        on: typical_check_triggers(),
+        concurrency: Some(concurrency()),
+        ..default()
+    };
     workflow.add(PRIMARY_TARGET, job::VerifyLicensePackages);
     for target in PR_CHECKED_TARGETS {
         add_backend_checks(&mut workflow, target, graalvm::Edition::Community);

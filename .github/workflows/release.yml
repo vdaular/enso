@@ -28,6 +28,7 @@ on:
         required: false
         type: string
         default: nodejs
+concurrency: release
 jobs:
   enso-build-ci-gen-draft-release-linux-amd64:
     name: Create a release draft.
@@ -725,4 +726,3 @@ env:
   ENSO_EDITION: ${{ inputs.version }}
   ENSO_VERSION: ${{ inputs.version }}
   RUST_BACKTRACE: full
-concurrency: release

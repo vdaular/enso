@@ -193,14 +193,14 @@ pub struct Workflow {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     pub on:          Event,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub concurrency: Option<Concurrency>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub permissions: BTreeMap<Permission, Access>,
     // No additional clause, as the jobs must be non-empty.
     pub jobs:        BTreeMap<String, Job>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub env:         BTreeMap<String, String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub concurrency: Option<Concurrency>,
 }
 
 impl Default for Workflow {

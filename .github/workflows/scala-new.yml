@@ -14,19 +14,10 @@ on:
         required: false
         type: boolean
         default: false
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/develop' }}
 jobs:
-  enso-build-ci-gen-job-cancel-workflow-linux-amd64:
-    name: Cancel Previous Runs
-    if: github.ref != 'refs/heads/develop'
-    runs-on:
-      - ubuntu-latest
-    steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.12.1
-        with:
-          access_token: ${{ github.token }}
-    permissions:
-      actions: write
   enso-build-ci-gen-job-ci-check-backend-graal-vm-ce-linux-amd64:
     name: Engine (GraalVM CE) (linux, amd64)
     runs-on:
