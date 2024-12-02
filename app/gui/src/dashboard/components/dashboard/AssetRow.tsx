@@ -27,7 +27,7 @@ import AssetListEventType from '#/events/AssetListEventType'
 import AssetContextMenu from '#/layouts/AssetContextMenu'
 import type * as assetsTable from '#/layouts/AssetsTable'
 import * as eventListProvider from '#/layouts/AssetsTable/EventListProvider'
-import { isCloudCategory } from '#/layouts/CategorySwitcher/Category'
+import { isCloudCategory, isLocalCategory } from '#/layouts/CategorySwitcher/Category'
 import * as localBackend from '#/services/LocalBackend'
 
 import * as backendModule from '#/services/Backend'
@@ -422,6 +422,11 @@ export function RealAssetInternalRow(props: RealAssetRowInternalProps) {
           )
           nodeParentKeysRef.current = { nodeMap: new WeakRef(nodeMap.current), parentKeys }
         }
+
+        if (isLocalCategory(category)) {
+          return true
+        }
+
         return payload.every((payloadItem) => {
           const parentKey = nodeParentKeysRef.current?.parentKeys.get(payloadItem.key)
           const parent = parentKey == null ? null : nodeMap.current.get(parentKey)
@@ -440,6 +445,7 @@ export function RealAssetInternalRow(props: RealAssetRowInternalProps) {
         })
       }
     })()
+
     if ((isPayloadMatch && canPaste) || event.dataTransfer.types.includes('Files')) {
       event.preventDefault()
       if (asset.type === backendModule.AssetType.directory && state.category.type !== 'trash') {

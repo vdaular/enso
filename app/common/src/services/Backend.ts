@@ -1430,23 +1430,16 @@ export function detectVersionLifecycle(version: string) {
 /** Return a positive number if `a > b`, a negative number if `a < b`, and zero if `a === b`. */
 export function compareAssets(a: AnyAsset, b: AnyAsset) {
   const relativeTypeOrder = ASSET_TYPE_ORDER[a.type] - ASSET_TYPE_ORDER[b.type]
+
   if (relativeTypeOrder !== 0) {
     return relativeTypeOrder
-  } else {
-    const aModified = Number(new Date(a.modifiedAt))
-    const bModified = Number(new Date(b.modifiedAt))
-    const modifiedDelta = aModified - bModified
-    if (modifiedDelta !== 0) {
-      // Sort by date descending, rather than ascending.
-      return -modifiedDelta
-    } else {
-      return (
-        a.title > b.title ? 1
-        : a.title < b.title ? -1
-        : 0
-      )
-    }
   }
+
+  return (
+    a.title > b.title ? 1
+    : a.title < b.title ? -1
+    : 0
+  )
 }
 
 // ==================
