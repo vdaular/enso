@@ -6,16 +6,16 @@ import * as copyHook from '#/hooks/copyHooks'
 
 import * as textProvider from '#/providers/TextProvider'
 
-import * as ariaComponents from '#/components/AriaComponents'
-
 import * as twv from '#/utilities/tailwindVariants'
+import { Button } from '../Button'
+import { TEXT_STYLE } from '../Text'
 
 // =================
 // === Constants ===
 // =================
 
 const COPY_BLOCK_STYLES = twv.tv({
-  base: ariaComponents.TEXT_STYLE({
+  base: TEXT_STYLE({
     class: 'max-w-full bg-primary/5 border-primary/10',
   }),
   variants: {
@@ -58,7 +58,7 @@ export function CopyBlock(props: CopyBlockProps) {
   const { copyTextBlock, base } = COPY_BLOCK_STYLES()
 
   return (
-    <ariaComponents.Button
+    <Button
       variant="custom"
       size="custom"
       onPress={() => mutateAsync()}
@@ -66,6 +66,6 @@ export function CopyBlock(props: CopyBlockProps) {
       className={base({ className })}
     >
       <span className={copyTextBlock()}>{copyText}</span>
-    </ariaComponents.Button>
+    </Button>
   )
 }

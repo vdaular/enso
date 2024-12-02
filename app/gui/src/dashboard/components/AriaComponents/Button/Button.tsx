@@ -272,7 +272,8 @@ export const BUTTON_STYLES = tv({
     { size: 'medium', iconOnly: true, class: { base: 'p-0 rounded-full', icon: 'w-4 h-4' } },
     { size: 'large', iconOnly: true, class: { base: 'p-0 rounded-full', icon: 'w-4.5 h-4.5' } },
     { size: 'hero', iconOnly: true, class: { base: 'p-0 rounded-full', icon: 'w-12 h-12' } },
-    { fullWidth: false, class: { icon: 'flex-none' } },
+
+    { variant: 'icon', class: { base: 'flex-none' } },
 
     { variant: 'link', isFocused: true, class: 'focus-visible:outline-offset-1' },
     { variant: 'link', size: 'xxsmall', class: 'font-medium' },

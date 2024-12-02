@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 
 import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 
+import type { DirectoryId } from 'enso-common/src/services/Backend'
 import {
   assetIsDirectory,
   createRootDirectoryAsset,
@@ -11,7 +12,6 @@ import {
   createSpecialLoadingAsset,
   type AnyAsset,
   type DirectoryAsset,
-  type DirectoryId,
 } from 'enso-common/src/services/Backend'
 
 import { listDirectoryQueryOptions } from '#/hooks/backendHooks'
@@ -88,10 +88,13 @@ export function useAssetTree(options: UseAssetTreeOptions) {
     useMemo(
       () => ({
         queryKey: [backend.type, 'refetchListDirectory'],
-        queryFn: async () => {
-          await queryClient.refetchQueries({ queryKey: [backend.type, 'listDirectory'] })
-          return null
-        },
+        queryFn: () =>
+          queryClient
+            .refetchQueries({
+              queryKey: [backend.type, 'listDirectory'],
+              type: 'active',
+            })
+            .then(() => null),
         refetchInterval:
           enableAssetsTableBackgroundRefresh ? assetsTableBackgroundRefreshInterval : false,
         refetchOnMount: 'always',

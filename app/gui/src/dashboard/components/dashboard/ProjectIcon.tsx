@@ -219,7 +219,7 @@ export default function ProjectIcon(props: ProjectIconProps) {
               icon={StopIcon}
               aria-label={userOpeningProjectTooltip ?? getText('stopExecution')}
               tooltipPlacement="left"
-              className={tailwindMerge.twMerge(isRunningInBackground && 'text-green')}
+              className={tailwindMerge.twJoin(isRunningInBackground && 'text-green')}
               onPress={doCloseProject}
             />
             <Spinner

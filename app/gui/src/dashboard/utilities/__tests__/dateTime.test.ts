@@ -7,8 +7,6 @@ import * as dateTime from '#/utilities/dateTime'
 // === Tests ===
 // =============
 
-/* eslint-disable @typescript-eslint/no-magic-numbers */
-
 /** The number of milliseconds in a minute. */
 const MIN_MS = 60_000
 /** Remove all UTC offset from a {@link Date}. Daylight savings-aware. */

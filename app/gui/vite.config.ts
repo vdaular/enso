@@ -12,6 +12,10 @@ import { defineConfig, type Plugin } from 'vite'
 import VueDevTools from 'vite-plugin-vue-devtools'
 import wasm from 'vite-plugin-wasm'
 import tailwindConfig from './tailwind.config'
+// @ts-expect-error We don't need to typecheck this file
+import reactCompiler from 'babel-plugin-react-compiler'
+// @ts-expect-error We don't need to typecheck this file
+import syntaxImportAttributes from '@babel/plugin-syntax-import-attributes'
 
 const dynHostnameWsUrl = (port: number) => JSON.stringify(`ws://__HOSTNAME__:${port}`)
 const projectManagerUrl = dynHostnameWsUrl(process.env.INTEGRATION_TEST === 'true' ? 30536 : 30535)
@@ -57,11 +61,8 @@ export default defineConfig({
       include: fileURLToPath(new URL('./src/dashboard/**/*.tsx', import.meta.url)),
       babel: {
         plugins: [
-          '@babel/plugin-syntax-import-attributes',
-          [
-            'babel-plugin-react-compiler',
-            { target: '18', enablePreserveExistingMemoizationGuarantees: true },
-          ],
+          syntaxImportAttributes,
+          [reactCompiler, { target: '18', enablePreserveExistingMemoizationGuarantees: true }],
         ],
       },
     }),

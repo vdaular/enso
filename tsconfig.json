@@ -21,5 +21,6 @@
     "skipLibCheck": true,
     "target": "ES2022",
     "jsx": "react-jsx"
-  }
+  },
+  "exclude": ["tools", "node_modules", "lib", "engine", "test", "dist", "docs"]
 }
