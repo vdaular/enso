@@ -11,7 +11,6 @@ use crate::version::ENSO_RELEASE_MODE;
 use crate::version::ENSO_VERSION;
 
 use ide_ci::actions::workflow::definition::checkout_repo_step;
-use ide_ci::actions::workflow::definition::env_expression;
 use ide_ci::actions::workflow::definition::get_input;
 use ide_ci::actions::workflow::definition::get_input_expression;
 use ide_ci::actions::workflow::definition::is_non_windows_runner;
@@ -502,14 +501,13 @@ pub fn nightly() -> Result<Workflow> {
     };
 
     let mut workflow = Workflow { on, name: "Nightly Release".into(), ..default() };
-    // Scheduled workflows do not support input parameters. Instead we provide env variable
-    // expression with default. Feature request is tracked by https://github.com/orgs/community/discussions/74698
-    let input_env_ydoc = format!("{} || {}", get_input(input::name::YDOC), input_ydoc_default);
-    workflow.env(input::env::Ydoc, wrap_expression(input_env_ydoc));
+    // Scheduled workflows do not support input parameters. We need to provide an explicit default
+    // value. Feature request is tracked by https://github.com/orgs/community/discussions/74698
+    let input_ydoc = format!("{} || '{}'", get_input(input::name::YDOC), input_ydoc_default);
 
     let job = workflow_call_job("Promote nightly", PROMOTE_WORKFLOW_PATH)
         .with_with(input::name::DESIGNATOR, Designation::Nightly.as_ref())
-        .with_with(input::name::YDOC, env_expression(&input::env::Ydoc));
+        .with_with(input::name::YDOC, wrap_expression(input_ydoc));
     workflow.add_job(job);
     Ok(workflow)
 }
