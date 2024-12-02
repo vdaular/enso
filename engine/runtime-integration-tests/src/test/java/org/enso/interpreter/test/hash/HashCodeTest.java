@@ -1,4 +1,4 @@
-package org.enso.interpreter.test;
+package org.enso.interpreter.test.hash;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -13,6 +13,7 @@ import org.enso.interpreter.node.expression.builtin.meta.HashCodeNode;
 import org.enso.interpreter.node.expression.builtin.meta.HashCodeNodeGen;
 import org.enso.interpreter.node.expression.foreign.HostValueToEnsoNode;
 import org.enso.interpreter.runtime.EnsoContext;
+import org.enso.interpreter.test.ValuesGenerator;
 import org.enso.test.utils.ContextUtils;
 import org.enso.test.utils.TestRootNode;
 import org.graalvm.polyglot.Context;

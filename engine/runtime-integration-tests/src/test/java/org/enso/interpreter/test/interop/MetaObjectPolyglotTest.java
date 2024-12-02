@@ -1,5 +1,6 @@
-package org.enso.interpreter.test;
+package org.enso.interpreter.test.interop;
 
+import org.enso.interpreter.test.ValuesGenerator;
 import org.enso.interpreter.test.ValuesGenerator.Language;
 import org.graalvm.polyglot.Context;
 

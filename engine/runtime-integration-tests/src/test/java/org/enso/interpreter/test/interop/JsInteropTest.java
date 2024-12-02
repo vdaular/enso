@@ -1,4 +1,4 @@
-package org.enso.interpreter.test;
+package org.enso.interpreter.test.interop;
 
 import static org.junit.Assert.assertEquals;
 

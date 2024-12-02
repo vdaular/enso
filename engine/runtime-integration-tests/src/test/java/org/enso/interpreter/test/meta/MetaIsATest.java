@@ -1,4 +1,4 @@
-package org.enso.interpreter.test;
+package org.enso.interpreter.test.meta;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.enso.interpreter.runtime.data.Type;
+import org.enso.interpreter.test.ValuesGenerator;
 import org.enso.interpreter.test.ValuesGenerator.Language;
 import org.enso.test.utils.ContextUtils;
 import org.graalvm.polyglot.Context;

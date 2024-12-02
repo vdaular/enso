@@ -1,4 +1,4 @@
-package org.enso.interpreter.test;
+package org.enso.interpreter.test.interop;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -20,6 +20,7 @@ import java.util.function.Predicate;
 import org.enso.common.MethodNames;
 import org.enso.interpreter.runtime.data.Type;
 import org.enso.interpreter.runtime.type.ConstantsGen;
+import org.enso.interpreter.test.ValuesGenerator;
 import org.enso.interpreter.test.ValuesGenerator.Language;
 import org.enso.test.utils.ContextUtils;
 import org.graalvm.polyglot.Context;
