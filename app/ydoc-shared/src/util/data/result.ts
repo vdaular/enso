@@ -37,8 +37,8 @@ export function Ok<T>(data?: T): Result<T | undefined, never> {
 }
 
 /** Constructor of error {@link Result}. */
-export function Err<E>(error: E): Result<never, E> {
-  return { ok: false, error: new ResultError(error) }
+export function Err<E>(error: E) {
+  return { ok: false, error: new ResultError(error) } as const satisfies Result<never, E>
 }
 
 /** Helper function for converting optional value to {@link Result}. */

@@ -1,6 +1,7 @@
+import { assert } from '@/util/assert'
 import { findIndexOpt } from '@/util/data/array'
 import { isSome, type Opt } from '@/util/data/opt'
-import { Err, Ok, type Result } from '@/util/data/result'
+import { Err, Ok, ResultError, type Result } from '@/util/data/result'
 import { AsyncQueue, type AbortScope } from '@/util/net'
 import {
   qnReplaceProjectName,
@@ -12,7 +13,12 @@ import * as array from 'lib0/array'
 import { ObservableV2 } from 'lib0/observable'
 import * as random from 'lib0/random'
 import { reactive } from 'vue'
-import type { LanguageServer } from 'ydoc-shared/languageServer'
+import {
+  ErrorCode,
+  LsRpcError,
+  RemoteRpcError,
+  type LanguageServer,
+} from 'ydoc-shared/languageServer'
 import {
   methodPointerEquals,
   stackItemsEqual,
@@ -97,6 +103,7 @@ type ExecutionContextNotification = {
 enum SyncStatus {
   NOT_SYNCED,
   QUEUED,
+  CREATING,
   SYNCING,
   SYNCED,
 }
@@ -163,13 +170,20 @@ export class ExecutionContext extends ObservableV2<ExecutionContextNotification>
       // Connection closed: the created execution context is no longer available
       // There is no point in any scheduled action until resynchronization
       this.queue.clear()
-      this.syncStatus = SyncStatus.NOT_SYNCED
-      this.queue.pushTask(() => {
-        this.clearScheduled = false
-        this.sync()
-        return Promise.resolve({ status: 'not-created' })
-      })
-      this.clearScheduled = true
+      // If syncing is at the first step (creating missing execution context), it is
+      // effectively waiting for reconnection to recreate the execution context.
+      // We should not clear it's outcome, as it's likely the context will be created after
+      // reconnection (so it's valid).
+      if (this.syncStatus !== SyncStatus.CREATING) {
+        // In other cases, any created context is destroyed after losing connection.
+        // The status should be cleared to 'not-created'.
+        this.queue.pushTask(() => {
+          this.clearScheduled = false
+          this.sync()
+          return Promise.resolve({ status: 'not-created' })
+        })
+        this.clearScheduled = true
+      }
     })
     this.lsRpc.on('refactoring/projectRenamed', ({ oldNormalizedName, newNormalizedName }) => {
       const newIdent = tryIdentifier(newNormalizedName)
@@ -327,7 +341,12 @@ export class ExecutionContext extends ObservableV2<ExecutionContextNotification>
   }
 
   private sync() {
-    if (this.syncStatus === SyncStatus.QUEUED || this.abort.signal.aborted) return
+    if (
+      this.syncStatus === SyncStatus.QUEUED ||
+      this.syncStatus === SyncStatus.CREATING ||
+      this.abort.signal.aborted
+    )
+      return
     this.syncStatus = SyncStatus.QUEUED
     this.queue.pushTask(this.syncTask())
   }
@@ -346,15 +365,10 @@ export class ExecutionContext extends ObservableV2<ExecutionContextNotification>
 
   private syncTask() {
     return async (state: ExecutionContextState) => {
-      this.syncStatus = SyncStatus.SYNCING
-      if (this.abort.signal.aborted) return state
       let newState = { ...state }
 
-      const create = () => {
+      const ensureCreated = () => {
         if (newState.status === 'created') return Ok()
-        // if (newState.status === 'broken') {
-        //   this.withBackoff(() => this.lsRpc.destroyExecutionContext(this.id), 'Failed to destroy broken execution context')
-        // }
         return this.withBackoff(async () => {
           const result = await this.lsRpc.createExecutionContext(this.id)
           if (!result.ok) return result
@@ -487,25 +501,61 @@ export class ExecutionContext extends ObservableV2<ExecutionContextNotification>
           .map((result) => (result.status === 'rejected' ? result.reason : null))
           .filter(isSome)
         if (errors.length > 0) {
-          console.error('Failed to synchronize visualizations:', errors)
+          const result = Err(`Failed to synchronize visualizations: ${errors}`)
+          result.error.log()
+          return result
+        }
+        return Ok()
+      }
+
+      const handleError = (error: ResultError): ExecutionContextState => {
+        // If error tells us that the execution context is missing, we schedule
+        // another sync to re-create it, and set proper state.
+        if (
+          error.payload instanceof LsRpcError &&
+          error.payload.cause instanceof RemoteRpcError &&
+          error.payload.cause.code === ErrorCode.CONTEXT_NOT_FOUND
+        ) {
+          this.sync()
+          return { status: 'not-created' }
+        } else {
+          return newState
         }
       }
 
-      const createResult = await create()
-      if (!createResult.ok) return newState
-      const syncStackResult = await syncStack()
-      if (!syncStackResult.ok) return newState
-      const syncEnvResult = await syncEnvironment()
-      if (!syncEnvResult.ok) return newState
-      this.emit('newVisualizationConfiguration', [new Set(this.visualizationConfigs.keys())])
-      await syncVisualizations()
-      this.emit('visualizationsConfigured', [
-        new Set(state.status === 'created' ? state.visualizations.keys() : []),
-      ])
-      if (this.syncStatus === SyncStatus.SYNCING) {
+      this.syncStatus = SyncStatus.CREATING
+      try {
+        if (this.abort.signal.aborted) return newState
+        const createResult = await ensureCreated()
+        if (!createResult.ok) return newState
+
+        DEV: assert(this.syncStatus === SyncStatus.CREATING)
+        this.syncStatus = SyncStatus.SYNCING
+
+        const syncStackResult = await syncStack()
+        if (!syncStackResult.ok) return handleError(syncStackResult.error)
+        if (this.syncStatus !== SyncStatus.SYNCING || this.clearScheduled) return newState
+
+        const syncEnvResult = await syncEnvironment()
+        if (!syncEnvResult.ok) return handleError(syncEnvResult.error)
+        if (this.syncStatus !== SyncStatus.SYNCING || this.clearScheduled) return newState
+
+        this.emit('newVisualizationConfiguration', [new Set(this.visualizationConfigs.keys())])
+        const syncVisResult = await syncVisualizations()
+        this.emit('visualizationsConfigured', [
+          new Set(state.status === 'created' ? state.visualizations.keys() : []),
+        ])
+        if (!syncVisResult.ok) return handleError(syncVisResult.error)
+        if (this.syncStatus !== SyncStatus.SYNCING || this.clearScheduled) return newState
+
         this.syncStatus = SyncStatus.SYNCED
+        return newState
+      } finally {
+        // On any exception or early return we assme we're not fully synced.
+        if (this.syncStatus === SyncStatus.SYNCING || this.syncStatus === SyncStatus.CREATING) {
+          this.syncStatus = SyncStatus.NOT_SYNCED
+        }
       }
-      return newState
     }
   }
 }
