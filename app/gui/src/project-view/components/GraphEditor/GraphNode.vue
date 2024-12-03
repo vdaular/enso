@@ -9,7 +9,6 @@ import GraphNodeMessage, {
   type MessageType,
 } from '@/components/GraphEditor/GraphNodeMessage.vue'
 import GraphNodeOutputPorts from '@/components/GraphEditor/GraphNodeOutputPorts.vue'
-import GraphNodeSelection from '@/components/GraphEditor/GraphNodeSelection.vue'
 import GraphVisualization from '@/components/GraphEditor/GraphVisualization.vue'
 import type { NodeCreationOptions } from '@/components/GraphEditor/nodeCreation'
 import NodeWidgetTree, {
@@ -183,9 +182,6 @@ const nodeHoverPos = ref<Vec2>()
 const selectionHoverPos = ref<Vec2>()
 function updateNodeHover(event: PointerEvent | undefined) {
   nodeHoverPos.value = event && eventScenePos(event)
-}
-function updateSelectionHover(event: PointerEvent | undefined) {
-  selectionHoverPos.value = event && eventScenePos(event)
 }
 
 const menuCloseTimeout = ref<ReturnType<typeof setTimeout>>()
@@ -505,22 +501,6 @@ const showMenuAt = ref<{ x: number; y: number }>()
     @pointermove="updateNodeHover"
     @contextmenu.stop.prevent="ensureSelected(), (showMenuAt = $event)"
   >
-    <Teleport v-if="navigator && !edited && graphNodeSelections" :to="graphNodeSelections">
-      <GraphNodeSelection
-        :data-node-id="nodeId"
-        :nodePosition="nodePosition"
-        :nodeSize="graphSelectionSize"
-        :class="{ draggable: true, dragged: isDragged }"
-        :color
-        :externalHovered="nodeHovered"
-        @visible="selectionVisible = $event"
-        @pointerenter="updateSelectionHover"
-        @pointermove="updateSelectionHover"
-        @pointerleave="updateSelectionHover(undefined)"
-        v-on="dragPointer.events"
-        @click="handleNodeClick"
-      />
-    </Teleport>
     <div class="binding" v-text="node.pattern?.code()" />
     <button
       v-if="!menuVisible && isRecordingOverridden"
@@ -602,7 +582,7 @@ const showMenuAt = ref<{ x: number; y: number }>()
       <GraphNodeOutputPorts
         v-if="props.node.type !== 'output'"
         :nodeId="nodeId"
-        :forceVisible="selectionVisible"
+        :forceVisible="nodeHovered"
         @portClick="(...args) => emit('outputPortClick', ...args)"
         @portDoubleClick="(...args) => emit('outputPortDoubleClick', ...args)"
         @update:hoverAnim="emit('update:hoverAnim', $event)"

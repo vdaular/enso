@@ -132,11 +132,13 @@ graph.suggestEdgeFromOutput(outputHovered)
 <template>
   <template v-for="port of outputPorts" :key="port.portId">
     <g :style="portGroupStyle(port)">
-      <g class="portClip">
+      <g
+        class="portClip"
+        @pointerenter="mouseOverOutput = port.portId"
+        @pointerleave="mouseOverOutput = undefined"
+      >
         <rect
           class="outputPortHoverArea clickable"
-          @pointerenter="mouseOverOutput = port.portId"
-          @pointerleave="mouseOverOutput = undefined"
           @pointerdown.stop.prevent="handlePortClick($event, port.portId)"
         />
         <rect class="outputPort" />

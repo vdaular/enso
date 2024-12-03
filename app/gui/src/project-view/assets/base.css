@@ -47,7 +47,7 @@
   /** The amount of overlap for the port shape with the node. */
   --output-port-overlap: -8px;
   /** Stroke width of output port active hover area shape. Should be large enough to allow easy targetting. */
-  --output-port-hover-width: 20px;
+  --output-port-hover-width: 40px;
   /** The width of selection area around node. */
   --selected-node-border-width: 20px;
   /** Padding added to token widgets to push them away from rounded corners of the parent widget. */
