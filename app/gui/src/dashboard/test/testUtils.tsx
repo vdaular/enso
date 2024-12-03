@@ -4,9 +4,11 @@
  * **IMPORTANT**: This file is supposed to be used instead of `@testing-library/react`
  * It is used to provide a portal root and locale to all tests.
  */
+/// <reference types="@testing-library/jest-dom" />
 
-import { Form, type FormProps, type TSchema } from '#/components/AriaComponents'
+import { Form, type FormInstance, type FormProps, type TSchema } from '#/components/AriaComponents'
 import UIProviders from '#/components/UIProviders'
+import { QueryClientProvider, type QueryClient } from '@tanstack/react-query'
 import {
   render,
   renderHook,
@@ -15,7 +17,8 @@ import {
   type RenderOptions,
   type RenderResult,
 } from '@testing-library/react'
-import { type PropsWithChildren, type ReactElement } from 'react'
+import { createQueryClient } from 'enso-common/src/queryClient'
+import { useState, type PropsWithChildren, type ReactElement, type ReactNode } from 'react'
 
 /**
  * A wrapper that passes through its children.
@@ -27,11 +30,19 @@ function PassThroughWrapper({ children }: PropsWithChildren) {
 /**
  * A wrapper that provides the {@link UIProviders} context.
  */
-function UIProvidersWrapper({ children }: PropsWithChildren) {
+function UIProvidersWrapper({
+  children,
+}: {
+  children?: ReactNode | ((props: { queryClient: QueryClient }) => ReactNode)
+}) {
+  const [queryClient] = useState(() => createQueryClient())
+
   return (
-    <UIProviders portalRoot={document.body} locale="en">
-      {children}
-    </UIProviders>
+    <QueryClientProvider client={queryClient}>
+      <UIProviders portalRoot={document.body} locale="en">
+        {typeof children === 'function' ? children({ queryClient }) : children}
+      </UIProviders>
+    </QueryClientProvider>
   )
 }
 
@@ -45,19 +56,48 @@ function FormWrapper<Schema extends TSchema, SubmitResult = void>(
 }
 
 /**
+ * Result type for {@link renderWithRoot}.
+ */
+interface RenderWithRootResult extends RenderResult {
+  readonly queryClient: QueryClient
+}
+
+/**
  * Custom render function for tests.
  */
-function renderWithRoot(ui: ReactElement, options?: Omit<RenderOptions, 'queries'>): RenderResult {
+function renderWithRoot(
+  ui: ReactElement,
+  options?: Omit<RenderOptions, 'queries'>,
+): RenderWithRootResult {
   const { wrapper: Wrapper = PassThroughWrapper, ...rest } = options ?? {}
 
-  return render(ui, {
+  let queryClient: QueryClient
+
+  const result = render(ui, {
     wrapper: ({ children }) => (
       <UIProvidersWrapper>
-        <Wrapper>{children}</Wrapper>
+        {({ queryClient: queryClientFromWrapper }) => {
+          queryClient = queryClientFromWrapper
+          return <Wrapper>{children}</Wrapper>
+        }}
       </UIProvidersWrapper>
     ),
     ...rest,
   })
+
+  return {
+    ...result,
+    // @ts-expect-error - This is safe because we render before returning the result,
+    // so the queryClient is guaranteed to be set.
+    queryClient,
+  } as const
+}
+
+/**
+ * Result type for {@link renderWithForm}.
+ */
+interface RenderWithFormResult<Schema extends TSchema> extends RenderWithRootResult {
+  readonly form: FormInstance<Schema>
 }
 
 /**
@@ -68,13 +108,36 @@ function renderWithForm<Schema extends TSchema, SubmitResult = void>(
   options: Omit<RenderOptions, 'queries' | 'wrapper'> & {
     formProps: FormProps<Schema, SubmitResult>
   },
-): RenderResult {
+): RenderWithFormResult<Schema> {
   const { formProps, ...rest } = options
 
-  return renderWithRoot(ui, {
-    wrapper: ({ children }) => <FormWrapper {...formProps}>{children}</FormWrapper>,
+  let form: FormInstance<Schema>
+
+  const result = renderWithRoot(ui, {
+    wrapper: ({ children }) => (
+      <FormWrapper {...formProps}>
+        {({ form: formFromWrapper }) => {
+          form = formFromWrapper
+          return <>{children}</>
+        }}
+      </FormWrapper>
+    ),
     ...rest,
   })
+
+  return {
+    ...result,
+    // @ts-expect-error - This is safe because we render before returning the result,
+    // so the form is guaranteed to be set.
+    form,
+  } as const
+}
+
+/**
+ * Result type for {@link renderHookWithRoot}.
+ */
+interface RenderHookWithRootResult<Result, Props> extends RenderHookResult<Result, Props> {
+  readonly queryClient: QueryClient
 }
 
 /**
@@ -83,8 +146,35 @@ function renderWithForm<Schema extends TSchema, SubmitResult = void>(
 function renderHookWithRoot<Result, Props>(
   hook: (props: Props) => Result,
   options?: Omit<RenderHookOptions<Props>, 'queries'>,
-): RenderHookResult<Result, Props> {
-  return renderHook(hook, { wrapper: UIProvidersWrapper, ...options })
+): RenderHookWithRootResult<Result, Props> {
+  let queryClient: QueryClient
+
+  const result = renderHook(hook, {
+    wrapper: ({ children }) => (
+      <UIProvidersWrapper>
+        {({ queryClient: queryClientFromWrapper }) => {
+          queryClient = queryClientFromWrapper
+          return <>{children}</>
+        }}
+      </UIProvidersWrapper>
+    ),
+    ...options,
+  })
+
+  return {
+    ...result,
+    // @ts-expect-error - This is safe because we render before returning the result,
+    // so the queryClient is guaranteed to be set.
+    queryClient,
+  } as const
+}
+
+/**
+ * Result type for {@link renderHookWithForm}.
+ */
+interface RenderHookWithFormResult<Result, Props, Schema extends TSchema>
+  extends RenderHookWithRootResult<Result, Props> {
+  readonly form: FormInstance<Schema>
 }
 
 /**
@@ -95,13 +185,28 @@ function renderHookWithForm<Result, Props, Schema extends TSchema, SubmitResult 
   options: Omit<RenderHookOptions<Props>, 'queries' | 'wrapper'> & {
     formProps: FormProps<Schema, SubmitResult>
   },
-): RenderHookResult<Result, Props> {
+): RenderHookWithFormResult<Result, Props, Schema> {
   const { formProps, ...rest } = options
 
-  return renderHookWithRoot(hook, {
-    wrapper: ({ children }) => <FormWrapper {...formProps}>{children}</FormWrapper>,
+  let form: FormInstance<Schema>
+  const result = renderHookWithRoot(hook, {
+    wrapper: ({ children }) => (
+      <FormWrapper {...formProps}>
+        {({ form: formFromWrapper }) => {
+          form = formFromWrapper
+          return <>{children}</>
+        }}
+      </FormWrapper>
+    ),
     ...rest,
   })
+
+  return {
+    ...result,
+    // @ts-expect-error - This is safe because we render before returning the result,
+    // so the form is guaranteed to be set.
+    form,
+  } as const
 }
 
 export * from '@testing-library/react'

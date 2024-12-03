@@ -27,7 +27,7 @@ export interface ChatPlaceholderProps {
 }
 
 /** A placeholder component replacing `Chat` when a user is not logged in. */
-export default function ChatPlaceholder(props: ChatPlaceholderProps) {
+function ChatPlaceholder(props: ChatPlaceholderProps) {
   const { hideLoginButtons = false, isOpen, doClose } = props
   const { getText } = textProvider.useText()
   const logger = loggerProvider.useLogger()
@@ -93,3 +93,5 @@ export default function ChatPlaceholder(props: ChatPlaceholderProps) {
     )
   }
 }
+
+export default React.memo(ChatPlaceholder)

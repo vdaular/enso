@@ -64,13 +64,16 @@ export default function SettingsTab(props: SettingsTabProps) {
   } else {
     const content =
       columns.length === 1 ?
-        <div className={twMerge('flex grow flex-col gap-8', classes[0])} {...contentProps}>
+        <div
+          className={twMerge('flex max-w-[512px] grow flex-col gap-8', classes[0])}
+          {...contentProps}
+        >
           {sections.map((section) => (
             <SettingsSection key={section.nameId} context={context} data={section} />
           ))}
         </div>
       : <div
-          className="grid min-h-full grow grid-cols-1 gap-8 lg:h-auto lg:grid-cols-2"
+          className="grid min-h-full max-w-[1024px] grow grid-cols-1 gap-8 lg:h-auto lg:grid-cols-2"
           {...contentProps}
         >
           {columns.map((sectionsInColumn, i) => (

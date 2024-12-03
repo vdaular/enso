@@ -5,9 +5,9 @@
  */
 
 import * as queryCore from '@tanstack/query-core'
-import * as persistClientCore from '@tanstack/query-persist-client-core'
+import type { AsyncStorage, StoragePersisterOptions } from '@tanstack/query-persist-client-core'
+import { experimental_createPersister as createPersister } from '@tanstack/query-persist-client-core'
 import * as vueQuery from '@tanstack/vue-query'
-import * as idbKeyval from 'idb-keyval'
 
 declare module '@tanstack/query-core' {
   /** Query client with additional methods. */
@@ -61,26 +61,38 @@ const DEFAULT_QUERY_PERSIST_TIME_MS = 30 * 24 * 60 * 60 * 1000 // 30 days
 
 const DEFAULT_BUSTER = 'v1.1'
 
+export interface QueryClientOptions<TStorageValue = string> {
+  readonly persisterStorage?: AsyncStorage<TStorageValue> & {
+    readonly clear: () => Promise<void>
+    readonly serialize?: StoragePersisterOptions<TStorageValue>['serialize']
+    readonly deserialize?: StoragePersisterOptions<TStorageValue>['deserialize']
+  }
+}
+
 /** Create a new Tanstack Query client. */
-export function createQueryClient(): QueryClient {
-  const store = idbKeyval.createStore('enso', 'query-persist-cache')
+export function createQueryClient<TStorageValue = string>(
+  options: QueryClientOptions<TStorageValue> = {},
+): QueryClient {
+  const { persisterStorage } = options
+
   queryCore.onlineManager.setOnline(navigator.onLine)
 
-  const persister = persistClientCore.experimental_createPersister({
-    storage: {
-      getItem: key => idbKeyval.get<persistClientCore.PersistedQuery>(key, store),
-      setItem: (key, value) => idbKeyval.set(key, value, store),
-      removeItem: key => idbKeyval.del(key, store),
-    },
-    // Prefer online first and don't rely on the local cache if user is online
-    // fallback to the local cache only if the user is offline
-    maxAge: queryCore.onlineManager.isOnline() ? -1 : DEFAULT_QUERY_PERSIST_TIME_MS,
-    buster: DEFAULT_BUSTER,
-    filters: { predicate: query => query.meta?.persist !== false },
-    prefix: 'enso:query-persist:',
-    serialize: persistedQuery => persistedQuery,
-    deserialize: persistedQuery => persistedQuery,
-  })
+  let persister: ReturnType<typeof createPersister<TStorageValue>> | null = null
+  if (persisterStorage) {
+    persister = createPersister<TStorageValue>({
+      storage: persisterStorage,
+      // Prefer online first and don't rely on the local cache if user is online
+      // fallback to the local cache only if the user is offline
+      maxAge: queryCore.onlineManager.isOnline() ? -1 : DEFAULT_QUERY_PERSIST_TIME_MS,
+      buster: DEFAULT_BUSTER,
+      filters: { predicate: query => query.meta?.persist !== false },
+      prefix: 'enso:query-persist:',
+      ...(persisterStorage.serialize != null ? { serialize: persisterStorage.serialize } : {}),
+      ...(persisterStorage.deserialize != null ?
+        { deserialize: persisterStorage.deserialize }
+      : {}),
+    })
+  }
 
   const queryClient: QueryClient = new vueQuery.QueryClient({
     mutationCache: new queryCore.MutationCache({
@@ -117,11 +129,11 @@ export function createQueryClient(): QueryClient {
     }),
     defaultOptions: {
       queries: {
-        persister,
+        ...(persister != null ? { persister } : {}),
         refetchOnReconnect: 'always',
         staleTime: DEFAULT_QUERY_STALE_TIME_MS,
         retry: (failureCount, error: unknown) => {
-          const statusesToIgnore = [401, 403, 404]
+          const statusesToIgnore = [403, 404]
           const errorStatus =
             (
               typeof error === 'object' &&
@@ -132,18 +144,22 @@ export function createQueryClient(): QueryClient {
               error.status
             : -1
 
+          if (errorStatus === 401) {
+            return true
+          }
+
           if (statusesToIgnore.includes(errorStatus)) {
             return false
-          } else {
-            return failureCount < 3
           }
+
+          return failureCount < 3
         },
       },
     },
   })
 
   Object.defineProperty(queryClient, 'nukePersister', {
-    value: () => idbKeyval.clear(store),
+    value: () => persisterStorage?.clear(),
     enumerable: false,
     configurable: false,
     writable: false,

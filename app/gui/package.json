@@ -57,6 +57,7 @@
     "clsx": "^2.1.1",
     "enso-common": "workspace:*",
     "framer-motion": "11.3.0",
+    "idb-keyval": "^6.2.1",
     "input-otp": "1.2.4",
     "is-network-error": "^1.0.1",
     "monaco-editor": "0.48.0",

@@ -15,6 +15,7 @@ import * as errorModule from '#/utilities/error'
 
 import type * as cognito from '#/authentication/cognito'
 import * as listen from '#/authentication/listen'
+import { useToastAndLog } from '#/hooks/toastAndLogHooks'
 
 // ======================
 // === SessionContext ===
@@ -52,19 +53,20 @@ export interface SessionProviderProps {
   readonly userSession: (() => Promise<cognito.UserSession | null>) | null
   readonly saveAccessToken?: ((accessToken: cognito.UserSession) => void) | null
   readonly refreshUserSession: (() => Promise<cognito.UserSession | null>) | null
-  readonly children: React.ReactNode
+  readonly children: React.ReactNode | ((props: SessionContextType) => React.ReactNode)
 }
-
-const FIVE_MINUTES_MS = 300_000
-const SIX_HOURS_MS = 21_600_000
 
 /** Create a query for the user session. */
 function createSessionQuery(userSession: (() => Promise<cognito.UserSession | null>) | null) {
   return reactQuery.queryOptions({
     queryKey: ['userSession'],
-    queryFn: () => userSession?.().catch(() => null) ?? null,
-    refetchOnWindowFocus: true,
-    refetchIntervalInBackground: true,
+    queryFn: async () => {
+      const session = (await userSession?.().catch(() => null)) ?? null
+      return session
+    },
+    refetchOnWindowFocus: 'always',
+    refetchOnMount: 'always',
+    refetchOnReconnect: 'always',
   })
 }
 
@@ -86,40 +88,31 @@ export default function SessionProvider(props: SessionProviderProps) {
 
   const httpClient = httpClientProvider.useHttpClient()
   const queryClient = reactQuery.useQueryClient()
+  const toastAndLog = useToastAndLog()
 
   const sessionQuery = createSessionQuery(userSession)
 
   const session = reactQuery.useSuspenseQuery(sessionQuery)
 
-  if (session.data) {
-    httpClient.setSessionToken(session.data.accessToken)
-  }
-
-  const timeUntilRefresh =
-    session.data ?
-      // If the session has not expired, we should refresh it when it is 5 minutes from expiring.
-      new Date(session.data.expireAt).getTime() - Date.now() - FIVE_MINUTES_MS
-    : Infinity
-
   const refreshUserSessionMutation = reactQuery.useMutation({
-    mutationKey: ['refreshUserSession', session.data?.expireAt],
-    mutationFn: async () => refreshUserSession?.(),
-    meta: { invalidates: [sessionQuery.queryKey] },
+    mutationKey: ['refreshUserSession', { expireAt: session.data?.expireAt }],
+    mutationFn: async () => refreshUserSession?.() ?? null,
+    onSuccess: (data) => {
+      if (data) {
+        httpClient?.setSessionToken(data.accessToken)
+      }
+      return queryClient.invalidateQueries({ queryKey: sessionQuery.queryKey })
+    },
+    onError: (error) => {
+      // Something went wrong with the refresh token, so we need to sign the user out.
+      toastAndLog('sessionExpiredError', error)
+      queryClient.setQueryData(sessionQuery.queryKey, null)
+    },
   })
 
-  reactQuery.useQuery({
-    queryKey: ['refreshUserSession'],
-    queryFn: () => refreshUserSessionMutation.mutateAsync(),
-    meta: { persist: false },
-    networkMode: 'online',
-    initialData: null,
-    initialDataUpdatedAt: Date.now(),
-    refetchOnWindowFocus: true,
-    refetchIntervalInBackground: true,
-    refetchInterval: timeUntilRefresh < SIX_HOURS_MS ? timeUntilRefresh : SIX_HOURS_MS,
-    // We don't want to refetch the session if the user is not authenticated
-    enabled: userSession != null && refreshUserSession != null && session.data != null,
-  })
+  if (session.data) {
+    httpClient?.setSessionToken(session.data.accessToken)
+  }
 
   // Register an effect that will listen for authentication events. When the event occurs, we
   // will refresh or clear the user's session, forcing a re-render of the page with the new
@@ -161,13 +154,65 @@ export default function SessionProvider(props: SessionProviderProps) {
     }
   }, [session.data, saveAccessTokenEventCallback])
 
+  const sessionContextValue = {
+    session: session.data,
+    sessionQueryKey: sessionQuery.queryKey,
+  }
+
   return (
-    <SessionContext.Provider
-      value={{ session: session.data, sessionQueryKey: sessionQuery.queryKey }}
-    >
-      {children}
+    <SessionContext.Provider value={sessionContextValue}>
+      {session.data && (
+        <SessionRefresher
+          session={session.data}
+          refreshUserSession={refreshUserSessionMutation.mutateAsync}
+        />
+      )}
+
+      {typeof children === 'function' ? children(sessionContextValue) : children}
     </SessionContext.Provider>
   )
+}
+
+/** Props for a {@link SessionRefresher}. */
+interface SessionRefresherProps {
+  readonly session: cognito.UserSession
+  readonly refreshUserSession: () => Promise<cognito.UserSession | null>
+}
+
+const TEN_SECONDS_MS = 10_000
+const SIX_HOURS_MS = 21_600_000
+
+/**
+ * A component that will refresh the user's session at a given interval.
+ */
+function SessionRefresher(props: SessionRefresherProps) {
+  const { refreshUserSession, session } = props
+
+  reactQuery.useQuery({
+    queryKey: ['refreshUserSession', { refreshToken: session.refreshToken }] as const,
+    queryFn: () => refreshUserSession(),
+    meta: { persist: false },
+    networkMode: 'online',
+    initialData: session,
+    initialDataUpdatedAt: Date.now(),
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: 'always',
+    refetchOnReconnect: 'always',
+    refetchOnMount: 'always',
+    refetchInterval: () => {
+      const expireAt = session.expireAt
+
+      const timeUntilRefresh =
+        // If the session has not expired, we should refresh it when it is 5 minutes from expiring.
+        // We use 1 second to ensure that we refresh even if the time is very close to expiring
+        // and value won't be less than 0.
+        Math.max(new Date(expireAt).getTime() - Date.now() - TEN_SECONDS_MS, TEN_SECONDS_MS)
+
+      return timeUntilRefresh < SIX_HOURS_MS ? timeUntilRefresh : SIX_HOURS_MS
+    },
+  })
+
+  return null
 }
 
 // ==================
@@ -195,8 +240,5 @@ export function useSessionStrict() {
 
   invariant(session != null, 'Session must be defined')
 
-  return {
-    session,
-    sessionQueryKey,
-  } as const
+  return { session, sessionQueryKey } as const
 }

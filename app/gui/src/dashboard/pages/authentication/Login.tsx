@@ -2,6 +2,7 @@
 import * as router from 'react-router-dom'
 
 import { CLOUD_DASHBOARD_DOMAIN } from 'enso-common'
+import { isOnElectron } from 'enso-common/src/detect'
 
 import { DASHBOARD_PATH, FORGOT_PASSWORD_PATH, REGISTRATION_PATH } from '#/appUtils'
 import ArrowRightIcon from '#/assets/arrow_right.svg'
@@ -18,7 +19,6 @@ import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import AuthenticationPage from '#/pages/authentication/AuthenticationPage'
 import { passwordSchema } from '#/pages/authentication/schemas'
 import { useAuth } from '#/providers/AuthProvider'
-import { useLocalBackend } from '#/providers/BackendProvider'
 import { useText } from '#/providers/TextProvider'
 import { useState } from 'react'
 
@@ -69,11 +69,10 @@ export default function Login() {
     },
   })
 
-  const [emailInput, setEmailInput] = useState(initialEmail)
-
   const [user, setUser] = useState<CognitoUser | null>(null)
-  const localBackend = useLocalBackend()
-  const supportsOffline = localBackend != null
+
+  const isElectron = isOnElectron()
+  const supportsOffline = isElectron
 
   const { nextStep, stepperState, previousStep } = Stepper.useStepperState({
     steps: 2,
@@ -93,17 +92,21 @@ export default function Login() {
       title={getText('loginToYourAccount')}
       supportsOffline={supportsOffline}
       footer={
-        <Link
-          openInBrowser={localBackend != null}
-          to={(() => {
-            const newQuery = new URLSearchParams({ email: emailInput }).toString()
-            return localBackend != null ?
-                `https://${CLOUD_DASHBOARD_DOMAIN}${REGISTRATION_PATH}?${newQuery}`
-              : `${REGISTRATION_PATH}?${newQuery}`
-          })()}
-          icon={CreateAccountIcon}
-          text={getText('dontHaveAnAccount')}
-        />
+        <Form.FieldValue form={form} name="email">
+          {(email) => (
+            <Link
+              openInBrowser={isElectron}
+              to={(() => {
+                const newQuery = new URLSearchParams({ email }).toString()
+                return isElectron ?
+                    `https://${CLOUD_DASHBOARD_DOMAIN}${REGISTRATION_PATH}?${newQuery}`
+                  : `${REGISTRATION_PATH}?${newQuery}`
+              })()}
+              icon={CreateAccountIcon}
+              text={getText('dontHaveAnAccount')}
+            />
+          )}
+        </Form.FieldValue>
       }
     >
       <Stepper state={stepperState} renderStep={() => null}>
@@ -129,9 +132,6 @@ export default function Login() {
                   autoComplete="email"
                   icon={AtIcon}
                   placeholder={getText('emailPlaceholder')}
-                  onChange={(event) => {
-                    setEmailInput(event.currentTarget.value)
-                  }}
                 />
 
                 <div className="flex w-full flex-col">
@@ -146,14 +146,18 @@ export default function Login() {
                     placeholder={getText('passwordPlaceholder')}
                   />
 
-                  <Button
-                    variant="link"
-                    href={`${FORGOT_PASSWORD_PATH}?${new URLSearchParams({ email: emailInput }).toString()}`}
-                    size="small"
-                    className="self-end"
-                  >
-                    {getText('forgotYourPassword')}
-                  </Button>
+                  <Form.FieldValue form={form} name="email">
+                    {(email) => (
+                      <Button
+                        variant="link"
+                        href={`${FORGOT_PASSWORD_PATH}?${new URLSearchParams({ email }).toString()}`}
+                        size="small"
+                        className="self-end"
+                      >
+                        {getText('forgotYourPassword')}
+                      </Button>
+                    )}
+                  </Form.FieldValue>
                 </div>
 
                 <Form.Submit size="large" icon={ArrowRightIcon} iconPosition="end" fullWidth>

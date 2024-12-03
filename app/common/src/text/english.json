@@ -67,6 +67,8 @@
   "passwordValidationMessage": "Your password must include numbers, letters (both lowercase and uppercase) and symbols ( ^$*.[]{}()?\"!@#%&/,><':;|_~`=+-).",
   "passwordValidationError": "Your password does not meet the security requirements.",
 
+  "sessionExpiredError": "Your session has expired. Please sign in again.",
+
   "confirmSignUpError": "Incorrect email or confirmation code.",
   "confirmRegistration": "Sign Up Successful!",
   "confirmRegistrationSubtitle": "Please confirm your email to complete registration",

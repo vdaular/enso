@@ -6,6 +6,7 @@ import FocusArea from '#/components/styled/FocusArea'
 import SvgMask from '#/components/SvgMask'
 import InfoMenu from '#/layouts/InfoMenu'
 import { useText } from '#/providers/TextProvider'
+import { memo } from 'react'
 
 // ===============
 // === InfoBar ===
@@ -18,7 +19,7 @@ export interface InfoBarProps {
 }
 
 /** A toolbar containing chat and the user menu. */
-export default function InfoBar(props: InfoBarProps) {
+function InfoBar(props: InfoBarProps) {
   const { isHelpChatOpen, setIsHelpChatOpen } = props
   const { getText } = useText()
 
@@ -66,3 +67,5 @@ export default function InfoBar(props: InfoBarProps) {
     </FocusArea>
   )
 }
+
+export default memo(InfoBar)

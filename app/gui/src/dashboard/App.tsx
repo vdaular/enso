@@ -51,7 +51,7 @@ import * as inputBindingsModule from '#/configurations/inputBindings'
 import AuthProvider, * as authProvider from '#/providers/AuthProvider'
 import BackendProvider, { useLocalBackend } from '#/providers/BackendProvider'
 import DriveProvider from '#/providers/DriveProvider'
-import { useHttpClient } from '#/providers/HttpClientProvider'
+import { useHttpClientStrict } from '#/providers/HttpClientProvider'
 import InputBindingsProvider from '#/providers/InputBindingsProvider'
 import LocalStorageProvider, * as localStorageProvider from '#/providers/LocalStorageProvider'
 import { useLogger } from '#/providers/LoggerProvider'
@@ -285,7 +285,7 @@ export interface AppRouterProps extends AppProps {
 function AppRouter(props: AppRouterProps) {
   const { isAuthenticationDisabled, shouldShowDashboard } = props
   const { onAuthenticated, projectManagerInstance } = props
-  const httpClient = useHttpClient()
+  const httpClient = useHttpClientStrict()
   const logger = useLogger()
   const navigate = router.useNavigate()
 

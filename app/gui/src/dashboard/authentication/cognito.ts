@@ -334,6 +334,10 @@ export class Cognito {
       const currentUser = await currentAuthenticatedUser()
       const refreshToken = (await amplify.Auth.currentSession()).getRefreshToken()
 
+      if (refreshToken.getToken() === '') {
+        throw new Error('Refresh token is empty, cannot refresh session, Please sign in again.')
+      }
+
       return await new Promise<cognito.CognitoUserSession>((resolve, reject) => {
         currentUser
           .unwrap()

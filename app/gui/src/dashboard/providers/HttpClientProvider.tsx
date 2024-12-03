@@ -27,7 +27,15 @@ export function HttpClientProvider(props: HttpClientProviderProps) {
 
 /** Returns the HTTP client. */
 export function useHttpClient() {
-  const httpClient = React.useContext(HTTPClientContext)
+  return React.useContext(HTTPClientContext)
+}
+
+/**
+ * Returns the HTTP client.
+ * @throws If the HTTP client is not found in context.
+ */
+export function useHttpClientStrict() {
+  const httpClient = useHttpClient()
 
   invariant(httpClient, 'HTTP client not found in context')
 
