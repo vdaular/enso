@@ -1,21 +1,21 @@
-package org.enso.aws.file_system;
+package org.enso.base.net.http;
 
 import org.enso.base.enso_cloud.DataLinkSPI;
 
 @org.openide.util.lookup.ServiceProvider(service = DataLinkSPI.class)
-public class S3DataLinkSPI extends DataLinkSPI {
+public final class HTTPFetchDataLinkImpl extends DataLinkSPI {
   @Override
   protected String getModuleName() {
-    return "Standard.AWS.S3.S3_Data_Link";
+    return "Standard.Base.Network.HTTP.Internal.HTTP_Fetch_Data_Link";
   }
 
   @Override
   protected String getTypeName() {
-    return "S3_Data_Link";
+    return "HTTP_Fetch_Data_Link";
   }
 
   @Override
   protected String getLinkTypeName() {
-    return "S3";
+    return "HTTP";
   }
 }

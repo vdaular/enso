@@ -1,26 +1,26 @@
-package org.enso.database.postgres;
+package org.enso.snowflake;
 
 import org.enso.database.DatabaseConnectionDetailsSPI;
 
 @org.openide.util.lookup.ServiceProvider(service = DatabaseConnectionDetailsSPI.class)
-public class PostgresConnectionDetailsSPI extends DatabaseConnectionDetailsSPI {
+public final class SnowflakeConnectionDetailsImpl extends DatabaseConnectionDetailsSPI {
   @Override
   protected String getModuleName() {
-    return "Standard.Database.Connection.Postgres";
+    return "Standard.Snowflake.Connection.Snowflake_Details";
   }
 
   @Override
   protected String getTypeName() {
-    return "Postgres";
+    return "Snowflake_Details";
   }
 
   @Override
   protected String getCodeForDefaultConstructor() {
-    return "(Postgres.Server 'localhost' 5432)";
+    return "..Snowflake";
   }
 
   @Override
   protected String getUserFacingConnectionName() {
-    return "Postgres";
+    return "Snowflake";
   }
 }

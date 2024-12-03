@@ -93,10 +93,6 @@ import project.System.Temporary_File_Spec
 
 import project.Random_Spec
 
-## Workaround for bug https://github.com/enso-org/enso/issues/11707
-   The Standard.Table import should be removed once the bug is fixed.
-import Standard.Table
-
 
 main filter=Nothing =
     suite = Test.build suite_builder->

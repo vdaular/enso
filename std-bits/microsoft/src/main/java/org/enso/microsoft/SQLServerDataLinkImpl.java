@@ -1,21 +1,21 @@
-package org.enso.snowflake;
+package org.enso.microsoft;
 
 import org.enso.base.enso_cloud.DataLinkSPI;
 
 @org.openide.util.lookup.ServiceProvider(service = DataLinkSPI.class)
-public class SnowflakeDataLinkSPI extends DataLinkSPI {
+public final class SQLServerDataLinkImpl extends DataLinkSPI {
   @Override
   protected String getModuleName() {
-    return "Standard.Snowflake.Snowflake_Data_Link";
+    return "Standard.Microsoft.SQLServer_Data_Link";
   }
 
   @Override
   protected String getTypeName() {
-    return "Snowflake_Data_Link";
+    return "SQLServer_Data_Link";
   }
 
   @Override
   protected String getLinkTypeName() {
-    return "Snowflake_Connection";
+    return "SQLServer_Connection";
   }
 }

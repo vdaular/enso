@@ -1,26 +1,26 @@
-package org.enso.snowflake;
+package org.enso.database.sqlite;
 
 import org.enso.database.DatabaseConnectionDetailsSPI;
 
 @org.openide.util.lookup.ServiceProvider(service = DatabaseConnectionDetailsSPI.class)
-public class SnowflakeConnectionDetailsSPI extends DatabaseConnectionDetailsSPI {
+public final class SQLiteInMemoryDetailsImpl extends DatabaseConnectionDetailsSPI {
   @Override
   protected String getModuleName() {
-    return "Standard.Snowflake.Connection.Snowflake_Details";
+    return "Standard.Database.Connection.SQLite";
   }
 
   @Override
   protected String getTypeName() {
-    return "Snowflake_Details";
+    return "SQLite";
   }
 
   @Override
   protected String getCodeForDefaultConstructor() {
-    return "..Snowflake";
+    return "SQLite.In_Memory";
   }
 
   @Override
   protected String getUserFacingConnectionName() {
-    return "Snowflake";
+    return "SQLite (In-Memory)";
   }
 }

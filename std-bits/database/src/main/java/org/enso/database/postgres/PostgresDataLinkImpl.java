@@ -1,21 +1,21 @@
-package org.enso.microsoft;
+package org.enso.database.postgres;
 
 import org.enso.base.enso_cloud.DataLinkSPI;
 
 @org.openide.util.lookup.ServiceProvider(service = DataLinkSPI.class)
-public class SQLServerDataLinkSPI extends DataLinkSPI {
+public final class PostgresDataLinkImpl extends DataLinkSPI {
   @Override
   protected String getModuleName() {
-    return "Standard.Microsoft.SQLServer_Data_Link";
+    return "Standard.Database.Connection.Data_Link.Postgres_Data_Link";
   }
 
   @Override
   protected String getTypeName() {
-    return "SQLServer_Data_Link";
+    return "Postgres_Data_Link";
   }
 
   @Override
   protected String getLinkTypeName() {
-    return "SQLServer_Connection";
+    return "Postgres_Connection";
   }
 }

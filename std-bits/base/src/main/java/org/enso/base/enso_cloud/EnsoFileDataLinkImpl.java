@@ -1,7 +1,7 @@
 package org.enso.base.enso_cloud;
 
 @org.openide.util.lookup.ServiceProvider(service = DataLinkSPI.class)
-public class EnsoFileDataLinkSPI extends DataLinkSPI {
+public final class EnsoFileDataLinkImpl extends DataLinkSPI {
   @Override
   protected String getModuleName() {
     return "Standard.Base.Enso_Cloud.Internal.Enso_File_Data_Link";

@@ -1,26 +1,26 @@
-package org.enso.database.sqlite;
+package org.enso.database.postgres;
 
 import org.enso.database.DatabaseConnectionDetailsSPI;
 
 @org.openide.util.lookup.ServiceProvider(service = DatabaseConnectionDetailsSPI.class)
-public class SQLiteConnectionDetailsSPI extends DatabaseConnectionDetailsSPI {
+public final class PostgresConnectionDetailsImpl extends DatabaseConnectionDetailsSPI {
   @Override
   protected String getModuleName() {
-    return "Standard.Database.Connection.SQLite";
+    return "Standard.Database.Connection.Postgres";
   }
 
   @Override
   protected String getTypeName() {
-    return "SQLite";
+    return "Postgres";
   }
 
   @Override
   protected String getCodeForDefaultConstructor() {
-    return "SQLite.From_File";
+    return "(Postgres.Server 'localhost' 5432)";
   }
 
   @Override
   protected String getUserFacingConnectionName() {
-    return "SQLite";
+    return "Postgres";
   }
 }

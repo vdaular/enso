@@ -3,7 +3,7 @@ package org.enso.image;
 import org.enso.base.file_format.FileFormatSPI;
 
 @org.openide.util.lookup.ServiceProvider(service = FileFormatSPI.class)
-public class ImageFormatSPI extends FileFormatSPI {
+public final class ImageFileFormatImpl extends FileFormatSPI {
   @Override
   protected String getModuleName() {
     return "Standard.Image.Image_File_Format";

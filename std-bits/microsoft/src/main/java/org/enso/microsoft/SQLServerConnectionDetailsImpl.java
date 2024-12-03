@@ -3,7 +3,7 @@ package org.enso.microsoft;
 import org.enso.database.DatabaseConnectionDetailsSPI;
 
 @org.openide.util.lookup.ServiceProvider(service = DatabaseConnectionDetailsSPI.class)
-public class SQLServerConnectionDetailsSPI extends DatabaseConnectionDetailsSPI {
+public final class SQLServerConnectionDetailsImpl extends DatabaseConnectionDetailsSPI {
 
   @Override
   protected String getModuleName() {

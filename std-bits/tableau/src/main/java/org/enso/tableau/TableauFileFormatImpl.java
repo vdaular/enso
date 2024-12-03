@@ -1,21 +1,21 @@
-package org.enso.table.read;
+package org.enso.tableau;
 
 import org.enso.base.file_format.FileFormatSPI;
 
 @org.openide.util.lookup.ServiceProvider(service = FileFormatSPI.class)
-public class ExcelFormatSPI extends FileFormatSPI {
+public final class TableauFileFormatImpl extends FileFormatSPI {
   @Override
   protected String getModuleName() {
-    return "Standard.Table.Excel.Excel_Format";
+    return "Standard.Tableau.Tableau_Format";
   }
 
   @Override
   protected String getTypeName() {
-    return "Excel_Format";
+    return "Tableau_Format";
   }
 
   @Override
   protected String getDataLinkFormatName() {
-    return "excel";
+    return "tableau";
   }
 }

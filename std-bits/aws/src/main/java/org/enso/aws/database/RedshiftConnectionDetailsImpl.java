@@ -3,7 +3,7 @@ package org.enso.aws.database;
 import org.enso.database.DatabaseConnectionDetailsSPI;
 
 @org.openide.util.lookup.ServiceProvider(service = DatabaseConnectionDetailsSPI.class)
-public class RedshiftConnectionDetailsSPI extends DatabaseConnectionDetailsSPI {
+public final class RedshiftConnectionDetailsImpl extends DatabaseConnectionDetailsSPI {
   @Override
   protected String getModuleName() {
     return "Standard.AWS.Database.Redshift.Redshift_Details";
