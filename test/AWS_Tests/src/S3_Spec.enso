@@ -245,9 +245,19 @@ add_specs suite_builder =
     suite_builder.group "S3_File reading" pending=api_pending group_builder->
         group_builder.specify "should be able to list the bucket's root directory" <|
             r = root.list
-            r.should_succeed
-
+            r.should_be_a Vector
             r.map .name . should_contain object_name
+
+            # Should also work through Data.list
+            r2 = Data.list root
+            r2.should_be_a Vector
+            r2.map .name . should_contain object_name
+
+            # Listing by text path requires S3 credentials to be in environment
+            with_default_credentials <|
+                r3 = Data.list root.path
+                r3.should_be_a Vector
+                r3.map .name . should_contain object_name
 
         group_builder.specify "will fail if no credentials are provided and no Default credentials are available" pending=(if AWS_Credential.is_default_credential_available then "Default AWS credentials are defined in the environment and this test has no way of overriding them, so it is impossible to test this scenario in such environment.") <|
             root_without_credentials = S3_File.new "s3://"+bucket_name+"/"

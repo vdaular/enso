@@ -232,7 +232,7 @@ read_text path=(Missing_Argument.throw "path") (encoding : Encoding = Encoding.d
 @directory (Folder_Browse display=..Always)
 @name_filter File_Format.name_filter_widget
 list : Text | File -> Text -> Boolean -> Vector File
-list (directory:(Text | File)=enso_project.root) (name_filter:Text="") recursive:Boolean=False =
+list (directory=enso_project.root) (name_filter:Text="") recursive:Boolean=False =
     file_obj = File.new directory
     if file_obj.is_directory.not then Error.throw (Illegal_Argument.Error "Cannot `list` a non-directory.") else
         file_obj.list name_filter=name_filter recursive=recursive
