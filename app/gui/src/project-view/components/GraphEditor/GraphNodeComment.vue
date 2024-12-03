@@ -32,6 +32,7 @@ syncRef(editing, useFocusDelayed(textEditorContent).focused)
   min-width: 22px;
   border-radius: var(--radius-default);
   background-color: var(--node-color-no-type);
+  opacity: 0.8;
   color: var(--color-text-inversed);
   font-weight: 400;
 }

@@ -639,7 +639,7 @@ const showMenuAt = ref<{ x: number; y: number }>()
   transition: box-shadow 0.2s ease-in-out;
   box-sizing: border-box;
   /** Space between node and component above and below, such as comments and errors. */
-  --node-vertical-gap: 4px;
+  --node-vertical-gap: 5px;
 
   --color-node-primary: var(--node-group-color);
   --node-color-port: color-mix(in oklab, var(--color-node-primary) 85%, white 15%);

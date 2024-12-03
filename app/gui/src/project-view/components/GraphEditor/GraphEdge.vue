@@ -512,7 +512,7 @@ const backwardEdgeArrowTransform = computed<string | undefined>(() => {
 const arrowHeight = 9
 const arrowYOffset = 0
 const arrowTransform = computed<string | undefined>(() => {
-  const arrowTopOffset = 4
+  const arrowTopOffset = 1
   const arrowWidth = 12
   const target = targetPos.value
   if (target == null) return
