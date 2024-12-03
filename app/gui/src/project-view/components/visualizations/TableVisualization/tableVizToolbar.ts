@@ -1,11 +1,11 @@
 import type { NodeCreationOptions } from '@/components/GraphEditor/nodeCreation'
-import type { TextFormatOptions } from '@/components/visualizations/TableVisualization.vue'
 import type { ToolbarItem } from '@/components/visualizations/toolbar'
 import { Ast } from '@/util/ast'
 import { Pattern } from '@/util/ast/match'
 import type { ToValue } from '@/util/reactivity'
 import { computed, type ComputedRef, type Ref, toValue } from 'vue'
 import { Expression, MutableExpression } from 'ydoc-shared/ast'
+import { TextFormatOptions } from '../TableVisualization.vue'
 
 type SortDirection = 'asc' | 'desc'
 export type SortModel = {

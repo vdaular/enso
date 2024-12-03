@@ -1,7 +1,10 @@
 <script lang="ts">
 import icons from '@/assets/icons.svg'
 import AgGridTableView, { commonContextMenuActions } from '@/components/shared/AgGridTableView.vue'
-import { useTableVizToolbar, type SortModel } from '@/components/visualizations/tableVizToolbar'
+import {
+  useTableVizToolbar,
+  type SortModel,
+} from '@/components/visualizations/TableVisualization/tableVizToolbar'
 import { Ast } from '@/util/ast'
 import { Pattern } from '@/util/ast/match'
 import { useVisualizationConfig } from '@/util/visualizationBuiltins'
@@ -14,7 +17,8 @@ import type {
   SortChangedEvent,
 } from 'ag-grid-enterprise'
 import { computed, onMounted, ref, shallowRef, watchEffect, type Ref } from 'vue'
-import { TableVisualisationTooltip } from './TableVisualisationTooltip'
+import { TableVisualisationTooltip } from './TableVisualization/TableVisualisationTooltip'
+import { getCellValueType } from './TableVisualization/tableVizUtils'
 
 export const name = 'Table'
 export const icon = 'table'
@@ -618,27 +622,54 @@ const getColumnValueToEnso = (columnName: string) => {
   if (isNumber.indexOf(columnType) != -1) {
     return (item: string, module: Ast.MutableModule) => Ast.tryNumberToEnso(Number(item), module)!
   }
-  const createDateTimePattern = (pattern: string, numberOfParts: number) => {
-    const dateOrTimePattern = Pattern.parseExpression(pattern)
-    return (item: string, module: Ast.MutableModule) => {
-      const dateTimeParts = item.match(/\d+/g)!.map(Number)
-      const dateTimePartsNumeric = []
-      for (let i = 0; i < numberOfParts; i++) {
-        dateTimePartsNumeric.push(Ast.tryNumberToEnso(Number(dateTimeParts[i] ?? 0), module)!)
-      }
-      return dateOrTimePattern.instantiateCopied(dateTimePartsNumeric)
-    }
-  }
   if (columnType === 'Date') {
-    return createDateTimePattern('(Date.new __ __ __)', 3)
+    return (item: string, module: Ast.MutableModule) => createDateValue(item, module)
   }
   if (columnType === 'Time') {
-    return createDateTimePattern('(Time_Of_Day.new __ __ __ __ __ __)', 6)
+    return (item: string, module: Ast.MutableModule) =>
+      createDateTimeValue('Time_Of_Day.parse (__)', item, module)
   }
   if (columnType === 'Date_Time') {
-    return (item: string) => Ast.parseExpression(`(Date_Time.parse '${item}')`)!
+    return (item: string, module: Ast.MutableModule) =>
+      createDateTimeValue('Date_Time.parse (__)', item, module)
+  }
+  if (columnType == 'Mixed') {
+    return (item: string, module: Ast.MutableModule) => {
+      const parsedCellType = getCellValueType(item)
+      return getFormattedValueForCell(item, module, parsedCellType)
+    }
   }
   return (item: string) => Ast.TextLiteral.new(item)
+}
+
+const getFormattedValueForCell = (item: string, module: Ast.MutableModule, cellType: string) => {
+  const isNumber = ['Integer', 'Float', 'Decimal', 'Byte']
+  if (isNumber.indexOf(cellType) != -1) {
+    return Ast.tryNumberToEnso(Number(item), module)!
+  }
+  if (cellType === 'Date') {
+    return createDateValue(item, module)
+  }
+  if (cellType === 'Time') {
+    return createDateTimeValue('Time_Of_Day.parse (__)', item, module)
+  }
+  if (cellType === 'Date_Time') {
+    return createDateTimeValue('Date_Time.parse (__)', item, module)
+  }
+  return Ast.TextLiteral.new(item)
+}
+
+const createDateTimeValue = (patternString: string, item: string, module: Ast.MutableModule) => {
+  const pattern = Pattern.parseExpression(patternString)!
+  return pattern.instantiateCopied([Ast.TextLiteral.new(item, module)])
+}
+
+const createDateValue = (item: string, module: Ast.MutableModule) => {
+  const dateOrTimePattern = Pattern.parseExpression('(Date.new __ __ __)')
+  const dateTimeParts = item
+    .match(/\d+/g)!
+    .map((part) => Ast.tryNumberToEnso(Number(part), module)!)
+  return dateOrTimePattern.instantiateCopied([...dateTimeParts])
 }
 
 function checkSortAndFilter(e: SortChangedEvent) {
