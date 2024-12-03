@@ -13,7 +13,6 @@ import {
   toValue,
   watch,
   watchEffect,
-  type ComputedRef,
   type Ref,
   type ShallowRef,
   type WatchSource,
@@ -183,16 +182,6 @@ export function unrefElement(
     return undefined
   }
   return result
-}
-
-/** Returns a reactive value for the input element's root, if it is an HTML element. */
-export function useUnrefHTMLElement(
-  element: Ref<Element | undefined | null | VueInstance>,
-): ComputedRef<HTMLElement | undefined> {
-  return computed(() => {
-    const elementValue = unrefElement(element)
-    return elementValue instanceof HTMLElement ? elementValue : undefined
-  })
 }
 
 interface ResizeObserverData {
