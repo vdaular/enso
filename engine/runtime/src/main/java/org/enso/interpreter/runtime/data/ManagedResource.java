@@ -1,5 +1,6 @@
 package org.enso.interpreter.runtime.data;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Bind;
 import com.oracle.truffle.api.interop.InteropLibrary;
@@ -12,7 +13,27 @@ import org.enso.interpreter.runtime.EnsoContext;
 import org.enso.interpreter.runtime.callable.function.Function;
 import org.enso.interpreter.runtime.library.dispatch.TypesLibrary;
 
-/** A runtime representation of a managed resource. */
+/**
+ * An Enso runtime representation of a managed resource.
+ *
+ * <p><b>Instance of this class</b> is convoluted with instances playing various roles:
+ *
+ * <ul>
+ *   <li>this {@link ManagedResource} points to {@code resource}
+ *   <li>this {@link ManagedResource} points to {@link PhantomReference} that is "phantom
+ *       referencing" {@code this}
+ *   <li>the implementation of {@link PhantomReference} is {@code Item} in {@link ResourceManager}
+ *   <li>the {@code Item} <em>"phantom referencing"</em> {@code this} {@link ManagedResource} is
+ *       stored in {@link ResourceManager} {@code pendingItems} collection.
+ *   <li>the {@code Item} has a pointer to the {@code resource} as well
+ *   <li>the {@code Item} has a pointer to the {@code finalizer} function
+ * </ul>
+ *
+ * Once all this braided chunk of objects is eligible for GC because <b>nobody holds pointer to
+ * {@link ManagedResource}</b>, the {@code Item} is put into {@link ResourceManager} {@code
+ * referenceQueue} and process by the intricate machinery of {@link ResourceManager} and its {@code
+ * ProcessItems} processor.
+ */
 @ExportLibrary(InteropLibrary.class)
 @ExportLibrary(TypesLibrary.class)
 @Builtin(pkg = "resource", stdlibName = "Standard.Base.Runtime.Managed_Resource.Managed_Resource")
@@ -52,8 +73,9 @@ public final class ManagedResource extends EnsoObject {
           "Makes an object into a managed resource, automatically finalized when the returned"
               + " object is garbage collected.")
   @Builtin.Specialize
-  public static ManagedResource register(EnsoContext context, Object resource, Function function) {
-    return context.getResourceManager().register(resource, function);
+  public static ManagedResource register_builtin(
+      EnsoContext context, Object resource, Function function, boolean systemCanFinalize) {
+    return context.getResourceManager().register(resource, function, systemCanFinalize);
   }
 
   @Builtin.Method(
@@ -97,8 +119,16 @@ public final class ManagedResource extends EnsoObject {
 
   @ExportMessage
   @TruffleBoundary
+  public String toDisplayString(boolean allowSideEffects, @Bind("$node") Node node) {
+    var type = getType(node);
+    return type.getName()
+        + " "
+        + InteropLibrary.getUncached().toDisplayString(resource, allowSideEffects);
+  }
+
+  @ExportMessage.Ignore
   @Override
-  public String toDisplayString(boolean allowSideEffects) {
-    return resource.toString();
+  public Object toDisplayString(boolean allowSideEffects) {
+    throw CompilerDirectives.shouldNotReachHere();
   }
 }

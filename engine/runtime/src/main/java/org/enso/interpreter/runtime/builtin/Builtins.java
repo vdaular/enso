@@ -97,7 +97,6 @@ public final class Builtins {
   private final Comparable comparable;
   private final DefaultComparator defaultComparator;
   private final System system;
-  private final Special special;
 
   // Builtin types
   private final Builtin any;
@@ -181,7 +180,6 @@ public final class Builtins {
     error = new Error(this, context);
     system = new System(this);
     number = new Number(this);
-    special = new Special(language);
     scope = scopeBuilder.build();
   }
 
@@ -767,10 +765,6 @@ public final class Builtins {
    */
   public Type dataflowError() {
     return dataflowError.getType();
-  }
-
-  public Special special() {
-    return special;
   }
 
   /**

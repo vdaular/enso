@@ -113,21 +113,39 @@ public final class ResourceManager {
   }
 
   /**
-   * Registers a new resource to the system. {@code function} will be called on {@code object} when
-   * the value returned by this method becomes unreachable.
+   * Registers a new (non-system controlled) resource to the system. Calls {@link
+   * #register(java.lang.Object, java.lang.Object, boolean)} with {@code false} as last argument.
    *
    * @param object the underlying resource
    * @param function the finalizer action to call on the underlying resource
    * @return a wrapper object, containing the resource and serving as a reachability probe
    */
   @CompilerDirectives.TruffleBoundary
-  public synchronized ManagedResource register(Object object, Object function) {
+  public ManagedResource register(Object object, Object function) {
+    return register(object, function, false);
+  }
+
+  /**
+   * Registers a new resource to the system.{@code function} will be called on {@code object} when
+   * the value returned by this method becomes unreachable.
+   *
+   * @param object the underlying resource
+   * @param function the finalizer action to call on the underlying resource
+   * @param systemResource resource is subject to finalization when {@link
+   *     #scheduleFinalizationOfSystemReferences} is called
+   * @return a wrapper object, containing the resource and serving as a reachability probe
+   */
+  @CompilerDirectives.TruffleBoundary
+  public synchronized ManagedResource register(
+      Object object, Object function, boolean systemResource) {
     if (CLOSED == processor) {
       throw EnsoContext.get(null)
           .raiseAssertionPanic(
               null, "Can't register new resources after resource manager is closed.", null);
     }
-    var resource = new ManagedResource(object, r -> new Item(r, object, function, referenceQueue));
+    var resource =
+        new ManagedResource(
+            object, r -> new Item(r, object, function, systemResource, referenceQueue));
     var ref = (Item) resource.getPhantomReference();
     addPendingItem(ref);
     return resource;
@@ -182,6 +200,21 @@ public final class ResourceManager {
       pendingItems.remove(item);
       if (pendingItems.isEmpty() && processor != null) {
         processor.awake();
+      }
+    }
+  }
+
+  /**
+   * Explicitly schedules all the <em>system references</em> registered with the manager for
+   * finalization.
+   *
+   * @see #register
+   */
+  @CompilerDirectives.TruffleBoundary
+  public final synchronized void scheduleFinalizationOfSystemReferences() {
+    for (var item : pendingItems) {
+      if (item.systemResource) {
+        item.enqueue();
       }
     }
   }
@@ -360,6 +393,7 @@ public final class ResourceManager {
 
   /** A storage representation of a finalizable object handled by this system. */
   private static final class Item extends PhantomReference<ManagedResource> {
+    private final boolean systemResource;
     private final Object underlying;
     private final Object finalizer;
 
@@ -393,10 +427,12 @@ public final class ResourceManager {
         ManagedResource referent,
         Object underlying,
         Object finalizer,
+        boolean systemResource,
         ReferenceQueue<ManagedResource> queue) {
       super(referent, queue);
       this.underlying = underlying;
       this.finalizer = finalizer;
+      this.systemResource = systemResource;
     }
 
     /**
@@ -408,6 +444,7 @@ public final class ResourceManager {
     @CompilerDirectives.TruffleBoundary
     private void finalizeNow(EnsoContext context) {
       try {
+        clear();
         InteropLibrary.getUncached(finalizer).execute(finalizer, underlying);
       } catch (Exception e) {
         context.getErr().println("Exception in finalizer: " + e.getMessage());

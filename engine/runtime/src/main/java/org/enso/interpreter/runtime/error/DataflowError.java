@@ -21,6 +21,7 @@ import org.enso.interpreter.node.expression.builtin.text.util.TypeToDisplayTextN
 import org.enso.interpreter.runtime.EnsoContext;
 import org.enso.interpreter.runtime.callable.UnresolvedSymbol;
 import org.enso.interpreter.runtime.data.Type;
+import org.enso.interpreter.runtime.data.text.Text;
 import org.enso.interpreter.runtime.data.vector.ArrayLikeHelpers;
 import org.enso.interpreter.runtime.library.dispatch.TypesLibrary;
 import org.enso.interpreter.runtime.state.HasContextEnabledNode;
@@ -116,8 +117,8 @@ public final class DataflowError extends AbstractTruffleException {
    *
    * @return the payload object
    */
-  public Object getPayload() {
-    return payload != null ? payload : "Uninitialized value";
+  public final Object getPayload() {
+    return payload != null ? payload : Text.create("Uninitialized value");
   }
 
   /**

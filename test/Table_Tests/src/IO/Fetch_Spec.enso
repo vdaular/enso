@@ -145,14 +145,14 @@ add_specs suite_builder =
         get_cache_file_sizes -> Vector Integer =
             Vector.from_polyglot_array EnsoSecretHelper.getOrCreateCache.getLRUCache.getFileSizes . sort Sort_Direction.Ascending
 
-        # Craetes a new cache each time, then resets it at the end
+        # Creates a new cache each time, then resets it at the end
         with_lru_cache lru_cache ~action =
             reset = EnsoSecretHelper.getOrCreateCache.setLRUCache LRUCache.new
             Panic.with_finalizer reset <|
                 EnsoSecretHelper.getOrCreateCache.setLRUCache lru_cache
                 action
 
-        # Craetes a new cache each time, then resets it at the end
+        # Creates a new cache each time, then resets it at the end
         with_config max_file_size total_cache_size ~action =
             now_getter = NowGetter.new
             disk_space_getter = DiskSpaceGetter.new
@@ -160,14 +160,14 @@ add_specs suite_builder =
             lru_cache = LRUCache.new lru_cache_settings now_getter disk_space_getter
             with_lru_cache lru_cache (action now_getter disk_space_getter)
 
-        # Craetes a new cache each time, then resets it at the end
+        # Creates a new cache each time, then resets it at the end
         with_mocks ~action =
             now_getter = NowGetter.new
             disk_space_getter = DiskSpaceGetter.new
             lru_cache = LRUCache.new LRUCacheSettings.getDefault now_getter disk_space_getter
             with_lru_cache lru_cache (action now_getter disk_space_getter)
 
-        # Craetes a new cache each time, then resets it at the end
+        # Creates a new cache each time, then resets it at the end
         with_default_cache ~action =
             lru_cache = LRUCache.new
             with_lru_cache lru_cache action

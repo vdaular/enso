@@ -206,10 +206,10 @@ public class MethodProcessor
       out.println();
       out.println("  private static final class Internals {");
       out.println("    Internals(boolean s) {");
-      out.println("      this.staticOfInstanceMethod = s;");
+      out.println("      this.staticOrInstanceMethod = s;");
       out.println("    }");
       out.println();
-      out.println("    private final boolean staticOfInstanceMethod;");
+      out.println("    private final boolean staticOrInstanceMethod;");
 
       for (MethodDefinition.ArgumentDefinition arg : methodDefinition.getArguments()) {
         if (arg.shouldCheckErrors()) {
@@ -239,10 +239,10 @@ public class MethodProcessor
       out.println(
           "  private "
               + methodDefinition.getClassName()
-              + "(EnsoLanguage language, boolean staticOfInstanceMethod) {");
+              + "(EnsoLanguage language, boolean staticOrInstanceMethod) {");
       out.println("    super(language);");
       out.println("    this.bodyNode = " + methodDefinition.getConstructorExpression() + ";");
-      out.println("    this.internals = new Internals(staticOfInstanceMethod);");
+      out.println("    this.internals = new Internals(staticOrInstanceMethod);");
       out.println("  }");
 
       out.println();
@@ -258,11 +258,11 @@ public class MethodProcessor
       out.println();
       out.println(
           "  public static Function makeFunction(EnsoLanguage language, boolean"
-              + " staticOfInstanceMethod) {");
-      out.println("    if (staticOfInstanceMethod) {");
+              + " staticOrInstanceMethod) {");
+      out.println("    if (staticOrInstanceMethod) {");
       out.println("      return Function." + functionBuilderMethod + "(");
       out.print(
-          "        new " + methodDefinition.getClassName() + "(language, staticOfInstanceMethod)");
+          "        new " + methodDefinition.getClassName() + "(language, staticOrInstanceMethod)");
       List<String> argsStaticInstace =
           generateMakeFunctionArgs(true, methodDefinition.getArguments());
       if (!argsStaticInstace.isEmpty()) {
@@ -272,7 +272,7 @@ public class MethodProcessor
       out.println("    } else {");
       out.println("      return Function." + functionBuilderMethod + "(");
       out.print(
-          "        new " + methodDefinition.getClassName() + "(language, staticOfInstanceMethod)");
+          "        new " + methodDefinition.getClassName() + "(language, staticOrInstanceMethod)");
       List<String> argsInstance = generateMakeFunctionArgs(false, methodDefinition.getArguments());
       if (!argsInstance.isEmpty()) {
         out.println(",");
@@ -288,7 +288,7 @@ public class MethodProcessor
         out.println("    class Inlineable extends InlineableNode {");
         out.println(
             "      private final Internals extra = new"
-                + " Internals(internals.staticOfInstanceMethod);");
+                + " Internals(internals.staticOrInstanceMethod);");
         out.println(
             "      private @Child "
                 + methodDefinition.getOriginalClassName()
@@ -334,7 +334,7 @@ public class MethodProcessor
                 + " bodyNode, AppendWarningNode appendWarningNode, WarningsLibrary warnLib,"
                 + " HashMapInsertAllNode mapInsertAllNode, Object[] args) {");
       }
-      out.println("    var prefix = internals.staticOfInstanceMethod ? 1 : 0;");
+      out.println("    var prefix = internals.staticOrInstanceMethod ? 1 : 0;");
       out.println("    State state = Function.ArgumentsHelper.getState(args);");
       if (methodDefinition.needsCallerInfo()) {
         out.println("    CallerInfo callerInfo = Function.ArgumentsHelper.getCallerInfo(args);");
@@ -343,7 +343,11 @@ public class MethodProcessor
           "    Object[] arguments = Function.ArgumentsHelper.getPositionalArguments(args);");
       List<String> callArgNames = new ArrayList<>();
       for (MethodDefinition.ArgumentDefinition arg : methodDefinition.getArguments()) {
-        if (!(arg.isImplicit() || arg.isFrame() || arg.isState() || arg.isCallerInfo())) {
+        if (!(arg.isImplicit()
+            || arg.isFrame()
+            || arg.isState()
+            || arg.isCallerInfo()
+            || arg.isNode())) {
           out.println(
               "    int arg" + arg.getPosition() + "Idx = " + arg.getPosition() + " + prefix;");
         }
@@ -361,6 +365,8 @@ public class MethodProcessor
           callArgNames.add("state");
         } else if (argumentDefinition.isFrame()) {
           callArgNames.add("frame");
+        } else if (argumentDefinition.isNode()) {
+          callArgNames.add("bodyNode");
         } else if (argumentDefinition.isCallerInfo()) {
           callArgNames.add("callerInfo");
         } else {
@@ -414,7 +420,7 @@ public class MethodProcessor
       out.println(
           "    return new "
               + methodDefinition.getClassName()
-              + "(EnsoLanguage.get(this), internals.staticOfInstanceMethod);");
+              + "(EnsoLanguage.get(this), internals.staticOrInstanceMethod);");
       out.println("  }");
 
       out.println();

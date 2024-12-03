@@ -176,7 +176,7 @@ public class ExecCompilerTest {
     var error = run.execute(-1);
     assertTrue("We get an error value back", error.isException());
     assertTrue("The error value also represents null", error.isNull());
-    assertEquals("(Error: Uninitialized value)", error.toString());
+    assertEquals("(Error: 'Uninitialized value')", error.toString());
   }
 
   @Test
@@ -195,7 +195,7 @@ public class ExecCompilerTest {
     var error = run.execute("Nope: ");
     assertTrue("We get an error value back", error.isException());
     assertTrue("The error value also represents null", error.isNull());
-    assertEquals("(Error: Uninitialized value)", error.toString());
+    assertEquals("(Error: 'Uninitialized value')", error.toString());
   }
 
   @Ignore("Explicitly-default arguments will be implemented in #8480")

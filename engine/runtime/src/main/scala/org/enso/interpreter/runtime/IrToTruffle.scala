@@ -32,7 +32,6 @@ import org.enso.compiler.core.ir.module.scope.Definition
 import org.enso.compiler.core.ir.module.scope.definition
 import org.enso.compiler.core.ir.module.scope.Import
 import org.enso.compiler.core.ir.module.scope.imports
-import org.enso.compiler.core.ir.Name.Special
 import org.enso.compiler.core.ir.expression.{
   errors,
   Application,
@@ -1969,16 +1968,6 @@ class IrToTruffle(
               "a Self occurence must be resolved"
             ).target
           )
-        case Name.Special(name, _, _) =>
-          val fun = name match {
-            case Special.NewRef    => context.getBuiltins.special().getNewRef
-            case Special.ReadRef   => context.getBuiltins.special().getReadRef
-            case Special.WriteRef  => context.getBuiltins.special().getWriteRef
-            case Special.RunThread => context.getBuiltins.special().getRunThread
-            case Special.JoinThread =>
-              context.getBuiltins.special().getJoinThread
-          }
-          ConstantObjectNode.build(fun)
         case _: Name.Annotation =>
           throw new CompilerError(
             "Annotation should not be present at codegen time."

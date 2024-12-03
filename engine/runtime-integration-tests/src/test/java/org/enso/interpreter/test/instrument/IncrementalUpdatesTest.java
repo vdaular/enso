@@ -133,7 +133,7 @@ public class IncrementalUpdatesTest {
         result.head().payload() instanceof Runtime$Api$ExecutionComplete);
     Assert.assertEquals(
         "Error is printed as a result",
-        List.newBuilder().addOne("(Error: Uninitialized value)"),
+        List.newBuilder().addOne("(Error: 'Uninitialized value')"),
         context.consumeOut());
   }
 
