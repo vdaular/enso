@@ -277,8 +277,10 @@ const { scheduleCreateNode, createNodes, placeNode } = provideNodeCreation(
   toRef(graphNavigator, 'sceneMousePos'),
   (nodes) => {
     clearFocus()
-    nodeSelection.setSelection(nodes)
-    panToSelected()
+    if (nodes.size > 0) {
+      nodeSelection.setSelection(nodes)
+      panToSelected()
+    }
   },
 )
 

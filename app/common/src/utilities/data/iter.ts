@@ -218,3 +218,11 @@ export function last<T>(iter: Iterable<T>): T | undefined {
   for (const el of iter) last = el
   return last
 }
+
+/** Yields items of the iterable with their index. */
+export function* enumerate<T>(items: Iterable<T>): Generator<[T, number]> {
+  let index = 0
+  for (const item of items) {
+    yield [item, index++]
+  }
+}

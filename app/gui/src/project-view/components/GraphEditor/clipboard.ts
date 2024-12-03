@@ -1,12 +1,10 @@
 import type { NodeCreationOptions } from '@/composables/nodeCreation'
 import type { Node } from '@/stores/graph'
-import { Ast } from '@/util/ast'
-import { Pattern } from '@/util/ast/match'
 import { nodeDocumentationText } from '@/util/ast/node'
 import { Vec2 } from '@/util/data/vec2'
 import * as iter from 'enso-common/src/utilities/data/iter'
-import { computed } from 'vue'
 import type { NodeMetadataFields } from 'ydoc-shared/ast'
+import { parseTsvData, tableToEnsoExpression } from './widgets/WidgetTableEditor/tableParsing'
 
 // MIME type in *vendor tree*; see https://www.rfc-editor.org/rfc/rfc6838#section-3.2
 // The `web ` prefix is required by Chromium:
@@ -133,17 +131,13 @@ const spreadsheetDecoder: ClipboardDecoder<CopiedNode[]> = {
     if (!item.types.includes('text/plain')) return
     if (isSpreadsheetTsv(htmlContent)) {
       const textData = await item.getType('text/plain').then((blob) => blob.text())
-      return [{ expression: tsvTableToEnsoExpression(textData) }]
+      const rows = parseTsvData(textData)
+      if (rows == null) return
+      const expression = tableToEnsoExpression(rows)
+      if (expression == null) return
+      return [{ expression }]
     }
   },
-}
-
-const toTable = computed(() => Pattern.parseExpression('__.to Table'))
-
-/** Create Enso Expression generating table from this tsvData. */
-export function tsvTableToEnsoExpression(tsvData: string) {
-  const textLiteral = Ast.TextLiteral.new(tsvData)
-  return toTable.value.instantiate(textLiteral.module, [textLiteral]).code()
 }
 
 /** @internal */

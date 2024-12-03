@@ -21,7 +21,7 @@ export const ROW_INDEX_HEADER = '#'
 /** A default prefix added to the column's index in newly created columns. */
 export const DEFAULT_COLUMN_PREFIX = 'Column #'
 const NOTHING_PATH = 'Standard.Base.Nothing.Nothing' as QualifiedName
-const NOTHING_NAME = qnLastSegment(NOTHING_PATH)
+export const NOTHING_NAME = qnLastSegment(NOTHING_PATH) as Ast.Identifier
 /**
  * The cells limit of the table; any modification which would exceed this limt should be
  * disallowed in UI
@@ -369,7 +369,7 @@ export function useTableInputArgument(
           contextMenuItems: [
             commonContextMenuActions.cut,
             commonContextMenuActions.copy,
-            'copyWithHeaders',
+            commonContextMenuActions.copyWithHeaders,
             commonContextMenuActions.paste,
             'separator',
             removeRowMenuItem,
