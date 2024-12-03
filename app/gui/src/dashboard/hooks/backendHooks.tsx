@@ -645,7 +645,6 @@ function useDeleteAsset(backend: Backend, category: Category) {
 
 /** A function to create a new folder. */
 export function useNewFolder(backend: Backend, category: Category) {
-  const insertAssets = useInsertAssets(backend, category)
   const ensureListDirectory = useEnsureListDirectory(backend, category)
   const toggleDirectoryExpansion = useToggleDirectoryExpansion()
   const setNewestFolderId = useSetNewestFolderId()
@@ -676,8 +675,6 @@ export function useNewFolder(backend: Backend, category: Category) {
       ),
     )
 
-    insertAssets([placeholderItem], parentId)
-
     return await createDirectoryMutation
       .mutateAsync([{ parentId: placeholderItem.parentId, title: placeholderItem.title }])
       .then((result) => {
@@ -691,12 +688,12 @@ export function useNewFolder(backend: Backend, category: Category) {
 
 /** A function to create a new project. */
 export function useNewProject(backend: Backend, category: Category) {
-  const insertAssets = useInsertAssets(backend, category)
   const ensureListDirectory = useEnsureListDirectory(backend, category)
   const toastAndLog = useToastAndLog()
   const doOpenProject = useOpenProject()
   const deleteAsset = useDeleteAsset(backend, category)
   const toggleDirectoryExpansion = useToggleDirectoryExpansion()
+
   const { user } = useFullUserSession()
   const { data: users } = useBackendQuery(backend, 'listUsers', [])
   const { data: userGroups } = useBackendQuery(backend, 'listUserGroups', [])
@@ -717,6 +714,7 @@ export function useNewProject(backend: Backend, category: Category) {
       parentPath: string | null | undefined,
     ) => {
       toggleDirectoryExpansion(parentId, true)
+
       const siblings = await ensureListDirectory(parentId)
       const projectName = (() => {
         const prefix = `${templateName ?? 'New Project'} `
@@ -727,6 +725,7 @@ export function useNewProject(backend: Backend, category: Category) {
           .map((maybeIndex) => (maybeIndex != null ? parseInt(maybeIndex, 10) : 0))
         return `${prefix}${Math.max(0, ...projectIndices) + 1}`
       })()
+
       const path = backend instanceof LocalBackend ? backend.joinPath(parentId, projectName) : null
 
       const placeholderItem = backendModule.createPlaceholderProjectAsset(
@@ -742,8 +741,6 @@ export function useNewProject(backend: Backend, category: Category) {
         user,
         path,
       )
-
-      insertAssets([placeholderItem], parentId)
 
       return await createProjectMutation
         .mutateAsync([
@@ -764,8 +761,9 @@ export function useNewProject(backend: Backend, category: Category) {
             id: createdProject.projectId,
             type: backend.type,
             parentId: placeholderItem.parentId,
-            title: placeholderItem.title,
+            title: createdProject.name,
           })
+
           return createdProject
         })
     },

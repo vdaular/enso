@@ -39,7 +39,7 @@ test('asset panel contents', ({ page }) =>
       page,
       setupAPI: (api) => {
         const { defaultOrganizationId, defaultUserId } = api
-        api.addProject('project', {
+        api.addProject({
           description: DESCRIPTION,
           permissions: [
             {
@@ -70,7 +70,7 @@ test('Asset Panel Documentation view', ({ page }) => {
     .mockAllAndLogin({
       page,
       setupAPI: (api) => {
-        api.addProject('project', { description: DESCRIPTION })
+        api.addProject({})
       },
     })
     .driveTable.clickRow(0)

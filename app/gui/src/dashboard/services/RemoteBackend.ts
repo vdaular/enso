@@ -533,9 +533,14 @@ export default class RemoteBackend extends Backend {
     body: backend.CreateDirectoryRequestBody,
   ): Promise<backend.CreatedDirectory> {
     const path = remoteBackendPaths.CREATE_DIRECTORY_PATH
-    const response = await this.post<backend.CreatedDirectory>(path, body)
+
+    // Remote backend doesn't need the title in the body.
+    // It's generated on the server side.
+    const { title, ...rest } = body
+
+    const response = await this.post<backend.CreatedDirectory>(path, rest)
     if (!responseIsSuccessful(response)) {
-      return await this.throw(response, 'createFolderBackendError', body.title)
+      return await this.throw(response, 'createFolderBackendError', title)
     } else {
       return await response.json()
     }
@@ -684,9 +689,13 @@ export default class RemoteBackend extends Backend {
     body: backend.CreateProjectRequestBody,
   ): Promise<backend.CreatedProject> {
     const path = remoteBackendPaths.CREATE_PROJECT_PATH
-    const response = await this.post<backend.CreatedProject>(path, body)
+    // Remote backend doesn't need the project name in the body.
+    // It's generated on the server side.
+    const { projectName, ...rest } = body
+
+    const response = await this.post<backend.CreatedProject>(path, rest)
     if (!responseIsSuccessful(response)) {
-      return await this.throw(response, 'createProjectBackendError', body.projectName)
+      return await this.throw(response, 'createProjectBackendError', projectName)
     } else {
       return await response.json()
     }

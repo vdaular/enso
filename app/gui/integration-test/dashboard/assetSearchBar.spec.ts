@@ -68,10 +68,10 @@ test.test('suggestions', async ({ page }) => {
   await actions.mockAllAndLogin({
     page,
     setupAPI: (api) => {
-      api.addDirectory('foo')
-      api.addProject('bar')
-      api.addSecret('baz')
-      api.addSecret('quux')
+      api.addDirectory({ title: 'foo' })
+      api.addProject({ title: 'bar' })
+      api.addSecret({ title: 'baz' })
+      api.addSecret({ title: 'quux' })
     },
   })
 
@@ -94,10 +94,10 @@ test.test('suggestions (keyboard)', async ({ page }) => {
   await actions.mockAllAndLogin({
     page,
     setupAPI: (api) => {
-      api.addDirectory('foo')
-      api.addProject('bar')
-      api.addSecret('baz')
-      api.addSecret('quux')
+      api.addDirectory({ title: 'foo' })
+      api.addProject({ title: 'bar' })
+      api.addSecret({ title: 'baz' })
+      api.addSecret({ title: 'quux' })
     },
   })
 
@@ -119,10 +119,10 @@ test.test('complex flows', async ({ page }) => {
   await actions.mockAllAndLogin({
     page,
     setupAPI: (api) => {
-      api.addDirectory(firstName)
-      api.addProject('bar')
-      api.addSecret('baz')
-      api.addSecret('quux')
+      api.addDirectory({ title: firstName })
+      api.addProject({ title: 'bar' })
+      api.addSecret({ title: 'baz' })
+      api.addSecret({ title: 'quux' })
     },
   })
   const searchBarInput = actions.locateSearchBarInput(page)

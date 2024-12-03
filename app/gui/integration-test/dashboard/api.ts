@@ -24,7 +24,7 @@ import LATEST_GITHUB_RELEASES from './latestGithubReleases.json' with { type: 'j
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const MOCK_SVG = `
-<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 100 100">
   <defs>
     <pattern id="checkerboard" width="20" height="20" patternUnits="userSpaceOnUse">
       <rect width="10" height="10" fill="white"/>
@@ -179,11 +179,16 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
     return wasDeleted
   }
 
-  const createDirectory = (
-    title: string,
-    rest: Partial<backend.DirectoryAsset> = {},
-  ): backend.DirectoryAsset =>
-    object.merge(
+  const createDirectory = (rest: Partial<backend.DirectoryAsset> = {}): backend.DirectoryAsset => {
+    const directoryTitles = new Set(
+      assets
+        .filter((asset) => asset.type === backend.AssetType.directory)
+        .map((asset) => asset.title),
+    )
+
+    const title = rest.title ?? `New Folder ${directoryTitles.size + 1}`
+
+    return object.merge(
       {
         type: backend.AssetType.directory,
         id: backend.DirectoryId('directory-' + uniqueString.uniqueString()),
@@ -191,7 +196,7 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
         extension: null,
         title,
         modifiedAt: dateTime.toRfc3339(new Date()),
-        description: null,
+        description: rest.description ?? '',
         labels: [],
         parentId: defaultDirectoryId,
         permissions: [
@@ -210,12 +215,18 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
       },
       rest,
     )
+  }
 
-  const createProject = (
-    title: string,
-    rest: Partial<backend.ProjectAsset> = {},
-  ): backend.ProjectAsset =>
-    object.merge(
+  const createProject = (rest: Partial<backend.ProjectAsset> = {}): backend.ProjectAsset => {
+    const projectNames = new Set(
+      assets
+        .filter((asset) => asset.type === backend.AssetType.project)
+        .map((asset) => asset.title),
+    )
+
+    const title = rest.title ?? `New Project ${projectNames.size + 1}`
+
+    return object.merge(
       {
         type: backend.AssetType.project,
         id: backend.ProjectId('project-' + uniqueString.uniqueString()),
@@ -226,7 +237,7 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
         extension: null,
         title,
         modifiedAt: dateTime.toRfc3339(new Date()),
-        description: null,
+        description: rest.description ?? '',
         labels: [],
         parentId: defaultDirectoryId,
         permissions: [],
@@ -235,17 +246,18 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
       },
       rest,
     )
+  }
 
-  const createFile = (title: string, rest: Partial<backend.FileAsset> = {}): backend.FileAsset =>
+  const createFile = (rest: Partial<backend.FileAsset> = {}): backend.FileAsset =>
     object.merge(
       {
         type: backend.AssetType.file,
         id: backend.FileId('file-' + uniqueString.uniqueString()),
         projectState: null,
         extension: '',
-        title,
+        title: rest.title ?? '',
         modifiedAt: dateTime.toRfc3339(new Date()),
-        description: null,
+        description: rest.description ?? '',
         labels: [],
         parentId: defaultDirectoryId,
         permissions: [],
@@ -255,19 +267,16 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
       rest,
     )
 
-  const createSecret = (
-    title: string,
-    rest: Partial<backend.SecretAsset> = {},
-  ): backend.SecretAsset =>
+  const createSecret = (rest: Partial<backend.SecretAsset>): backend.SecretAsset =>
     object.merge(
       {
         type: backend.AssetType.secret,
         id: backend.SecretId('secret-' + uniqueString.uniqueString()),
         projectState: null,
         extension: null,
-        title,
+        title: rest.title ?? '',
         modifiedAt: dateTime.toRfc3339(new Date()),
-        description: null,
+        description: rest.description ?? '',
         labels: [],
         parentId: defaultDirectoryId,
         permissions: [],
@@ -283,20 +292,20 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
     color,
   })
 
-  const addDirectory = (title: string, rest?: Partial<backend.DirectoryAsset>) => {
-    return addAsset(createDirectory(title, rest))
+  const addDirectory = (rest: Partial<backend.DirectoryAsset>) => {
+    return addAsset(createDirectory(rest))
   }
 
-  const addProject = (title: string, rest?: Partial<backend.ProjectAsset>) => {
-    return addAsset(createProject(title, rest))
+  const addProject = (rest: Partial<backend.ProjectAsset>) => {
+    return addAsset(createProject(rest))
   }
 
-  const addFile = (title: string, rest?: Partial<backend.FileAsset>) => {
-    return addAsset(createFile(title, rest))
+  const addFile = (rest: Partial<backend.FileAsset>) => {
+    return addAsset(createFile(rest))
   }
 
-  const addSecret = (title: string, rest?: Partial<backend.SecretAsset>) => {
-    return addAsset(createSecret(title, rest))
+  const addSecret = (rest: Partial<backend.SecretAsset>) => {
+    return addAsset(createSecret(rest))
   }
 
   const addLabel = (value: string, color: backend.LChColor) => {
@@ -784,7 +793,7 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
     await post(remoteBackendPaths.UPLOAD_FILE_END_PATH + '*', (_route, request) => {
       const body: backend.UploadFileEndRequestBody = request.postDataJSON()
 
-      const file = addFile(body.fileName, {
+      const file = addFile({
         id: backend.FileId(body.uploadId),
         title: body.fileName,
         ...(body.parentDirectoryId != null ? { parentId: body.parentDirectoryId } : {}),
@@ -795,7 +804,9 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
 
     await post(remoteBackendPaths.CREATE_SECRET_PATH + '*', async (_route, request) => {
       const body: backend.CreateSecretRequestBody = await request.postDataJSON()
-      const secret = addSecret(body.name)
+      const secret = addSecret({
+        title: body.name,
+      })
       return secret.id
     })
 
@@ -978,19 +989,13 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
     })
     await post(remoteBackendPaths.CREATE_PROJECT_PATH + '*', (_route, request) => {
       const body: backend.CreateProjectRequestBody = request.postDataJSON()
-      const title = body.projectName
       const id = backend.ProjectId(`project-${uniqueString.uniqueString()}`)
       const parentId =
         body.parentDirectoryId ?? backend.DirectoryId(`directory-${uniqueString.uniqueString()}`)
-      const json: backend.CreatedProject = {
-        name: title,
-        organizationId: defaultOrganizationId,
-        packageName: 'Project_root',
-        projectId: id,
-        state: { type: backend.ProjectState.closed, volumeId: '' },
-      }
 
-      addProject(title, {
+      const state = { type: backend.ProjectState.closed, volumeId: '' }
+
+      const project = addProject({
         description: null,
         id,
         labels: [],
@@ -1007,19 +1012,26 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
             permission: permissions.PermissionAction.own,
           },
         ],
-        projectState: json.state,
+        projectState: state,
       })
 
-      return json
+      return {
+        title: project.title,
+        id: project.id,
+        parentId: project.parentId,
+        state: project.projectState,
+        organizationId: defaultOrganizationId,
+        packageName: 'Project_root',
+        projectId: id,
+      }
     })
 
     await post(remoteBackendPaths.CREATE_DIRECTORY_PATH + '*', (_route, request) => {
       const body: backend.CreateDirectoryRequestBody = request.postDataJSON()
-      const title = body.title
       const id = backend.DirectoryId(`directory-${uniqueString.uniqueString()}`)
       const parentId = body.parentId ?? defaultDirectoryId
-      const json: backend.CreatedDirectory = { title, id, parentId }
-      addDirectory(title, {
+
+      const directory = addDirectory({
         description: null,
         id,
         labels: [],
@@ -1038,7 +1050,12 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
         ],
         projectState: null,
       })
-      return json
+
+      return {
+        title: directory.title,
+        id: directory.id,
+        parentId: directory.parentId,
+      }
     })
 
     await get(remoteBackendPaths.getProjectContentPath(GLOB_PROJECT_ID), (route) => {
@@ -1059,6 +1076,10 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
     })
 
     await page.route('mock/svg.svg', (route) => {
+      return route.fulfill({ body: MOCK_SVG, contentType: 'image/svg+xml' })
+    })
+
+    await page.route('**/assets/*.svg', (route) => {
       return route.fulfill({ body: MOCK_SVG, contentType: 'image/svg+xml' })
     })
 
