@@ -1,9 +1,14 @@
 import * as random from 'lib0/random'
-import { assert } from '../util/assert'
-import type { ExternalId, SourceRange, SourceRangeKey } from '../yjsModel'
-import { IdMap, isUuid, sourceRangeFromKey, sourceRangeKey } from '../yjsModel'
-import type { Token } from './token'
-import type { Ast, AstId } from './tree'
+import {
+  type ExternalId,
+  type SourceRange,
+  type SourceRangeKey,
+  IdMap,
+  sourceRangeFromKey,
+  sourceRangeKey,
+} from '../yjsModel'
+import { type Token } from './token'
+import { type Ast, type AstId, ExpressionStatement } from './tree'
 
 declare const nodeKeyBrand: unique symbol
 /** A source-range key for an `Ast`. */
@@ -40,12 +45,11 @@ export function newExternalId(): ExternalId {
 export function spanMapToIdMap(spans: SpanMap): IdMap {
   const idMap = new IdMap()
   for (const [key, token] of spans.tokens.entries()) {
-    assert(isUuid(token.id))
     idMap.insertKnownId(sourceRangeFromKey(key), token.id)
   }
   for (const [key, asts] of spans.nodes.entries()) {
     for (const ast of asts) {
-      assert(isUuid(ast.externalId))
+      if (ast instanceof ExpressionStatement && asts.length > 1) continue
       idMap.insertKnownId(sourceRangeFromKey(key), ast.externalId)
     }
   }
