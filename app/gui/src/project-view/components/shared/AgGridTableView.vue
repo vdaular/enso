@@ -344,9 +344,25 @@ const { AgGridVue } = await import('ag-grid-vue3')
   height: 100%;
 }
 
+/*
+ * FIXME: This style should apply when using this component both in visualization and in widget.
+ * Right now, it appear to only have an effect on visualization, so we have a copy of it inside
+ * WidgetTableEditor.
+ */
 .ag-theme-alpine {
   --ag-grid-size: 3px;
   --ag-list-item-height: 20px;
+  --ag-background-color: var(--color-visualization-bg);
+  --ag-odd-row-background-color: color-mix(in srgb, var(--color-visualization-bg) 98%, black);
+  --ag-header-background-color: var(--color-visualization-bg);
   font-family: var(--font-mono);
+
+  :deep(.ag-header) {
+    background: linear-gradient(
+      to top,
+      var(--ag-odd-row-background-color),
+      var(--ag-background-color)
+    );
+  }
 }
 </style>

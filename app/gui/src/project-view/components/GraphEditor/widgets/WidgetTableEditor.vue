@@ -312,9 +312,29 @@ For some reason, Vue cannot load them there, probably because it is used also as
   height: 100%;
 }
 
+/*
+ * FIXME: This is a copy of the style defined within AgGridTableView, which has no effect here due to a bug.
+ */
 :deep(.ag-theme-alpine) {
   --ag-grid-size: 3px;
   --ag-list-item-height: 20px;
+  --ag-background-color: var(--color-visualization-bg);
+  --ag-odd-row-background-color: color-mix(in srgb, var(--color-visualization-bg) 98%, black);
+  --ag-header-background-color: var(--color-visualization-bg);
   font-family: var(--font-mono);
+
+  :deep(.ag-header) {
+    background: linear-gradient(
+      to top,
+      var(--ag-odd-row-background-color),
+      var(--ag-background-color)
+    );
+  }
+}
+
+/* Separate, actually widget-specific styling. */
+.WidgetTableEditor:deep(.ag-root-wrapper) {
+  --ag-wrapper-border-radius: var(--node-port-border-radius);
+  border: none;
 }
 </style>

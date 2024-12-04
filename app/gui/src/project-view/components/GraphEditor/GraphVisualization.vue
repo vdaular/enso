@@ -306,6 +306,7 @@ customElements.define(ensoVisualizationHost, defineCustomElement(VisualizationHo
 .content {
   overflow: auto;
   contain: strict;
+  border-radius: 0 0 var(--radius-default) var(--radius-default);
   height: 100%;
 }
 
