@@ -242,6 +242,41 @@ class ChangesetBuilderTest
       )
     }
 
+    "multiline swap nodes" in {
+      val code =
+        """x ->
+          |    y = _.abs
+          |    z = 42
+          |    y + x""".stripMargin.linesIterator.mkString("\n")
+      val edits = Seq(
+        TextEdit(Range(Position(1, 4), Position(2, 4)), ""),
+        TextEdit(Range(Position(2, 0), Position(2, 0)), "    y = z.abs\n")
+      )
+
+      val ir = code
+        .preprocessExpression(freshInlineContext)
+        .get
+        .asInstanceOf[Function.Lambda]
+
+      val firstLine = ir.body.children()(0).asInstanceOf[Expression.Binding]
+      val yName     = firstLine.name
+      val yExpr = firstLine.expression
+        .asInstanceOf[Function.Lambda]
+        .body
+        .asInstanceOf[Application.Prefix]
+      val yExprFunction    = yExpr.function
+      val yExprFunctionArg = yExpr.arguments(0).value
+      val secondLine       = ir.body.children()(1).asInstanceOf[Expression.Binding]
+      val zName            = secondLine.name
+
+      invalidated(ir, code, edits: _*) should contain theSameElementsAs Seq(
+        yName.getId,
+        yExprFunction.getId,
+        yExprFunctionArg.getId,
+        zName.getId
+      )
+    }
+
     "multiline insert line 1" in {
       val code =
         """x ->

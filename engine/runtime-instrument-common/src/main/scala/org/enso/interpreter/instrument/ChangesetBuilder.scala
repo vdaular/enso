@@ -12,6 +12,7 @@ import org.enso.text.editing.model.{IdMap, TextEdit}
 import org.enso.text.editing.{IndexedSource, TextEditor}
 
 import java.util.UUID
+
 import scala.collection.mutable
 
 /** The changeset of a module containing the computed list of invalidated
@@ -178,6 +179,8 @@ final class ChangesetBuilder[A: TextEditor: IndexedSource](
     * @return the set of IR nodes directly affected by the edit
     */
   def invalidated(edits: Seq[TextEdit]): Set[ChangesetBuilder.NodeId] = {
+    val allEdits = edits.toSet
+
     @scala.annotation.tailrec
     def go(
       tree: ChangesetBuilder.Tree,
@@ -187,8 +190,9 @@ final class ChangesetBuilder[A: TextEditor: IndexedSource](
     ): Set[ChangesetBuilder.NodeId] = {
       if (edits.isEmpty) ids.toSet
       else {
-        val edit         = edits.dequeue()
-        val locationEdit = ChangesetBuilder.toLocationEdit(edit, source)
+        val edit = edits.dequeue()
+        val locationEdit =
+          ChangesetBuilder.toLocationEdit(edit, source, allEdits)
         var invalidatedSet =
           ChangesetBuilder.invalidated(
             tree,
@@ -533,17 +537,26 @@ object ChangesetBuilder {
     *
     * @param edit the text edit
     * @param source the source text
+    * @param edits all applied text edits
     * @return the edit location in the source text
     */
   private def toLocationEdit[A: IndexedSource](
     edit: TextEdit,
-    source: A
+    source: A,
+    edits: Set[TextEdit]
   ): LocationEdit = {
     def isSameOffset: Boolean =
       edit.range.end.character == edit.range.start.character
     def isAcrossLines: Boolean =
       edit.range.end.line > edit.range.start.line
-    val isNodeRemoved = edit.text.isEmpty && isSameOffset && isAcrossLines
+    def otherEditPositions =
+      (edits - edit).flatMap(edit => Set(edit.range.start, edit.range.end))
+    def noOtherEditsOnTheLine =
+      !otherEditPositions.exists(p =>
+        p.line == edit.range.start.line || p.line == edit.range.end.line
+      )
+    val isNodeRemoved =
+      edit.text.isEmpty && isSameOffset && isAcrossLines && noOtherEditsOnTheLine
     LocationEdit(toLocation(edit, source), edit.text.length, isNodeRemoved)
   }
 
