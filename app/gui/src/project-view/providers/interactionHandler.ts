@@ -1,8 +1,7 @@
 import { createContextStore } from '@/providers'
 import { shallowRef, watch, type WatchSource } from 'vue'
 
-export { injectFn as injectInteractionHandler, provideFn as provideInteractionHandler }
-const { provideFn, injectFn } = createContextStore(
+export const [provideInteractionHandler, injectInteractionHandler] = createContextStore(
   'Interaction handler',
   () => new InteractionHandler(),
 )

@@ -5,8 +5,7 @@ import { type Ref } from 'vue'
 
 export type GuiConfig = ApplicationConfigValue
 
-export { injectFn as injectGuiConfig, provideFn as provideGuiConfig }
-const { provideFn, injectFn } = createContextStore(
+export const [provideGuiConfig, injectGuiConfig] = createContextStore(
   'GUI config',
   identity<Ref<ApplicationConfigValue>>,
 )

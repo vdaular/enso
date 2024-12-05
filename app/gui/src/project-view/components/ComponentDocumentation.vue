@@ -7,7 +7,9 @@ import type { SuggestionId } from 'ydoc-shared/languageServerTypes/suggestions'
 import { Err, Ok, unwrapOr } from 'ydoc-shared/util/data/result'
 
 // A displayed component can be overridren by this model, e.g. when the user clicks links in the documenation.
-const overrideDisplayed = defineModel<SuggestionId | null>({ default: null })
+const overrideDisplayed = defineModel<SuggestionId | undefined>()
+const props = defineProps<{ aiMode?: boolean }>()
+
 const selection = injectGraphSelection()
 const graphStore = useGraphStore()
 
@@ -21,7 +23,7 @@ function docsForSelection() {
 
 const docs = computed(() => docsForSelection())
 // When the selection changes, we cancel the displayed suggestion override that can be in place.
-watch(docs, (_) => (overrideDisplayed.value = null))
+watch(docs, (_) => (overrideDisplayed.value = undefined))
 
 const displayedId = computed(() => overrideDisplayed.value ?? unwrapOr(docs.value, null))
 </script>
@@ -30,6 +32,7 @@ const displayedId = computed(() => overrideDisplayed.value ?? unwrapOr(docs.valu
   <DocumentationPanel
     v-if="displayedId"
     :selectedEntry="displayedId"
+    :aiMode="props.aiMode"
     @update:selectedEntry="overrideDisplayed = $event"
   />
   <div v-else-if="!displayedId && !docs.ok" class="help-placeholder">{{ docs.error.payload }}.</div>

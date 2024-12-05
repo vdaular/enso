@@ -112,7 +112,7 @@ function runAnimation(e: HTMLElement, done: Done, isEnter: boolean) {
   }
   if (props.leftGap && e.parentElement) {
     const parentStyle = getComputedStyle(e.parentElement)
-    const negativeGap = `calc(${parentStyle.gap} * -1)`
+    const negativeGap = `calc(${parentStyle.gap || '0'} * -1)`
     start.marginLeft = lastSnapshot?.marginLeft || negativeGap
     end.marginLeft = isEnter ? current.marginLeft : negativeGap
   }

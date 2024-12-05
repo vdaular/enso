@@ -17,7 +17,7 @@ import { useEventListener } from '@vueuse/core'
 import type Backend from 'enso-common/src/services/Backend'
 import { computed, markRaw, toRaw, toRef, watch } from 'vue'
 import TooltipDisplayer from './components/TooltipDisplayer.vue'
-import { provideTooltipRegistry } from './providers/tooltipState'
+import { provideTooltipRegistry } from './providers/tooltipRegistry'
 import { provideVisibility } from './providers/visibility'
 import { urlParams } from './util/urlParams'
 

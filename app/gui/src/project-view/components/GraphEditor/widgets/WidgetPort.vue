@@ -40,28 +40,22 @@ const isCurrentEdgeHoverTarget = computed(
   () =>
     graph.mouseEditedEdge?.source != null &&
     selection?.hoveredPort === portId.value &&
-    graph.db.getPatternExpressionNodeId(graph.mouseEditedEdge.source) !== tree.nodeId,
+    graph.db.getPatternExpressionNodeId(graph.mouseEditedEdge.source) !== tree.externalId,
 )
 const isCurrentDisconnectedEdgeTarget = computed(
   () =>
     graph.mouseEditedEdge?.disconnectedEdgeTarget === portId.value &&
     graph.mouseEditedEdge?.target !== portId.value,
 )
-const isSelfArgument = computed(
-  () =>
-    props.input.value instanceof Ast.Ast && props.input.value.id === tree.potentialSelfArgumentId,
-)
-const connected = computed(
-  () => (!isSelfArgument.value && hasConnection.value) || isCurrentEdgeHoverTarget.value,
-)
+const connected = computed(() => hasConnection.value || isCurrentEdgeHoverTarget.value)
 const isTarget = computed(
   () =>
     (hasConnection.value && !isCurrentDisconnectedEdgeTarget.value) ||
     isCurrentEdgeHoverTarget.value,
 )
 
-const rootNode = shallowRef<HTMLElement>()
-const nodeSize = useResizeObserver(rootNode)
+const portRoot = shallowRef<HTMLElement>()
+const portSize = useResizeObserver(portRoot)
 
 // Compute the scene-space bounding rectangle of the expression's widget. Those bounds are later
 // used for edge positioning. Querying and updating those bounds is relatively expensive, so we only
@@ -87,20 +81,22 @@ providePortInfo(proxyRefs({ portId, connected: hasConnection }))
 
 watchEffect(
   (onCleanup) => {
+    const externalId = tree.externalId
+    if (!graph.db.isNodeId(externalId)) return
     const id = portId.value
-    const instance = new PortViewInstance(portRect, tree.nodeId, props.onUpdate)
+    const instance = new PortViewInstance(portRect, externalId, props.onUpdate)
     graph.addPortInstance(id, instance)
     onCleanup(() => graph.removePortInstance(id, instance))
   },
   { flush: 'post' },
 )
 
-const keyboard = injectKeyboard()
+const keyboard = injectKeyboard(true)
 
 const enabled = computed(() => {
   const input = props.input.value
-  const isConditional = input instanceof Ast.Ast && tree.conditionalPorts.has(input.id)
-  return !isConditional || keyboard.mod
+  const isConditional = input instanceof Ast.Ast && (tree.conditionalPorts?.has(input.id) ?? false)
+  return !isConditional || (keyboard?.mod ?? false)
 })
 
 /**
@@ -121,8 +117,8 @@ function updateRect() {
 }
 
 function relativePortSceneRect(): Rect | undefined {
-  const domNode = rootNode.value
-  const rootDomNode = tree.nodeElement
+  const domNode = portRoot.value
+  const rootDomNode = tree.rootElement
   if (domNode == null || rootDomNode == null) return
   if (!enabled.value) return
   const exprClientRect = Rect.FromDomRect(domNode.getBoundingClientRect())
@@ -133,10 +129,7 @@ function relativePortSceneRect(): Rect | undefined {
   return rect.isFinite() ? rect : undefined
 }
 
-watch(
-  () => [nodeSize.value, rootNode.value, tree.nodeElement, tree.nodeSize, enabled.value],
-  updateRect,
-)
+watch(() => [portSize.value, portRoot.value, tree.rootElement, enabled.value], updateRect)
 onUpdated(() => nextTick(updateRect))
 onMounted(() => nextTick(updateRect))
 useRaf(toRef(tree, 'hasActiveAnimations'), updateRect)
@@ -183,7 +176,7 @@ export const widgetDefinition = defineWidget(
 
 <template>
   <div
-    ref="rootNode"
+    ref="portRoot"
     class="WidgetPort"
     :class="{
       enabled,
@@ -210,11 +203,12 @@ export const widgetDefinition = defineWidget(
   min-height: var(--node-port-height);
   min-width: var(--node-port-height);
   box-sizing: border-box;
+  transition: background-color 0.2s ease;
 }
 
 .WidgetPort.connected {
-  background-color: var(--node-color-port);
-  color: white;
+  background-color: var(--color-node-port);
+  color: var(--color-node-text);
 }
 
 .GraphEditor.draggingEdge .WidgetPort {

@@ -2,8 +2,10 @@ import { createContextStore } from '@/providers'
 import type { WidgetComponent, WidgetInput, WidgetUpdate } from '@/providers/widgetRegistry'
 import { identity } from '@vueuse/core'
 
-export { injectFn as injectWidgetUsageInfo, provideFn as provideWidgetUsageInfo }
-const { provideFn, injectFn } = createContextStore('Widget usage info', identity<WidgetUsageInfo>)
+export const [provideWidgetUsageInfo, injectWidgetUsageInfo] = createContextStore(
+  'Widget usage info',
+  identity<WidgetUsageInfo>,
+)
 
 /**
  * Information about a widget that can be accessed in its child views. Currently this is used during

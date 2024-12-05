@@ -171,8 +171,9 @@ class Synchronizer {
 
 /** {@link useSuggestionDbStore} composable object */
 export type SuggestionDbStore = ReturnType<typeof useSuggestionDbStore>
-export const { provideFn: provideSuggestionDbStore, injectFn: useSuggestionDbStore } =
-  createContextStore('suggestionDatabase', (projectStore: ProjectStore) => {
+export const [provideSuggestionDbStore, useSuggestionDbStore] = createContextStore(
+  'suggestionDatabase',
+  (projectStore: ProjectStore) => {
     const entries = new SuggestionDb()
     const groups = ref<Group[]>([])
 
@@ -194,4 +195,5 @@ export const { provideFn: provideSuggestionDbStore, injectFn: useSuggestionDbSto
 
     const _synchronizer = new Synchronizer(projectStore, entries, groups)
     return proxyRefs({ entries: markRaw(entries), groups, _synchronizer, mockSuggestion })
-  })
+  },
+)

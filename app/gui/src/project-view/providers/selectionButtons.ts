@@ -71,7 +71,7 @@ function useSelectionButtons(
 }
 
 export { injectFn as injectSelectionButtons, provideFn as provideSelectionButtons }
-const { provideFn, injectFn } = createContextStore('Selection buttons', useSelectionButtons)
+const [provideFn, injectFn] = createContextStore('Selection buttons', useSelectionButtons)
 
 export type ComponentAndSelectionButtons = DisjointKeysUnion<ComponentButtons, SelectionButtons>
 

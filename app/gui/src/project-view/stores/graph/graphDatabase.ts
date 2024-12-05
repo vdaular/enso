@@ -2,6 +2,7 @@ import { computeNodeColor } from '@/composables/nodeColors'
 import { ComputedValueRegistry, type ExpressionInfo } from '@/stores/project/computedValueRegistry'
 import { SuggestionDb, type Group } from '@/stores/suggestionDatabase'
 import type { SuggestionEntry } from '@/stores/suggestionDatabase/entry'
+import { assert } from '@/util/assert'
 import { Ast } from '@/util/ast'
 import type { AstId, NodeMetadata } from '@/util/ast/abstract'
 import { MutableModule } from '@/util/ast/abstract'
@@ -12,7 +13,12 @@ import { recordEqual } from '@/util/data/object'
 import { unwrap } from '@/util/data/result'
 import { Vec2 } from '@/util/data/vec2'
 import { ReactiveDb, ReactiveIndex, ReactiveMapping } from '@/util/database/reactiveDb'
-import { tryIdentifier } from '@/util/qualifiedName'
+import {
+  isIdentifierOrOperatorIdentifier,
+  isQualifiedName,
+  normalizeQualifiedName,
+  tryIdentifier,
+} from '@/util/qualifiedName'
 import {
   nonReactiveView,
   resumeReactivity,
@@ -23,7 +29,12 @@ import * as objects from 'enso-common/src/utilities/data/object'
 import * as set from 'lib0/set'
 import { reactive, ref, shallowReactive, type Ref, type WatchStopHandle } from 'vue'
 import { type SourceDocument } from 'ydoc-shared/ast/sourceDocument'
-import type { MethodCall, StackItem } from 'ydoc-shared/languageServerTypes'
+import {
+  methodPointerEquals,
+  type MethodCall,
+  type MethodPointer,
+  type StackItem,
+} from 'ydoc-shared/languageServerTypes'
 import type { Opt } from 'ydoc-shared/util/data/opt'
 import type { ExternalId, VisualizationMetadata } from 'ydoc-shared/yjsModel'
 import { isUuid, visMetadataEquals } from 'ydoc-shared/yjsModel'
@@ -181,7 +192,7 @@ export class GraphDb {
   }
 
   /** TODO: Add docs */
-  isNodeId(externalId: ExternalId): boolean {
+  isNodeId(externalId: ExternalId): externalId is NodeId {
     return this.nodeIdToNode.has(asNodeId(externalId))
   }
 
@@ -443,6 +454,42 @@ export class GraphDb {
     return id ? this.idToExternalMap.get(id) : undefined
   }
 
+  /**
+   * Synchronously replace all instances of specific method pointer usage within the value registry and
+   * suggestion database.
+   *
+   * FIXME: This is a hack in order to make function renaming from within that function work correctly.
+   * Execution contexts don't send expression updates about their parent frames, so we end up with an
+   * outdated methodPointer on the parent frame's expression. We have to update the valueRegistry and
+   * suggestionDb entries to keep it working correctly. Both need to be updated synchronously to avoid
+   * flashing.
+   */
+  insertSyntheticMethodPointerUpdate(
+    oldMethodPointer: MethodPointer,
+    newMethodPointer: MethodPointer,
+  ) {
+    for (const value of this.valuesRegistry.db.values()) {
+      if (
+        value.methodCall != null &&
+        methodPointerEquals(value.methodCall.methodPointer, oldMethodPointer)
+      ) {
+        value.methodCall.methodPointer = newMethodPointer
+      }
+    }
+
+    const suggestion = this.suggestionDb.findByMethodPointer(oldMethodPointer)
+    const suggestionEntry = suggestion != null ? this.suggestionDb.get(suggestion) : null
+    if (suggestionEntry != null) {
+      DEV: assert(isQualifiedName(newMethodPointer.module))
+      DEV: assert(isQualifiedName(newMethodPointer.definedOnType))
+      DEV: assert(isIdentifierOrOperatorIdentifier(newMethodPointer.name))
+      Object.assign(suggestionEntry, {
+        definedIn: normalizeQualifiedName(newMethodPointer.module),
+        memberOf: normalizeQualifiedName(newMethodPointer.definedOnType),
+        name: newMethodPointer.name,
+      })
+    }
+  }
   /** TODO: Add docs */
   static Mock(registry = ComputedValueRegistry.Mock(), db = new SuggestionDb()): GraphDb {
     return new GraphDb(db, ref([]), registry)

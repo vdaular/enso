@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="Tab extends string">
 import { documentationEditorBindings } from '@/bindings'
 import ResizeHandles from '@/components/ResizeHandles.vue'
 import SizeTransition from '@/components/SizeTransition.vue'
@@ -6,6 +6,7 @@ import ToggleIcon from '@/components/ToggleIcon.vue'
 import { useResizeObserver } from '@/composables/events'
 import { Rect } from '@/util/data/rect'
 import { Vec2 } from '@/util/data/vec2'
+import { TabButton } from '@/util/tabs'
 import { tabClipPath } from 'enso-common/src/utilities/style/tabBar'
 import { computed, ref } from 'vue'
 
@@ -13,13 +14,13 @@ const TAB_EDGE_MARGIN_PX = 4
 const TAB_SIZE_PX = { width: 48 - TAB_EDGE_MARGIN_PX, height: 48 }
 const TAB_RADIUS_PX = 8
 
-type Tab = 'docs' | 'help'
-
 const show = defineModel<boolean>('show', { required: true })
 const size = defineModel<number | undefined>('size')
-const tab = defineModel<Tab>('tab')
-const _props = defineProps<{
+const currentTab = defineModel<Tab>('tab')
+
+const props = defineProps<{
   contentFullscreen: boolean
+  tabButtons: TabButton<Tab>[]
 }>()
 
 const slideInPanel = ref<HTMLElement>()
@@ -53,30 +54,26 @@ const tabStyle = {
       :title="`Documentation Panel (${documentationEditorBindings.bindings.toggle.humanReadable})`"
       icon="right_panel"
       class="toggleDock"
-      :class="{ aboveFullscreen: contentFullscreen }"
+      :class="{ aboveFullscreen: props.contentFullscreen }"
     />
     <SizeTransition width :duration="100">
       <div v-if="show" ref="slideInPanel" :style="style" class="panelOuter" data-testid="rightDock">
         <div class="panelInner">
           <div class="content">
-            <slot v-if="tab == 'docs'" name="docs" />
-            <slot v-else-if="tab == 'help'" name="help" />
+            <slot :name="`tab-${currentTab}`" />
           </div>
           <div class="tabBar">
-            <div class="tab" :style="tabStyle">
+            <div
+              v-for="{ tab, title, icon } in props.tabButtons"
+              :key="tab"
+              class="tab"
+              :style="tabStyle"
+            >
               <ToggleIcon
-                :modelValue="tab == 'docs'"
-                title="Documentation Editor"
-                icon="text"
-                @update:modelValue="tab = 'docs'"
-              />
-            </div>
-            <div class="tab" :style="tabStyle">
-              <ToggleIcon
-                :modelValue="tab == 'help'"
-                title="Component Help"
-                icon="help"
-                @update:modelValue="tab = 'help'"
+                :modelValue="currentTab == tab"
+                :title="title"
+                :icon="icon"
+                @update:modelValue="currentTab = tab"
               />
             </div>
           </div>

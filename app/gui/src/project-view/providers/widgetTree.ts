@@ -1,37 +1,28 @@
 import { createContextStore } from '@/providers'
 import { type WidgetEditHandlerRoot } from '@/providers/widgetRegistry/editHandler'
-import { useGraphStore } from '@/stores/graph'
-import { type NodeId } from '@/stores/graph/graphDatabase'
 import { Ast } from '@/util/ast'
-import type { Vec2 } from '@/util/data/vec2'
 import { computed, proxyRefs, shallowRef, type Ref, type ShallowUnwrapRef } from 'vue'
+import { AstId } from 'ydoc-shared/ast'
+import { ExternalId } from 'ydoc-shared/yjsModel'
 
-export { injectFn as injectWidgetTree, provideFn as provideWidgetTree }
-const { provideFn, injectFn } = createContextStore(
+export const [provideWidgetTree, injectWidgetTree] = createContextStore(
   'Widget tree',
   (
-    astRoot: Ref<Ast.Expression>,
-    nodeId: Ref<NodeId>,
-    nodeElement: Ref<HTMLElement | undefined>,
-    nodeSize: Ref<Vec2>,
-    potentialSelfArgumentId: Ref<Ast.AstId | undefined>,
-    conditionalPorts: Ref<Set<Ast.AstId>>,
+    externalId: Ref<ExternalId>,
+    rootElement: Ref<HTMLElement | undefined>,
+    conditionalPorts: Ref<Set<Ast.AstId> | undefined>,
     extended: Ref<boolean>,
     hasActiveAnimations: Ref<boolean>,
+    potentialSelfArgumentId: Ref<AstId | undefined>,
   ) => {
-    const graph = useGraphStore()
-    const nodeSpanStart = computed(() => graph.moduleSource.getSpan(astRoot.value.id)![0])
     const { setCurrentEditRoot, currentEdit } = useCurrentEdit()
     return proxyRefs({
-      astRoot,
-      nodeId,
-      nodeElement,
-      nodeSize,
-      potentialSelfArgumentId,
+      externalId,
+      rootElement,
       conditionalPorts,
       extended,
-      nodeSpanStart,
       hasActiveAnimations,
+      potentialSelfArgumentId,
       setCurrentEditRoot,
       currentEdit,
     })

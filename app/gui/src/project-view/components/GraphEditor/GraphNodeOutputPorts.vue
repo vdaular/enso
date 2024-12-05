@@ -158,7 +158,7 @@ graph.suggestEdgeFromOutput(outputHovered)
   rx: calc(var(--node-border-radius) + var(--output-port-width) / 2);
 
   fill: none;
-  stroke: var(--node-color-port);
+  stroke: var(--color-node-edge);
   stroke-width: calc(var(--output-port-width) + var(--output-port-overlap-anim));
   transition: stroke 0.2s ease;
   --horizontal-line: calc(var(--node-size-x) - var(--node-border-radius) * 2);

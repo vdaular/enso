@@ -8,8 +8,7 @@ export interface GraphEditorLayers {
   floating: Readonly<Ref<HTMLElement | undefined>>
 }
 
-export { provideFn as provideGraphEditorLayers, injectFn as useGraphEditorLayers }
-const { provideFn, injectFn } = createContextStore(
+export const [provideGraphEditorLayers, useGraphEditorLayers] = createContextStore(
   'Graph editor layers',
   identity<GraphEditorLayers>,
 )

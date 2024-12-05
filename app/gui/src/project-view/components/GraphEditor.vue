@@ -11,8 +11,6 @@ import CodeEditor from '@/components/CodeEditor.vue'
 import ComponentBrowser from '@/components/ComponentBrowser.vue'
 import type { Usage } from '@/components/ComponentBrowser/input'
 import { usePlacement } from '@/components/ComponentBrowser/placement'
-import ComponentDocumentation from '@/components/ComponentDocumentation.vue'
-import DockPanel from '@/components/DockPanel.vue'
 import DocumentationEditor from '@/components/DocumentationEditor.vue'
 import GraphEdges from '@/components/GraphEditor/GraphEdges.vue'
 import GraphNodes from '@/components/GraphEditor/GraphNodes.vue'
@@ -31,7 +29,6 @@ import { useDoubleClick } from '@/composables/doubleClick'
 import { keyboardBusy, keyboardBusyExceptIn, unrefElement, useEvent } from '@/composables/events'
 import { groupColorVar } from '@/composables/nodeColors'
 import type { PlacementStrategy } from '@/composables/nodeCreation'
-import { useSyncLocalStorage } from '@/composables/syncLocalStorage'
 import { provideGraphEditorLayers } from '@/providers/graphEditorLayers'
 import type { GraphNavigator } from '@/providers/graphNavigator'
 import { provideGraphNavigator } from '@/providers/graphNavigator'
@@ -42,15 +39,15 @@ import { provideStackNavigator } from '@/providers/graphStackNavigator'
 import { provideInteractionHandler } from '@/providers/interactionHandler'
 import { provideKeyboard } from '@/providers/keyboard'
 import { provideSelectionButtons } from '@/providers/selectionButtons'
-import { injectVisibility } from '@/providers/visibility'
 import { provideWidgetRegistry } from '@/providers/widgetRegistry'
 import type { Node, NodeId } from '@/stores/graph'
 import { provideGraphStore } from '@/stores/graph'
 import { isInputNode, nodeId } from '@/stores/graph/graphDatabase'
 import type { RequiredImport } from '@/stores/graph/imports'
+import { providePersisted } from '@/stores/persisted'
 import { useProjectStore } from '@/stores/project'
 import { provideNodeExecution } from '@/stores/project/nodeExecution'
-import { useSettings } from '@/stores/settings'
+import { provideRightDock, StorageMode } from '@/stores/rightDock'
 import { provideSuggestionDbStore } from '@/stores/suggestionDatabase'
 import type { SuggestionId, Typename } from '@/stores/suggestionDatabase/entry'
 import { suggestionDocumentationUrl } from '@/stores/suggestionDatabase/entry'
@@ -60,12 +57,10 @@ import { Ast } from '@/util/ast'
 import { colorFromString } from '@/util/colors'
 import { partition } from '@/util/data/array'
 import { Rect } from '@/util/data/rect'
-import { Err, Ok } from '@/util/data/result'
+import { Err, Ok, unwrapOr } from '@/util/data/result'
 import { Vec2 } from '@/util/data/vec2'
-import { computedFallback, useSelectRef } from '@/util/reactivity'
-import { until } from '@vueuse/core'
 import * as iter from 'enso-common/src/utilities/data/iter'
-import { encoding, set } from 'lib0'
+import { set } from 'lib0'
 import {
   computed,
   onMounted,
@@ -77,10 +72,8 @@ import {
   watch,
   type ComponentInstance,
 } from 'vue'
-import { encodeMethodPointer } from 'ydoc-shared/languageServerTypes'
 import { isDevMode } from 'ydoc-shared/util/detect'
-
-const rootNode = ref<HTMLElement>()
+import RightDockPanel from './RightDockPanel.vue'
 
 const keyboard = provideKeyboard()
 const projectStore = useProjectStore()
@@ -88,7 +81,7 @@ const suggestionDb = provideSuggestionDbStore(projectStore)
 const graphStore = provideGraphStore(projectStore, suggestionDb)
 const widgetRegistry = provideWidgetRegistry(graphStore.db)
 const _visualizationStore = provideVisualizationStore(projectStore)
-const visible = injectVisibility()
+
 provideNodeExecution(projectStore)
 ;(window as any)._mockSuggestion = suggestionDb.mockSuggestion
 
@@ -112,6 +105,7 @@ const graphNavigator: GraphNavigator = provideGraphNavigator(viewportNode, keybo
 
 // === Exposed layers ===
 
+const rootNode = ref<HTMLElement>()
 const floatingLayer = ref<HTMLElement>()
 provideGraphEditorLayers({
   fullscreen: rootNode,
@@ -120,75 +114,16 @@ provideGraphEditorLayers({
 
 // === Client saved state ===
 
-const storedShowRightDock = ref()
-const storedRightDockTab = ref()
-const rightDockWidth = ref<number>()
+const persisted = providePersisted(
+  () => projectStore.id,
+  graphStore,
+  graphNavigator,
+  () => zoomToAll(true),
+)
 
-/**
- * JSON serializable representation of graph state saved in localStorage. The names of fields here
- * are kept relatively short, because it will be common to store hundreds of them within one big
- * JSON object, and serialize it quite often whenever the state is modified. Shorter keys end up
- * costing less localStorage space and slightly reduce serialization overhead.
- */
-interface GraphStoredState {
-  /** Navigator position X */
-  x: number
-  /** Navigator position Y */
-  y: number
-  /** Navigator scale */
-  s: number
-  /** Whether or not the documentation panel is open. */
-  doc: boolean
-  /** The selected tab in the right-side panel. */
-  rtab: string
-  /** Width of the right dock. */
-  rwidth: number | null
-}
+const rightDock = provideRightDock(graphStore, persisted)
 
-const visibleAreasReady = computed(() => {
-  const nodesCount = graphStore.db.nodeIdToNode.size
-  const visibleNodeAreas = graphStore.visibleNodeAreas
-  return nodesCount > 0 && visibleNodeAreas.length == nodesCount
-})
-
-const { user: userSettings } = useSettings()
-
-useSyncLocalStorage<GraphStoredState>({
-  storageKey: 'enso-graph-state',
-  mapKeyEncoder: (enc) => {
-    // Client graph state needs to be stored separately for:
-    // - each project
-    // - each function within the project
-    encoding.writeVarString(enc, projectStore.id)
-    const methodPtr = graphStore.currentMethodPointer()
-    if (methodPtr != null) encodeMethodPointer(enc, methodPtr)
-  },
-  debounce: 200,
-  captureState() {
-    return {
-      x: graphNavigator.targetCenter.x,
-      y: graphNavigator.targetCenter.y,
-      s: graphNavigator.targetScale,
-      doc: storedShowRightDock.value,
-      rtab: storedRightDockTab.value,
-      rwidth: rightDockWidth.value ?? null,
-    }
-  },
-  async restoreState(restored, abort) {
-    if (restored) {
-      const pos = new Vec2(restored.x ?? 0, restored.y ?? 0)
-      const scale = restored.s ?? 1
-      graphNavigator.setCenterAndScale(pos, scale)
-      storedShowRightDock.value = restored.doc ?? undefined
-      storedRightDockTab.value = restored.rtab ?? undefined
-      rightDockWidth.value = restored.rwidth ?? undefined
-    } else {
-      await until(visibleAreasReady).toBe(true)
-      await until(visible).toBe(true)
-      if (!abort.aborted) zoomToAll(true)
-    }
-  },
-})
+// === Zoom/pan ===
 
 function nodesBounds(nodeIds: Iterable<NodeId>) {
   let bounds = Rect.Bounding()
@@ -439,32 +374,18 @@ const codeEditorHandler = codeEditorBindings.handler({
 
 // === Documentation Editor ===
 
-const displayedDocs = ref<SuggestionId | null>(null)
+const displayedDocs = ref<SuggestionId>()
 const aiMode = ref<boolean>(false)
+
+function toggleRightDockHelpPanel() {
+  rightDock.toggleVisible('help')
+}
 
 const docEditor = shallowRef<ComponentInstance<typeof DocumentationEditor>>()
 const documentationEditorArea = computed(() => unrefElement(docEditor))
-const showRightDock = computedFallback(
-  storedShowRightDock,
-  // Show documentation editor when documentation exists on first graph visit.
-  () => (markdownDocs.value?.length ?? 0) > 0,
-)
-const rightDockTab = computedFallback(storedRightDockTab, () => 'docs')
-
-/* Separate Dock Panel state when Component Browser is opened. */
-const rightDockTabForCB = ref('help')
-const rightDockVisibleForCB = ref(true)
 
 const documentationEditorHandler = documentationEditorBindings.handler({
-  toggle() {
-    rightDockVisible.value = !rightDockVisible.value
-  },
-})
-
-const markdownDocs = computed(() => {
-  const currentMethod = graphStore.methodAst
-  if (!currentMethod.ok) return
-  return currentMethod.value.mutableDocumentationMarkdown()
+  toggle: () => rightDock.toggleVisible(),
 })
 
 // === Component Browser ===
@@ -472,6 +393,10 @@ const markdownDocs = computed(() => {
 const componentBrowserVisible = ref(false)
 const componentBrowserNodePosition = ref<Vec2>(Vec2.Zero)
 const componentBrowserUsage = ref<Usage>({ type: 'newNode' })
+
+watch(componentBrowserVisible, (v) =>
+  rightDock.setStorageMode(v ? StorageMode.ComponentBrowser : StorageMode.Default),
+)
 
 function openComponentBrowser(usage: Usage, position: Vec2) {
   componentBrowserUsage.value = usage
@@ -482,47 +407,7 @@ function openComponentBrowser(usage: Usage, position: Vec2) {
 function hideComponentBrowser() {
   graphStore.editedNodeInfo = undefined
   componentBrowserVisible.value = false
-  displayedDocs.value = null
-}
-
-const rightDockDisplayedTab = useSelectRef(
-  componentBrowserVisible,
-  computed({
-    get() {
-      if (userSettings.value.showHelpForCB) {
-        return 'help'
-      } else {
-        return showRightDock.value ? rightDockTab.value : rightDockTabForCB.value
-      }
-    },
-    set(tab) {
-      rightDockTabForCB.value = tab
-      userSettings.value.showHelpForCB = tab === 'help'
-      if (showRightDock.value) rightDockTab.value = tab
-    },
-  }),
-  rightDockTab,
-)
-
-const rightDockVisible = useSelectRef(
-  componentBrowserVisible,
-  computed({
-    get() {
-      return userSettings.value.showHelpForCB || rightDockVisibleForCB.value || showRightDock.value
-    },
-    set(vis) {
-      rightDockVisibleForCB.value = vis
-      userSettings.value.showHelpForCB = vis
-      if (!vis) showRightDock.value = false
-    },
-  }),
-  showRightDock,
-)
-
-/** Show help panel if it is not visible. If it is visible, close the right dock. */
-function toggleRightDockHelpPanel() {
-  rightDockVisible.value = !rightDockVisible.value || rightDockDisplayedTab.value !== 'help'
-  rightDockDisplayedTab.value = 'help'
+  displayedDocs.value = undefined
 }
 
 function editWithComponentBrowser(node: NodeId, cursorPos: number) {
@@ -654,10 +539,9 @@ function collapseNodes(nodes: Node[]) {
       toasts.userActionFailed.show(`Unable to group nodes: ${info.error.payload}.`)
       return
     }
-    const currentMethod = projectStore.executionContext.getStackTop()
-    const currentMethodName = graphStore.db.stackItemToMethodName(currentMethod)
+    const currentMethodName = unwrapOr(graphStore.currentMethodPointer, undefined)?.name
     if (currentMethodName == null) {
-      bail(`Cannot get the method name for the current execution stack item. ${currentMethod}`)
+      bail(`Cannot get the method name for the current execution stack item.`)
     }
     const topLevel = graphStore.moduleRoot
     if (!topLevel) {
@@ -735,8 +619,6 @@ const groupColors = computed(() => {
   }
   return styles
 })
-
-const documentationEditorFullscreen = ref(false)
 </script>
 
 <template>
@@ -776,12 +658,13 @@ const documentationEditorFullscreen = ref(false)
         <TopBar
           v-model:recordMode="projectStore.recordMode"
           v-model:showCodeEditor="showCodeEditor"
-          v-model:showDocumentationEditor="rightDockVisible"
+          :showDocumentationEditor="rightDock.visible"
           :zoomLevel="100.0 * graphNavigator.targetScale"
-          :class="{ extraRightSpace: !rightDockVisible }"
+          :class="{ extraRightSpace: !rightDock.visible }"
           @fitToAllClicked="zoomToSelected"
           @zoomIn="graphNavigator.stepZoom(+1)"
           @zoomOut="graphNavigator.stepZoom(-1)"
+          @update:showDocumentationEditor="rightDock.setVisible"
         />
         <SceneScroller
           :navigator="graphNavigator"
@@ -800,25 +683,7 @@ const documentationEditorFullscreen = ref(false)
         </Suspense>
       </BottomPanel>
     </div>
-    <DockPanel
-      ref="docPanel"
-      v-model:show="rightDockVisible"
-      v-model:size="rightDockWidth"
-      v-model:tab="rightDockDisplayedTab"
-      :contentFullscreen="documentationEditorFullscreen"
-    >
-      <template #docs>
-        <DocumentationEditor
-          v-if="markdownDocs"
-          ref="docEditor"
-          :yText="markdownDocs"
-          @update:fullscreen="documentationEditorFullscreen = $event"
-        />
-      </template>
-      <template #help>
-        <ComponentDocumentation v-model="displayedDocs" :aiMode="aiMode" />
-      </template>
-    </DockPanel>
+    <RightDockPanel ref="docPanel" v-model:displayedDocs="displayedDocs" :aiMode="aiMode" />
   </div>
 </template>
 
@@ -862,7 +727,6 @@ const documentationEditorFullscreen = ref(false)
   contain: layout;
   overflow: clip;
   touch-action: none;
-  --group-color-fallback: #006b8a;
   --node-color-no-type: #596b81;
   --output-node-color: #006b8a;
 }

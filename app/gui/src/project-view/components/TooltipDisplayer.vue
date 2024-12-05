@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type TooltipRegistry } from '@/providers/tooltipState'
+import { type TooltipRegistry } from '@/providers/tooltipRegistry'
 import { debouncedGetter } from '@/util/reactivity'
 import { autoUpdate, flip, offset, shift, useFloating } from '@floating-ui/vue'
 import { computed, ref } from 'vue'

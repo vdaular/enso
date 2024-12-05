@@ -11,10 +11,8 @@ import type { WidgetEditHandlerParent } from './widgetRegistry/editHandler'
 export type WidgetComponent<T extends WidgetInput> = Component<WidgetProps<T>>
 
 export namespace WidgetInput {
-  /** Returns widget-input data for the given AST expression or token. */
-  export function FromAst<A extends Ast.Expression | Ast.Token>(
-    ast: A,
-  ): WidgetInput & { value: A } {
+  /** Returns widget-input data for the given AST tree or token. */
+  export function FromAst<A extends Ast.Ast | Ast.Token>(ast: A): WidgetInput & { value: A } {
     return {
       portId: ast.id,
       value: ast,
@@ -117,10 +115,10 @@ export interface WidgetInput {
    */
   portId: PortId
   /**
-   * An expected widget value. If Ast.Expression or Ast.Token, the widget represents an existing part of
+   * An expected widget value. If Ast.Ast or Ast.Token, the widget represents an existing part of
    * code. If string, it may be e.g. a default value of an argument.
    */
-  value: Ast.Expression | Ast.Token | string | undefined
+  value: Ast.Ast | Ast.Token | string | undefined
   /** An expected type which widget should set. */
   expectedType?: Typename | undefined
   /** Configuration provided by engine. */
@@ -165,7 +163,7 @@ export interface WidgetProps<T> {
  * Every widget type should set it's name as `metadataKey`.
  *
  * The handlers interested in a specific port update should apply it using received edit. The edit
- * is committed in {@link NodeWidgetTree}.
+ * is committed in {@link ComponentWidgetTree}.
  */
 export interface WidgetUpdate {
   edit?: Ast.MutableModule | undefined
@@ -334,8 +332,7 @@ function makeInputMatcher<T extends WidgetInput>(
   }
 }
 
-export { injectFn as injectWidgetRegistry, provideFn as provideWidgetRegistry }
-const { provideFn, injectFn } = createContextStore(
+export const [provideWidgetRegistry, injectWidgetRegistry] = createContextStore(
   'Widget registry',
   (db: GraphDb) => new WidgetRegistry(db),
 )

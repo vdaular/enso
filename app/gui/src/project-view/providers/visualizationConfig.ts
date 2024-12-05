@@ -27,8 +27,8 @@ export interface VisualizationConfig {
   setToolbarOverlay: (enableOverlay: boolean) => void
 }
 
-export { provideFn as provideVisualizationConfig }
-const { provideFn, injectFn } = createContextStore(
+export { provideVisualizationConfig }
+const [provideVisualizationConfig, injectVisualizationConfig] = createContextStore(
   'Visualization config',
   reactive<VisualizationConfig>,
 )
@@ -38,5 +38,5 @@ const { provideFn, injectFn } = createContextStore(
 
 /** TODO: Add docs */
 export function useVisualizationConfig() {
-  return injectFn()
+  return injectVisualizationConfig()
 }

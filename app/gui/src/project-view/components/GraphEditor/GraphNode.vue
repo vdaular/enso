@@ -2,6 +2,11 @@
 import { graphBindings, nodeEditBindings } from '@/bindings'
 import ComponentContextMenu from '@/components/ComponentContextMenu.vue'
 import ComponentMenu from '@/components/ComponentMenu.vue'
+import ComponentWidgetTree, {
+  GRAB_HANDLE_X_MARGIN_L,
+  GRAB_HANDLE_X_MARGIN_R,
+  ICON_WIDTH,
+} from '@/components/GraphEditor/ComponentWidgetTree.vue'
 import GraphNodeComment from '@/components/GraphEditor/GraphNodeComment.vue'
 import GraphNodeMessage, {
   colorForMessageType,
@@ -11,11 +16,6 @@ import GraphNodeMessage, {
 import GraphNodeOutputPorts from '@/components/GraphEditor/GraphNodeOutputPorts.vue'
 import GraphVisualization from '@/components/GraphEditor/GraphVisualization.vue'
 import type { NodeCreationOptions } from '@/components/GraphEditor/nodeCreation'
-import NodeWidgetTree, {
-  GRAB_HANDLE_X_MARGIN_L,
-  GRAB_HANDLE_X_MARGIN_R,
-  ICON_WIDTH,
-} from '@/components/GraphEditor/NodeWidgetTree.vue'
 import PointFloatingMenu from '@/components/PointFloatingMenu.vue'
 import SmallPlusButton from '@/components/SmallPlusButton.vue'
 import SvgIcon from '@/components/SvgIcon.vue'
@@ -318,53 +318,13 @@ const nodeEditHandler = nodeEditBindings.handler({
       e.target.blur()
     }
   },
-  edit(e) {
-    const pos = 'clientX' in e ? new Vec2(e.clientX, e.clientY) : undefined
-    startEditingNode(pos)
+  edit() {
+    startEditingNode()
   },
 })
 
-function startEditingNode(position?: Vec2 | undefined) {
-  let sourceOffset = props.node.rootExpr.code().length
-  if (position != null) {
-    let domNode, domOffset
-    if ((document as any).caretPositionFromPoint) {
-      const caret = document.caretPositionFromPoint(position.x, position.y)
-      domNode = caret?.offsetNode
-      domOffset = caret?.offset
-    } else if (document.caretRangeFromPoint) {
-      const caret = document.caretRangeFromPoint(position.x, position.y)
-      domNode = caret?.startContainer
-      domOffset = caret?.startOffset
-    } else {
-      console.error(
-        'Neither `caretPositionFromPoint` nor `caretRangeFromPoint` are supported by this browser',
-      )
-    }
-    if (domNode != null && domOffset != null) {
-      sourceOffset = getRelatedSpanOffset(domNode, domOffset)
-    }
-  }
-  emit('update:edited', sourceOffset)
-}
-
-function getRelatedSpanOffset(domNode: globalThis.Node, domOffset: number): number {
-  if (domNode instanceof HTMLElement && domOffset == 1) {
-    const offsetData = domNode.dataset.spanStart
-    const offset = (offsetData != null && parseInt(offsetData)) || 0
-    const length = domNode.textContent?.length ?? 0
-    return offset + length
-  } else if (domNode instanceof Text) {
-    const siblingEl = domNode.previousElementSibling
-    if (siblingEl instanceof HTMLElement) {
-      const offsetData = siblingEl.dataset.spanStart
-      if (offsetData != null)
-        return parseInt(offsetData) + domOffset + (siblingEl.textContent?.length ?? 0)
-    }
-    const offsetData = domNode.parentElement?.dataset.spanStart
-    if (offsetData != null) return parseInt(offsetData) + domOffset
-  }
-  return domOffset
+function startEditingNode() {
+  emit('update:edited', props.node.rootExpr.code().length)
 }
 
 const handleNodeClick = useDoubleClick(
@@ -403,6 +363,16 @@ const dataSource = computed(
   () => ({ type: 'node', nodeId: props.node.rootExpr.externalId }) as const,
 )
 
+const pending = computed(() => {
+  switch (executionState.value) {
+    case 'Unknown':
+    case 'Pending':
+      return true
+    default:
+      return false
+  }
+})
+
 // === Recompute node expression ===
 
 function useRecomputation() {
@@ -420,6 +390,30 @@ function useRecomputation() {
   }
   return { recomputeOnce, isBeingRecomputed }
 }
+
+const nodeStyle = computed(() => {
+  return {
+    transform: transform.value,
+    minWidth: isVisualizationEnabled.value ? `${visualizationWidth.value ?? 200}px` : undefined,
+    '--node-group-color': color.value,
+    ...(props.node.zIndex ? { 'z-index': props.node.zIndex } : {}),
+    '--viz-below-node': `${graphSelectionSize.value.y - nodeSize.value.y}px`,
+    '--node-size-x': `${nodeSize.value.x}px`,
+    '--node-size-y': `${nodeSize.value.y}px`,
+  }
+})
+
+const nodeClass = computed(() => {
+  return {
+    selected: selected.value,
+    selectionVisible: selectionVisible.value,
+    pending: pending.value,
+    inputNode: props.node.type === 'input',
+    outputNode: props.node.type === 'output',
+    menuVisible: menuVisible.value,
+    menuFull: menuFull.value,
+  }
+})
 
 // === Component actions ===
 
@@ -476,25 +470,9 @@ const showMenuAt = ref<{ x: number; y: number }>()
   <div
     v-show="!edited"
     ref="rootNode"
-    class="GraphNode"
-    :style="{
-      transform,
-      minWidth: isVisualizationEnabled ? `${visualizationWidth ?? 200}px` : undefined,
-      '--node-group-color': color,
-      ...(node.zIndex ? { 'z-index': node.zIndex } : {}),
-      '--viz-below-node': `${graphSelectionSize.y - nodeSize.y}px`,
-      '--node-size-x': `${nodeSize.x}px`,
-      '--node-size-y': `${nodeSize.y}px`,
-    }"
-    :class="{
-      selected,
-      selectionVisible,
-      ['executionState-' + executionState]: true,
-      inputNode: props.node.type === 'input',
-      outputNode: props.node.type === 'output',
-      menuVisible,
-      menuFull,
-    }"
+    class="GraphNode define-node-colors"
+    :style="nodeStyle"
+    :class="nodeClass"
     :data-node-id="nodeId"
     @pointerenter="(nodeHovered = true), updateNodeHover($event)"
     @pointerleave="(nodeHovered = false), updateNodeHover(undefined)"
@@ -553,12 +531,11 @@ const showMenuAt = ref<{ x: number; y: number }>()
       @click="handleNodeClick"
       @contextmenu.stop.prevent="ensureSelected(), (showMenuAt = $event)"
     >
-      <NodeWidgetTree
+      <ComponentWidgetTree
         :ast="props.node.innerExpr"
         :nodeId="nodeId"
-        :nodeElement="rootNode"
+        :rootElement="rootNode"
         :nodeType="props.node.type"
-        :nodeSize="nodeSize"
         :potentialSelfArgumentId="potentialSelfArgumentId"
         :conditionalPorts="props.node.conditionalPorts"
         :extended="isOnlyOneSelected"
@@ -609,7 +586,6 @@ const showMenuAt = ref<{ x: number; y: number }>()
   top: 0;
   left: 0;
   display: flex;
-
   --output-port-transform: translateY(var(--viz-below-node));
 }
 
@@ -623,32 +599,10 @@ const showMenuAt = ref<{ x: number; y: number }>()
 }
 
 .GraphNode {
-  --color-node-text: white;
-  --color-node-primary: var(--node-group-color);
-  --color-node-background: var(--node-group-color);
-}
-
-.GraphNode.selected {
-  --color-node-background: color-mix(in oklab, var(--color-node-primary) 30%, white 70%);
-  --color-node-text: color-mix(in oklab, var(--color-node-primary) 70%, black 30%);
-}
-
-.GraphNode {
   position: absolute;
   border-radius: var(--node-border-radius);
   transition: box-shadow 0.2s ease-in-out;
   box-sizing: border-box;
-  /** Space between node and component above and below, such as comments and errors. */
-  --node-vertical-gap: 5px;
-
-  --color-node-primary: var(--node-group-color);
-  --node-color-port: color-mix(in oklab, var(--color-node-primary) 85%, white 15%);
-  --node-color-error: color-mix(in oklab, var(--node-group-color) 30%, rgb(255, 0, 0) 70%);
-
-  &.executionState-Unknown,
-  &.executionState-Pending {
-    --color-node-primary: color-mix(in oklab, var(--node-group-color) 60%, #aaa 40%);
-  }
 }
 
 .content {

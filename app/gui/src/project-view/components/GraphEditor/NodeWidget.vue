@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import type { WidgetModule } from '@/providers/widgetRegistry'
 import { injectWidgetRegistry, WidgetInput, type WidgetUpdate } from '@/providers/widgetRegistry'
-import { injectWidgetTree } from '@/providers/widgetTree'
 import {
   injectWidgetUsageInfo,
   provideWidgetUsageInfo,
   usageKeyForInput,
 } from '@/providers/widgetUsageInfo'
-import { useGraphStore } from '@/stores/graph'
-import { Ast } from '@/util/ast'
 import { computed, getCurrentInstance, proxyRefs, shallowRef, watchEffect, withCtx } from 'vue'
 
 const props = defineProps<{
@@ -28,9 +25,7 @@ defineOptions({
 
 type UpdateHandler = (update: WidgetUpdate) => boolean
 
-const graph = useGraphStore()
 const registry = injectWidgetRegistry()
-const tree = injectWidgetTree()
 const parentUsageInfo = injectWidgetUsageInfo(true)
 const usageKey = computed(() => usageKeyForInput(props.input))
 const sameInputAsParent = computed(() => parentUsageInfo?.usageKey === usageKey.value)
@@ -82,13 +77,6 @@ provideWidgetUsageInfo(
     }),
   }),
 )
-
-const spanStart = computed(() => {
-  if (!(props.input instanceof Ast.Ast)) return undefined
-  const span = graph.moduleSource.getSpan(props.input.id)
-  if (span == null) return undefined
-  return span[0] - tree.nodeSpanStart
-})
 </script>
 
 <template>
@@ -98,7 +86,6 @@ const spanStart = computed(() => {
     v-bind="$attrs"
     :input="props.input"
     :nesting="nesting"
-    :data-span-start="spanStart"
     :data-port="props.input.portId"
     @update="updateHandler"
   />

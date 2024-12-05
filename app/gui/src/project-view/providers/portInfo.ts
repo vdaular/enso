@@ -14,5 +14,4 @@ interface PortInfo {
   connected: boolean
 }
 
-export { injectFn as injectPortInfo, provideFn as providePortInfo }
-const { provideFn, injectFn } = createContextStore('Port info', identity<PortInfo>)
+export const [providePortInfo, injectPortInfo] = createContextStore('Port info', identity<PortInfo>)

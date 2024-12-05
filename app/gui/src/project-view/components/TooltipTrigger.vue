@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useTooltipRegistry } from '@/providers/tooltipState'
+import { useTooltipRegistry } from '@/providers/tooltipRegistry'
 import { usePropagateScopesToAllRoots } from '@/util/patching'
 import { toRef, useSlots } from 'vue'
 

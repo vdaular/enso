@@ -5,6 +5,8 @@ import { useGraphEditorLayers } from '@/providers/graphEditorLayers'
 import { Rect } from '@/util/data/rect'
 import { computed, ref, toRef, watch } from 'vue'
 
+export type SavedSize = Keyframe
+
 const props = defineProps<{
   fullscreen: boolean
 }>()
@@ -89,10 +91,6 @@ watch(
 )
 
 const active = computed(() => props.fullscreen || animating.value)
-</script>
-
-<script lang="ts">
-export type SavedSize = Keyframe
 </script>
 
 <!-- The outer `div` is to avoid having a dynamic root. A component whose root may change cannot be passed to a `slot`,

@@ -22,17 +22,13 @@ export const widgetDefinition = defineWidget(
 /** If the element is the recursively-first-child of a top-level argument, return the top-level argument element. */
 export function enclosingTopLevelArgument(
   element: HTMLElement | undefined,
-  tree: { nodeElement: HTMLElement | undefined },
+  rootElement: HTMLElement | undefined,
 ): HTMLElement | undefined {
   return (
     element?.dataset.topLevelArgument !== undefined ? element
-    : (
-      !element ||
-      element === tree.nodeElement ||
-      element.parentElement?.firstElementChild !== element
-    ) ?
+    : !element || element === rootElement || element.parentElement?.firstElementChild !== element ?
       undefined
-    : enclosingTopLevelArgument(element.parentElement, tree)
+    : enclosingTopLevelArgument(element.parentElement, rootElement)
   )
 }
 </script>

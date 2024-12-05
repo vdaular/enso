@@ -67,3 +67,14 @@ export function documentationData(
     isUnstable: isSome(tagValue(parsed, 'Unstable')) || isSome(tagValue(parsed, 'Advanced')),
   }
 }
+
+/**
+ * Get the ICON tag value from the documentation block. Only use this function
+ * if all you need is icon, since the docs parsing is an expensive operation.
+ * @param documentation String representation of documentation block.
+ * @returns Value of icon tag within the docs.
+ */
+export function getDocsIcon(documentation: Opt<string>): Opt<Icon> {
+  const parsed = documentation != null ? parseDocs(documentation) : []
+  return tagValue(parsed, 'Icon') as Opt<Icon>
+}

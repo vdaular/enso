@@ -21,8 +21,8 @@ import type { QualifiedName } from '@/util/qualifiedName'
 import { qnSegments, qnSlice } from '@/util/qualifiedName'
 import { computed, watch } from 'vue'
 
-const props = defineProps<{ selectedEntry: SuggestionId | null; aiMode?: boolean }>()
-const emit = defineEmits<{ 'update:selectedEntry': [value: SuggestionId | null] }>()
+const props = defineProps<{ selectedEntry: SuggestionId | undefined; aiMode?: boolean }>()
+const emit = defineEmits<{ 'update:selectedEntry': [value: SuggestionId | undefined] }>()
 const db = useSuggestionDbStore()
 
 const documentation = computed<Docs>(() => {

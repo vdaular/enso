@@ -78,6 +78,15 @@ export function mapOk<T, U, E>(result: Result<T, E>, f: (value: T) => U): Result
   else return result
 }
 
+/** Maps the {@link Result} value with a function that returns a result. */
+export function andThen<T, U, E>(
+  result: Result<T, E>,
+  f: (value: T) => Result<U, E>,
+): Result<U, E> {
+  if (result.ok) return f(result.value)
+  else return result
+}
+
 /** If the value is nullish, returns {@link Ok} with it. */
 export function transposeResult<T, E>(value: Opt<Result<T, E>>): Result<Opt<T>, E>
 /** If any of the values is an error, the first error is returned. */

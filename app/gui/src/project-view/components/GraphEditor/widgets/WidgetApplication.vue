@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import NodeWidget from '@/components/GraphEditor/NodeWidget.vue'
-import { FunctionName } from '@/components/GraphEditor/widgets/WidgetFunctionName.vue'
 import SizeTransition from '@/components/SizeTransition.vue'
 import { WidgetInput, defineWidget, widgetProps } from '@/providers/widgetRegistry'
 import { injectWidgetTree } from '@/providers/widgetTree'
@@ -25,11 +24,6 @@ const targetMaybePort = computed(() => {
     if (!ptr) return input
     const definition = graph.getMethodAst(ptr)
     if (!definition.ok) return input
-    if (input.value instanceof Ast.PropertyAccess || input.value instanceof Ast.Ident) {
-      input[FunctionName] = {
-        editableName: definition.value.name.externalId,
-      }
-    }
     return input
   } else {
     return { ...target.toWidgetInput(), forcePort: !(target instanceof ArgumentApplication) }

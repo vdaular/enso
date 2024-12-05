@@ -96,9 +96,10 @@ test('Collapsing nodes', async ({ page }) => {
     annotations: [],
   })
   const collapsedNode = locate.graphNodeByBinding(page, 'prod')
-  await expect(collapsedNode.locator('.WidgetFunctionName')).toExist()
-  await expect(collapsedNode.locator('.WidgetFunctionName .WidgetToken')).toHaveText(['Main', '.'])
-  await expect(collapsedNode.locator('.WidgetFunctionName input')).toHaveValue('collapsed')
+  await expect(collapsedNode.locator('.WidgetApplication.prefix > .WidgetPort')).toExist()
+  await expect(collapsedNode.locator('.WidgetApplication.prefix > .WidgetPort')).toHaveText(
+    'Main.collapsed',
+  )
   await expect(collapsedNode.locator('.WidgetTopLevelArgument')).toHaveText('five')
 
   await locate.graphNodeIcon(collapsedNode).dblclick()

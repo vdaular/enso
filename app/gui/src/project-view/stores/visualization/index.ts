@@ -78,8 +78,9 @@ const builtinVisualizationsByName = Object.fromEntries(
   builtinVisualizations.map((viz) => [viz.name, viz]),
 )
 
-export const { provideFn: provideVisualizationStore, injectFn: useVisualizationStore } =
-  createContextStore('visualization', (proj: ProjectStore) => {
+export const [provideVisualizationStore, useVisualizationStore] = createContextStore(
+  'visualization',
+  (proj: ProjectStore) => {
     const cache = reactive(new Map<VisualizationId, Promise<VisualizationModule>>())
     /**
      * A map from file path to {@link AbortController}, so that a file change event can stop previous
@@ -283,4 +284,5 @@ export const { provideFn: provideVisualizationStore, injectFn: useVisualizationS
     }
 
     return { types, get, icon }
-  })
+  },
+)

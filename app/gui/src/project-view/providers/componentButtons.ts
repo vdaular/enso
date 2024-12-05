@@ -116,5 +116,7 @@ function useComponentButtons(
   }
 }
 
-export { injectFn as injectComponentButtons, provideFn as provideComponentButtons }
-const { provideFn, injectFn } = createContextStore('Component buttons', useComponentButtons)
+export const [provideComponentButtons, injectComponentButtons] = createContextStore(
+  'Component buttons',
+  useComponentButtons,
+)

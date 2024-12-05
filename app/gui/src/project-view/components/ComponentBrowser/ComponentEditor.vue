@@ -49,7 +49,7 @@ const rootStyle = computed(() => {
 </script>
 
 <template>
-  <div class="ComponentEditor" :style="rootStyle">
+  <div class="ComponentEditor define-node-colors" :style="rootStyle">
     <div v-if="props.icon" class="iconPort">
       <SvgIcon :name="props.icon" class="nodeIcon" />
     </div>
@@ -72,7 +72,6 @@ const rootStyle = computed(() => {
 
 <style scoped>
 .ComponentEditor {
-  --node-color-port: color-mix(in oklab, var(--color-node-primary) 85%, white 15%);
   --port-padding: 6px;
   --icon-height: 16px;
   --icon-text-gap: 6px;
@@ -101,7 +100,7 @@ const rootStyle = computed(() => {
   border-radius: var(--radius-full);
   padding: var(--port-padding);
   margin: 0 var(--icon-text-gap) 0 calc(0px - var(--port-padding));
-  background-color: var(--node-color-port);
+  background-color: var(--color-node-port);
   isolation: isolate;
 }
 

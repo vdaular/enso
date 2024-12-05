@@ -13,7 +13,7 @@ const props = defineProps<{
 
 <template>
   <div class="StandaloneButton">
-    <SvgButton v-bind="props" :name="icon" />
+    <SvgButton v-bind="{ ...$attrs, ...props }" :name="icon" />
   </div>
 </template>
 

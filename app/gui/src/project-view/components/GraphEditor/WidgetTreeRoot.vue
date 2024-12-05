@@ -1,111 +1,52 @@
 <script setup lang="ts">
 import NodeWidget from '@/components/GraphEditor/NodeWidget.vue'
 import { useTransitioning } from '@/composables/animation'
-import { injectGraphSelection } from '@/providers/graphSelection'
 import { WidgetInput, type WidgetUpdate } from '@/providers/widgetRegistry'
+import { WidgetEditHandlerParent } from '@/providers/widgetRegistry/editHandler'
 import { provideWidgetTree } from '@/providers/widgetTree'
-import { useGraphStore, type NodeId } from '@/stores/graph'
-import type { NodeType } from '@/stores/graph/graphDatabase'
 import { Ast } from '@/util/ast'
-import type { Vec2 } from '@/util/data/vec2'
-import { iconOfNode } from '@/util/getIconName'
-import { computed, toRef, watch } from 'vue'
-import { DisplayIcon } from './widgets/WidgetIcon.vue'
+import { toRef, watch } from 'vue'
+import { AstId } from 'ydoc-shared/ast'
+import { ExternalId } from 'ydoc-shared/yjsModel'
 
 const props = defineProps<{
-  ast: Ast.Expression
-  nodeId: NodeId
-  nodeElement: HTMLElement | undefined
-  nodeType: NodeType
-  nodeSize: Vec2
-  potentialSelfArgumentId: Ast.AstId | undefined
+  externalId: string & ExternalId
+  input: WidgetInput
+  rootElement: HTMLElement | undefined
+  potentialSelfArgumentId?: AstId | undefined
   /** Ports that are not targetable by default; see {@link NodeDataFromAst}. */
-  conditionalPorts: Set<Ast.AstId>
+  conditionalPorts?: Set<Ast.AstId> | undefined
   extended: boolean
+  onUpdate: (update: WidgetUpdate) => boolean
 }>()
-const graph = useGraphStore()
-const rootPort = computed(() => {
-  const input = WidgetInput.FromAst(props.ast)
-  if (
-    props.ast instanceof Ast.Ident &&
-    (!graph.db.isKnownFunctionCall(props.ast.id) || graph.db.connections.hasValue(props.ast.id))
-  ) {
-    input.forcePort = true
-  }
+const emit = defineEmits<{
+  currentEditChanged: [WidgetEditHandlerParent | undefined]
+}>()
 
-  if (!props.potentialSelfArgumentId && topLevelIcon.value) {
-    input[DisplayIcon] = {
-      icon: topLevelIcon.value,
-      showContents: props.nodeType != 'output',
-    }
-  }
-  return input
-})
-const selection = injectGraphSelection()
+const layoutTransitions = useTransitioning(
+  new Set([
+    'margin-left',
+    'margin-right',
+    'margin-top',
+    'margin-bottom',
+    'padding-left',
+    'padding-right',
+    'padding-top',
+    'padding-bottom',
+    'width',
+    'height',
+  ]),
+)
 
-const observedLayoutTransitions = new Set([
-  'margin-left',
-  'margin-right',
-  'margin-top',
-  'margin-bottom',
-  'padding-left',
-  'padding-right',
-  'padding-top',
-  'padding-bottom',
-  'width',
-  'height',
-])
-
-function selectNode() {
-  selection.setSelection(new Set([props.nodeId]))
-}
-
-function handleWidgetUpdates(update: WidgetUpdate) {
-  selectNode()
-  const edit = update.edit ?? graph.startEdit()
-  if (update.portUpdate) {
-    const { origin } = update.portUpdate
-    if (Ast.isAstId(origin)) {
-      if ('value' in update.portUpdate) {
-        const value = update.portUpdate.value
-        const ast =
-          value instanceof Ast.Ast ? value
-          : value == null ? Ast.Wildcard.new(edit)
-          : undefined
-        if (ast) {
-          edit.replaceValue(origin, ast)
-        } else if (typeof value === 'string') {
-          edit.tryGet(origin)?.syncToCode(value)
-        }
-      }
-      if ('metadata' in update.portUpdate) {
-        const { metadataKey, metadata } = update.portUpdate
-        edit.tryGet(origin)?.setWidgetMetadata(metadataKey, metadata)
-      }
-    } else {
-      console.error(`[UPDATE ${origin}] Invalid top-level origin. Expected expression ID.`)
-    }
-  }
-  graph.commitEdit(edit)
-  // This handler is guaranteed to be the last handler in the chain.
-  return true
-}
-
-const layoutTransitions = useTransitioning(observedLayoutTransitions)
-const widgetTree = provideWidgetTree(
-  toRef(props, 'ast'),
-  toRef(props, 'nodeId'),
-  toRef(props, 'nodeElement'),
-  toRef(props, 'nodeSize'),
-  toRef(props, 'potentialSelfArgumentId'),
+const tree = provideWidgetTree(
+  toRef(props, 'externalId'),
+  toRef(props, 'rootElement'),
   toRef(props, 'conditionalPorts'),
   toRef(props, 'extended'),
   layoutTransitions.active,
+  toRef(props, 'potentialSelfArgumentId'),
 )
-
-const topLevelIcon = computed(() => iconOfNode(props.nodeId, graph.db))
-
-watch(toRef(widgetTree, 'currentEdit'), (edit) => edit && selectNode())
+watch(toRef(tree, 'currentEdit'), (edit) => emit('currentEditChanged', edit))
 </script>
 <script lang="ts">
 export const GRAB_HANDLE_X_MARGIN_L = 4
@@ -114,13 +55,13 @@ export const ICON_WIDTH = 16
 </script>
 
 <template>
-  <div class="NodeWidgetTree widgetRounded" spellcheck="false" v-on="layoutTransitions.events">
-    <NodeWidget :input="rootPort" @update="handleWidgetUpdates" />
+  <div class="WidgetTreeRoot widgetRounded" spellcheck="false" v-on="layoutTransitions.events">
+    <NodeWidget :input="input" :onUpdate="onUpdate" />
   </div>
 </template>
 
 <style scoped>
-.NodeWidgetTree {
+.WidgetTreeRoot {
   color: var(--color-node-text);
 
   outline: none;
@@ -161,7 +102,7 @@ export const ICON_WIDTH = 16
  *                         at the end of the widget template, so it doesn't prevent tokens around
  *                         them from being properly padded.
  */
-.NodeWidgetTree {
+.WidgetTreeRoot {
   /*
    * Core of the propagation logic. Prevent left/right margin from propagating to non-first non-last
    * children of a widget. That way, only the innermost left/right deep child of a rounded widget will

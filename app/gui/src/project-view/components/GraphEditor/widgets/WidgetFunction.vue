@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import NodeWidget from '@/components/GraphEditor/NodeWidget.vue'
 import { useWidgetFunctionCallInfo } from '@/components/GraphEditor/widgets/WidgetFunction/widgetFunctionCallInfo'
-import { FunctionName } from '@/components/GraphEditor/widgets/WidgetFunctionName.vue'
 import { injectFunctionInfo, provideFunctionInfo } from '@/providers/functionInfo'
 import {
   Score,
@@ -65,13 +64,7 @@ const innerInput = computed(() => {
     input = { ...props.input }
   }
   const callInfo = methodCallInfo.value
-  if (callInfo) {
-    input[CallInfo] = callInfo
-    if (input.value instanceof Ast.PropertyAccess || input.value instanceof Ast.Ident) {
-      const definition = graph.getMethodAst(callInfo.methodCall.methodPointer)
-      if (definition.ok) input[FunctionName] = { editableName: definition.value.name.externalId }
-    }
-  }
+  if (callInfo) input[CallInfo] = callInfo
   return input
 })
 

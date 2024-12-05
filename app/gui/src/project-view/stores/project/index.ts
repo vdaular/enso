@@ -101,7 +101,7 @@ export type ProjectStore = ReturnType<typeof useProjectStore>
  * performed using a CRDT data types from Yjs. Once the data is synchronized with a "LS bridge"
  * client, it is submitted to the language server as a document update.
  */
-export const { provideFn: provideProjectStore, injectFn: useProjectStore } = createContextStore(
+export const [provideProjectStore, useProjectStore] = createContextStore(
   'project',
   (props: { projectId: string; renameProject: (newName: string) => void }) => {
     const { projectId, renameProject: renameProjectBackend } = props
