@@ -55,7 +55,7 @@ impl<'s> FunctionBuilder<'s> {
                 arrow = Some(i);
                 break;
             }
-            if i == start + qn_len || matches!(Spacing::of_item(item), Spacing::Spaced) {
+            if i == start + qn_len || Spacing::of_item(item) == Spacing::Spaced {
                 arg_starts.push(i);
             }
         }
@@ -185,7 +185,7 @@ pub fn parse_args<'s>(
 ) -> Vec<ArgumentDefinition<'s>> {
     let mut arg_starts = vec![];
     for (i, item) in items.iter().enumerate().skip(start) {
-        if i == start || matches!(Spacing::of_item(item), Spacing::Spaced) {
+        if i == start || Spacing::of_item(item) == Spacing::Spaced {
             arg_starts.push(i);
         }
     }
@@ -296,7 +296,7 @@ pub fn parse_type_args<'s>(
             expecting_rhs = true;
             continue;
         }
-        if matches!(Spacing::of_item(item), Spacing::Spaced) {
+        if Spacing::of_item(item) == Spacing::Spaced {
             arg_starts.push(i);
         }
     }
@@ -363,7 +363,7 @@ pub fn try_parse_foreign_function<'s>(
 
     let mut arg_starts = vec![];
     for (i, item) in items.iter().enumerate().skip(start + 3) {
-        if i == start + 3 || matches!(Spacing::of_item(item), Spacing::Spaced) {
+        if i == start + 3 || Spacing::of_item(item) == Spacing::Spaced {
             arg_starts.push(i);
         }
     }

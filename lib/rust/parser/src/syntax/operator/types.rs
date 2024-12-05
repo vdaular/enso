@@ -1,3 +1,5 @@
+use crate::syntax::operator::annotations::Annotation;
+use crate::syntax::operator::named_app::NamedApp;
 use crate::syntax::operator::section::MaybeSection;
 use crate::syntax::token;
 use crate::syntax::tree;
@@ -6,9 +8,6 @@ use crate::syntax::Inspect;
 use crate::syntax::Token;
 use crate::syntax::Tree;
 use crate::syntax::TreeConsumer;
-
-use crate::syntax::operator::annotations::Annotation;
-use crate::syntax::operator::named_app::NamedApp;
 use std::fmt::Debug;
 
 
@@ -54,11 +53,23 @@ pub enum Arity<'s> {
 }
 
 impl<'s> Arity<'s> {
+    fn expected_operands(&self) -> (bool, bool) {
+        match self {
+            Arity::App | Arity::Binary { missing: None, .. } => (true, true),
+            Arity::Unary(_)
+            | Arity::Annotation(_)
+            | Arity::Binary { missing: Some(BinaryOperand::Left), .. } => (false, true),
+            Arity::NamedApp(_) | Arity::Binary { missing: Some(BinaryOperand::Right), .. } =>
+                (true, false),
+        }
+    }
+
+    pub fn expects_lhs(&self) -> bool {
+        self.expected_operands().0
+    }
+
     pub fn expects_rhs(&self) -> bool {
-        matches!(
-            self,
-            Arity::Unary(_) | Arity::Binary { missing: None | Some(BinaryOperand::Left), .. }
-        )
+        self.expected_operands().1
     }
 }
 

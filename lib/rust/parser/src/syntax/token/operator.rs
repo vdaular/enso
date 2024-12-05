@@ -22,10 +22,41 @@ pub struct OperatorProperties {
 
 pub fn is_syntactic_binary_operator(variant: &Variant) -> bool {
     use Variant::*;
-    matches!(
-        variant,
-        AssignmentOperator(_) | TypeAnnotationOperator(_) | ArrowOperator(_) | CommaOperator(_)
-    )
+    match variant {
+        AssignmentOperator(_) | TypeAnnotationOperator(_) | ArrowOperator(_) | CommaOperator(_) =>
+            true,
+        Operator(_)
+        | DotOperator(_)
+        | UnaryOperator(_)
+        | AnnotationOperator(_)
+        | AutoscopeOperator(_)
+        | LambdaOperator(_)
+        | SuspensionOperator(_)
+        | NegationOperator(_)
+        | Newline(_)
+        | OpenSymbol(_)
+        | CloseSymbol(_)
+        | BlockStart(_)
+        | BlockEnd(_)
+        | Wildcard(_)
+        | SuspendedDefaultArguments(_)
+        | Ident(_)
+        | Digits(_)
+        | NumberBase(_)
+        | PrivateKeyword(_)
+        | TypeKeyword(_)
+        | ForeignKeyword(_)
+        | AllKeyword(_)
+        | CaseKeyword(_)
+        | OfKeyword(_)
+        | TextStart(_)
+        | TextEnd(_)
+        | TextSection(_)
+        | TextEscape(_)
+        | TextInitialNewline(_)
+        | TextNewline(_)
+        | Invalid(_) => false,
+    }
 }
 
 impl OperatorProperties {

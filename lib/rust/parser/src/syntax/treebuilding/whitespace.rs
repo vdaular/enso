@@ -57,14 +57,46 @@ fn token_starts_new_no_space_group<'a: 'b, 'b, T: Into<token::Ref<'a, 'b>>>(toke
 }
 
 fn tree_starts_new_no_space_group(tree: &Tree) -> bool {
+    use tree::Variant::*;
     tree.span.left_offset.visible.width_in_spaces != 0
-        || matches!(
-            &tree.variant,
-            tree::Variant::BodyBlock(_)
-                | tree::Variant::OperatorBlockApplication(_)
-                | tree::Variant::ArgumentBlockApplication(_)
-                | tree::Variant::SuspendedDefaultArguments(_)
-        )
+        || match &tree.variant {
+            BodyBlock(_)
+            | ArgumentBlockApplication(_)
+            | OperatorBlockApplication(_)
+            | SuspendedDefaultArguments(_) => true,
+            Invalid(_)
+            | Ident(_)
+            | Private(_)
+            | Number(_)
+            | Wildcard(_)
+            | TextLiteral(_)
+            | App(_)
+            | NamedApp(_)
+            | OprApp(_)
+            | UnaryOprApp(_)
+            | AutoscopedIdentifier(_)
+            | OprSectionBoundary(_)
+            | TemplateFunction(_)
+            | MultiSegmentApp(_)
+            | TypeDef(_)
+            | Assignment(_)
+            | Function(_)
+            | ForeignFunction(_)
+            | Import(_)
+            | Export(_)
+            | Group(_)
+            | TypeSignatureDeclaration(_)
+            | TypeAnnotated(_)
+            | CaseOf(_)
+            | Lambda(_)
+            | Array(_)
+            | Tuple(_)
+            | Annotation(_)
+            | AnnotatedBuiltin(_)
+            | Documentation(_)
+            | ExpressionStatement(_)
+            | ConstructorDefinition(_) => false,
+        }
 }
 
 

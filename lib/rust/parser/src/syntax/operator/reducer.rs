@@ -44,6 +44,16 @@ impl<'s> OperatorConsumer<'s> for Reduce<'s> {
         } else {
             Default::default()
         };
+        // Eagerly reduce postfix operators. This does not affect the result of reduction, but is
+        // slightly more efficient and can simplify debugging.
+        if !arity.expects_rhs() {
+            let lhs = self.output.pop();
+            debug_assert!(lhs.is_some());
+            let mut applied = reduce_step(arity, lhs, &mut self.output);
+            warnings.apply(&mut applied.value);
+            self.push_operand(applied);
+            return;
+        }
         self.operator_stack.push(StackOperator {
             right_precedence,
             associativity,

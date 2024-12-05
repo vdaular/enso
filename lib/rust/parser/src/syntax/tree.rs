@@ -1026,7 +1026,11 @@ pub fn apply<'s>(mut func: Tree<'s>, mut arg: Tree<'s>) -> Tree<'s> {
     let error = match Spacing::of_tree(&arg) {
         Spacing::Spaced => None,
         Spacing::Unspaced => Some("Space required between terms."),
-    };
+    }
+    .or(match &arg.variant {
+        Variant::AnnotatedBuiltin(_) => Some("Unexpected expression annotation."),
+        _ => None,
+    });
     maybe_with_error(Tree::app(func, arg), error)
 }
 

@@ -725,7 +725,7 @@ fn parse_assignment_like_statement<'s>(
     }
     match match (expression, qn_len) {
         (Some(e), Some(qn_len))
-            if matches!(evaluation_context, EvaluationContext::Lazy)
+            if evaluation_context == EvaluationContext::Lazy
                 || matches!(e.variant, tree::Variant::BodyBlock(_)) =>
             Type::Function { expression: Some(e), qn_len },
         (Some(expression), None) => Type::Assignment { expression },
@@ -848,7 +848,7 @@ fn find_top_level_operator<'a, 's>(
     let mut after_first_space = false;
     for (i, item) in items.iter().enumerate() {
         let next_is_after_space =
-            i != 0 && (after_first_space || matches!(Spacing::of_item(item), Spacing::Spaced));
+            i != 0 && (after_first_space || Spacing::of_item(item) == Spacing::Spaced);
         if let Item::Token(token) = item {
             let is_spaced = token.is_spaced();
             if !after_first_space || is_spaced {
@@ -904,7 +904,7 @@ fn find_top_level_operator<'a, 's>(
 
 fn next_spaced(items: &[Item]) -> Option<usize> {
     for (i, item) in items.iter().enumerate().skip(1) {
-        if matches!(Spacing::of_item(item), Spacing::Spaced) {
+        if Spacing::of_item(item) == Spacing::Spaced {
             return Some(i);
         }
     }

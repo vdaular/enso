@@ -1753,6 +1753,7 @@ fn nonsense_inputs() {
     expect_invalid_node("if (asGuestValue\n  a");
     expect_invalid_node("foo(\n  a");
     expect_invalid_node("(Vector(), true)");
+    expect_invalid_node("x @Builtin_Method \"a\"");
 }
 
 #[test]
