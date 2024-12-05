@@ -572,25 +572,6 @@ export function useRootDirectoryId(backend: Backend, category: Category) {
   }, [category, backend, user, organization, localRootDirectory])
 }
 
-/** A function to optimistically insert assets into the React Query cache listing for a folder. */
-function useInsertAssets(backend: Backend, category: Category) {
-  const queryClient = useQueryClient()
-  const rootDirectoryId = useRootDirectoryId(backend, category)
-
-  return useEventCallback((assets: readonly AnyAsset[], parentId: DirectoryId | null) => {
-    const actualParentId = parentId ?? rootDirectoryId
-
-    const listDirectoryQuery = queryClient.getQueryCache().find<DirectoryQuery>({
-      queryKey: [backend.type, 'listDirectory', actualParentId],
-      exact: false,
-    })
-
-    if (listDirectoryQuery?.state.data) {
-      listDirectoryQuery.setData([...listDirectoryQuery.state.data, ...assets])
-    }
-  })
-}
-
 /** Return query data for the children of a directory, fetching it if it does not exist. */
 function useEnsureListDirectory(backend: Backend, category: Category) {
   const queryClient = useQueryClient()
@@ -772,7 +753,6 @@ export function useNewProject(backend: Backend, category: Category) {
 
 /** A function to create a new secret. */
 export function useNewSecret(backend: Backend, category: Category) {
-  const insertAssets = useInsertAssets(backend, category)
   const toggleDirectoryExpansion = useToggleDirectoryExpansion()
   const { user } = useFullUserSession()
   const { data: users } = useBackendQuery(backend, 'listUsers', [])
@@ -799,8 +779,6 @@ export function useNewSecret(backend: Backend, category: Category) {
         ),
       )
 
-      insertAssets([placeholderItem], parentId)
-
       return await createSecretMutation.mutateAsync([
         {
           parentDirectoryId: placeholderItem.parentId,
@@ -814,7 +792,6 @@ export function useNewSecret(backend: Backend, category: Category) {
 
 /** A function to create a new Datalink. */
 export function useNewDatalink(backend: Backend, category: Category) {
-  const insertAssets = useInsertAssets(backend, category)
   const toggleDirectoryExpansion = useToggleDirectoryExpansion()
   const { user } = useFullUserSession()
   const { data: users } = useBackendQuery(backend, 'listUsers', [])
@@ -840,8 +817,6 @@ export function useNewDatalink(backend: Backend, category: Category) {
           userGroups ?? [],
         ),
       )
-
-      insertAssets([placeholderItem], parentId)
 
       return await createDatalinkMutation.mutateAsync([
         {
