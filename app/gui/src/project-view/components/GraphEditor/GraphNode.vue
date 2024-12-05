@@ -215,6 +215,7 @@ watch(menuVisible, (visible) => {
 
 function setSoleSelected() {
   nodeSelection?.setSelection(new Set([nodeId.value]))
+  graph.db.moveNodeToTop(nodeId.value)
 }
 
 function ensureSelected() {
@@ -491,7 +492,7 @@ const showMenuAt = ref<{ x: number; y: number }>()
       v-if="menuVisible"
       @pointerenter="menuHovered = true"
       @pointerleave="menuHovered = false"
-      @click.capture="ensureSelected"
+      @click.capture="setSoleSelected"
     />
     <GraphVisualization
       v-if="isVisualizationVisible"
