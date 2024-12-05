@@ -29,7 +29,7 @@ prepare_visualization y max_rows=1000 = if y.is_error then (make_json_for_error 
         _ : Array -> prepare_visualization x.to_vector max_rows
         _ : Dictionary -> make_json_for_dictionary x max_rows
         _ : JS_Object -> make_json_for_js_object x max_rows
-        _ : Row -> make_json_for_dictionary x.to_dictionary max_rows "column"
+        _ : Row -> make_json_for_row x
         _ : Column -> prepare_visualization x.to_table max_rows
         _ : Table ->
             all_rows_count = x.row_count
@@ -64,6 +64,19 @@ make_json_for_error : Any -> JS_Object
 make_json_for_error error =
     pairs = [["error", error.to_display_text]]
     JS_Object.from_pairs pairs
+
+## PRIVATE
+   Render Vector to JSON
+make_json_for_row : Row -> JS_Object
+make_json_for_row row =
+    header = ["header", ["column", "value"]]
+    all_rows = ["all_rows_count", row.length]
+    column_names = row.column_names
+    values = ((0.up_to row.length).map idx-> row.get idx)
+    data = ["data", [column_names, values]]
+    links = ["get_child_node_action", "at"]
+    get_child_node_action_link_name = ["get_child_node_link_name", "column"]
+    JS_Object.from_pairs [header, all_rows, data, links, get_child_node_action_link_name, ["type", "Map"]]
 
 ## PRIVATE
    Render Vector to JSON
@@ -125,14 +138,14 @@ make_json_for_object_matrix current vector idx=0 = if idx == vector.length then 
 ## PRIVATE
    Render Dictionary to JSON
 make_json_for_dictionary : Dictionary -> Integer -> Text -> JS_Object
-make_json_for_dictionary dict max_items key_name="key" =
-    header = ["header", [key_name, "value"]]
+make_json_for_dictionary dict max_items =
+    header = ["header", ["key", "value"]]
     all_rows = ["all_rows_count", dict.size]
     as_vector = Warning.clear (dict.to_vector.take max_items)
     mapped = as_vector . map p-> [p.first.to_text, make_json_for_value p.second]
     data = ["data", [mapped.map .first, mapped.map .second]]
     links = ["get_child_node_action", "at"]
-    get_child_node_action_link_name = ["get_child_node_link_name", key_name]
+    get_child_node_action_link_name = ["get_child_node_link_name", "key"]
     JS_Object.from_pairs [header, data, all_rows, links, get_child_node_action_link_name, ["type", "Map"]]
 
 ## PRIVATE
