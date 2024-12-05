@@ -21,7 +21,7 @@ test('edit name (context menu)', async ({ page }) => {
   await actions.mockAllAndLogin({
     page,
     setupAPI: (api) => {
-      api.addAsset(api.createDirectory('foo'))
+      api.addAsset(api.createDirectory({ title: 'foo' }))
     },
   })
 

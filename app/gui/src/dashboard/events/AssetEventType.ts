@@ -6,15 +6,6 @@
 
 /** Possible types of asset state change. */
 enum AssetEventType {
-  newProject = 'new-project',
-  newFolder = 'new-folder',
-  uploadFiles = 'upload-files',
-  updateFiles = 'update-files',
-  newDatalink = 'new-datalink',
-  newSecret = 'new-secret',
-  copy = 'copy',
-  cut = 'cut',
-  cancelCut = 'cancel-cut',
   move = 'move',
   delete = 'delete',
   deleteForever = 'delete-forever',
@@ -26,8 +17,6 @@ enum AssetEventType {
   temporarilyRemoveLabels = 'temporarily-remove-labels',
   addLabels = 'add-labels',
   removeLabels = 'remove-labels',
-  deleteLabel = 'delete-label',
-  projectClosed = 'project-closed',
 }
 
 export default AssetEventType

@@ -14,15 +14,6 @@ interface AssetBaseEvent<Type extends AssetEventType> {
 
 /** All possible events. */
 interface AssetEvents {
-  readonly newProject: AssetNewProjectEvent
-  readonly newFolder: AssetNewFolderEvent
-  readonly uploadFiles: AssetUploadFilesEvent
-  readonly updateFiles: AssetUpdateFilesEvent
-  readonly newDatalink: AssetNewDatalinkEvent
-  readonly newSecret: AssetNewSecretEvent
-  readonly copy: AssetCopyEvent
-  readonly cut: AssetCutEvent
-  readonly cancelCut: AssetCancelCutEvent
   readonly move: AssetMoveEvent
   readonly delete: AssetDeleteEvent
   readonly deleteForever: AssetDeleteForeverEvent
@@ -34,8 +25,6 @@ interface AssetEvents {
   readonly temporarilyRemoveLabels: AssetTemporarilyRemoveLabelsEvent
   readonly addLabels: AssetAddLabelsEvent
   readonly removeLabels: AssetRemoveLabelsEvent
-  readonly deleteLabel: AssetDeleteLabelEvent
-  readonly projectClosed: AssetProjectClosedEvent
 }
 
 /** A type to ensure that {@link AssetEvents} contains every {@link AssetEventType}. */
@@ -46,64 +35,6 @@ type SanityCheck<
     readonly [Type in keyof typeof AssetEventType]: AssetBaseEvent<(typeof AssetEventType)[Type]>
   } = AssetEvents,
 > = [T]
-
-/** A signal to create a project. */
-export interface AssetNewProjectEvent extends AssetBaseEvent<AssetEventType.newProject> {
-  readonly placeholderId: backend.ProjectId
-  readonly templateId: string | null
-  readonly datalinkId: backend.DatalinkId | null
-  readonly originalId: backend.ProjectId | null
-  readonly versionId: backend.S3ObjectVersionId | null
-  readonly onCreated?: (project: backend.CreatedProject) => void
-  readonly onError?: () => void
-}
-
-/** A signal to create a directory. */
-export interface AssetNewFolderEvent extends AssetBaseEvent<AssetEventType.newFolder> {
-  readonly placeholderId: backend.DirectoryId
-}
-
-/** A signal to upload files. */
-export interface AssetUploadFilesEvent extends AssetBaseEvent<AssetEventType.uploadFiles> {
-  readonly files: ReadonlyMap<backend.AssetId, File>
-}
-
-/** A signal to update files with new versions. */
-export interface AssetUpdateFilesEvent extends AssetBaseEvent<AssetEventType.updateFiles> {
-  readonly files: ReadonlyMap<backend.AssetId, File>
-}
-
-/** A signal to create a Datalink. */
-export interface AssetNewDatalinkEvent extends AssetBaseEvent<AssetEventType.newDatalink> {
-  readonly placeholderId: backend.DatalinkId
-  readonly value: unknown
-}
-
-/** A signal to create a secret. */
-export interface AssetNewSecretEvent extends AssetBaseEvent<AssetEventType.newSecret> {
-  readonly placeholderId: backend.SecretId
-  readonly value: string
-}
-
-/**
- * A signal that multiple assets should be copied. `ids` are the `Id`s of the newly created
- * placeholder items.
- */
-export interface AssetCopyEvent extends AssetBaseEvent<AssetEventType.copy> {
-  readonly ids: ReadonlySet<backend.AssetId>
-  readonly newParentKey: backend.AssetId
-  readonly newParentId: backend.DirectoryId
-}
-
-/** A signal to cut multiple assets. */
-export interface AssetCutEvent extends AssetBaseEvent<AssetEventType.cut> {
-  readonly ids: ReadonlySet<backend.AssetId>
-}
-
-/** A signal that a cut operation has been cancelled. */
-export interface AssetCancelCutEvent extends AssetBaseEvent<AssetEventType.cancelCut> {
-  readonly ids: ReadonlySet<backend.AssetId>
-}
 
 /** A signal to move multiple assets. */
 export interface AssetMoveEvent extends AssetBaseEvent<AssetEventType.move> {
@@ -164,19 +95,6 @@ export interface AssetAddLabelsEvent extends AssetBaseEvent<AssetEventType.addLa
 export interface AssetRemoveLabelsEvent extends AssetBaseEvent<AssetEventType.removeLabels> {
   readonly ids: ReadonlySet<backend.AssetId>
   readonly labelNames: ReadonlySet<backend.LabelName>
-}
-
-/** A signal to remove a label from all assets. */
-export interface AssetDeleteLabelEvent extends AssetBaseEvent<AssetEventType.deleteLabel> {
-  readonly labelName: backend.LabelName
-}
-
-/**
- * A signal that a project was closed. In this case, the consumer should not fire a
- * "close project" request to the backend.
- */
-export interface AssetProjectClosedEvent extends AssetBaseEvent<AssetEventType.projectClosed> {
-  readonly id: backend.AssetId
 }
 
 /** Every possible type of asset event. */

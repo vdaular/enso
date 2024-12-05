@@ -710,7 +710,6 @@ export default function AssetsTable(props: AssetsTableProps) {
           if (pasteData == null) {
             return false
           } else {
-            dispatchAssetEvent({ type: AssetEventType.cancelCut, ids: pasteData.data.ids })
             setPasteData(null)
             return
           }
@@ -1211,15 +1210,11 @@ export default function AssetsTable(props: AssetsTableProps) {
 
   const doCut = useEventCallback(() => {
     unsetModal()
-    const { selectedKeys, pasteData } = driveStore.getState()
-    if (pasteData != null) {
-      dispatchAssetEvent({ type: AssetEventType.cancelCut, ids: pasteData.data.ids })
-    }
+    const { selectedKeys } = driveStore.getState()
     setPasteData({
       type: 'move',
       data: { backendType: backend.type, category, ids: selectedKeys },
     })
-    dispatchAssetEvent({ type: AssetEventType.cut, ids: selectedKeys })
     setSelectedKeys(EMPTY_SET)
   })
 

@@ -3,10 +3,6 @@ import * as test from '@playwright/test'
 
 import * as actions from './actions'
 
-// =============
-// === Tests ===
-// =============
-
 test.test('copy', ({ page }) =>
   actions
     .mockAllAndLogin({ page })
@@ -159,8 +155,10 @@ test.test('duplicate', ({ page }) =>
     .mockAllAndLogin({ page })
     // Assets: [0: New Project 1]
     .newEmptyProject()
-    .waitForEditorToLoad()
-    .goToPage.drive()
+    // FIXME[sb]: https://github.com/enso-org/cloud-v2/issues/1615
+    // Uncomment once cloud execution in the browser is re-enabled.
+    // .waitForEditorToLoad()
+    // .goToPage.drive()
     .driveTable.rightClickRow(0)
     .contextMenu.duplicate()
     .driveTable.withRows(async (rows) => {
@@ -177,8 +175,10 @@ test.test('duplicate (keyboard)', ({ page }) =>
     .mockAllAndLogin({ page })
     // Assets: [0: New Project 1]
     .newEmptyProject()
-    .waitForEditorToLoad()
-    .goToPage.drive()
+    // FIXME[sb]: https://github.com/enso-org/cloud-v2/issues/1615
+    // Uncomment once cloud execution in the browser is re-enabled.
+    // .waitForEditorToLoad()
+    // .goToPage.drive()
     .driveTable.clickRow(0)
     .press('Mod+D')
     .driveTable.withRows(async (rows) => {

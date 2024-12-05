@@ -643,6 +643,8 @@
   "downgradeInfo": "to downgrade",
   "xItemsCopied": "$0 item(s) copied",
   "xItemsCut": "$0 item(s) cut",
+  "downloadToOpenWorkflow": "Download Enso to open workflows.",
+  "downloadToExecuteWorkflow": "Download Enso to execute workflows.",
 
   "someAgreementsHaveBeenUpdated": "Some agreements have been updated. Please re-read and agree to continue.",
   "licenseAgreementTitle": "Enso Terms of Service",

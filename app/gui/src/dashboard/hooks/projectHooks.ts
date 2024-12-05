@@ -23,9 +23,6 @@ import { useFeatureFlag } from '#/providers/FeatureFlagsProvider'
 import type Backend from '#/services/Backend'
 import * as backendModule from '#/services/Backend'
 
-// ====================================
-// === createGetProjectDetailsQuery ===
-// ====================================
 /** Default interval for refetching project status when the project is opened. */
 const OPENED_INTERVAL_MS = 30_000
 /**
@@ -46,6 +43,12 @@ export interface CreateOpenedProjectQueryOptions {
   readonly assetId: backendModule.Asset<backendModule.AssetType.project>['id']
   readonly parentId: backendModule.Asset<backendModule.AssetType.project>['parentId']
   readonly backend: Backend
+}
+
+/** Whether the user can open projects. */
+export function useCanOpenProjects() {
+  const localBackend = backendProvider.useLocalBackend()
+  return localBackend != null
 }
 
 /** Return a function to update a project asset in the TanStack Query cache. */
@@ -146,10 +149,6 @@ export function createGetProjectDetailsQuery(options: CreateOpenedProjectQueryOp
 }
 createGetProjectDetailsQuery.getQueryKey = (id: LaunchedProjectId) => ['project', id] as const
 
-// ==============================
-// === useOpenProjectMutation ===
-// ==============================
-
 /** A mutation to open a project. */
 export function useOpenProjectMutation() {
   const client = reactQuery.useQueryClient()
@@ -210,10 +209,6 @@ export function useOpenProjectMutation() {
   })
 }
 
-// ===============================
-// === useCloseProjectMutation ===
-// ===============================
-
 /** Mutation to close a project. */
 export function useCloseProjectMutation() {
   const client = reactQuery.useQueryClient()
@@ -255,10 +250,6 @@ export function useCloseProjectMutation() {
   })
 }
 
-// ================================
-// === useRenameProjectMutation ===
-// ================================
-
 /** Mutation to rename a project. */
 export function useRenameProjectMutation() {
   const client = reactQuery.useQueryClient()
@@ -289,13 +280,10 @@ export function useRenameProjectMutation() {
   })
 }
 
-// ======================
-// === useOpenProject ===
-// ======================
-
 /** A callback to open a project. */
 export function useOpenProject() {
   const client = reactQuery.useQueryClient()
+  const canOpenProjects = useCanOpenProjects()
   const projectsStore = useProjectsStore()
   const addLaunchedProject = useAddLaunchedProject()
   const closeAllProjects = useCloseAllProjects()
@@ -304,6 +292,10 @@ export function useOpenProject() {
   const enableMultitabs = useFeatureFlag('enableMultitabs')
 
   return eventCallbacks.useEventCallback((project: LaunchedProject) => {
+    if (!canOpenProjects) {
+      return
+    }
+
     if (!enableMultitabs) {
       // Since multiple tabs cannot be opened at the same time, the opened projects need to be closed first.
       if (projectsStore.getState().launchedProjects.length > 0) {
@@ -335,10 +327,6 @@ export function useOpenProject() {
   })
 }
 
-// =====================
-// === useOpenEditor ===
-// =====================
-
 /** A function to open the editor. */
 export function useOpenEditor() {
   const setPage = useSetPage()
@@ -346,10 +334,6 @@ export function useOpenEditor() {
     setPage(projectId)
   })
 }
-
-// =======================
-// === useCloseProject ===
-// =======================
 
 /** A function to close a project. */
 export function useCloseProject() {
@@ -389,10 +373,6 @@ export function useCloseProject() {
     setPage(TabType.drive)
   })
 }
-
-// ===========================
-// === useCloseAllProjects ===
-// ===========================
 
 /** A function to close all projects. */
 export function useCloseAllProjects() {

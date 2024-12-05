@@ -75,7 +75,9 @@ export interface ProjectIconProps {
 
 /** An interactive icon indicating the status of a project. */
 export default function ProjectIcon(props: ProjectIconProps) {
-  const { backend, item, isOpened, isDisabled, isPlaceholder } = props
+  const { backend, item, isOpened, isDisabled: isDisabledRaw, isPlaceholder } = props
+  const isUnconditionallyDisabled = !projectHooks.useCanOpenProjects()
+  const isDisabled = isDisabledRaw || isUnconditionallyDisabled
 
   const openProject = projectHooks.useOpenProject()
   const closeProject = projectHooks.useCloseProject()
@@ -93,7 +95,7 @@ export default function ProjectIcon(props: ProjectIconProps) {
       backend,
     }),
     select: (data) => data.state,
-    enabled: !isPlaceholder && isOpened,
+    enabled: !isPlaceholder && isOpened && !isUnconditionallyDisabled,
   })
 
   const status = projectState?.type
@@ -118,6 +120,7 @@ export default function ProjectIcon(props: ProjectIconProps) {
 
   const userOpeningProjectTooltip =
     userOpeningProject == null ? null : getText('xIsUsingTheProject', userOpeningProject.name)
+  const disabledTooltip = isUnconditionallyDisabled ? getText('downloadToOpenWorkflow') : null
 
   const state = (() => {
     if (!isOpened && !isPlaceholder) {
@@ -173,7 +176,7 @@ export default function ProjectIcon(props: ProjectIconProps) {
           size="custom"
           variant="icon"
           icon={PlayIcon}
-          aria-label={getText('openInEditor')}
+          aria-label={disabledTooltip ?? getText('openInEditor')}
           tooltipPlacement="left"
           extraClickZone="xsmall"
           isDisabled={isDisabled || projectState?.type === backendModule.ProjectState.closing}
