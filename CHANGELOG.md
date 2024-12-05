@@ -45,6 +45,8 @@
 - [Pasting tabular data now creates Table.input expressions][11695].
 - [No halo is displayed around components when hovering][11715].
 - [The hover area of the component output port extended twice its size][11715].
+- [In the table visualization and table widget, the table context menu can now
+  be opened on OS X][11755].
 - [Fix some UI elements drawing on top of visualization toolbar dropdown
   menus][11768].
 

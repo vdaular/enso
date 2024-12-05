@@ -499,7 +499,6 @@ const showMenuAt = ref<{ x: number; y: number }>()
     @pointerenter="(nodeHovered = true), updateNodeHover($event)"
     @pointerleave="(nodeHovered = false), updateNodeHover(undefined)"
     @pointermove="updateNodeHover"
-    @contextmenu.stop.prevent="ensureSelected(), (showMenuAt = $event)"
   >
     <div class="binding" v-text="node.pattern?.code()" />
     <button
@@ -552,6 +551,7 @@ const showMenuAt = ref<{ x: number; y: number }>()
       :style="contentNodeStyle"
       v-on="dragPointer.events"
       @click="handleNodeClick"
+      @contextmenu.stop.prevent="ensureSelected(), (showMenuAt = $event)"
     >
       <NodeWidgetTree
         :ast="props.node.innerExpr"
