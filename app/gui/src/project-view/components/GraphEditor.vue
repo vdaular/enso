@@ -252,7 +252,7 @@ useEvent(
   'keydown',
   (event) =>
     interactionBindingsHandler(event) ||
-    (!keyboardBusyExceptIn(documentationEditorArea.value) && undoBindingsHandler(event)) ||
+    (!keyboardBusy() && undoBindingsHandler(event)) ||
     (!keyboardBusy() && graphBindingsHandler(event)) ||
     (!keyboardBusyExceptIn(codeEditorArea.value) && codeEditorHandler(event)) ||
     (!keyboardBusyExceptIn(documentationEditorArea.value) && documentationEditorHandler(event)) ||
