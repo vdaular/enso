@@ -673,6 +673,30 @@ describe('Code edit', () => {
     expect(after['func 123 arg2'].id).toBe(before['func arg1 arg2'].id)
   })
 
+  test('syncToCode does not create unneeded AST nodes', () => {
+    const beforeRoot = Ast.parseModule('main = func 1 2\n')
+    beforeRoot.module.setRoot(beforeRoot)
+    const edit = beforeRoot.module.edit()
+    const newCode = 'main = func 10 2\n'
+    let changes: Record<string, number> | undefined = undefined
+    edit.observe(
+      (update) =>
+        (changes = {
+          added: update.nodesAdded.size,
+          deleted: update.nodesDeleted.size,
+          updated: update.nodesUpdated.size,
+        }),
+    )
+    edit.syncToCode(newCode)
+    expect(edit.root()?.code()).toBe(newCode)
+    expect(edit.root()?.id).toBe(beforeRoot.id)
+    expect(changes).toEqual({
+      added: 0,
+      deleted: 0,
+      updated: 1,
+    })
+  })
+
   test('Insert argument names', () => {
     const beforeRoot = Ast.parseExpression('func arg1 arg2')
     assertDefined(beforeRoot)

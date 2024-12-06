@@ -180,6 +180,19 @@ export class MutableModule implements Module {
     return materializeMutable(this, fields) as Owned<Mutable<typeof ast>>
   }
 
+  /**
+   * Copy the node into the module *without copying children*. The returned object, and the module containing it, may be
+   * in an invalid state until the callee has ensured all references are resolvable, e.g. by recursing into children.
+   * @internal
+   */
+  splice<T extends Ast>(ast: T): Owned<Mutable<T>> {
+    assert(ast.module !== this)
+    const fields = ast.fields.clone() as any
+    this.nodes.set(ast.id, fields)
+    fields.set('parent', undefined)
+    return materializeMutable(this, fields) as Owned<Mutable<typeof ast>>
+  }
+
   /** TODO: Add docs */
   static Transient() {
     return new this(new Y.Doc())
