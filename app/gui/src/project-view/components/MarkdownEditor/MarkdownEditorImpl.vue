@@ -88,11 +88,13 @@ defineExpose({
   font-size: 20px;
   line-height: 1.75;
 }
+
 .heading2 {
   font-weight: 700;
   font-size: 16px;
   line-height: 1.75;
 }
+
 .heading3,
 .heading4,
 .heading5,
@@ -100,22 +102,28 @@ defineExpose({
   font-size: 14px;
   line-height: 2;
 }
+
 .processingInstruction {
   opacity: 20%;
 }
+
 .emphasis:not(.processingInstruction) {
   font-style: italic;
 }
+
 .strong:not(.processingInstruction) {
   font-weight: bold;
 }
+
 .strikethrough:not(.processingInstruction) {
   text-decoration: line-through;
 }
+
 .monospace {
   /*noinspection CssNoGenericFontName*/
   font-family: var(--font-mono);
 }
+
 .url {
   color: royalblue;
 }
@@ -127,22 +135,24 @@ defineExpose({
   :global(.cm-image-markup) {
     display: none;
   }
+
   .processingInstruction {
     display: none;
   }
-  .url {
+
+  .link:not(a *) {
     display: none;
   }
-  a .url {
-    display: inline;
-  }
+
   a {
     cursor: pointer;
     color: blue;
+
     &:hover {
       text-decoration: underline;
     }
   }
+
   &:has(.list.processingInstruction) {
     display: list-item;
     list-style-type: disc;

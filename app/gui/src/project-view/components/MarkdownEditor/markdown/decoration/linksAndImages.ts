@@ -38,7 +38,7 @@ export function markdownLinkEditPopup(): Extension {
   return linkEditPopup((el) => (el instanceof HTMLElement ? el.dataset.href : undefined))
 }
 
-function parseAutolink(nodeRef: SyntaxNodeRef, doc: Text) {
+function parseAutolink(nodeRef: SyntaxNodeRef, doc: Text): LinkLikeInfo | undefined {
   const cursor = nodeRef.node.cursor()
   if (!cursor.firstChild()) return // <
   const linkFrom = cursor.from
@@ -73,7 +73,7 @@ function decorateLink(
     : nodeRef.name === 'Autolink' ? parseAutolink(nodeRef, doc)
     : undefined
   if (!parsed) return
-  const { linkFrom, linkTo, textFrom, textTo, url } = parsed
+  const { linkFrom, linkTo, textFrom, textTo, url, title } = parsed
   if (textFrom === textTo) return
   emitDecoration(
     linkFrom,
@@ -83,12 +83,13 @@ function decorateLink(
       attributes: { 'data-href': url },
     }),
   )
+  const attributes = makeAttributes(url)
   emitDecoration(
     textFrom,
     textTo,
     Decoration.mark({
       tagName: 'a',
-      attributes: makeAttributes(url),
+      attributes: title ? { title, ...attributes } : attributes,
     }),
   )
 }
@@ -188,8 +189,17 @@ class ImageWidget extends WidgetType {
 
 // === Common ===
 
+interface LinkLikeInfo {
+  linkFrom: number
+  linkTo: number
+  textFrom: number
+  textTo: number
+  url: string
+  title?: string | undefined
+}
+
 /** Parse a link or image */
-function parseLinkLike(nodeRef: SyntaxNodeRef, doc: Text) {
+function parseLinkLike(nodeRef: SyntaxNodeRef, doc: Text): LinkLikeInfo | undefined {
   const cursor = nodeRef.node.cursor()
   if (!cursor.firstChild()) return
   const linkFrom = cursor.from // [ or ![
@@ -201,6 +211,11 @@ function parseLinkLike(nodeRef: SyntaxNodeRef, doc: Text) {
   } while (!isNodeType(cursor, 'URL'))
   const url = doc.sliceString(cursor.from, cursor.to)
   cursor.nextSibling()
+  let title: string | undefined = undefined
+  if (isNodeType(cursor, 'LinkTitle')) {
+    title = doc.sliceString(cursor.from, cursor.to)
+    cursor.nextSibling()
+  }
   let linkTo: number
   do {
     linkTo = cursor.to
@@ -212,5 +227,6 @@ function parseLinkLike(nodeRef: SyntaxNodeRef, doc: Text) {
     textFrom,
     textTo,
     url,
+    title,
   }
 }

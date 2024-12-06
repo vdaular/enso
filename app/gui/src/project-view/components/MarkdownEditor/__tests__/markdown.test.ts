@@ -15,7 +15,9 @@ function decorations<T>(
     }),
   })
   const vueHost = {
-    register: () => ({ unregister: () => {} }),
+    register: () => ({
+      unregister: () => {},
+    }),
   }
   view.dispatch({ effects: setVueHost.of(vueHost) })
   const decorationSets = view.state.facet(EditorView.decorations)
@@ -39,6 +41,7 @@ function links(source: string) {
       return {
         text: source.substring(from, to),
         href: deco.spec.attributes.href,
+        title: deco.spec.attributes.title,
       }
     }
   })
@@ -64,6 +67,16 @@ test.each([
       {
         text: 'Link text',
         href: 'https://www.example.com/index.html',
+      },
+    ],
+  },
+  {
+    markdown: '[Link text](https://www.example.com/index.html "title text")',
+    expectedLinks: [
+      {
+        text: 'Link text',
+        href: 'https://www.example.com/index.html',
+        title: '"title text"',
       },
     ],
   },
