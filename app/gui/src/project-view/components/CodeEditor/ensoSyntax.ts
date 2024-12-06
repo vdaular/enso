@@ -52,8 +52,8 @@ const nodeSet = new NodeSet(nodeTypes).extend(
   }),
 )
 
-type AstNode = RawAstExtended<RawAst.Tree | RawAst.Token, false>
-const astProp = new NodeProp<AstNode>({ perNode: true })
+export type AstNode = RawAstExtended<RawAst.Tree | RawAst.Token, false>
+export const astProp = new NodeProp<AstNode>({ perNode: true })
 
 function astToCodeMirrorTree(
   nodeSet: NodeSet,

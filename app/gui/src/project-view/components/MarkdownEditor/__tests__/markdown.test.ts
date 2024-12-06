@@ -1,4 +1,5 @@
 import { ensoMarkdown } from '@/components/MarkdownEditor/markdown'
+import { setVueHost } from '@/util/codemirror/vueHostExt'
 import { EditorState } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
 import { expect, test } from 'vitest'
@@ -7,15 +8,17 @@ function decorations<T>(
   source: string,
   recognize: (from: number, to: number, decoration: Decoration) => T | undefined,
 ) {
+  const view = new EditorView({
+    state: EditorState.create({
+      doc: source,
+      extensions: ensoMarkdown(),
+    }),
+  })
   const vueHost = {
     register: () => ({ unregister: () => {} }),
   }
-  const state = EditorState.create({
-    doc: source,
-    extensions: [ensoMarkdown({ vueHost })],
-  })
-  const view = new EditorView({ state })
-  const decorationSets = state.facet(EditorView.decorations)
+  view.dispatch({ effects: setVueHost.of(vueHost) })
+  const decorationSets = view.state.facet(EditorView.decorations)
   const results = []
   for (const decorationSet of decorationSets) {
     const resolvedDecorations =

@@ -1,7 +1,6 @@
-import type { GraphStore, NodeId } from '@/stores/graph'
+import { type AstNode, astProp } from '@/components/CodeEditor/ensoSyntax'
+import { type GraphStore, type NodeId } from '@/stores/graph'
 import { type SuggestionDbStore } from '@/stores/suggestionDatabase'
-import { type RawAstExtended } from '@/util/ast/extended'
-import { RawAst } from '@/util/ast/raw'
 import { qnJoin, tryQualifiedName } from '@/util/qualifiedName'
 import { syntaxTree } from '@codemirror/language'
 import { type Extension } from '@codemirror/state'
@@ -11,12 +10,9 @@ import {
   tooltips,
   type TooltipView,
 } from '@codemirror/view'
-import { NodeProp, type SyntaxNode } from '@lezer/common'
+import { type SyntaxNode } from '@lezer/common'
 import { unwrap } from 'ydoc-shared/util/data/result'
 import { rangeEncloses } from 'ydoc-shared/yjsModel'
-
-type AstNode = RawAstExtended<RawAst.Tree | RawAst.Token, false>
-const astProp = new NodeProp<AstNode>({ perNode: true })
 
 /** TODO: Add docs */
 function hoverTooltip(

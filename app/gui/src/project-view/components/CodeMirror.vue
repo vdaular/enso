@@ -8,7 +8,7 @@ defineExpose({ rootElement })
 <template>
   <div
     ref="rootElement"
-    class="EditorRoot"
+    class="CodeMirror"
     @keydown.arrow-left.stop
     @keydown.arrow-right.stop
     @keydown.arrow-up.stop
@@ -22,7 +22,7 @@ defineExpose({ rootElement })
 </template>
 
 <style scoped>
-.EditorRoot {
+.CodeMirror {
   width: 100%;
   height: 100%;
 }

@@ -193,6 +193,8 @@ export function some<T>(iter: Iterable<T>, f: (value: T) => boolean): boolean {
   return false
 }
 
+export function find<T, S extends T>(iter: Iterable<T>, f: (value: T) => value is S): S | undefined
+export function find<T>(iter: Iterable<T>, f: (value: T) => boolean): T | undefined
 /** Return the first element returned by the iterable which meets the condition. */
 export function find<T>(iter: Iterable<T>, f: (value: T) => boolean): T | undefined {
   for (const value of iter) {

@@ -41,14 +41,14 @@ function handlePaste(raw: boolean) {
   window.navigator.clipboard.read().then(async (items) => {
     if (!markdownEditor.value) return
     for (const item of items) {
+      if (tryUploadPastedImage(item)) return
       const textType = item.types.find((type) => type === 'text/plain')
       if (textType) {
         const blob = await item.getType(textType)
         const rawText = await blob.text()
         markdownEditor.value.putText(raw ? rawText : transformPastedText(rawText))
-        break
+        return
       }
-      if (tryUploadPastedImage(item)) break
     }
   })
 }

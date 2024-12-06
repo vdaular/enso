@@ -1,11 +1,12 @@
-import type { GraphStore } from '@/stores/graph'
-import { Annotation, ChangeSet, type ChangeSpec } from '@codemirror/state'
+import { type GraphStore } from '@/stores/graph'
+import { type ProjectStore } from '@/stores/project'
+import { Annotation, ChangeSet, type ChangeSpec, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { createDebouncer } from 'lib0/eventloop'
-import { onUnmounted } from 'vue'
+import { onUnmounted, watch } from 'vue'
 import { MutableModule } from 'ydoc-shared/ast'
 import { SourceRangeEdit, textChangeToEdits } from 'ydoc-shared/util/data/text'
-import type { Origin } from 'ydoc-shared/yjsModel'
+import { type Origin } from 'ydoc-shared/yjsModel'
 
 function changeSetToTextEdits(changes: ChangeSet) {
   const textEdits = new Array<SourceRangeEdit>()
@@ -24,6 +25,7 @@ const synchronizedModule = Annotation.define<MutableModule>()
 
 /** @returns A CodeMirror Extension that synchronizes the editor state with the AST of an Enso module. */
 export function useEnsoSourceSync(
+  projectStore: Pick<ProjectStore, 'module'>,
   graphStore: Pick<GraphStore, 'moduleSource' | 'viewModule' | 'startEdit' | 'commitEdit'>,
   editorView: EditorView,
 ) {
@@ -31,7 +33,7 @@ export function useEnsoSourceSync(
   let currentModule: MutableModule | undefined
 
   const debounceUpdates = createDebouncer(0)
-  const updateListener = EditorView.updateListener.of((update) => {
+  const updateListener: Extension = EditorView.updateListener.of((update) => {
     for (const transaction of update.transactions) {
       const newModule = transaction.annotation(synchronizedModule)
       if (newModule) {
@@ -115,9 +117,26 @@ export function useEnsoSourceSync(
       annotations: synchronizedModule.of(graphStore.startEdit()),
     })
   }
+
   onUnmounted(() => graphStore.moduleSource.unobserve(observeSourceChange))
+  /**
+   * Starts synchronizing the editor with module updates. This must be called *after* installing the `updateListener`
+   * extension in the editor.
+   */
+  function connectModuleListener() {
+    watch(
+      () => projectStore.module,
+      (module, _oldValue, onCleanup) => {
+        if (!module) return
+        graphStore.moduleSource.observe(observeSourceChange)
+        onCleanup(() => graphStore.moduleSource.unobserve(observeSourceChange))
+      },
+      { immediate: true },
+    )
+  }
   return {
+    /** The extension to install in the editor. */
     updateListener,
-    connectModuleListener: () => graphStore.moduleSource.observe(observeSourceChange),
+    connectModuleListener,
   }
 }

@@ -137,7 +137,7 @@ export class YRemoteSelectionsPluginValue {
     }
     this._awareness = this.conf.awareness
     this._awareness.on('change', this._listener)
-    this.decorations = cmState.RangeSet.of([])
+    this.decorations = cmView.Decoration.none
   }
 
   /** TODO: Add docs */

@@ -4,10 +4,8 @@ import { type Diagnostic, forceLinting, linter } from '@codemirror/lint'
 import { type Extension, StateEffect, StateField } from '@codemirror/state'
 import { type EditorView } from '@codemirror/view'
 import * as iter from 'enso-common/src/utilities/data/iter'
-import { computed, shallowRef, watch } from 'vue'
+import { computed, watch } from 'vue'
 import { type Diagnostic as LSDiagnostic, type Position } from 'ydoc-shared/languageServerTypes'
-
-const executionContextDiagnostics = shallowRef<Diagnostic[]>([])
 
 // Effect that can be applied to the document to invalidate the linter state.
 const diagnosticsUpdated = StateEffect.define()
@@ -110,22 +108,19 @@ export function useEnsoDiagnostics(
     }
     return diagnostics
   })
-  watch([executionContextDiagnostics, expressionUpdatesDiagnostics], () => {
-    editorView.dispatch({ effects: diagnosticsUpdated.of(null) })
-    forceLinting(editorView)
-  })
   // The LS protocol doesn't identify what version of the file updates are in reference to. When diagnostics are
   // received from the LS, we map them to the text assuming that they are applicable to the current version of the
   // module. This will be correct if there is no one else editing, and we aren't editing faster than the LS can send
   // updates. Typing too quickly can result in incorrect ranges, but at idle it should correct itself when we receive
   // new diagnostics.
-  watch(
-    () => projectStore.diagnostics,
-    (diagnostics) => {
-      const { lineColToIndex } = stringPosConverter(graphStore.moduleSource.text)
-      executionContextDiagnostics.value = lsDiagnosticsToCMDiagnostics(diagnostics, lineColToIndex)
-    },
-  )
+  const executionContextDiagnostics = computed(() => {
+    const { lineColToIndex } = stringPosConverter(graphStore.moduleSource.text)
+    return lsDiagnosticsToCMDiagnostics(projectStore.diagnostics, lineColToIndex)
+  })
+  watch([executionContextDiagnostics, expressionUpdatesDiagnostics], () => {
+    editorView.dispatch({ effects: diagnosticsUpdated.of(null) })
+    forceLinting(editorView)
+  })
   return [
     diagnosticsVersion,
     linter(() => [...executionContextDiagnostics.value, ...expressionUpdatesDiagnostics.value], {

@@ -3,12 +3,13 @@ import { useEnsoDiagnostics } from '@/components/CodeEditor/diagnostics'
 import { ensoSyntax } from '@/components/CodeEditor/ensoSyntax'
 import { useEnsoSourceSync } from '@/components/CodeEditor/sync'
 import { ensoHoverTooltip } from '@/components/CodeEditor/tooltips'
-import EditorRoot from '@/components/codemirror/EditorRoot.vue'
-import { testSupport } from '@/components/codemirror/testSupport'
+import CodeMirror from '@/components/CodeMirror.vue'
 import { useGraphStore } from '@/stores/graph'
 import { useProjectStore } from '@/stores/project'
 import { useSuggestionDbStore } from '@/stores/suggestionDatabase'
 import { useAutoBlur } from '@/util/autoBlur'
+import { useCodeMirror } from '@/util/codemirror'
+import { testSupport } from '@/util/codemirror/testSupport'
 import {
   bracketMatching,
   defaultHighlightStyle,
@@ -17,58 +18,46 @@ import {
 } from '@codemirror/language'
 import { lintGutter } from '@codemirror/lint'
 import { highlightSelectionMatches } from '@codemirror/search'
-import { EditorState } from '@codemirror/state'
-import { EditorView } from '@codemirror/view'
 import { type Highlighter } from '@lezer/highlight'
 import { minimalSetup } from 'codemirror'
-import { computed, onMounted, ref, watch, type ComponentInstance } from 'vue'
+import { computed, onMounted, useTemplateRef, type ComponentInstance } from 'vue'
 
 const projectStore = useProjectStore()
 const graphStore = useGraphStore()
 const suggestionDbStore = useSuggestionDbStore()
-const editorRoot = ref<ComponentInstance<typeof EditorRoot>>()
+const editorRoot = useTemplateRef<ComponentInstance<typeof CodeMirror>>('editorRoot')
 const rootElement = computed(() => editorRoot.value?.rootElement)
 useAutoBlur(rootElement)
 
-const editorView = new EditorView()
+const { editorView, setExtraExtensions } = useCodeMirror(editorRoot, {
+  extensions: [
+    minimalSetup,
+    syntaxHighlighting(defaultHighlightStyle as Highlighter),
+    bracketMatching(),
+    foldGutter(),
+    lintGutter(),
+    highlightSelectionMatches(),
+    ensoSyntax(),
+    ensoHoverTooltip(graphStore, suggestionDbStore),
+  ],
+})
 ;(window as any).__codeEditorApi = testSupport(editorView)
-
-const { updateListener, connectModuleListener } = useEnsoSourceSync(graphStore, editorView)
-const ensoDiagnostics = useEnsoDiagnostics(projectStore, graphStore, editorView)
-
-watch(
-  () => projectStore.module,
-  (module) => {
-    if (!module) return
-    editorView.setState(
-      EditorState.create({
-        extensions: [
-          minimalSetup,
-          syntaxHighlighting(defaultHighlightStyle as Highlighter),
-          bracketMatching(),
-          foldGutter(),
-          lintGutter(),
-          highlightSelectionMatches(),
-          ensoSyntax(),
-          updateListener,
-          ensoHoverTooltip(graphStore, suggestionDbStore),
-          ensoDiagnostics,
-        ],
-      }),
-    )
-    connectModuleListener()
-  },
-  { immediate: true },
+const { updateListener, connectModuleListener } = useEnsoSourceSync(
+  projectStore,
+  graphStore,
+  editorView,
 )
+const ensoDiagnostics = useEnsoDiagnostics(projectStore, graphStore, editorView)
+setExtraExtensions([updateListener, ensoDiagnostics])
+connectModuleListener()
 
 onMounted(() => {
   editorView.focus()
-  rootElement.value?.prepend(editorView.dom)
 })
 </script>
 
 <template>
-  <EditorRoot ref="editorRoot" class="CodeEditor" />
+  <CodeMirror ref="editorRoot" class="CodeEditor" />
 </template>
 
 <style scoped>

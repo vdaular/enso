@@ -1,10 +1,10 @@
-import { type StackItemEvent } from '@/components/codemirror/yCollab/yjsTypes'
+import { type YRange } from '@/util/codemirror/yCollab/y-range'
+import { ySyncAnnotation, type YSyncConfig, ySyncFacet } from '@/util/codemirror/yCollab/y-sync'
+import { type StackItemEvent } from '@/util/codemirror/yCollab/yjsTypes'
 import * as cmState from '@codemirror/state'
 import * as cmView from '@codemirror/view'
 import { createMutex } from 'lib0/mutex'
 import * as Y from 'yjs'
-import { type YRange } from './y-range'
-import { ySyncAnnotation, type YSyncConfig, ySyncFacet } from './y-sync'
 
 /** TODO: Add docs */
 export class YUndoManagerConfig {

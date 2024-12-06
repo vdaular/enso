@@ -1,5 +1,3 @@
-import { markdownDecorators } from '@/components/MarkdownEditor/markdown/decoration'
-import type { VueHost } from '@/components/VueComponentHost.vue'
 import { markdown as markdownExtension } from '@codemirror/lang-markdown'
 import {
   defineLanguageFacet,
@@ -10,24 +8,19 @@ import {
   languageDataProp,
   syntaxTree,
 } from '@codemirror/language'
-import type { Extension } from '@codemirror/state'
+import { type Extension } from '@codemirror/state'
 import { NodeProp, type NodeType, type Parser, type SyntaxNode } from '@lezer/common'
 import { markdownParser } from 'ydoc-shared/ast/ensoMarkdown'
 
-/** CodeMirror Extension for the Enso Markdown dialect. */
-export function ensoMarkdown({ vueHost }: { vueHost: VueHost }): Extension {
-  return [
-    markdownExtension({
-      base: mkLang(
-        markdownParser.configure([
-          commonmarkCodemirrorLanguageExtension,
-          tableCodemirrorLanguageExtension,
-        ]),
-      ),
-    }),
-    markdownDecorators({ vueHost }),
-  ]
-}
+export const ensoMarkdownSyntax: () => Extension = () =>
+  markdownExtension({
+    base: mkLang(
+      markdownParser.configure([
+        commonmarkCodemirrorLanguageExtension,
+        tableCodemirrorLanguageExtension,
+      ]),
+    ),
+  })
 
 function mkLang(parser: Parser) {
   return new Language(data, parser, [headerIndent], 'markdown')

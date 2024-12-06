@@ -47,6 +47,8 @@
 - [Pasting tabular data now creates Table.input expressions][11695].
 - [No halo is displayed around components when hovering][11715].
 - [The hover area of the component output port extended twice its size][11715].
+- [The documentation editor and comment documentation support opening links with
+  a key pressed, or via a popup when editing][11753].
 - [Fixed a rare bug where the component position wasn't persisted after closing
   project][11761]
 - [In the table visualization and table widget, the table context menu can now
@@ -83,6 +85,7 @@
 [11684]: https://github.com/enso-org/enso/pull/11684
 [11695]: https://github.com/enso-org/enso/pull/11695
 [11715]: https://github.com/enso-org/enso/pull/11715
+[11753]: https://github.com/enso-org/enso/pull/11753
 [11761]: https://github.com/enso-org/enso/pull/11761
 [11768]: https://github.com/enso-org/enso/pull/11768
 
