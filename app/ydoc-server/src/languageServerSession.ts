@@ -350,7 +350,7 @@ class ModulePersistence extends ObservableV2<{ removed: () => void }> {
       // @ts-expect-error This is SAFE. `this.state` is only `readonly` to ensure that
       // this is the only place where it is mutated.
       this.state = state
-      if (state === LsSyncState.Synchronized) this.trySyncRemoveUpdates()
+      if (state === LsSyncState.Synchronized) this.trySyncRemoteUpdates()
     } else {
       throw new Error('LsSync disposed')
     }
@@ -450,10 +450,10 @@ class ModulePersistence extends ObservableV2<{ removed: () => void }> {
     } else {
       this.updateToApply = update
     }
-    this.trySyncRemoveUpdates()
+    this.trySyncRemoteUpdates()
   }
 
-  trySyncRemoveUpdates() {
+  trySyncRemoteUpdates() {
     if (this.updateToApply == null) return
     // apply updates to the ls-representation doc if we are already in sync with the LS.
     if (!this.inState(LsSyncState.Synchronized)) return
