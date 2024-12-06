@@ -162,7 +162,23 @@ export abstract class Ast {
     return this.fields.get('id')
   }
 
-  /** TODO: Add docs */
+  /**
+   * Get an id used to communication with engine.
+   *
+   * This id has two purposes:
+   * - It is used in communication with Engine (regarding visualization, execution context frames, etc.)
+   * - This is used as key files metadata (keeping e.g. node's positions)
+   *
+   * ## Id vs. externalId
+   *
+   * It subtly differs in meaning from standard id: while the latter keeps identity from ydoc conflict resolution
+   * perspective, this id rather try to keep what is the node or widget identity from user perspective. The best
+   * example showing this difference is adding a new argument, like changing  `foo = bar` to `foo = bar a`:
+   * - `id` should be kept on `Main.bar` expression, and `Main.bar a` gets new id, so any concurrent edit on `bar`
+   *   will be handled properly
+   * - `externalId` should be moved from `bar` to `bar a` expression, as this is still the same node (so its
+   *   position and other properties should be kept)
+   */
   get externalId(): ExternalId {
     const id = this.fields.get('metadata').get('externalId')
     assert(id != null)

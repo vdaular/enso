@@ -36,6 +36,7 @@ import * as Y from 'yjs'
 import {
   applyDiffAsTextEdits,
   applyDocumentUpdates,
+  getIdMapToPersist,
   prettyPrintDiff,
   translateVisualizationFromFile,
 } from './edits'
@@ -463,26 +464,12 @@ class ModulePersistence extends ObservableV2<{ removed: () => void }> {
     const moduleUpdate = syncModule.applyUpdate(update, 'remote')
     if (moduleUpdate && this.syncedContent) {
       const synced = splitFileContents(this.syncedContent)
-      const { newCode, newIdMap, newMetadata } = applyDocumentUpdates(
+      const { newCode, newIdMap, newPersistedIdMap, newMetadata } = applyDocumentUpdates(
         this.doc,
         synced,
         moduleUpdate,
       )
-      this.sendLsUpdate(synced, newCode, newIdMap, newMetadata)
-    }
-  }
-
-  private static getIdMapToPersist(
-    idMap: IdMap | undefined,
-    metadata: fileFormat.IdeMetadata,
-  ): IdMap | undefined {
-    if (idMap === undefined) {
-      return
-    } else {
-      const entriesIntersection = idMap
-        .entries()
-        .filter(([, id]) => id in metadata.node || id in (metadata.widget ?? {}))
-      return new IdMap(entriesIntersection)
+      this.sendLsUpdate(synced, newCode, newIdMap, newPersistedIdMap, newMetadata)
     }
   }
 
@@ -508,6 +495,7 @@ class ModulePersistence extends ObservableV2<{ removed: () => void }> {
     synced: EnsoFileParts,
     newCode: string | undefined,
     newIdMap: IdMap | undefined,
+    newPersistedIdMap: IdMap | undefined,
     newMetadata: fileFormat.IdeMetadata | undefined,
   ) {
     if (this.syncedContent == null || this.syncedVersion == null) return
@@ -525,10 +513,7 @@ class ModulePersistence extends ObservableV2<{ removed: () => void }> {
           ...newSnapshot,
         },
       })
-    const idMapToPersist =
-      (newIdMap || newMetadata) &&
-      ModulePersistence.getIdMapToPersist(newIdMap, newMetadata ?? this.syncedMeta.ide)
-    const newIdMapToPersistJson = idMapToPersist && serializeIdMap(idMapToPersist)
+    const newIdMapToPersistJson = newPersistedIdMap && serializeIdMap(newPersistedIdMap)
     const code = newCode ?? synced.code
     const newContent = combineFileParts({
       code,
@@ -713,6 +698,7 @@ class ModulePersistence extends ObservableV2<{ removed: () => void }> {
         contentsReceived,
         this.syncedCode ?? undefined,
         unsyncedIdMap,
+        this.syncedMeta && getIdMapToPersist(unsyncedIdMap, this.syncedMeta.ide),
         this.syncedMeta?.ide,
       )
   }

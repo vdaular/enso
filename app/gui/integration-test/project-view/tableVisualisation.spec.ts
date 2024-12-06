@@ -34,6 +34,9 @@ test('Load Table Visualisation', async ({ page }) => {
 })
 
 test('Copy/paste from Table Visualization', async ({ page, context }) => {
+  const expectClipboard = expect.poll(() =>
+    page.evaluate(() => window.navigator.clipboard.readText()),
+  )
   await context.grantPermissions(['clipboard-read', 'clipboard-write'])
   await actions.goToGraph(page)
 
@@ -47,8 +50,7 @@ test('Copy/paste from Table Visualization', async ({ page, context }) => {
 
   // Copy from table visualization
   await page.keyboard.press(`${CONTROL_KEY}+C`)
-  let clipboardContent = await page.evaluate(() => window.navigator.clipboard.readText())
-  expect(clipboardContent).toMatch(/^0,0\t0,1\r\n1,0\t1,1\r\n2,0\t2,1$/)
+  await expectClipboard.toMatch(/^0,0\t0,1\r\n1,0\t1,1\r\n2,0\t2,1$/)
 
   // Paste to Node.
   await actions.clickAtBackground(page)
@@ -82,8 +84,7 @@ test('Copy/paste from Table Visualization', async ({ page, context }) => {
   await node.getByText('2,1').hover()
   await page.mouse.up()
   await page.keyboard.press(`${CONTROL_KEY}+C`)
-  clipboardContent = await page.evaluate(() => window.navigator.clipboard.readText())
-  expect(clipboardContent).toMatch(/^0,0\t0,1\r\n1,0\t1,1\r\n2,0\t2,1$/)
+  await expectClipboard.toMatch(/^0,0\t0,1\r\n1,0\t1,1\r\n2,0\t2,1$/)
 
   // Copy from table input widget with headers
   await node.getByText('0,0').hover()
@@ -93,8 +94,7 @@ test('Copy/paste from Table Visualization', async ({ page, context }) => {
   await page.mouse.down({ button: 'right' })
   await page.mouse.up({ button: 'right' })
   await page.getByText('Copy with Headers').click()
-  clipboardContent = await page.evaluate(() => window.navigator.clipboard.readText())
-  expect(clipboardContent).toMatch(/^Column #1\tColumn #2\r\n0,0\t0,1\r\n1,0\t1,1\r\n2,0\t2,1$/)
+  await expectClipboard.toMatch(/^Column #1\tColumn #2\r\n0,0\t0,1\r\n1,0\t1,1\r\n2,0\t2,1$/)
 })
 
 async function expectTableInputContent(page: Page, node: Locator) {
