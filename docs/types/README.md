@@ -30,6 +30,8 @@ as well as formal specifications where necessary. It discusses the impact of
 many syntactic language features upon inference and type checking, and is
 instrumental for ensuring that we build the right language.
 
+> [!NOTE]
+>
 > #### A Note on Syntax
 >
 > In the aid of precision, this document will use syntax that _may not_ be
@@ -37,8 +39,9 @@ instrumental for ensuring that we build the right language.
 > described in the [syntax](../syntax/README.md) document makes no promises as
 > to whether said syntax will be exposed in the surface language.
 
-> **Please Note:** The designs in this section are currently very exploratory as
-> the type system is not slated from implementation until after 2.0.
+> [!WARNING]
+> The specification in this section is very outdated and far from
+> reality. Sections that are known to be _"off"_ are marked as _warning_.
 
 Information on the type system is broken up into the following sections:
 

@@ -8,10 +8,11 @@ order: 12
 
 # Errors
 
-Enso supports two notions of errors. One is the standard asynchronous exceptions
+Enso supports two notions of errors. One is the standard exceptions
 model, while the other is a theory of 'broken values' that propagate through
 computations.
 
+> [!WARNING]
 > The actionables for this section are:
 >
 > - Greatly expand on the reasoning and theory behind the two exception models.
@@ -27,14 +28,16 @@ computations.
 
 ## Async Exceptions
 
+> [!WARNING]
 > The actionables for this section are:
 >
+> - why is this called _"asynchronous"_ when the `Panic` is raised synchronously?
 > - Formalise the model of async exceptions as implemented.
 
 ## Broken Values
 
 In Enso we have the notion of a 'broken' value: one which is in an invalid state
-but not an asynchronous error. While these may initially seem a touch useless,
+but not an error. While these may initially seem a touch useless,
 they are actually key for the display of errors in the GUI.
 
 Broken values can be thought of like checked monadic exceptions in Haskell, but
@@ -61,6 +64,7 @@ with an automatic propagation mechanism:
 
 - This allows for very natural error handling in the GUI.
 
+> [!WARNING]
 > The actionables for this section are:
 >
 > - Determine what kinds of APIs we want to use async exceptions for, and which

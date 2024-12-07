@@ -14,8 +14,10 @@ based on types. This is an _advanced_ feature and is not expected to be used by
 the novice, but it is nonetheless an important feature for working with a
 powerful type system.
 
+> [!WARNING]
 > The actionables for this section are:
 >
+> - Just _delete it all_!?
 > - Examine what other ways we can exploit type information to aid development.
 
 <!-- MarkdownTOC levels="2,3" autolink="true" -->
@@ -29,6 +31,7 @@ powerful type system.
 
 ## Typed Holes
 
+> [!WARNING]
 > The actionables for this section are:
 >
 > - Determine how we want to support typed holes.
@@ -36,6 +39,7 @@ powerful type system.
 
 ## Case Splitting
 
+> [!WARNING]
 > The actionables for this section are:
 >
 > - Determine how we want to support case splitting.
@@ -43,12 +47,14 @@ powerful type system.
 
 ## Row Manipulation
 
+> [!WARNING]
 > The actionables for this section are:
 >
 > - Determine how we want to support row manipulation.
 
 ## Dependent Sum Manipulation
 
+> [!WARNING]
 > The actionables for this section are:
 >
 > - Determine how we want to support dependent sum manipulation.

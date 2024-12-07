@@ -8,11 +8,13 @@ order: 13
 
 # Inference and Checking
 
-As a statically-typed language, Enso is built with a sophisticated type checker
-capable of reasoning about a fully dependently-typed system. However, a type
+In spite of being dynamically-typed language, Enso is built with a sophisticated type checker
+capable of reasoning about Enso typed system. However, a type
 checker on its own is quite useless. For Enso to truly be usable, it must also
 have a powerful type inference engine.
 
+> [!WARNING]
+>
 > The actionables for this section are:
 >
 > - Work out how on earth we do inference and how we maximise inference power.
@@ -41,6 +43,7 @@ In order to make Enso's type inference as helpful and friendly as possible to
 our users, we want the ability to infer the _maximal subset_ of the types that
 Enso can express.
 
+> [!WARNING]
 > The actionables for this section are:
 >
 > - How do we do inference for higher-rank and impredicative instantiations.
@@ -56,18 +59,21 @@ Enso can express.
 
 ## Type Inference Algorithm
 
+> [!WARNING]
 > The actionables for this section are:
 >
 > - Specify the inference algorithm.
 
 ### Inferring Dependency
 
+> [!WARNING]
 > The actionables for this section are:
 >
 > - Specify how (if at all) we can infer dependent quantifiers.
 
 ## Type Checking Algorithm
 
+> [!WARNING]
 > The actionables for this section are:
 >
 > - Specify the type checking algorithm.
