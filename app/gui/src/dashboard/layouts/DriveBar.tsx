@@ -30,14 +30,13 @@ import {
 } from '#/hooks/backendHooks'
 import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import { useOffline } from '#/hooks/offlineHooks'
-import { useSearchParamsState } from '#/hooks/searchParamsStateHooks'
 import AssetSearchBar from '#/layouts/AssetSearchBar'
-import { useDispatchAssetEvent } from '#/layouts/AssetsTable/EventListProvider'
 import {
   canTransferBetweenCategories,
   isCloudCategory,
   type Category,
 } from '#/layouts/CategorySwitcher/Category'
+import { useDispatchAssetEvent } from '#/layouts/Drive/EventListProvider'
 import StartModal from '#/layouts/StartModal'
 import ConfirmDeleteModal from '#/modals/ConfirmDeleteModal'
 import UpsertDatalinkModal from '#/modals/UpsertDatalinkModal'
@@ -55,6 +54,7 @@ import type Backend from '#/services/Backend'
 import type AssetQuery from '#/utilities/AssetQuery'
 import { inputFiles } from '#/utilities/input'
 import * as sanitizedEventTargets from '#/utilities/sanitizedEventTargets'
+import { useFullUserSession } from '../providers/AuthProvider'
 import { AssetPanelToggle } from './AssetPanel'
 
 // ================
@@ -68,6 +68,9 @@ export interface DriveBarProps {
   readonly setQuery: React.Dispatch<React.SetStateAction<AssetQuery>>
   readonly category: Category
   readonly doEmptyTrash: () => void
+  readonly isEmpty: boolean
+  readonly shouldDisplayStartModal: boolean
+  readonly isDisabled: boolean
 }
 
 /**
@@ -75,12 +78,16 @@ export interface DriveBarProps {
  * and a column display mode switcher.
  */
 export default function DriveBar(props: DriveBarProps) {
-  const { backend, query, setQuery, category, doEmptyTrash } = props
-
-  const [startModalDefaultOpen, , resetStartModalDefaultOpen] = useSearchParamsState(
-    'startModalDefaultOpen',
-    false,
-  )
+  const {
+    backend,
+    query,
+    setQuery,
+    category,
+    doEmptyTrash,
+    isEmpty,
+    shouldDisplayStartModal,
+    isDisabled,
+  } = props
 
   const { unsetModal } = useSetModal()
   const { getText } = useText()
@@ -91,8 +98,11 @@ export default function DriveBar(props: DriveBarProps) {
   const createAssetButtonsRef = React.useRef<HTMLDivElement>(null)
   const isCloud = isCloudCategory(category)
   const { isOffline } = useOffline()
+  const { user } = useFullUserSession()
   const canDownload = useCanDownload()
-  const shouldBeDisabled = (isCloud && isOffline) || !canCreateAssets
+
+  const shouldBeDisabled = (isCloud && isOffline) || !canCreateAssets || isDisabled
+
   const error =
     !shouldBeDisabled ? null
     : isCloud && isOffline ? getText('youAreOffline')
@@ -107,7 +117,7 @@ export default function DriveBar(props: DriveBarProps) {
   const effectivePasteData =
     (
       pasteData?.data.backendType === backend.type &&
-      canTransferBetweenCategories(pasteData.data.category, category)
+      canTransferBetweenCategories(pasteData.data.category, category, user)
     ) ?
       pasteData
     : null
@@ -207,9 +217,10 @@ export default function DriveBar(props: DriveBarProps) {
       return (
         <ButtonGroup className="my-0.5 grow-0">
           <DialogTrigger>
-            <Button size="medium" variant="outline" isDisabled={shouldBeDisabled}>
+            <Button size="medium" variant="outline" isDisabled={shouldBeDisabled || isEmpty}>
               {getText('clearTrash')}
             </Button>
+
             <ConfirmDeleteModal
               actionText={getText('allTrashedItemsForever')}
               doDelete={doEmptyTrash}
@@ -233,12 +244,7 @@ export default function DriveBar(props: DriveBarProps) {
             className="grow-0"
             {...createAssetsVisualTooltip.targetProps}
           >
-            <DialogTrigger
-              defaultOpen={startModalDefaultOpen}
-              onClose={() => {
-                resetStartModalDefaultOpen(true)
-              }}
-            >
+            <DialogTrigger defaultOpen={shouldDisplayStartModal}>
               <Button
                 size="medium"
                 variant="accent"

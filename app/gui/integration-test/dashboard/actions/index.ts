@@ -3,9 +3,11 @@ import * as test from '@playwright/test'
 
 import { TEXTS } from 'enso-common/src/text'
 
+import path from 'node:path'
 import * as apiModule from '../api'
 import DrivePageActions from './DrivePageActions'
 import LoginPageActions from './LoginPageActions'
+import StartModalActions from './StartModalActions'
 
 // =================
 // === Constants ===
@@ -675,38 +677,69 @@ export async function press(page: test.Page, keyOrShortcut: string) {
 // === Miscellaneous utilities ===
 // ===============================
 
+/** Get the path to the auth file. */
+export function getAuthFilePath() {
+  const __dirname = path.dirname(new URL(import.meta.url).pathname)
+  return path.join(__dirname, '../../../playwright/.auth/user.json')
+}
+
 /** Perform a successful login. */
 export async function login(
   { page, setupAPI }: MockParams,
   email = 'email@example.com',
   password = VALID_PASSWORD,
-  first = true,
 ) {
-  await test.test.step('Login', async () => {
-    const url = new URL(page.url())
+  const authFile = getAuthFilePath()
 
-    if (url.pathname !== '/login') {
-      return
-    }
+  await waitForLoaded(page)
+  const isLoggedIn = (await page.$('[data-testid="before-auth-layout"]')) === null
+
+  if (isLoggedIn) {
+    test.test.info().annotations.push({
+      type: 'skip',
+      description: 'Already logged in',
+    })
+    return
+  }
+
+  return test.test.step('Login', async () => {
+    test.test.info().annotations.push({
+      type: 'Login',
+      description: 'Performing login',
+    })
 
     await locateEmailInput(page).fill(email)
     await locatePasswordInput(page).fill(password)
     await locateLoginButton(page).click()
+    await passAgreementsDialog({ page, setupAPI })
 
-    await test.expect(page.getByText(TEXT.loadingAppMessage)).not.toBeVisible()
-
-    if (first) {
-      await passAgreementsDialog({ page, setupAPI })
-      await test.expect(page.getByText(TEXT.loadingAppMessage)).not.toBeVisible()
-    }
+    await page.context().storageState({ path: authFile })
   })
+}
+
+/**
+ * Wait for the page to load.
+ */
+export async function waitForLoaded(page: test.Page) {
+  await page.waitForLoadState()
+
+  await test.expect(page.locator('[data-testid="spinner"]')).toHaveCount(0)
+  await test.expect(page.getByTestId('loading-app-message')).not.toBeVisible({ timeout: 30_000 })
+}
+
+/**
+ * Wait for the dashboard to load.
+ */
+export async function waitForDashboardToLoad(page: test.Page) {
+  await waitForLoaded(page)
+  await test.expect(page.getByTestId('after-auth-layout')).toBeAttached()
 }
 
 /** Reload. */
 export async function reload({ page }: MockParams) {
   await test.test.step('Reload', async () => {
     await page.reload()
-    await test.expect(page.getByText(TEXT.loadingAppMessage)).not.toBeVisible()
+    await waitForLoaded(page)
   })
 }
 
@@ -722,7 +755,7 @@ export async function relog(
       .getByRole('button', { name: TEXT.signOutShortcut })
       .getByText(TEXT.signOutShortcut)
       .click()
-    await login({ page, setupAPI }, email, password, false)
+    await login({ page, setupAPI }, email, password)
   })
 }
 
@@ -776,46 +809,49 @@ export const mockApi = apiModule.mockApi
 
 /** Set up all mocks, without logging in. */
 export function mockAll({ page, setupAPI }: MockParams) {
-  const actions = new LoginPageActions(page)
-
-  actions.step('Execute all mocks', async () => {
-    await Promise.all([
-      mockApi({ page, setupAPI }),
-      mockDate({ page, setupAPI }),
-      mockAllAnimations({ page }),
-      mockUnneededUrls({ page }),
-    ])
-
-    await page.goto('/')
-  })
-
-  return actions
+  return new LoginPageActions(page)
+    .step('Execute all mocks', async () => {
+      await Promise.all([
+        mockApi({ page, setupAPI }),
+        mockDate({ page, setupAPI }),
+        mockAllAnimations({ page }),
+        mockUnneededUrls({ page }),
+      ])
+    })
+    .step('Navigate to the Root page', async () => {
+      await page.goto('/')
+      await waitForLoaded(page)
+    })
 }
 
 /** Set up all mocks, and log in with dummy credentials. */
-export function mockAllAndLogin({ page, setupAPI }: MockParams): DrivePageActions {
-  mockAll({ page, setupAPI })
-
-  const actions = new DrivePageActions(page)
-
-  actions.step('Login', async () => {
-    await login({ page, setupAPI })
-  })
-
-  return actions
+export function mockAllAndLogin({ page, setupAPI }: MockParams) {
+  return mockAll({ page, setupAPI })
+    .step('Login', async () => {
+      await login({ page, setupAPI })
+    })
+    .step('Wait for dashboard to load', async () => {
+      await waitForDashboardToLoad(page)
+    })
+    .step('Check if start modal is shown', async () => {
+      await new StartModalActions(page).close()
+    })
+    .into(DrivePageActions)
 }
 
 /**
  * Mock all animations.
  */
 export async function mockAllAnimations({ page }: MockParams) {
-  await page.addInitScript({
-    content: `
-      window.DISABLE_ANIMATIONS = true;
-      document.addEventListener('DOMContentLoaded', () => {
-        document.documentElement.classList.add('disable-animations')
-      })
-    `,
+  await test.test.step('Mock all animations', async () => {
+    await page.addInitScript({
+      content: `
+        window.DISABLE_ANIMATIONS = true;
+        document.addEventListener('DOMContentLoaded', () => {
+          document.documentElement.classList.add('disable-animations')
+        })
+      `,
+    })
   })
 }
 
@@ -826,27 +862,29 @@ export async function mockUnneededUrls({ page }: MockParams) {
   const EULA_JSON = JSON.stringify(apiModule.EULA_JSON)
   const PRIVACY_JSON = JSON.stringify(apiModule.PRIVACY_JSON)
 
-  return Promise.all([
-    page.route('https://*.ingest.sentry.io/api/*/envelope/*', async (route) => {
-      await route.fulfill()
-    }),
+  await test.test.step('Mock unneeded URLs', async () => {
+    return Promise.all([
+      page.route('https://*.ingest.sentry.io/api/*/envelope/*', async (route) => {
+        await route.fulfill()
+      }),
 
-    page.route('https://api.mapbox.com/mapbox-gl-js/*/mapbox-gl.css', async (route) => {
-      await route.fulfill({ contentType: 'text/css', body: '' })
-    }),
+      page.route('https://api.mapbox.com/mapbox-gl-js/*/mapbox-gl.css', async (route) => {
+        await route.fulfill({ contentType: 'text/css', body: '' })
+      }),
 
-    page.route('https://ensoanalytics.com/eula.json', async (route) => {
-      await route.fulfill({ contentType: 'text/json', body: EULA_JSON })
-    }),
+      page.route('https://ensoanalytics.com/eula.json', async (route) => {
+        await route.fulfill({ contentType: 'text/json', body: EULA_JSON })
+      }),
 
-    page.route('https://ensoanalytics.com/privacy.json', async (route) => {
-      await route.fulfill({ contentType: 'text/json', body: PRIVACY_JSON })
-    }),
+      page.route('https://ensoanalytics.com/privacy.json', async (route) => {
+        await route.fulfill({ contentType: 'text/json', body: PRIVACY_JSON })
+      }),
 
-    page.route('https://fonts.googleapis.com/css2*', async (route) => {
-      await route.fulfill({ contentType: 'text/css', body: '' })
-    }),
-  ])
+      page.route('https://fonts.googleapis.com/css2*', async (route) => {
+        await route.fulfill({ contentType: 'text/css', body: '' })
+      }),
+    ])
+  })
 }
 
 /**
@@ -859,6 +897,9 @@ export async function mockAllAndLoginAndExposeAPI({ page, setupAPI }: MockParams
     await mockDate({ page, setupAPI })
     await page.goto('/')
     await login({ page, setupAPI })
+    await waitForDashboardToLoad(page)
+    await new StartModalActions(page).close()
+
     return api
   })
 }

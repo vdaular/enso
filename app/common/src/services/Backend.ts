@@ -1787,3 +1787,17 @@ export default abstract class Backend {
   /** Resolve the path of an asset relative to a project. */
   abstract resolveProjectAssetPath(projectId: ProjectId, relativePath: string): Promise<string>
 }
+
+// ==============================
+// ====== Custom Errors =========
+// ==============================
+
+/** Error thrown when a directory does not exist. */
+export class DirectoryDoesNotExistError extends Error {
+  /**
+   * Create a new instance of the {@link DirectoryDoesNotExistError} class.
+   */
+  constructor() {
+    super('Directory does not exist.')
+  }
+}

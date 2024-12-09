@@ -334,8 +334,12 @@ export function listDirectoryQueryOptions(options: ListDirectoryQueryOptions) {
           },
           parentId,
         )
-      } catch {
-        throw Object.assign(new Error(), { parentId })
+      } catch (e) {
+        if (e instanceof Error) {
+          throw Object.assign(e, { parentId })
+        } else {
+          throw e
+        }
       }
     },
 

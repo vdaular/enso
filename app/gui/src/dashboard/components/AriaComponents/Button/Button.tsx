@@ -9,14 +9,13 @@ import {
   type ReactNode,
 } from 'react'
 
-import { useFocusChild } from '#/hooks/focusHooks'
-
 import * as aria from '#/components/aria'
 import { StatelessSpinner } from '#/components/StatelessSpinner'
 import SvgMask from '#/components/SvgMask'
 
 import { TEXT_STYLE, useVisualTooltip } from '#/components/AriaComponents/Text'
 import { Tooltip, TooltipTrigger } from '#/components/AriaComponents/Tooltip'
+import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import { forwardRef } from '#/utilities/react'
 import type { ExtractFunction, VariantProps } from '#/utilities/tailwindVariants'
 import { tv } from '#/utilities/tailwindVariants'
@@ -65,6 +64,21 @@ export interface BaseButtonProps<Render>
    */
   readonly loaderPosition?: 'full' | 'icon'
   readonly styles?: ExtractFunction<typeof BUTTON_STYLES> | undefined
+
+  readonly addonStart?:
+    | ReactElement
+    | string
+    | false
+    | ((render: Render) => ReactElement | string | null)
+    | null
+    | undefined
+  readonly addonEnd?:
+    | ReactElement
+    | string
+    | false
+    | ((render: Render) => ReactElement | string | null)
+    | null
+    | undefined
 }
 
 export const BUTTON_STYLES = tv({
@@ -101,7 +115,15 @@ export const BUTTON_STYLES = tv({
     fullWidth: { true: 'w-full' },
     size: {
       custom: { base: '', extraClickZone: '', icon: 'h-full w-unset min-w-[1.906cap]' },
-      hero: { base: 'px-8 py-4 text-lg font-bold', content: 'gap-[0.75em]' },
+      hero: {
+        base: TEXT_STYLE({
+          variant: 'subtitle',
+          color: 'custom',
+          weight: 'semibold',
+          className: 'flex px-[24px] py-5',
+        }),
+        text: 'mx-[1.5em]',
+      },
       large: {
         base: TEXT_STYLE({
           variant: 'body',
@@ -110,7 +132,7 @@ export const BUTTON_STYLES = tv({
           className: 'flex px-[11px] py-[5.5px]',
         }),
         content: 'gap-2',
-        icon: 'mb-[-0.1cap] h-4 w-4',
+        icon: '-mb-0.5 h-4 w-4',
         extraClickZone: 'after:inset-[-6px]',
       },
       medium: {
@@ -118,9 +140,9 @@ export const BUTTON_STYLES = tv({
           variant: 'body',
           color: 'custom',
           weight: 'semibold',
-          className: 'flex px-[9px] py-[3.5px]',
+          className: 'flex px-[7px] py-[3.5px]',
         }),
-        icon: 'mb-[-0.1cap] h-4 w-4',
+        icon: '-mb-0.5 h-4 w-4',
         content: 'gap-2',
         extraClickZone: 'after:inset-[-8px]',
       },
@@ -129,9 +151,9 @@ export const BUTTON_STYLES = tv({
           variant: 'body',
           color: 'custom',
           weight: 'medium',
-          className: 'flex px-[7px] py-[1.5px]',
+          className: 'flex px-[5px] py-[1.5px]',
         }),
-        icon: 'mb-[-0.1cap] h-3.5 w-3.5',
+        icon: '-mb-0.5 h-3.5 w-3.5',
         content: 'gap-1',
         extraClickZone: 'after:inset-[-10px]',
       },
@@ -143,7 +165,7 @@ export const BUTTON_STYLES = tv({
           disableLineHeightCompensation: true,
           className: 'flex px-[5px] pt-[0.5px] pb-[2.5px]',
         }),
-        icon: 'mb-[-0.2cap] h-3 w-3',
+        icon: '-mb-0.5 h-3 w-3',
         content: 'gap-1',
         extraClickZone: 'after:inset-[-12px]',
       },
@@ -247,9 +269,11 @@ export const BUTTON_STYLES = tv({
       'flex relative after:absolute after:cursor-pointer group-disabled:after:cursor-not-allowed',
     wrapper: 'relative block',
     loader: 'absolute inset-0 flex items-center justify-center',
-    content: 'flex items-center gap-[0.5em]',
+    content: 'flex items-center',
     text: 'inline-flex items-center justify-center gap-1 w-full',
     icon: 'h-[1.906cap] w-[1.906cap] flex-none aspect-square flex items-center justify-center',
+    addonStart: 'flex items-center justify-center macos:-mb-0.5',
+    addonEnd: 'flex items-center justify-center macos:-mb-0.5',
   },
   defaultVariants: {
     isActive: 'none',
@@ -273,7 +297,11 @@ export const BUTTON_STYLES = tv({
     { size: 'large', iconOnly: true, class: { base: 'p-0 rounded-full', icon: 'w-4.5 h-4.5' } },
     { size: 'hero', iconOnly: true, class: { base: 'p-0 rounded-full', icon: 'w-12 h-12' } },
 
+    { size: 'xsmall', class: { addonStart: '-ml-[3.5px]', addonEnd: '-mr-[3.5px]' } },
+    { size: 'xxsmall', class: { addonStart: '-ml-[2.5px]', addonEnd: '-mr-[2.5px]' } },
+
     { variant: 'icon', class: { base: 'flex-none' } },
+    { variant: 'icon', isDisabled: true, class: { base: 'opacity-50 cursor-not-allowed' } },
 
     { variant: 'link', isFocused: true, class: 'focus-visible:outline-offset-1' },
     { variant: 'link', size: 'xxsmall', class: 'font-medium' },
@@ -286,6 +314,8 @@ export const BUTTON_STYLES = tv({
     { variant: 'icon', isDisabled: true, class: 'opacity-50' },
   ],
 })
+
+const ICON_LOADER_DELAY = 150
 
 /** A button allows a user to perform an action, with mouse, touch, and keyboard interactions. */
 export const Button = memo(
@@ -310,11 +340,13 @@ export const Button = memo(
       extraClickZone: extraClickZoneProp,
       onPress = () => {},
       variants = BUTTON_STYLES,
+      addonStart,
+      addonEnd,
       ...ariaProps
     } = props
-    const focusChildProps = useFocusChild()
 
     const [implicitlyLoading, setImplicitlyLoading] = useState(false)
+
     const contentRef = useRef<HTMLSpanElement>(null)
     const loaderRef = useRef<HTMLSpanElement>(null)
 
@@ -328,6 +360,7 @@ export const Button = memo(
     }
 
     const isIconOnly = (children == null || children === '' || children === false) && icon != null
+
     const shouldShowTooltip = (() => {
       if (tooltip === false) {
         return false
@@ -337,6 +370,7 @@ export const Button = memo(
         return tooltip != null
       }
     })()
+
     const tooltipElement = shouldShowTooltip ? tooltip ?? ariaProps['aria-label'] : null
 
     const isLoading = loading || implicitlyLoading
@@ -345,7 +379,7 @@ export const Button = memo(
     const extraClickZone = extraClickZoneProp ?? variant === 'icon'
 
     useLayoutEffect(() => {
-      const delay = 350
+      const delay = ICON_LOADER_DELAY
 
       if (isLoading) {
         const loaderAnimation = loaderRef.current?.animate(
@@ -371,18 +405,19 @@ export const Button = memo(
       }
     }, [isLoading, loaderPosition])
 
-    const handlePress = (event: aria.PressEvent): void => {
+    const handlePress = useEventCallback((event: aria.PressEvent): void => {
       if (!isDisabled) {
         const result = onPress?.(event)
 
         if (result instanceof Promise) {
           setImplicitlyLoading(true)
+
           void result.finally(() => {
             setImplicitlyLoading(false)
           })
         }
       }
-    }
+    })
 
     const styles = variants({
       isDisabled,
@@ -398,44 +433,6 @@ export const Button = memo(
       iconOnly: isIconOnly,
     })
 
-    const childrenFactory = (render: aria.ButtonRenderProps | aria.LinkRenderProps): ReactNode => {
-      const iconComponent = (() => {
-        if (isLoading && loaderPosition === 'icon') {
-          return (
-            <span className={styles.icon()}>
-              <StatelessSpinner state="loading-medium" size={16} />
-            </span>
-          )
-        } else if (icon == null) {
-          return null
-        } else {
-          /* @ts-expect-error any here is safe because we transparently pass it to the children, and ts infer the type outside correctly */
-          const actualIcon = typeof icon === 'function' ? icon(render) : icon
-
-          if (typeof actualIcon === 'string') {
-            return <SvgMask src={actualIcon} className={styles.icon()} />
-          } else {
-            return <span className={styles.icon()}>{actualIcon}</span>
-          }
-        }
-      })()
-      // Icon only button
-      if (isIconOnly) {
-        return <span className={styles.extraClickZone()}>{iconComponent}</span>
-      } else {
-        // Default button
-        return (
-          <>
-            {iconComponent}
-            <span className={styles.text()}>
-              {/* @ts-expect-error any here is safe because we transparently pass it to the children, and ts infer the type outside correctly */}
-              {typeof children === 'function' ? children(render) : children}
-            </span>
-          </>
-        )
-      }
-    }
-
     const { tooltip: visualTooltip, targetProps } = useVisualTooltip({
       targetRef: contentRef,
       children: tooltipElement,
@@ -448,7 +445,7 @@ export const Button = memo(
         // @ts-expect-error ts errors are expected here because we are merging props with different types
         ref={ref}
         // @ts-expect-error ts errors are expected here because we are merging props with different types
-        {...aria.mergeProps<aria.ButtonProps>()(goodDefaults, ariaProps, focusChildProps, {
+        {...aria.mergeProps<aria.ButtonProps>()(goodDefaults, ariaProps, {
           isDisabled,
           // we use onPressEnd instead of onPress because for some reason react-aria doesn't trigger
           // onPress on EXTRA_CLICK_ZONE, but onPress{start,end} are triggered
@@ -469,8 +466,20 @@ export const Button = memo(
               className={styles.content({ className: contentClassName })}
               {...targetProps}
             >
-              {}
-              {childrenFactory(render)}
+              <ButtonContent
+                isIconOnly={isIconOnly}
+                isLoading={isLoading}
+                loaderPosition={loaderPosition}
+                icon={icon}
+                styles={styles}
+                /* @ts-expect-error any here is safe because we transparently pass it to the children, and ts infer the type outside correctly */
+                addonStart={typeof addonStart === 'function' ? addonStart(render) : addonStart}
+                /* @ts-expect-error any here is safe because we transparently pass it to the children, and ts infer the type outside correctly */
+                addonEnd={typeof addonEnd === 'function' ? addonEnd(render) : addonEnd}
+              >
+                {/* @ts-expect-error any here is safe because we transparently pass it to the children, and ts infer the type outside correctly */}
+                {typeof children === 'function' ? children(render) : children}
+              </ButtonContent>
             </span>
 
             {isLoading && loaderPosition === 'full' && (
@@ -478,25 +487,135 @@ export const Button = memo(
                 <StatelessSpinner state="loading-medium" size={16} />
               </span>
             )}
+
+            {shouldShowTooltip && visualTooltip}
           </span>
         )}
       </Tag>
     )
 
-    return (
-      tooltipElement == null ? button
-      : shouldUseVisualTooltip ?
-        <>
-          {button}
-          {visualTooltip}
-        </>
-      : <TooltipTrigger delay={0} closeDelay={0}>
-          {button}
+    if (tooltipElement == null) {
+      return button
+    }
 
-          <Tooltip {...(tooltipPlacement != null ? { placement: tooltipPlacement } : {})}>
-            {tooltipElement}
-          </Tooltip>
-        </TooltipTrigger>
+    return (
+      <TooltipTrigger delay={0} closeDelay={0}>
+        {button}
+
+        <Tooltip {...(tooltipPlacement != null ? { placement: tooltipPlacement } : {})}>
+          {tooltipElement}
+        </Tooltip>
+      </TooltipTrigger>
     )
   }),
 )
+
+/**
+ * Props for {@link ButtonContent}.
+ */
+interface ButtonContentProps {
+  readonly isIconOnly: boolean
+  readonly isLoading: boolean
+  readonly loaderPosition: 'full' | 'icon'
+  readonly icon: ButtonProps['icon']
+  readonly styles: ReturnType<typeof BUTTON_STYLES>
+  readonly children: ReactNode
+  readonly addonStart?: ReactElement | string | false | null | undefined
+  readonly addonEnd?: ReactElement | string | false | null | undefined
+}
+
+/**
+ * Checks if an addon is present.
+ */
+function hasAddon(addon: ButtonContentProps['addonEnd']): boolean {
+  return addon != null && addon !== false && addon !== ''
+}
+
+/**
+ * Renders the content of a button.
+ */
+// eslint-disable-next-line no-restricted-syntax
+const ButtonContent = memo(function ButtonContent(props: ButtonContentProps) {
+  const { isIconOnly, isLoading, loaderPosition, icon, styles, children, addonStart, addonEnd } =
+    props
+
+  // Icon only button
+  if (isIconOnly) {
+    return (
+      <span className={styles.extraClickZone()}>
+        {hasAddon(addonStart) && <div className={styles.addonStart()}>{addonStart}</div>}
+        <Icon isLoading={isLoading} loaderPosition={loaderPosition} icon={icon} styles={styles} />
+        {hasAddon(addonEnd) && <div className={styles.addonEnd()}>{addonEnd}</div>}
+      </span>
+    )
+  }
+
+  // Default button
+  return (
+    <>
+      {hasAddon(addonStart) && <div className={styles.addonStart()}>{addonStart}</div>}
+      <Icon isLoading={isLoading} loaderPosition={loaderPosition} icon={icon} styles={styles} />
+      <span className={styles.text()}>{children}</span>
+      {hasAddon(addonEnd) && <div className={styles.addonEnd()}>{addonEnd}</div>}
+    </>
+  )
+})
+
+/**
+ * Props for {@link Icon}.
+ */
+interface IconProps {
+  readonly isLoading: boolean
+  readonly loaderPosition: 'full' | 'icon'
+  readonly icon: ButtonProps['icon']
+  readonly styles: ReturnType<typeof BUTTON_STYLES>
+}
+
+/**
+ * Renders an icon for a button.
+ */
+const Icon = memo(function Icon(props: IconProps) {
+  const { isLoading, loaderPosition, icon, styles } = props
+
+  const [loaderIsVisible, setLoaderIsVisible] = useState(false)
+
+  useLayoutEffect(() => {
+    if (isLoading && loaderPosition === 'icon') {
+      const timeout = setTimeout(() => {
+        setLoaderIsVisible(true)
+      }, ICON_LOADER_DELAY)
+
+      return () => {
+        clearTimeout(timeout)
+      }
+    } else {
+      setLoaderIsVisible(false)
+    }
+  }, [isLoading, loaderPosition])
+
+  const shouldShowLoader = isLoading && loaderPosition === 'icon' && loaderIsVisible
+
+  if (icon == null && !shouldShowLoader) {
+    return null
+  }
+
+  const actualIcon = (() => {
+    /* @ts-expect-error any here is safe because we transparently pass it to the children, and ts infer the type outside correctly */
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    const iconRender = typeof icon === 'function' ? icon(render) : icon
+
+    return typeof iconRender === 'string' ?
+        <SvgMask src={iconRender} className={styles.icon()} />
+      : <span className={styles.icon()}>{iconRender}</span>
+  })()
+
+  if (shouldShowLoader) {
+    return (
+      <div className={styles.icon()}>
+        <StatelessSpinner state="loading-medium" size={16} />
+      </div>
+    )
+  }
+
+  return actualIcon
+})

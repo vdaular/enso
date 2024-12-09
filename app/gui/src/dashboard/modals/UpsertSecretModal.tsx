@@ -1,36 +1,11 @@
 /** @file Modal for confirming delete of any type of asset. */
-import {
-  ButtonGroup,
-  Dialog,
-  DialogDismiss,
-  Form,
-  INPUT_STYLES,
-  Input,
-} from '#/components/AriaComponents'
+import { ButtonGroup, Dialog, DialogDismiss, Form, Input } from '#/components/AriaComponents'
 import { useText } from '#/providers/TextProvider'
 import type { SecretId } from '#/services/Backend'
-import { tv } from '#/utilities/tailwindVariants'
 
 // =========================
 // === UpsertSecretModal ===
 // =========================
-
-const CLASSIC_INPUT_STYLES = tv({
-  extend: INPUT_STYLES,
-  slots: {
-    base: '',
-    textArea: 'rounded-full border-0.5 border-primary/20 px-1.5',
-    inputContainer: 'before:h-0 after:h-0.5',
-  },
-})
-
-const CLASSIC_FIELD_STYLES = tv({
-  extend: Form.FIELD_STYLES,
-  slots: {
-    base: '',
-    label: 'px-2',
-  },
-})
 
 /** Props for a {@link UpsertSecretModal}. */
 export interface UpsertSecretModalProps {
@@ -70,31 +45,23 @@ export default function UpsertSecretModal(props: UpsertSecretModalProps) {
         <Input
           form={form}
           name="name"
-          size="custom"
-          rounded="full"
           autoFocus={isNameEditable}
           autoComplete="off"
           isDisabled={!isNameEditable}
           label={getText('name')}
           placeholder={getText('secretNamePlaceholder')}
-          variants={CLASSIC_INPUT_STYLES}
-          fieldVariants={CLASSIC_FIELD_STYLES}
         />
       )}
       <Input
         form={form}
         name="value"
         type="password"
-        size="custom"
-        rounded="full"
         autoFocus={!isNameEditable}
         autoComplete="off"
         label={getText('value')}
         placeholder={
           isNameEditable ? getText('secretValuePlaceholder') : getText('secretValueHidden')
         }
-        variants={CLASSIC_INPUT_STYLES}
-        fieldVariants={CLASSIC_FIELD_STYLES}
       />
       <ButtonGroup className="mt-2">
         <Form.Submit>{isCreatingSecret ? getText('create') : getText('update')}</Form.Submit>

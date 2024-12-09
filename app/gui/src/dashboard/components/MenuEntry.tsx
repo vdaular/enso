@@ -88,7 +88,7 @@ export interface MenuEntryProps extends tailwindVariants.VariantProps<typeof MEN
   readonly action: inputBindings.DashboardBindingKey
   /** Overrides the text for the menu entry. */
   readonly label?: string | undefined
-  readonly tooltip?: string | undefined
+  readonly tooltip?: string | null | undefined
   /** When true, the button is not clickable. */
   readonly isDisabled?: boolean | undefined
   readonly title?: string | undefined

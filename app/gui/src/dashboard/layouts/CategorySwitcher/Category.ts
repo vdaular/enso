@@ -6,14 +6,16 @@ import * as z from 'zod'
 import AssetEventType from '#/events/AssetEventType'
 import { backendMutationOptions, useBackendQuery } from '#/hooks/backendHooks'
 import { useEventCallback } from '#/hooks/eventCallbackHooks'
-import { useDispatchAssetEvent } from '#/layouts/AssetsTable/EventListProvider'
+import { useDispatchAssetEvent } from '#/layouts/Drive/EventListProvider'
 import { useFullUserSession } from '#/providers/AuthProvider'
 import { useBackend, useLocalBackend, useRemoteBackend } from '#/providers/BackendProvider'
 import {
   FilterBy,
+  Plan,
   type AssetId,
   type DirectoryId,
   type Path,
+  type User,
   type UserGroupInfo,
 } from '#/services/Backend'
 import { newDirectoryId } from '#/services/LocalBackend'
@@ -169,12 +171,15 @@ export function areCategoriesEqual(a: Category, b: Category) {
 }
 
 /** Whether an asset can be transferred between categories. */
-export function canTransferBetweenCategories(from: Category, to: Category) {
+export function canTransferBetweenCategories(from: Category, to: Category, user: User) {
   switch (from.type) {
     case 'cloud':
     case 'recent':
     case 'team':
     case 'user': {
+      if (user.plan === Plan.enterprise || user.plan === Plan.team) {
+        return to.type !== 'cloud'
+      }
       return to.type === 'trash' || to.type === 'cloud' || to.type === 'team' || to.type === 'user'
     }
     case 'trash': {

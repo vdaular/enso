@@ -47,7 +47,7 @@ export interface AssetPanelProps {
  * The asset panel is a sidebar that can be expanded or collapsed.
  * It is used to view and interact with assets in the drive.
  */
-export function AssetPanel(props: AssetPanelProps) {
+export const AssetPanel = memo(function AssetPanel(props: AssetPanelProps) {
   const isHidden = useStore(assetPanelStore, (state) => state.isAssetPanelHidden, {
     unsafeEnableTransition: true,
   })
@@ -90,7 +90,7 @@ export function AssetPanel(props: AssetPanelProps) {
       </AnimatePresence>
     </div>
   )
-}
+})
 
 /**
  * The internal implementation of the Asset Panel Tabs.

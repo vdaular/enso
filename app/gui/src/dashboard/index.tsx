@@ -127,8 +127,8 @@ export function run(props: DashboardProps) {
     reactDOM.createRoot(root).render(
       <React.StrictMode>
         <QueryClientProvider client={queryClient}>
-          <UIProviders locale="en-US" portalRoot={portalRoot}>
-            <ErrorBoundary>
+          <ErrorBoundary>
+            <UIProviders locale="en-US" portalRoot={portalRoot}>
               <Suspense fallback={<LoadingScreen />}>
                 <OfflineNotificationManager>
                   <LoggerProvider logger={logger}>
@@ -138,10 +138,10 @@ export function run(props: DashboardProps) {
                   </LoggerProvider>
                 </OfflineNotificationManager>
               </Suspense>
-            </ErrorBoundary>
 
-            <ReactQueryDevtools />
-          </UIProviders>
+              <ReactQueryDevtools />
+            </UIProviders>
+          </ErrorBoundary>
         </QueryClientProvider>
       </React.StrictMode>,
     )

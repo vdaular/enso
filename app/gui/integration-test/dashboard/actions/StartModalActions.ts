@@ -1,7 +1,7 @@
 /** @file Actions for the "home" page. */
+import * as test from '@playwright/test'
 import * as actions from '.'
 import BaseActions from './BaseActions'
-import DrivePageActions from './DrivePageActions'
 import EditorPageActions from './EditorPageActions'
 
 // =========================
@@ -11,10 +11,31 @@ import EditorPageActions from './EditorPageActions'
 /** Actions for the "start" modal. */
 export default class StartModalActions extends BaseActions {
   /** Close this modal and go back to the Drive page. */
-  close() {
-    return this.step('Close "start" modal', (page) => page.getByLabel('Close').click()).into(
-      DrivePageActions,
-    )
+  async close() {
+    const isOnScreen = await this.isStartModalShown()
+
+    if (isOnScreen) {
+      return test.test.step('Close start modal', async () => {
+        await this.locateStartModal().getByTestId('close-button').click()
+      })
+    }
+  }
+
+  /** Locate the "start" modal. */
+  locateStartModal() {
+    return this.page.getByTestId('start-modal')
+  }
+
+  /**
+   * Check if the Asset Panel is shown.
+   */
+  isStartModalShown() {
+    return this.locateStartModal()
+      .isHidden()
+      .then(
+        (result) => !result,
+        () => false,
+      )
   }
 
   /** Create a project from the template at the given index. */

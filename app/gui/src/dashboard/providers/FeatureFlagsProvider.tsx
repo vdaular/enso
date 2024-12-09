@@ -4,14 +4,11 @@
  * Feature flags provider.
  * Feature flags are used to enable or disable certain features in the application.
  */
-import { useMount } from '#/hooks/mountHooks'
-import { useLocalStorage } from '#/providers/LocalStorageProvider'
 import LocalStorage from '#/utilities/LocalStorage'
-import { unsafeEntries } from '#/utilities/object'
 import type { ReactNode } from 'react'
-import { useEffect } from 'react'
 import { z } from 'zod'
 import { createStore, useStore } from 'zustand'
+import { persist } from 'zustand/middleware'
 
 declare module '#/utilities/LocalStorage' {
   /** Local storage data structure. */
@@ -42,17 +39,22 @@ export interface FeatureFlags {
   ) => void
 }
 
-const flagsStore = createStore<FeatureFlags>((set) => ({
-  featureFlags: {
-    enableMultitabs: false,
-    enableAssetsTableBackgroundRefresh: true,
-    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-    assetsTableBackgroundRefreshInterval: 3_000,
-  },
-  setFeatureFlags: (key, value) => {
-    set(({ featureFlags }) => ({ featureFlags: { ...featureFlags, [key]: value } }))
-  },
-}))
+const flagsStore = createStore<FeatureFlags>()(
+  persist(
+    (set) => ({
+      featureFlags: {
+        enableMultitabs: false,
+        enableAssetsTableBackgroundRefresh: true,
+        // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+        assetsTableBackgroundRefreshInterval: 3_000,
+      },
+      setFeatureFlags: (key, value) => {
+        set(({ featureFlags }) => ({ featureFlags: { ...featureFlags, [key]: value } }))
+      },
+    }),
+    { name: 'featureFlags' },
+  ),
+)
 
 /** Hook to get all feature flags. */
 export function useFeatureFlags() {
@@ -77,28 +79,5 @@ export function useSetFeatureFlags() {
  * Also saves feature flags to local storage when they change.
  */
 export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
-  const { localStorage } = useLocalStorage()
-  const setFeatureFlags = useSetFeatureFlags()
-
-  useMount(() => {
-    const storedFeatureFlags = localStorage.get('featureFlags')
-
-    if (storedFeatureFlags) {
-      for (const [key, value] of unsafeEntries(storedFeatureFlags)) {
-        setFeatureFlags(key, value)
-      }
-    }
-  })
-
-  useEffect(
-    () =>
-      flagsStore.subscribe((state, prevState) => {
-        if (state.featureFlags !== prevState.featureFlags) {
-          localStorage.set('featureFlags', state.featureFlags)
-        }
-      }),
-    [localStorage],
-  )
-
   return <>{children}</>
 }

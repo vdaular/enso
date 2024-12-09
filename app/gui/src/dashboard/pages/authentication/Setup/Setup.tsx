@@ -314,6 +314,7 @@ const BASE_STEPS: Step[] = [
     /** Final setup step. */
     component: function AllSetStep({ goToPreviousStep }) {
       const { getText } = textProvider.useText()
+
       const navigate = useNavigate()
       const queryClient = useQueryClient()
 

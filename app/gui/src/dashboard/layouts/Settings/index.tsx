@@ -189,6 +189,16 @@ export default function Settings() {
     }
   }, [isQueryBlank, doesEntryMatchQuery, getText, isMatch, effectiveTab])
 
+  const hideSidebarPopover = useEventCallback(() => {
+    setIsSidebarPopoverOpen(false)
+  })
+
+  const changeTab = useEventCallback(() => {
+    if (tab !== effectiveTab) {
+      setTab(tab)
+    }
+  })
+
   return (
     <div className="flex flex-1 flex-col gap-4 overflow-hidden pl-page-x pt-4">
       <Heading level={1} className="flex items-center px-heading-x">
@@ -201,9 +211,7 @@ export default function Settings() {
               tabsToShow={tabsToShow}
               tab={effectiveTab}
               setTab={setTab}
-              onClickCapture={() => {
-                setIsSidebarPopoverOpen(false)
-              }}
+              onClickCapture={hideSidebarPopover}
             />
           </Popover>
         </MenuTrigger>
@@ -241,15 +249,7 @@ export default function Settings() {
           />
         </aside>
         <main className="flex flex-1 flex-col overflow-y-auto pb-12 pl-1 scrollbar-gutter-stable">
-          <SettingsTab
-            context={context}
-            data={data}
-            onInteracted={() => {
-              if (effectiveTab !== tab) {
-                setTab(effectiveTab)
-              }
-            }}
-          />
+          <SettingsTab context={context} data={data} onInteracted={changeTab} />
         </main>
       </div>
     </div>

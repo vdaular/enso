@@ -65,16 +65,16 @@ import {
 } from '#/layouts/AssetPanel'
 import type * as assetSearchBar from '#/layouts/AssetSearchBar'
 import { useSetSuggestions } from '#/layouts/AssetSearchBar'
-import { useAssetsTableItems } from '#/layouts/AssetsTable/assetsTableItemsHooks'
-import { useAssetTree, type DirectoryQuery } from '#/layouts/AssetsTable/assetTreeHooks'
-import { useDirectoryIds } from '#/layouts/AssetsTable/directoryIdsHooks'
-import * as eventListProvider from '#/layouts/AssetsTable/EventListProvider'
 import AssetsTableContextMenu from '#/layouts/AssetsTableContextMenu'
 import {
   canTransferBetweenCategories,
   isLocalCategory,
   type Category,
 } from '#/layouts/CategorySwitcher/Category'
+import { useAssetsTableItems } from '#/layouts/Drive/assetsTableItemsHooks'
+import { useAssetTree, type DirectoryQuery } from '#/layouts/Drive/assetTreeHooks'
+import { useDirectoryIds } from '#/layouts/Drive/directoryIdsHooks'
+import * as eventListProvider from '#/layouts/Drive/EventListProvider'
 import DragModal from '#/modals/DragModal'
 import UpsertSecretModal from '#/modals/UpsertSecretModal'
 import { useFullUserSession } from '#/providers/AuthProvider'
@@ -304,7 +304,7 @@ export interface AssetManagementApi {
 }
 
 /** The table of project assets. */
-export default function AssetsTable(props: AssetsTableProps) {
+function AssetsTable(props: AssetsTableProps) {
   const { hidden, query, setQuery, category, assetManagementApiRef } = props
   const { initialProjectName } = props
 
@@ -1226,7 +1226,7 @@ export default function AssetsTable(props: AssetsTableProps) {
 
     if (
       pasteData?.data.backendType === backend.type &&
-      canTransferBetweenCategories(pasteData.data.category, category)
+      canTransferBetweenCategories(pasteData.data.category, category, user)
     ) {
       if (pasteData.data.ids.has(newParentKey)) {
         toast.error('Cannot paste a folder into itself.')
@@ -2030,3 +2030,5 @@ const HiddenColumn = memo(function HiddenColumn(props: HiddenColumnProps) {
     />
   )
 })
+
+export default memo(AssetsTable)

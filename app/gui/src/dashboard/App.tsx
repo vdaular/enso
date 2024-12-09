@@ -247,7 +247,7 @@ export default function App(props: AppProps) {
         closeOnClick={false}
         draggable={false}
         toastClassName="text-sm leading-cozy bg-selected-frame rounded-lg backdrop-blur-default"
-        transition={toastify.Zoom}
+        transition={toastify.Slide}
         limit={3}
       />
       <router.BrowserRouter basename={getMainPageUrl().pathname}>
@@ -538,16 +538,14 @@ function AppRouter(props: AppRouterProps) {
                 {/* Ideally this would be in `Drive.tsx`, but it currently must be all the way out here
                  * due to modals being in `TheModal`. */}
                 <DriveProvider>
-                  <errorBoundary.ErrorBoundary>
-                    <LocalBackendPathSynchronizer />
-                    <VersionChecker />
-                    {routes}
-                    <suspense.Suspense>
-                      <errorBoundary.ErrorBoundary>
-                        <devtools.EnsoDevtools />
-                      </errorBoundary.ErrorBoundary>
-                    </suspense.Suspense>
-                  </errorBoundary.ErrorBoundary>
+                  <LocalBackendPathSynchronizer />
+                  <VersionChecker />
+                  {routes}
+                  <suspense.Suspense>
+                    <errorBoundary.ErrorBoundary>
+                      <devtools.EnsoDevtools />
+                    </errorBoundary.ErrorBoundary>
+                  </suspense.Suspense>
                 </DriveProvider>
               </InputBindingsProvider>
             </AuthProvider>

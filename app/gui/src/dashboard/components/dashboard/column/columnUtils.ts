@@ -90,7 +90,6 @@ export function getColumnList(
 ): readonly Column[] {
   const isCloud = backendType === backend.BackendType.remote
   const isEnterprise = user.plan === backend.Plan.enterprise
-  const isTeam = user.plan === backend.Plan.team
 
   const isTrash = category.type === 'trash'
   const isRecent = category.type === 'recent'
@@ -100,7 +99,7 @@ export function getColumnList(
     if (isTrash) return false
     if (isRecent) return false
     if (isRoot) return false
-    return isCloud && (isEnterprise || isTeam) && Column.sharedWith
+    return isCloud && isEnterprise && Column.sharedWith
   }
 
   const columns = [

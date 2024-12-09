@@ -159,6 +159,8 @@ export function useForm<Schema extends types.TSchema, SubmitResult = void>(
             closeRef.current()
           }
 
+          formInstance.reset()
+
           return result
         } catch (error) {
           const isJSError = errorUtils.isJSError(error)

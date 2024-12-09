@@ -380,4 +380,18 @@ export default class DrivePageActions extends PageActions {
       await callback(locateContextMenus(page))
     })
   }
+
+  /** Close the "get started" modal. */
+  closeGetStartedModal() {
+    return this.step('Close "get started" modal', async (page) => {
+      await new StartModalActions(page).close()
+    })
+  }
+
+  /** Interact with the "start" modal. */
+  withStartModal(callback: baseActions.LocatorCallback) {
+    return this.step('Interact with start modal', async (page) => {
+      await callback(new StartModalActions(page).locateStartModal())
+    })
+  }
 }

@@ -12,8 +12,7 @@ test.test.use({ storageState: { cookies: [], origins: [] } })
 
 test.test('login and logout', ({ page }) =>
   actions
-    .mockAll({ page })
-    .login()
+    .mockAllAndLogin({ page })
     .do(async (thePage) => {
       await test.expect(actions.locateDriveView(thePage)).toBeVisible()
       await test.expect(actions.locateLoginButton(thePage)).not.toBeVisible()

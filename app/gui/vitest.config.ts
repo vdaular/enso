@@ -6,6 +6,7 @@ const config = mergeConfig(
   viteConfig,
   defineConfig({
     test: {
+      reporters: process.env.CI ? ['dot', 'github-actions'] : ['default'],
       environment: 'jsdom',
       includeSource: ['./src/**/*.{ts,tsx,vue}'],
       exclude: [...configDefaults.exclude, 'integration-test/**/*'],

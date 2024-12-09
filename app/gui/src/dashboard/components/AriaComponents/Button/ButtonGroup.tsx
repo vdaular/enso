@@ -8,10 +8,16 @@ import * as twv from '#/utilities/tailwindVariants'
 // =================
 
 const STYLES = twv.tv({
-  base: 'flex w-full flex-1 shrink-0',
+  base: 'flex flex-1 shrink-0',
   variants: {
     wrap: { true: 'flex-wrap' },
     direction: { column: 'flex-col', row: 'flex-row' },
+    width: {
+      auto: 'w-auto',
+      full: 'w-full',
+      min: 'w-min',
+      max: 'w-max',
+    },
     gap: {
       custom: '',
       large: 'gap-3.5',
@@ -65,7 +71,9 @@ export const ButtonGroup = React.forwardRef(function ButtonGroup(
     gap = 'medium',
     wrap = false,
     direction = 'row',
+    width = 'full',
     align,
+    variants = STYLES,
     verticalAlign,
     ...passthrough
   } = props
@@ -73,12 +81,13 @@ export const ButtonGroup = React.forwardRef(function ButtonGroup(
   return (
     <div
       ref={ref}
-      className={STYLES({
+      className={variants({
         gap,
         wrap,
         direction,
         align,
         verticalAlign,
+        width,
         className,
       })}
       {...passthrough}

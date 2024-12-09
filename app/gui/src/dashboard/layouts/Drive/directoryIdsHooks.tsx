@@ -22,10 +22,12 @@ export function useDirectoryIds(options: UseDirectoryIdsOptions) {
   const { category } = options
   const backend = useBackend(category)
   const { user } = useFullUserSession()
+
   const organizationQuery = useSuspenseQuery({
     queryKey: [backend.type, 'getOrganization'],
     queryFn: () => backend.getOrganization(),
   })
+
   const organization = organizationQuery.data
 
   /**
@@ -37,6 +39,7 @@ export function useDirectoryIds(options: UseDirectoryIdsOptions) {
   const setExpandedDirectoryIds = useSetExpandedDirectoryIds()
 
   const [localRootDirectory] = useLocalStorageState('localRootDirectory')
+
   const rootDirectoryId = useMemo(() => {
     const localRootPath = localRootDirectory != null ? Path(localRootDirectory) : null
     const id =
@@ -46,7 +49,9 @@ export function useDirectoryIds(options: UseDirectoryIdsOptions) {
     invariant(id, 'Missing root directory')
     return id
   }, [category, backend, user, organization, localRootDirectory])
+
   const rootDirectory = useMemo(() => createRootDirectoryAsset(rootDirectoryId), [rootDirectoryId])
+
   const expandedDirectoryIds = useMemo(
     () => [rootDirectoryId].concat(privateExpandedDirectoryIds),
     [privateExpandedDirectoryIds, rootDirectoryId],

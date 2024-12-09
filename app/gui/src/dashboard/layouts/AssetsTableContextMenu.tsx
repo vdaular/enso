@@ -26,7 +26,7 @@ import ConfirmDeleteModal from '#/modals/ConfirmDeleteModal'
 import type Backend from '#/services/Backend'
 import * as backendModule from '#/services/Backend'
 
-import { useDispatchAssetEvent } from '#/layouts/AssetsTable/EventListProvider'
+import { useDispatchAssetEvent } from '#/layouts/Drive/EventListProvider'
 import { useFullUserSession } from '#/providers/AuthProvider'
 import { useSetModal } from '#/providers/ModalProvider'
 import { useText } from '#/providers/TextProvider'
@@ -82,7 +82,7 @@ export default function AssetsTableContextMenu(props: AssetsTableContextMenuProp
     const effectivePasteData =
       (
         pasteData?.data.backendType === backend.type &&
-        canTransferBetweenCategories(pasteData.data.category, category)
+        canTransferBetweenCategories(pasteData.data.category, category, user)
       ) ?
         pasteData
       : null

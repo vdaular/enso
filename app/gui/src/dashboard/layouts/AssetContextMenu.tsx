@@ -17,15 +17,14 @@ import * as textProvider from '#/providers/TextProvider'
 import AssetEventType from '#/events/AssetEventType'
 import AssetListEventType from '#/events/AssetListEventType'
 
-import * as eventListProvider from '#/layouts/AssetsTable/EventListProvider'
 import * as categoryModule from '#/layouts/CategorySwitcher/Category'
+import * as eventListProvider from '#/layouts/Drive/EventListProvider'
 import { GlobalContextMenu } from '#/layouts/GlobalContextMenu'
 
 import ContextMenu from '#/components/ContextMenu'
 import ContextMenuEntry from '#/components/ContextMenuEntry'
 import ContextMenus from '#/components/ContextMenus'
 import type * as assetRow from '#/components/dashboard/AssetRow'
-import * as paywall from '#/components/Paywall'
 import Separator from '#/components/styled/Separator'
 
 import ConfirmDeleteModal from '#/modals/ConfirmDeleteModal'
@@ -35,6 +34,7 @@ import ManagePermissionsModal from '#/modals/ManagePermissionsModal'
 import * as backendModule from '#/services/Backend'
 import * as localBackendModule from '#/services/LocalBackend'
 
+import { ContextMenuEntry as PaywallContextMenuEntry } from '#/components/Paywall'
 import { useNewProject, useUploadFileWithToastMutation } from '#/hooks/backendHooks'
 import { usePasteData } from '#/providers/DriveProvider'
 import { normalizePath } from '#/utilities/fileInfo'
@@ -186,6 +186,8 @@ export default function AssetContextMenu(props: AssetContextMenuProps) {
     />
   )
 
+  const canUploadToCloud = user.plan !== backendModule.Plan.free
+
   return (
     category.type === 'trash' ?
       !ownsThisAsset ? null
@@ -297,8 +299,10 @@ export default function AssetContextMenu(props: AssetContextMenuProps) {
               />
             )}
           {asset.type === backendModule.AssetType.project && !isCloud && (
-            <ContextMenuEntry
+            <PaywallContextMenuEntry
               hidden={hidden}
+              isUnderPaywall={!canUploadToCloud}
+              feature="uploadToCloud"
               action="uploadToCloud"
               doAction={async () => {
                 try {
@@ -429,35 +433,29 @@ export default function AssetContextMenu(props: AssetContextMenuProps) {
           {isCloud && <Separator hidden={hidden} />}
 
           {isCloud && managesThisAsset && self != null && (
-            <>
-              {isUnderPaywall && (
-                <paywall.ContextMenuEntry feature="share" action="share" hidden={hidden} />
-              )}
-
-              {!isUnderPaywall && (
-                <ContextMenuEntry
-                  hidden={hidden}
-                  action="share"
-                  doAction={() => {
-                    setModal(
-                      <ManagePermissionsModal
-                        backend={backend}
-                        category={category}
-                        item={asset}
-                        self={self}
-                        eventTarget={eventTarget}
-                        doRemoveSelf={() => {
-                          dispatchAssetEvent({
-                            type: AssetEventType.removeSelf,
-                            id: asset.id,
-                          })
-                        }}
-                      />,
-                    )
-                  }}
-                />
-              )}
-            </>
+            <PaywallContextMenuEntry
+              feature="share"
+              isUnderPaywall={isUnderPaywall}
+              action="share"
+              hidden={hidden}
+              doAction={() => {
+                setModal(
+                  <ManagePermissionsModal
+                    backend={backend}
+                    category={category}
+                    item={asset}
+                    self={self}
+                    eventTarget={eventTarget}
+                    doRemoveSelf={() => {
+                      dispatchAssetEvent({
+                        type: AssetEventType.removeSelf,
+                        id: asset.id,
+                      })
+                    }}
+                  />,
+                )
+              }}
+            />
           )}
 
           {isCloud && (

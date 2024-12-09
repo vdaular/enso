@@ -1,7 +1,7 @@
 /** @file A hook to return the asset tree. */
 import { useMemo } from 'react'
 
-import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useIsFetching, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import type { DirectoryId } from 'enso-common/src/services/Backend'
 import {
@@ -15,6 +15,7 @@ import {
 } from 'enso-common/src/services/Backend'
 
 import { listDirectoryQueryOptions } from '#/hooks/backendHooks'
+import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import type { Category } from '#/layouts/CategorySwitcher/Category'
 import { useFullUserSession } from '#/providers/AuthProvider'
 import { useBackend } from '#/providers/BackendProvider'
@@ -36,8 +37,11 @@ export interface UseAssetTreeOptions {
 /** A hook to return the asset tree. */
 export function useAssetTree(options: UseAssetTreeOptions) {
   const { hidden, category, rootDirectory, expandedDirectoryIds } = options
+
   const { user } = useFullUserSession()
+
   const backend = useBackend(category)
+
   const enableAssetsTableBackgroundRefresh = useFeatureFlag('enableAssetsTableBackgroundRefresh')
   const assetsTableBackgroundRefreshInterval = useFeatureFlag(
     'assetsTableBackgroundRefreshInterval',
@@ -84,7 +88,7 @@ export function useAssetTree(options: UseAssetTreeOptions) {
 
   // We use a different query to refetch the directory data in the background.
   // This reduces the amount of rerenders by batching them together, so they happen less often.
-  useQuery(
+  const { refetch } = useQuery(
     useMemo(
       () => ({
         queryKey: [backend.type, 'refetchListDirectory'],
@@ -112,6 +116,28 @@ export function useAssetTree(options: UseAssetTreeOptions) {
       ],
     ),
   )
+
+  const refetchAllDirectories = useEventCallback(() => {
+    return refetch()
+  })
+
+  /**
+   * Refetch the directory data for a given directory.
+   */
+  const refetchDirectory = useEventCallback((directoryId: DirectoryId) => {
+    return queryClient.refetchQueries({
+      queryKey: listDirectoryQueryOptions({
+        backend,
+        parentId: directoryId,
+        category,
+      }).queryKey,
+      type: 'active',
+    })
+  })
+
+  const isFetching = useIsFetching({
+    queryKey: [backend.type, 'listDirectory'],
+  })
 
   const rootDirectoryContent = directories.rootDirectory.data
   const isError = directories.rootDirectory.isError
@@ -258,5 +284,12 @@ export function useAssetTree(options: UseAssetTreeOptions) {
     user,
   ])
 
-  return { isLoading, isError, assetTree } as const
+  return {
+    isLoading,
+    isError,
+    assetTree,
+    isFetching,
+    refetchDirectory,
+    refetchAllDirectories,
+  } as const
 }

@@ -116,16 +116,16 @@ const DIALOG_STYLES = tv({
       xxxlarge: { content: 'p-20 pt-10 pb-16' },
     },
     scrolledToTop: { true: { header: 'border-transparent' } },
+    layout: { true: { measurerWrapper: 'h-auto' }, false: { measurerWrapper: 'h-full' } },
   },
   slots: {
     header:
       'sticky z-1 top-0 grid grid-cols-[1fr_auto_1fr] items-center border-b border-primary/10 transition-[border-color] duration-150',
     closeButton: 'col-start-1 col-end-1 mr-auto',
     heading: 'col-start-2 col-end-2 my-0 text-center',
-    scroller: 'flex flex-col overflow-y-auto max-h-[inherit]',
-    measurerWrapper: 'inline-grid h-fit max-h-fit min-h-fit w-full grid-rows-[auto]',
-    measurer: 'pointer-events-none block [grid-area:1/1]',
-    content: 'inline-block h-fit max-h-fit min-h-fit [grid-area:1/1] min-w-0',
+    scroller: 'flex flex-col h-full overflow-y-auto max-h-[inherit]',
+    measurerWrapper: 'inline-grid min-h-fit w-full grid-rows-1',
+    content: 'inline-block max-h-fit min-h-fit [grid-area:1/1] min-w-0',
   },
   compoundVariants: [
     { type: 'modal', size: 'small', class: 'max-w-sm' },
@@ -135,8 +135,10 @@ const DIALOG_STYLES = tv({
     { type: 'modal', size: 'xxlarge', class: 'max-w-2xl' },
     { type: 'modal', size: 'xxxlarge', class: 'max-w-3xl' },
     { type: 'modal', size: 'xxxxlarge', class: 'max-w-4xl' },
+    { type: 'fullscreen', class: { measurerWrapper: 'h-full' } },
   ],
   defaultVariants: {
+    layout: true,
     type: 'modal',
     closeButton: 'normal',
     hideCloseButton: false,
@@ -239,6 +241,7 @@ function DialogContent(props: DialogContentProps) {
     size,
     padding: paddingRaw,
     fitContent,
+    layout,
     testId = 'dialog',
     title,
     children,
@@ -247,14 +250,12 @@ function DialogContent(props: DialogContentProps) {
   } = props
 
   const dialogRef = React.useRef<HTMLDivElement>(null)
-  const scrollerRef = React.useRef<HTMLDivElement | null>()
+  const scrollerRef = React.useRef<HTMLDivElement | null>(null)
   const dialogId = aria.useId()
 
   const titleId = `${dialogId}-title`
   const padding = paddingRaw ?? (type === 'modal' ? 'medium' : 'xlarge')
   const isFullscreen = type === 'fullscreen'
-
-  const [isScrolledToTop, setIsScrolledToTop] = React.useState(true)
 
   const [isLayoutDisabled, setIsLayoutDisabled] = React.useState(true)
 
@@ -283,22 +284,6 @@ function DialogContent(props: DialogContentProps) {
     },
   })
 
-  /** Handles the scroll event on the dialog content. */
-  const handleScroll = useEventCallback((ref: HTMLDivElement | null) => {
-    scrollerRef.current = ref
-    React.startTransition(() => {
-      if (ref && ref.scrollTop > 0) {
-        setIsScrolledToTop(false)
-      } else {
-        setIsScrolledToTop(true)
-      }
-    })
-  })
-
-  const handleScrollEvent = useEventCallback((event: React.UIEvent<HTMLDivElement>) => {
-    handleScroll(event.currentTarget)
-  })
-
   React.useEffect(() => {
     if (isFullscreen) {
       return
@@ -317,13 +302,13 @@ function DialogContent(props: DialogContentProps) {
     rounded,
     hideCloseButton,
     closeButton,
-    scrolledToTop: isScrolledToTop,
     size,
     padding,
     fitContent,
+    layout,
   })
 
-  const dialogHeight = () => {
+  const getDialogHeight = () => {
     if (isFullscreen) {
       return ''
     }
@@ -340,7 +325,7 @@ function DialogContent(props: DialogContentProps) {
       <MotionDialog
         layout
         transition={TRANSITION}
-        style={{ height: dialogHeight() }}
+        style={{ height: getDialogHeight() }}
         id={dialogId}
         onLayoutAnimationStart={() => {
           if (scrollerRef.current) {
@@ -362,7 +347,7 @@ function DialogContent(props: DialogContentProps) {
               // This is a temporary solution until we refactor the Dialog component
               // to use `useDialog` hook from the 'react-aria-components' library.
               // this will allow us to set the `data-testid` attribute on the dialog
-              element.dataset.testId = testId
+              element.dataset.testid = testId
             }
           })(ref)
         }}
@@ -372,54 +357,44 @@ function DialogContent(props: DialogContentProps) {
       >
         {(opts) => (
           <>
-            <dialogProvider.DialogProvider close={opts.close} dialogId={dialogId}>
-              <motion.div layout className="w-full" transition={{ duration: 0 }}>
-                <DialogHeader
-                  closeButton={closeButton}
-                  title={title}
-                  titleId={titleId}
-                  headerClassName={styles.header({ scrolledToTop: isScrolledToTop })}
-                  closeButtonClassName={styles.closeButton()}
-                  headingClassName={styles.heading()}
-                  headerDimensionsRef={headerDimensionsRef}
-                />
-              </motion.div>
+            <motion.div layout className="w-full" transition={{ duration: 0 }}>
+              <DialogHeader
+                closeButton={closeButton}
+                title={title}
+                titleId={titleId}
+                scrollerRef={scrollerRef}
+                fitContent={fitContent}
+                hideCloseButton={hideCloseButton}
+                padding={padding}
+                rounded={rounded}
+                size={size}
+                type={type}
+                headerDimensionsRef={headerDimensionsRef}
+                close={opts.close}
+                variants={variants}
+              />
+            </motion.div>
 
-              <motion.div
-                layout
-                layoutScroll
-                className={styles.scroller()}
-                ref={handleScroll}
-                onScroll={handleScrollEvent}
-                transition={{ duration: 0 }}
+            <motion.div
+              layout
+              layoutScroll
+              className={styles.scroller()}
+              ref={scrollerRef}
+              transition={{ duration: 0 }}
+            >
+              <DialogBody
+                close={opts.close}
+                contentDimensionsRef={contentDimensionsRef}
+                dialogId={dialogId}
+                headerDimensionsRef={headerDimensionsRef}
+                scrollerRef={scrollerRef}
+                measurerWrapperClassName={styles.measurerWrapper()}
+                contentClassName={styles.content()}
+                type={type}
               >
-                <div className={styles.measurerWrapper()}>
-                  {/* eslint-disable jsdoc/check-alignment */}
-                  {/**
-                   * This div is used to measure the content dimensions.
-                   * It's takes the same grid area as the content, thus
-                   * resizes together with the content.
-                   *
-                   * We use grid + grid-area to avoid setting `position: relative`
-                   * on the element, which would interfere with the layout.
-                   *
-                   * It's set to `pointer-events-none` so that it doesn't
-                   * interfere with the layout.
-                   */}
-                  {/* eslint-enable jsdoc/check-alignment */}
-                  <div ref={contentDimensionsRef} className={styles.measurer()} />
-                  <div className={styles.content()}>
-                    <errorBoundary.ErrorBoundary>
-                      <suspense.Suspense
-                        loaderProps={{ minHeight: type === 'fullscreen' ? 'full' : 'h32' }}
-                      >
-                        {typeof children === 'function' ? children(opts) : children}
-                      </suspense.Suspense>
-                    </errorBoundary.ErrorBoundary>
-                  </div>
-                </div>
-              </motion.div>
-            </dialogProvider.DialogProvider>
+                {children}
+              </DialogBody>
+            </motion.div>
           </>
         )}
       </MotionDialog>
@@ -430,47 +405,142 @@ function DialogContent(props: DialogContentProps) {
 }
 
 /**
+ * Props for the {@link DialogBody} component.
+ */
+interface DialogBodyProps {
+  readonly dialogId: string
+  readonly contentDimensionsRef: (node: HTMLElement | null) => void
+  readonly headerDimensionsRef: (node: HTMLElement | null) => void
+  readonly scrollerRef: React.RefObject<HTMLDivElement>
+  readonly close: () => void
+  readonly measurerWrapperClassName: string
+  readonly contentClassName: string
+  readonly children: DialogProps['children']
+  readonly type: DialogProps['type']
+}
+
+/**
+ * The internals of a dialog. Exists only as a performance optimization.
+ */
+// eslint-disable-next-line no-restricted-syntax
+const DialogBody = React.memo(function DialogBody(props: DialogBodyProps) {
+  const {
+    close,
+    contentDimensionsRef,
+    dialogId,
+    children,
+    measurerWrapperClassName,
+    contentClassName,
+    type,
+  } = props
+
+  return (
+    <div className={measurerWrapperClassName}>
+      <div ref={contentDimensionsRef} className={contentClassName}>
+        <errorBoundary.ErrorBoundary>
+          <suspense.Suspense loaderProps={{ minHeight: type === 'fullscreen' ? 'full' : 'h32' }}>
+            <dialogProvider.DialogProvider close={close} dialogId={dialogId}>
+              {typeof children === 'function' ? children({ close }) : children}
+            </dialogProvider.DialogProvider>
+          </suspense.Suspense>
+        </errorBoundary.ErrorBoundary>
+      </div>
+    </div>
+  )
+})
+
+/**
  * Props for the {@link DialogHeader} component.
  */
-interface DialogHeaderProps {
-  readonly headerClassName: string
-  readonly closeButtonClassName: string
-  readonly headingClassName: string
+interface DialogHeaderProps extends Omit<VariantProps<typeof DIALOG_STYLES>, 'scrolledToTop'> {
   readonly closeButton: DialogProps['closeButton']
   readonly title: DialogProps['title']
   readonly titleId: string
   readonly headerDimensionsRef: (node: HTMLElement | null) => void
+  readonly scrollerRef: React.RefObject<HTMLDivElement>
+  readonly close: () => void
 }
 
 /**
  * The header of a dialog.
  * @internal
  */
-// eslint-disable-next-line no-restricted-syntax
 const DialogHeader = React.memo(function DialogHeader(props: DialogHeaderProps) {
   const {
     closeButton,
     title,
     titleId,
-    headerClassName,
-    closeButtonClassName,
-    headingClassName,
     headerDimensionsRef,
+    scrollerRef,
+    fitContent,
+    hideCloseButton,
+    padding,
+    rounded,
+    size,
+    type,
+    variants = DIALOG_STYLES,
+    close,
+    layout,
   } = props
 
-  const { close } = dialogProvider.useDialogStrictContext()
+  const styles = variants({
+    type,
+    closeButton,
+    fitContent,
+    hideCloseButton,
+    padding,
+    rounded,
+    size,
+    layout,
+  })
+
+  const [isScrolledToTop, privateSetIsScrolledToTop] = React.useState(true)
+
+  const setIsScrolledToTop = React.useCallback(
+    (value: boolean) => {
+      React.startTransition(() => {
+        privateSetIsScrolledToTop(value)
+      })
+    },
+    [privateSetIsScrolledToTop],
+  )
+
+  /** Handles the scroll event on the dialog content. */
+  const handleScrollEvent = useEventCallback(() => {
+    if (scrollerRef.current) {
+      setIsScrolledToTop(scrollerRef.current.scrollTop === 0)
+    } else {
+      setIsScrolledToTop(true)
+    }
+  })
+
+  React.useEffect(() => {
+    const scroller = scrollerRef.current
+    if (scroller) {
+      handleScrollEvent()
+
+      scroller.addEventListener('scroll', handleScrollEvent, { passive: true })
+
+      return () => {
+        scroller.removeEventListener('scroll', handleScrollEvent)
+      }
+    }
+  }, [handleScrollEvent, scrollerRef])
 
   return (
-    <aria.Header ref={headerDimensionsRef} className={headerClassName}>
+    <aria.Header
+      ref={headerDimensionsRef}
+      className={styles.header({ scrolledToTop: isScrolledToTop })}
+    >
       {closeButton !== 'none' && (
-        <ariaComponents.CloseButton className={closeButtonClassName} onPress={close} />
+        <ariaComponents.CloseButton className={styles.closeButton()} onPress={close} />
       )}
 
       {title != null && (
         <ariaComponents.Text.Heading
           id={titleId}
           level={2}
-          className={headingClassName}
+          className={styles.heading()}
           weight="semibold"
         >
           {title}

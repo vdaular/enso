@@ -2,10 +2,12 @@
  * @file
  * This file provides a zustand store that contains the state of the Enso devtools.
  */
-import type { PaywallFeatureName } from '#/hooks/billing'
+import { type PaywallFeatureName, PAYWALL_FEATURES } from '#/hooks/billing'
+import { unsafeEntries, unsafeFromEntries } from '#/utilities/object'
 import * as zustand from '#/utilities/zustand'
 import { IS_DEV_MODE } from 'enso-common/src/detect'
 import { MotionGlobalConfig } from 'framer-motion'
+import { persist } from 'zustand/middleware'
 
 /** Configuration for a paywall feature. */
 export interface PaywallDevtoolsFeatureConfiguration {
@@ -29,46 +31,52 @@ interface EnsoDevtoolsStore {
   readonly setAnimationsDisabled: (animationsDisabled: boolean) => void
 }
 
-export const ensoDevtoolsStore = zustand.createStore<EnsoDevtoolsStore>((set) => ({
-  showDevtools: IS_DEV_MODE,
-  setShowDevtools: (showDevtools) => {
-    set({ showDevtools })
-  },
-  toggleDevtools: () => {
-    set(({ showDevtools }) => ({ showDevtools: !showDevtools }))
-  },
-  showVersionChecker: false,
-  paywallFeatures: {
-    share: { isForceEnabled: null },
-    shareFull: { isForceEnabled: null },
-    userGroups: { isForceEnabled: null },
-    userGroupsFull: { isForceEnabled: null },
-    inviteUser: { isForceEnabled: null },
-    inviteUserFull: { isForceEnabled: null },
-  },
-  setPaywallFeature: (feature, isForceEnabled) => {
-    set((state) => ({
-      paywallFeatures: { ...state.paywallFeatures, [feature]: { isForceEnabled } },
-    }))
-  },
-  setEnableVersionChecker: (showVersionChecker) => {
-    set({ showVersionChecker })
-  },
-  animationsDisabled: localStorage.getItem('disableAnimations') === 'true',
-  setAnimationsDisabled: (animationsDisabled) => {
-    if (animationsDisabled) {
-      localStorage.setItem('disableAnimations', 'true')
-      MotionGlobalConfig.skipAnimations = true
-      document.documentElement.classList.add('disable-animations')
-    } else {
-      localStorage.setItem('disableAnimations', 'false')
-      MotionGlobalConfig.skipAnimations = false
-      document.documentElement.classList.remove('disable-animations')
-    }
+export const ensoDevtoolsStore = zustand.createStore<EnsoDevtoolsStore>()(
+  persist(
+    (set) => ({
+      showDevtools: IS_DEV_MODE,
+      setShowDevtools: (showDevtools) => {
+        set({ showDevtools })
+      },
+      toggleDevtools: () => {
+        set(({ showDevtools }) => ({ showDevtools: !showDevtools }))
+      },
+      showVersionChecker: false,
+      paywallFeatures: unsafeFromEntries(
+        unsafeEntries(PAYWALL_FEATURES).map(([feature]) => [feature, { isForceEnabled: null }]),
+      ),
+      setPaywallFeature: (feature, isForceEnabled) => {
+        set((state) => ({
+          paywallFeatures: { ...state.paywallFeatures, [feature]: { isForceEnabled } },
+        }))
+      },
+      setEnableVersionChecker: (showVersionChecker) => {
+        set({ showVersionChecker })
+      },
+      animationsDisabled: localStorage.getItem('disableAnimations') === 'true',
+      setAnimationsDisabled: (animationsDisabled) => {
+        if (animationsDisabled) {
+          localStorage.setItem('disableAnimations', 'true')
+          MotionGlobalConfig.skipAnimations = true
+          document.documentElement.classList.add('disable-animations')
+        } else {
+          localStorage.setItem('disableAnimations', 'false')
+          MotionGlobalConfig.skipAnimations = false
+          document.documentElement.classList.remove('disable-animations')
+        }
 
-    set({ animationsDisabled })
-  },
-}))
+        set({ animationsDisabled })
+      },
+    }),
+    {
+      name: 'ensoDevtools',
+      partialize: (state) => ({
+        showDevtools: state.showDevtools,
+        animationsDisabled: state.animationsDisabled,
+      }),
+    },
+  ),
+)
 
 // ===============================
 // === useEnableVersionChecker ===

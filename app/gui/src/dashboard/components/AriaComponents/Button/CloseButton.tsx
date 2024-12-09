@@ -21,6 +21,7 @@ export const CloseButton = memo(function CloseButton(props: CloseButtonProps) {
     icon = DismissIcon,
     tooltip = false,
     'aria-label': ariaLabel = getText('closeModalShortcut'),
+    testId = 'close-button',
     ...buttonProps
   } = props
 
@@ -45,6 +46,7 @@ export const CloseButton = memo(function CloseButton(props: CloseButtonProps) {
       extraClickZone="medium"
       icon={icon}
       aria-label={ariaLabel}
+      testId={testId}
       /* This is safe because we are passing all props to the button */
       /* eslint-disable-next-line @typescript-eslint/no-explicit-any,no-restricted-syntax */
       {...(buttonProps as any)}

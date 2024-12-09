@@ -64,6 +64,6 @@ const VARIANT_BY_LEVEL: Record<
 > = {
   free: 'primary',
   enterprise: 'primary',
-  solo: 'outline',
+  solo: 'accent',
   team: 'submit',
 }

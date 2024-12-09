@@ -188,7 +188,7 @@ function TwoFa() {
 
   return (
     <>
-      <div className="flex w-full flex-col gap-4 overflow-hidden">
+      <div className="flex w-full flex-col gap-4">
         <Selector name="display" items={['QR', 'Text']} aria-label={getText('display')} />
 
         <Form.FieldValue name="display">

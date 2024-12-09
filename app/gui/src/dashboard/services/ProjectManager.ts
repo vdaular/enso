@@ -565,7 +565,9 @@ export default class ProjectManager {
       ...entry,
       path: normalizeSlashes(entry.path),
     }))
+
     this.internalDirectories.set(parentId, result)
+
     for (const entry of result) {
       if (entry.type === FileSystemEntryType.ProjectEntry) {
         this.internalProjectPaths.set(entry.metadata.id, entry.path)

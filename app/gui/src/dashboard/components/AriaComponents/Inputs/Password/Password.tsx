@@ -6,12 +6,14 @@ import EyeIcon from '#/assets/eye.svg'
 import EyeCrossedIcon from '#/assets/eye_crossed.svg'
 import {
   Button,
+  Form,
   Input,
   type FieldPath,
   type FieldValues,
   type InputProps,
   type TSchema,
 } from '#/components/AriaComponents'
+import { AnimatePresence, motion } from 'framer-motion'
 
 // ================
 // === Password ===
@@ -29,6 +31,8 @@ export function Password<Schema extends TSchema, TFieldName extends Path<FieldVa
 ) {
   const [showPassword, setShowPassword] = useState(false)
 
+  const form = Form.useFormContext(props.form)
+
   return (
     <Input
       {...props}
@@ -37,15 +41,33 @@ export function Password<Schema extends TSchema, TFieldName extends Path<FieldVa
         <>
           {props.addonEnd}
 
-          <Button
-            size="medium"
-            variant="icon"
-            extraClickZone
-            icon={showPassword ? EyeIcon : EyeCrossedIcon}
-            onPress={() => {
-              setShowPassword(!showPassword)
-            }}
-          />
+          <Form.FieldValue form={form} name={props.name}>
+            {(value) => (
+              <AnimatePresence>
+                {value != null && value.length > 0 && (
+                  <motion.div
+                    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+                    initial={{ opacity: 0, x: 10, rotateY: 30 }}
+                    animate={{ opacity: 1, x: 0, rotateY: 0 }}
+                    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+                    exit={{ opacity: 0, x: 10, rotateY: 30 }}
+                    // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+                    transition={{ duration: 0.2, ease: 'easeInOut' }}
+                  >
+                    <Button
+                      size="medium"
+                      variant="icon"
+                      extraClickZone
+                      icon={showPassword ? EyeIcon : EyeCrossedIcon}
+                      onPress={() => {
+                        setShowPassword(!showPassword)
+                      }}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            )}
+          </Form.FieldValue>
         </>
       }
     />

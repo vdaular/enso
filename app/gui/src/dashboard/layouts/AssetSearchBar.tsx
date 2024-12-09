@@ -335,6 +335,8 @@ function AssetSearchBar(props: AssetSearchBarProps) {
     }
   })
 
+  const deferredSuggestions = React.useDeferredValue(suggestions)
+
   return (
     <FocusArea direction="horizontal">
       {(innerProps) => (
@@ -369,7 +371,7 @@ function AssetSearchBar(props: AssetSearchBarProps) {
               querySource={querySource}
               query={query}
               setQuery={setQuery}
-              suggestions={suggestions}
+              suggestions={deferredSuggestions}
               selectedIndex={selectedIndex}
               setAreSuggestionsVisible={setAreSuggestionsVisible}
               baseQuery={baseQuery}
@@ -471,7 +473,9 @@ interface AssetSearchBarPopoverProps {
 /**
  * Renders the popover containing suggestions.
  */
-function AssetSearchBarPopover(props: AssetSearchBarPopoverProps) {
+const AssetSearchBarPopover = React.memo(function AssetSearchBarPopover(
+  props: AssetSearchBarPopoverProps,
+) {
   const {
     areSuggestionsVisible,
     isCloud,
@@ -545,7 +549,7 @@ function AssetSearchBarPopover(props: AssetSearchBarPopoverProps) {
       </AnimatePresence>
     </>
   )
-}
+})
 
 /**
  * Props for a {@link SuggestionRenderer}.

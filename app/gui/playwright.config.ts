@@ -110,6 +110,7 @@ export default defineConfig({
       use: {
         baseURL: `http://localhost:${ports.dashboard}`,
         actionTimeout: TIMEOUT_MS,
+        offline: false,
       },
     },
     {
@@ -125,6 +126,7 @@ export default defineConfig({
       use: {
         baseURL: `http://localhost:${ports.dashboard}`,
         actionTimeout: TIMEOUT_MS,
+        offline: false,
         storageState: path.join(dirName, './playwright/.auth/user.json'),
       },
     },

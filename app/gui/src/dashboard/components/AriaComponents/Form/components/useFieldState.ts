@@ -3,7 +3,6 @@
  *
  * Hook to get the state of a field.
  */
-import { useFormState } from 'react-hook-form'
 import { useFormContext } from './FormProvider'
 import type { FieldPath, FormInstanceValidated, TSchema } from './types'
 
@@ -23,18 +22,10 @@ export function useFieldState<Schema extends TSchema, TFieldName extends FieldPa
   const { name } = options
 
   const form = useFormContext(options.form)
-
-  const { errors, dirtyFields, isValidating, touchedFields } = useFormState({
-    control: form.control,
-    name,
-  })
-
-  const isDirty = name in dirtyFields
-  const isTouched = name in touchedFields
-  const error = errors[name]?.message?.toString()
+  const { error, isDirty, isTouched, isValidating } = form.getFieldState(name)
 
   return {
-    error,
+    error: error?.message?.toString(),
     isDirty,
     isTouched,
     isValidating,

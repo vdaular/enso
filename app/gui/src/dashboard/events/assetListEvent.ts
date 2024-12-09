@@ -1,8 +1,8 @@
 /** @file Events related to changes in the asset list. */
 import AssetListEventType from '#/events/AssetListEventType'
 import { useEventCallback } from '#/hooks/eventCallbackHooks'
-import { useDispatchAssetListEvent } from '#/layouts/AssetsTable/EventListProvider'
 import { useTransferBetweenCategories, type Category } from '#/layouts/CategorySwitcher/Category'
+import { useDispatchAssetListEvent } from '#/layouts/Drive/EventListProvider'
 import type { DrivePastePayload } from '#/providers/DriveProvider'
 
 import type * as backend from '#/services/Backend'

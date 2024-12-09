@@ -80,7 +80,7 @@ export interface EditorProps {
 }
 
 /** The container that launches the IDE. */
-export default function Editor(props: EditorProps) {
+function Editor(props: EditorProps) {
   const { project, hidden, startProject, isOpeningFailed, openingError } = props
 
   const backend = backendProvider.useBackendForProjectType(project.type)
@@ -130,7 +130,7 @@ export default function Editor(props: EditorProps) {
 
           case projectQuery.isLoading ||
             projectQuery.data?.state.type !== backendModule.ProjectState.opened:
-            return <suspense.Loader loaderProps={{ minHeight: 'full' }} />
+            return <suspense.Loader minHeight="full" />
 
           default:
             return (
@@ -232,3 +232,5 @@ function EditorInternal(props: EditorInternalProps) {
   // this is no longer necessary, the `key` could be removed.
   return AppRunner == null ? null : <AppRunner key={appProps.projectId} {...appProps} />
 }
+
+export default React.memo(Editor)

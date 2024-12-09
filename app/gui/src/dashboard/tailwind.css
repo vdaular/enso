@@ -397,10 +397,11 @@
   --sidebar-section-heading-padding-y: 0.125rem;
   /* The vertical gap between the section heading and its content. */
   --sidebar-section-heading-margin-b: 0.375rem;
-}
 
-.Toastify--animate {
-  animation-duration: 200ms;
+  /* Toast colors. */
+  --toastify-color-light: var(--color-background);
+  --toastify-icon-color-success: var(--color-accent);
+  --toastify-icon-color-error: var(--color-danger);
 }
 
 /* These styles MUST still be copied
@@ -562,4 +563,12 @@ html.disable-animations * {
   transition: none !important;
   animation: none !important;
   animation-play-state: paused !important;
+}
+
+.Toastify__toast {
+  @apply rounded-2xl;
+}
+
+.Toastify--animate {
+  /* animation-duration: 200ms; */
 }
