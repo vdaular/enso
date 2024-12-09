@@ -24,8 +24,6 @@ export interface UnconnectedSource extends AnyUnconnectedEdge {
 export interface UnconnectedTarget extends AnyUnconnectedEdge {
   source: AstId
   target: undefined
-  /** If true, the target end should be drawn as with a self-argument arrow. */
-  targetIsSelfArgument?: boolean
   /** If true, the edge will be rendered in its dimmed color. */
   suggestion?: boolean
 }

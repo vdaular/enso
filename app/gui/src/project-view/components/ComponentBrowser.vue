@@ -240,10 +240,6 @@ const nodeColor = computed(() => {
   }
   return 'var(--node-color-no-type)'
 })
-watchEffect(() => {
-  if (!graphStore.cbEditedEdge) return
-  graphStore.cbEditedEdge.color = nodeColor.value
-})
 
 const selectedSuggestionIcon = computed(() => {
   return selectedSuggestion.value ? suggestionEntryToIcon(selectedSuggestion.value) : undefined

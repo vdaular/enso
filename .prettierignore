@@ -16,6 +16,7 @@ distribution/lib/Standard/*/*/manifest.yaml
 distribution/lib/Standard/*/*/polyglot
 distribution/lib/Standard/*/*/THIRD-PARTY
 distribution/docs-js
+docs/**/*.md
 
 built-distribution/
 THIRD-PARTY
