@@ -18,7 +18,7 @@ import type {
 } from 'ag-grid-enterprise'
 import { computed, onMounted, ref, shallowRef, watchEffect, type Ref } from 'vue'
 import { TableVisualisationTooltip } from './TableVisualization/TableVisualisationTooltip'
-import { getCellValueType } from './TableVisualization/tableVizUtils'
+import { getCellValueType, isNumericType } from './TableVisualization/tableVizUtils'
 
 export const name = 'Table'
 export const icon = 'table'
@@ -295,8 +295,7 @@ function cellClass(params: CellClassParams) {
   if (typeof params.value === 'number' || params.value === null) return 'ag-right-aligned-cell'
   if (typeof params.value === 'object') {
     const valueType = params.value?.type
-    if (valueType === 'BigInt' || valueType === 'Float' || valueType === 'Decimal')
-      return 'ag-right-aligned-cell'
+    if (isNumericType(valueType)) return 'ag-right-aligned-cell'
   }
   return null
 }
@@ -311,10 +310,9 @@ function cellRenderer(params: ICellRendererParams) {
   else if (Array.isArray(params.value)) return `[Vector ${params.value.length} items]`
   else if (typeof params.value === 'object') {
     const valueType = params.value?.type
-    if (valueType === 'BigInt') return formatNumber(params)
-    else if (valueType === 'Decimal') return formatNumber(params)
-    else if (valueType === 'Float')
+    if (valueType === 'Float')
       return `<span style="color:grey; font-style: italic;">${params.value?.value ?? 'Unknown'}</span>`
+    else if (isNumericType(valueType)) return formatNumber(params)
     else if ('_display_text_' in params.value && params.value['_display_text_'])
       return String(params.value['_display_text_'])
     else return `{ ${valueType} Object }`
@@ -623,8 +621,7 @@ const colTypeMap = computed(() => {
 
 const getColumnValueToEnso = (columnName: string) => {
   const columnType = colTypeMap.value.get(columnName) ?? ''
-  const isNumber = ['Integer', 'Float', 'Decimal', 'Byte']
-  if (isNumber.indexOf(columnType) != -1) {
+  if (isNumericType(columnType)) {
     return (item: string, module: Ast.MutableModule) => Ast.tryNumberToEnso(Number(item), module)!
   }
   if (columnType === 'Date') {
@@ -648,8 +645,7 @@ const getColumnValueToEnso = (columnName: string) => {
 }
 
 const getFormattedValueForCell = (item: string, module: Ast.MutableModule, cellType: string) => {
-  const isNumber = ['Integer', 'Float', 'Decimal', 'Byte']
-  if (isNumber.indexOf(cellType) != -1) {
+  if (isNumericType(cellType)) {
     return Ast.tryNumberToEnso(Number(item), module)!
   }
   if (cellType === 'Date') {
