@@ -19,6 +19,7 @@ import project.AWS_Credential.AWS_Credential
 import project.Errors.S3_Bucket_Not_Found
 import project.Errors.S3_Error
 import project.Errors.S3_Key_Not_Found
+import project.Errors.S3_Warning
 import project.Internal.S3_File_Write_Strategy
 import project.Internal.S3_Path.S3_Path
 import project.S3.S3
@@ -173,19 +174,20 @@ type S3_File
          thrown as these are currently unsupported.
     list : Text -> Boolean -> Vector S3_File
     list self name_filter:Text="" recursive:Boolean=False =
-        check_name_filter action = if name_filter != "" then Unimplemented.throw "S3 listing with name filter is not currently implemented." else action
-        check_recursion action = if recursive then Unimplemented.throw "S3 listing with recursion is not currently implemented." else action
-        check_directory action = if self.is_directory.not then Error.throw (Illegal_Argument.Error "Cannot `list` a non-directory." self.uri) else action
+        if Data_Link.is_data_link self then Data_Link_Helpers.interpret_data_link_target_as_file self . list name_filter=name_filter recursive=recursive else
+            check_name_filter action = if name_filter != "" then Unimplemented.throw "S3 listing with name filter is not currently implemented." else action
+            check_recursion action = if recursive then Unimplemented.throw "S3 listing with recursion is not currently implemented." else action
+            check_directory action = if self.is_directory.not then Error.throw (Illegal_Argument.Error "Cannot `list` a non-directory." self.uri) else action
 
-        check_directory <| check_recursion <| check_name_filter <|
-            if self.s3_path.bucket == "" then translate_file_errors self <| S3.list_buckets self.credentials . map bucket-> S3_File.Value (S3_Path.Value bucket "") self.credentials else
-                pair = translate_file_errors self <| S3.read_bucket self.s3_path.bucket self.s3_path.key self.credentials delimiter=S3_Path.delimiter
-                bucket = self.s3_path.bucket
-                sub_folders = pair.first . map key->
-                    S3_File.Value (S3_Path.Value bucket key) self.credentials
-                files = pair.second . map key->
-                    S3_File.Value (S3_Path.Value bucket key) self.credentials
-                sub_folders + files
+            check_directory <| check_recursion <| check_name_filter <|
+                if self.s3_path.bucket == "" then translate_file_errors self <| S3.list_buckets self.credentials . map bucket-> S3_File.Value (S3_Path.Value bucket "") self.credentials else
+                    pair = translate_file_errors self <| S3.read_bucket self.s3_path.bucket self.s3_path.key self.credentials delimiter=S3_Path.delimiter
+                    bucket = self.s3_path.bucket
+                    sub_folders = pair.first . map key->
+                        S3_File.Value (S3_Path.Value bucket key) self.credentials
+                    files = pair.second . map key->
+                        S3_File.Value (S3_Path.Value bucket key) self.credentials
+                    sub_folders + files
 
     ## ALIAS load bytes, open bytes
        ICON data_input
@@ -354,25 +356,23 @@ type S3_File
 
     ## GROUP Output
        ICON folder_add
-       Creates the directory represented by this file if it did not exist.
-       It also creates parent directories if they did not exist.
+       Within S3 the concept of creating directories has slightly different
+       meaning than on other filesystems. Text
 
-       Returns:
-       - An `Unimplemented` error as this operation is not currently supported.
+       The `create_directory` method is provided on `S3_File` only for
+       compatibility - to allow easy switching between file-systems.
 
-       ! S3 Directory Handling
+       It does not perform any actual operation. Note that in S3 a directory is
+       treated as existing if it contains any entries. Thus, even after calling
+       this `create_directory` method, the `exists` method may still yield
+       `False` until the directory is populated with some files.
 
-         Note that regular S3 buckets do not have a 'native' notion of
-         directories, instead they are emulated using prefixes and a delimiter
-         (in Enso, the delimiter is set to "/").
-
-         The trailing slash determines if the given path is treated as a
-         directory or as a regular file.
+       To warn about this specific behaviour, a warning is attached to the
+       result.
     create_directory : File
     create_directory self =
-        ## TODO Add more information about how S3 handles directories.
-           https://github.com/enso-org/enso/issues/9704
-        Unimplemented.throw "Creating S3 folders is currently not implemented."
+        warning = S3_Warning.Warning "The `create_directory` on `S3_File` is only kept for compatibility, it does not do anything. To make sure a directory reports as `exists` you must put some files into it."
+        Warning.attach warning self
 
     ## GROUP Standard.Base.Operators
        ICON folder
@@ -600,7 +600,7 @@ type S3_File
     to_display_text self = "S3_File {" + self.to_text + "}"
 
 ## PRIVATE
-File_Format_Metadata.from (that : S3_File) = File_Format_Metadata.Value that.uri that.name (that.extension.catch _->Nothing)
+File_Format_Metadata.from (that : S3_File) = File_Format_Metadata.Value that.uri that.name (that.extension.catch S3_Error _->Nothing)
 
 ## PRIVATE
 File_Like.from (that : S3_File) = File_Like.Value that

@@ -8,7 +8,7 @@ import Standard.Base.Errors.Illegal_State.Illegal_State
 import Standard.Base.Runtime.Context
 
 from Standard.AWS import S3, S3_File, AWS_Credential
-from Standard.AWS.Errors import AWS_SDK_Error, More_Records_Available, S3_Error, S3_Bucket_Not_Found, S3_Key_Not_Found
+from Standard.AWS.Errors import AWS_SDK_Error, More_Records_Available, S3_Error, S3_Bucket_Not_Found, S3_Key_Not_Found, S3_Warning
 import Standard.AWS.Internal.S3_Path.S3_Path
 
 # Needed for custom formats test
@@ -19,7 +19,9 @@ import enso_dev.Table_Tests.Util
 from Standard.Test import all
 
 import enso_dev.Base_Tests.Network.Enso_Cloud.Cloud_Tests_Setup.Cloud_Tests_Setup
+import enso_dev.Base_Tests.Network.Enso_Cloud.Cloud_Tests_Setup.Temporary_Directory
 import enso_dev.Base_Tests.System.File_Spec as Local_File_Spec
+from enso_dev.Base_Tests.Network.Enso_Cloud.Cloud_Data_Link_Spec import Symlink_Test_Setup, create_data_link_to_cloud, add_symlink_spec
 
 test_credentials -> AWS_Credential ! Illegal_State =
     access_key_id = Environment.get "ENSO_LIB_S3_AWS_ACCESS_KEY_ID" ""
@@ -324,6 +326,10 @@ add_specs suite_builder =
         assert my_writable_dir.is_directory
         group_builder.teardown (my_writable_dir.delete_if_exists recursive=True)
 
+        group_builder.specify "warns that `create_directory` is a no-op" <|
+            r = (my_writable_dir / "subdir").create_directory
+            Problems.expect_only_warning S3_Warning r
+
         group_builder.specify "should be able to write and delete a new file" <|
             new_file = my_writable_dir / "new_file1.txt"
             "Hello".write new_file on_existing_file=Existing_File_Behavior.Overwrite . should_succeed
@@ -533,6 +539,9 @@ add_specs suite_builder =
         Local_File_Spec.add_copy_edge_cases_specs group_builder my_writable_dir file_from_path=(S3_File.new _ test_credentials)
 
     suite_builder.group "DataLinks to S3_File" pending=api_pending group_builder->
+        assert my_writable_dir.is_directory
+        group_builder.teardown (my_writable_dir.delete_if_exists recursive=True)
+
         group_builder.specify "should be able to read a data link of an S3 File" <| with_default_credentials <|
             # It reads the datalink description and then reads the actual S3 file contents:
             (enso_project.data / "simple.datalink") . read . should_equal "Hello WORLD!"
@@ -561,6 +570,17 @@ add_specs suite_builder =
             Data_Link.write_raw_config s3_link raw_content replace_existing=True . should_succeed
             Panic.with_finalizer s3_link.delete <|
                 s3_link.read . should_equal "Hello WORLD!"
+
+        s3_to_s3_datalinks = Symlink_Test_Setup.make (my_writable_dir / "target-link-dir-1") (my_writable_dir / "datalink-dir-1") (create_data_link_to_s3 test_credentials)
+        add_symlink_spec group_builder "S3 -> S3" s3_to_s3_datalinks
+
+        cloud_test_root = Temporary_Directory.make "DataLinks-from-3S-to-Cloud"
+        group_builder.teardown cloud_test_root.cleanup
+        s3_to_cloud_datalinks = Symlink_Test_Setup.make (cloud_test_root.get / "target-link-dir-2") (my_writable_dir / "datalink-dir-2") create_data_link_to_cloud
+        add_symlink_spec group_builder "S3 -> Cloud" s3_to_cloud_datalinks pending=cloud_setup.real_cloud_pending
+
+        cloud_to_s3_datalinks = Symlink_Test_Setup.make (my_writable_dir / "target-link-dir-3") (cloud_test_root.get / "datalink-dir-3") (create_data_link_to_s3 test_credentials)
+        add_symlink_spec group_builder "Cloud -> S3" cloud_to_s3_datalinks pending=cloud_setup.real_cloud_pending
 
         group_builder.specify "should be able to read an S3 data link overriding the format" <| with_default_credentials <|
             s3_link = my_writable_dir / "my-simple.datalink"
@@ -598,6 +618,34 @@ add_specs suite_builder =
             got_table.should_equal table
         test_write_table_to_datalink "json" got_json->
             Table.from got_json . should_equal table
+
+s3_file_data_link_template = """
+    {
+      "type": "S3",
+      "libraryName": "Standard.AWS",
+      "uri": "<PATH>",
+      "auth": {
+        "type": "aws_auth",
+        "subType": "access_key",
+        "accessKeyId": "<ACCESS_KEY>",
+        "secretAccessKey": "<SECRET_KEY>"
+      }
+    }
+
+create_data_link_to_s3 credential:AWS_Credential link_location target:S3_File =
+    keys = case credential of
+        AWS_Credential.Key key secret ->    
+            if key.is_a Text . not then 
+                Panic.throw (Illegal_State.Error "AWS tests expect the access_key_id to be raw text constants.")
+            if secret.is_a Text . not then 
+                Panic.throw (Illegal_State.Error "AWS tests expect the secret_access_key to be raw text constants.")
+            [key, secret]
+        _ -> Panic.throw (Illegal_State.Error "AWS tests expect AWS_Credential.Key setup, but got: "+credential.to_display_text)
+    new_content = s3_file_data_link_template
+        . replace "<PATH>" target.path
+        . replace "<ACCESS_KEY>" keys.first
+        . replace "<SECRET_KEY>" keys.second
+    Data_Link.write_raw_config link_location new_content replace_existing=True
 
 main filter=Nothing =
     suite = Test.build suite_builder->
