@@ -1853,7 +1853,8 @@ type Table
         Warning.attach (Deprecated.Warning "Standard.Table.Table.Table" "auto_value_types" "Deprecated: `auto_value_types` has been replaced by `auto_cast`.") <|
             self.auto_cast columns shrink_types error_on_missing_columns on_problems
 
-    ## GROUP Standard.Base.Conversions
+    ## ALIAS tokenize, parse
+       GROUP Standard.Base.Conversions
        ICON split
        Creates a new table by splitting the chosen column of text, by the
        specified delimiter into a set of new columns. The original column will
@@ -1883,7 +1884,8 @@ type Table
     split_to_columns self column delimiter="," (column_count : Columns_To_Add = ..All_Columns) on_problems:Problem_Behavior=..Report_Warning =
         Split_Tokenize.split_to_columns self column delimiter column_count=column_count on_problems
 
-    ## GROUP Standard.Base.Conversions
+    ## ALIAS tokenize, parse
+       GROUP Standard.Base.Conversions
        ICON split
        Creates a new table by splitting the chosen column of text, by the
        specified delimiter into a set of new rows.
@@ -1902,7 +1904,8 @@ type Table
     split_to_rows self column delimiter="," =
         Split_Tokenize.split_to_rows self column delimiter
 
-    ## GROUP Standard.Base.Conversions
+    ## ALIAS split, parse, regex
+       GROUP Standard.Base.Conversions
        ICON split
 
        Creates a new Table with the chosen column of Text split by the `pattern`
@@ -1934,7 +1937,8 @@ type Table
     tokenize_to_columns self column pattern="." case_sensitivity:Case_Sensitivity=..Sensitive (column_count : Columns_To_Add = ..All_Columns) on_problems:Problem_Behavior=..Report_Warning =
         Split_Tokenize.tokenize_to_columns self column pattern case_sensitivity column_count on_problems
 
-    ## GROUP Standard.Base.Conversions
+    ## ALIAS split, parse, regex
+       GROUP Standard.Base.Conversions
        ICON split
 
        Creates a new Table with the chosen column of Text split by the `pattern`
@@ -1962,7 +1966,8 @@ type Table
     tokenize_to_rows self column pattern="." case_sensitivity:Case_Sensitivity=..Sensitive at_least_one_row:Boolean=False =
         Split_Tokenize.tokenize_to_rows self column pattern case_sensitivity at_least_one_row
 
-    ## GROUP Standard.Base.Conversions
+    ## ALIAS split, tokenize, regex
+       GROUP Standard.Base.Conversions
        ICON split
        Converts a Text column into new columns using a regular expression
        pattern.
@@ -2536,7 +2541,8 @@ type Table
         if self.row_count == 0 then Error.throw (Index_Out_Of_Bounds.Error 0 0) else
             Row.Value self (self.row_count-1)
 
-    ## GROUP Standard.Base.Calculations
+    ## ALIAS merge, xlookup, vlookup, hlookup, lookup
+       GROUP Standard.Base.Calculations
        ICON join
        Joins two tables according to the specified join conditions.
 
@@ -2673,7 +2679,7 @@ type Table
             self.java_table.join right.java_table java_conditions join_kind.to_java (columns_to_keep.at 0) (columns_to_keep.at 1) right_columns_to_drop right_prefix java_aggregator
         Table.Value new_java_table
 
-    ## ALIAS append, cartesian join
+    ## ALIAS append, cartesian
        GROUP Standard.Base.Calculations
        ICON join
        Joins tables by pairing every row of the left table with every row of the
@@ -2718,7 +2724,7 @@ type Table
                 self.java_table.crossJoin right.java_table right_prefix java_aggregator
             Table.Value new_java_table
 
-    ## ALIAS lookup
+    ## ALIAS join, xlookup, vlookup, hlookup, lookup
        GROUP Standard.Base.Calculations
        ICON join
        Merges this table with a lookup table
@@ -3538,7 +3544,8 @@ type Table
         transformer col = col.fill_empty resolved_default
         Table_Helpers.replace_columns_with_transformed_columns self columns transformer
 
-    ## GROUP Standard.Base.Text
+    ## ALIAS regex, substitute
+       GROUP Standard.Base.Text
        ICON column_add
        Replaces the first, or all occurrences of `term` with `new_text` in each
        row of the specified column. If `term` is empty, the function returns the

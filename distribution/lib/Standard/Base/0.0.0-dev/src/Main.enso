@@ -91,9 +91,7 @@ export project.Data.Text.Extensions.repeat
 export project.Data.Text.Extensions.replace
 export project.Data.Text.Extensions.reverse
 export project.Data.Text.Extensions.second
-export project.Data.Text.Extensions.slice_text
 export project.Data.Text.Extensions.split
-export project.Data.Text.Extensions.split_find_delimiters
 export project.Data.Text.Extensions.starts_with
 export project.Data.Text.Extensions.substring
 export project.Data.Text.Extensions.take

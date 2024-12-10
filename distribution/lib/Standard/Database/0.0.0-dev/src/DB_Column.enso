@@ -1546,7 +1546,8 @@ type DB_Column
             if self.connection.dialect.is_operation_supported operator then self.make_binary_op operator what new_name else
                 Error.throw (Unsupported_Database_Operation.Error ("`trim "+where.to_text+"`"))
 
-    ## GROUP Standard.Base.Text
+    ## ALIAS regex, substitute
+       GROUP Standard.Base.Text
        ICON column_add
        Replaces the first, or all occurrences of `term` with `new_text` in each
        row. If `term` is empty, the function returns the table unchanged.

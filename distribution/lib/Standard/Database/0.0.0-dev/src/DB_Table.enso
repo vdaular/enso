@@ -906,7 +906,7 @@ type DB_Table
                         associated_selector = element.associated_selector
                         self.connection.dialect.prepare_order_descriptor column associated_selector.direction text_ordering=Nothing
                     True -> case self.default_ordering of
-                        Nothing -> Error.throw (Illegal_Argument.Error "No `order_by` is specified and the table has no existing ordering (e.g. from an `order_by` operation or a primary key). Some ordering is required for `add_row_number` in Database tables.")
+                        Nothing -> Error.throw (Illegal_Argument.Error "The table has no existing ordering (e.g. from a `sort` operation or primary key). `add_row_number` requires an ordering in database.")
                         descriptors -> descriptors
                 grouping_expressions = (grouping_columns.map _.as_internal).map .expression
 
@@ -1417,7 +1417,8 @@ type DB_Table
         _ = [columns, case_sensitivity, on_problems]
         Error.throw (Unsupported_Database_Operation.Error "duplicates")
 
-    ## GROUP Standard.Base.Calculations
+    ## ALIAS merge, xlookup, vlookup, hlookup, lookup
+       GROUP Standard.Base.Calculations
        ICON join
        Joins two tables according to the specified join conditions.
 
@@ -1609,7 +1610,7 @@ type DB_Table
             on_problems.attach_problems_before limit_problems <|
                 self.join_or_cross_join right join_kind=Join_Kind_Cross on=[] right_prefix on_problems
 
-    ## ALIAS lookup
+    ## ALIAS join, xlookup, vlookup, hlookup, lookup
        GROUP Standard.Base.Calculations
        ICON join
        Merges this table with a lookup table.
@@ -2308,7 +2309,8 @@ type DB_Table
         _ = [columns, format, locale, error_on_missing_columns, on_problems]
         Error.throw (Unsupported_Database_Operation.Error "format")
 
-    ## GROUP Standard.Base.Conversions
+    ## ALIAS tokenize, parse
+       GROUP Standard.Base.Conversions
        ICON split
        Splits a column of text into a set of new columns.
        The original column will be removed from the table.
@@ -2333,7 +2335,8 @@ type DB_Table
         _ = [column, delimiter, column_count.columns_to_split, on_problems]
         Error.throw (Unsupported_Database_Operation.Error "split_to_columns")
 
-    ## GROUP Standard.Base.Conversions
+    ## ALIAS tokenize, parse
+       GROUP Standard.Base.Conversions
        ICON split
        Splits a column of text into a set of new rows.
        The values of other columns are repeated for the new rows.
@@ -2348,7 +2351,8 @@ type DB_Table
         _ = [column, delimiter]
         Error.throw (Unsupported_Database_Operation.Error "split_to_rows")
 
-    ## GROUP Standard.Base.Conversions
+    ## ALIAS split, parse, regex
+       GROUP Standard.Base.Conversions
        ICON split
        Tokenizes a column of text into a set of new columns using a regular
        expression.
@@ -2376,7 +2380,8 @@ type DB_Table
         _ = [column, pattern, case_sensitivity, column_count, on_problems]
         Error.throw (Unsupported_Database_Operation.Error "tokenize_to_columns")
 
-    ## GROUP Standard.Base.Conversions
+    ## ALIAS split, parse, regex
+       GROUP Standard.Base.Conversions
        ICON split
        Tokenizes a column of text into a set of new rows using a regular
        expression.
@@ -2398,7 +2403,8 @@ type DB_Table
         _ = [column, pattern, case_sensitivity, at_least_one_row]
         Error.throw (Unsupported_Database_Operation.Error "tokenize_to_rows")
 
-    ## GROUP Standard.Base.Conversions
+    ## ALIAS split, tokenize, regex
+       GROUP Standard.Base.Conversions
        ICON split
        Converts a Text column into new columns using a regular expression
        pattern.
@@ -2906,7 +2912,8 @@ type DB_Table
         transformer col = col.fill_empty resolved_default
         Table_Helpers.replace_columns_with_transformed_columns self columns transformer
 
-    ## GROUP Standard.Base.Text
+    ## ALIAS regex, substitute
+       GROUP Standard.Base.Text
        ICON column_add
        Replaces the first, or all occurrences of `term` with `new_text` in each
        row of the specified column. If `term` is empty, the function returns the
