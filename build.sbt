@@ -3621,6 +3621,7 @@ lazy val `engine-runner` = project
       ).distinct
       val stdLibsJars =
         `base-polyglot-root`.listFiles("*.jar").map(_.getAbsolutePath()) ++
+        `image-polyglot-root`.listFiles("*.jar").map(_.getAbsolutePath()) ++
         `table-polyglot-root`.listFiles("*.jar").map(_.getAbsolutePath())
       core ++ stdLibsJars
     },
