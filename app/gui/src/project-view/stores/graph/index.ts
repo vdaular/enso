@@ -15,7 +15,7 @@ import {
 import { useUnconnectedEdges, type UnconnectedEdge } from '@/stores/graph/unconnectedEdges'
 import { type ProjectStore } from '@/stores/project'
 import { type SuggestionDbStore } from '@/stores/suggestionDatabase'
-import { assert, assertNever, bail } from '@/util/assert'
+import { assert, assertDefined, assertNever, bail } from '@/util/assert'
 import { Ast } from '@/util/ast'
 import type { AstId, Identifier, MutableModule } from '@/util/ast/abstract'
 import { isAstId, isIdentifier } from '@/util/ast/abstract'
@@ -610,7 +610,7 @@ export const [provideGraphStore, useGraphStore] = createContextStore(
         console.error(`BUG: Cannot commit edit: No module root block.`)
         return
       }
-      if (!skipTreeRepair) Ast.repair(root, edit)
+      if (!skipTreeRepair) edit.transact(() => Ast.repair(root, edit))
       syncModule.value!.applyEdit(edit, origin)
     }
 
@@ -622,8 +622,8 @@ export const [provideGraphStore, useGraphStore] = createContextStore(
      *  to `true` for better performance.
      */
     function edit<T>(f: (edit: MutableModule) => T, skipTreeRepair?: boolean): T {
-      const edit = syncModule.value?.edit()
-      assert(edit != null)
+      assertDefined(syncModule.value)
+      const edit = syncModule.value.edit()
       let result
       edit.transact(() => {
         result = f(edit)
@@ -632,17 +632,9 @@ export const [provideGraphStore, useGraphStore] = createContextStore(
           assert(root instanceof Ast.BodyBlock)
           Ast.repair(root, edit)
         }
-        syncModule.value!.applyEdit(edit)
       })
+      syncModule.value.applyEdit(edit)
       return result!
-    }
-
-    /**
-     * Obtain a version of the given `Ast` for direct mutation. The `ast` must exist in the current module.
-     *  This can be more efficient than creating and committing an edit, but skips tree-repair and cannot be aborted.
-     */
-    function getMutable<T extends Ast.Ast>(ast: T): Ast.Mutable<T> {
-      return syncModule.value!.getVersion(ast)
     }
 
     function batchEdits(f: () => void, origin: Origin = defaultLocalOrigin) {
@@ -814,7 +806,6 @@ export const [provideGraphStore, useGraphStore] = createContextStore(
       pickInCodeOrder,
       ensureCorrectNodeOrder,
       batchEdits,
-      getMutable,
       overrideNodeColor,
       getNodeColorOverride,
       setNodeContent,

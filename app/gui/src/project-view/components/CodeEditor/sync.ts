@@ -1,6 +1,14 @@
 import { type GraphStore } from '@/stores/graph'
 import { type ProjectStore } from '@/stores/project'
-import { Annotation, ChangeSet, type ChangeSpec, type Extension } from '@codemirror/state'
+import { useToast } from '@/util/toast.ts'
+import {
+  Annotation,
+  ChangeSet,
+  type ChangeSpec,
+  type EditorSelection,
+  type Extension,
+  type Text,
+} from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { createDebouncer } from 'lib0/eventloop'
 import { onUnmounted, watch } from 'vue'
@@ -29,8 +37,13 @@ export function useEnsoSourceSync(
   graphStore: Pick<GraphStore, 'moduleSource' | 'viewModule' | 'startEdit' | 'commitEdit'>,
   editorView: EditorView,
 ) {
-  let pendingChanges: ChangeSet | undefined
+  let pendingChanges:
+    | { changes: ChangeSet; selectionBefore: EditorSelection; textBefore: Text }
+    | undefined
   let currentModule: MutableModule | undefined
+
+  const notifyErrorToast = useToast.error()
+  const notifyError = notifyErrorToast.show.bind(notifyErrorToast)
 
   const debounceUpdates = createDebouncer(0)
   const updateListener: Extension = EditorView.updateListener.of((update) => {
@@ -42,7 +55,16 @@ export function useEnsoSourceSync(
         currentModule = newModule
       } else if (transaction.docChanged && currentModule) {
         pendingChanges =
-          pendingChanges ? pendingChanges.compose(transaction.changes) : transaction.changes
+          pendingChanges ?
+            {
+              ...pendingChanges,
+              changes: pendingChanges.changes.compose(transaction.changes),
+            }
+          : {
+              changes: transaction.changes,
+              selectionBefore: transaction.startState.selection,
+              textBefore: transaction.startState.doc,
+            }
         // Defer the update until after pending events have been processed, so that if changes are arriving faster
         // than we would be able to apply them individually we coalesce them to keep up.
         debounceUpdates(commitPendingChanges)
@@ -50,7 +72,7 @@ export function useEnsoSourceSync(
     }
   })
 
-  /** Set the editor contents the current module state, discarding any pending editor-initiated changes. */
+  /** Set the editor contents to the current module state, discarding any pending editor-initiated changes. */
   function resetView() {
     pendingChanges = undefined
     currentModule = undefined
@@ -64,27 +86,31 @@ export function useEnsoSourceSync(
     })
   }
 
-  function checkSync() {
-    const code = graphStore.viewModule.root()?.code() ?? ''
-    const viewText = editorView.state.doc.toString()
-    const uncommitted = textChangeToEdits(code, viewText).map(textEditToChangeSpec)
-    if (uncommitted.length > 0) {
-      console.warn(`Module source was not synced to editor content\n${code}`, uncommitted)
-    }
-  }
-
   /** Apply any pending changes to the currently-synchronized module, clearing the set of pending changes. */
   function commitPendingChanges() {
     if (!pendingChanges || !currentModule) return
-    const changes = pendingChanges
+    const { changes, selectionBefore, textBefore } = pendingChanges
     pendingChanges = undefined
     const edits = changeSetToTextEdits(changes)
     try {
-      currentModule.applyTextEdits(edits, graphStore.viewModule)
-      graphStore.commitEdit(currentModule, undefined, 'local:userAction:CodeEditor')
-      checkSync()
+      const editedModule = currentModule.edit()
+      editedModule.applyTextEdits(edits, graphStore.viewModule)
+      if (editedModule.root()?.code() === editorView.state.doc.toString()) {
+        graphStore.commitEdit(editedModule, undefined, 'local:userAction:CodeEditor')
+        currentModule = editedModule
+        return
+      }
     } catch (error) {
       console.error(`Code Editor failed to modify module`, error)
+    }
+    notifyError('Unable to apply source code edit.')
+    editorView.dispatch({
+      changes: changes.invert(textBefore),
+      selection: selectionBefore,
+      annotations: synchronizedModule.of(currentModule),
+    })
+    if (currentModule.root()?.code() !== editorView.state.doc.toString()) {
+      console.warn('Unexpected: Applying inverted edit did not yield original module source')
       resetView()
     }
   }

@@ -117,11 +117,10 @@ export class DistributedProject {
 
 /** TODO: Add docs */
 export class ModuleDoc {
-  ydoc: Y.Doc
-  nodes: Y.Map<any>
+  readonly nodes: Y.Map<any>
+
   /** TODO: Add docs */
-  constructor(ydoc: Y.Doc) {
-    this.ydoc = ydoc
+  constructor(readonly ydoc: Y.Doc) {
     this.nodes = ydoc.getMap('nodes')
   }
 }

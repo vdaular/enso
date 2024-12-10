@@ -3,7 +3,7 @@ import { useEnsoDiagnostics } from '@/components/CodeEditor/diagnostics'
 import { ensoSyntax } from '@/components/CodeEditor/ensoSyntax'
 import { useEnsoSourceSync } from '@/components/CodeEditor/sync'
 import { ensoHoverTooltip } from '@/components/CodeEditor/tooltips'
-import CodeMirror from '@/components/CodeMirror.vue'
+import CodeMirrorRoot from '@/components/CodeMirrorRoot.vue'
 import { useGraphStore } from '@/stores/graph'
 import { useProjectStore } from '@/stores/project'
 import { useSuggestionDbStore } from '@/stores/suggestionDatabase'
@@ -27,7 +27,7 @@ import { computed, onMounted, useTemplateRef, type ComponentInstance } from 'vue
 const projectStore = useProjectStore()
 const graphStore = useGraphStore()
 const suggestionDbStore = useSuggestionDbStore()
-const editorRoot = useTemplateRef<ComponentInstance<typeof CodeMirror>>('editorRoot')
+const editorRoot = useTemplateRef<ComponentInstance<typeof CodeMirrorRoot>>('editorRoot')
 const rootElement = computed(() => editorRoot.value?.rootElement)
 useAutoBlur(rootElement)
 
@@ -60,7 +60,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <CodeMirror ref="editorRoot" class="CodeEditor" @keydown.tab.stop.prevent />
+  <CodeMirrorRoot ref="editorRoot" class="CodeEditor" @keydown.tab.stop.prevent />
 </template>
 
 <style scoped>

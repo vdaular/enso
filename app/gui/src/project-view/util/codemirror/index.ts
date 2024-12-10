@@ -1,5 +1,5 @@
 import { textEditorsBindings } from '@/bindings'
-import CodeMirror from '@/components/CodeMirror.vue'
+import CodeMirrorRoot from '@/components/CodeMirrorRoot.vue'
 import { type VueHost } from '@/components/VueComponentHost.vue'
 import { injectKeyboard } from '@/providers/keyboard'
 import { useCompartment, useDispatch, useStateEffect } from '@/util/codemirror/reactivity'
@@ -31,7 +31,7 @@ disableEditContextApi()
 
 /** Creates a CodeMirror editor instance, and sets its initial state. */
 export function useCodeMirror(
-  editorRoot: ToValue<ComponentInstance<typeof CodeMirror> | null>,
+  editorRoot: ToValue<ComponentInstance<typeof CodeMirrorRoot> | null>,
   {
     content,
     extensions,
