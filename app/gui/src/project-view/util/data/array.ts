@@ -90,7 +90,8 @@ export function partition<T>(array: Iterable<T>, pred: (elem: T) => boolean): [T
 }
 
 /**
- * Find smallest index at which two arrays differ. Returns an index past the array (i.e. array length) when both arrays are equal.
+ * Find smallest index at which two arrays differ. Returns an index past the array (i.e. array length) when both arrays
+ * are equal. Note that the default comparator uses strict equality, and so `NaN` values will be considered different.
  */
 export function findDifferenceIndex<T>(
   lhs: T[],
