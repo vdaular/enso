@@ -73,6 +73,9 @@ public class LRUCache<M> {
   /** Used to get the current free disk space; mockable. */
   private final DiskSpaceGetter diskSpaceGetter;
 
+  /** Used to clear the cache on reload. */
+  private final ReloadDetector reloadDetector = new ReloadDetector();
+
   public LRUCache() {
     this(LRUCacheSettings.getDefault(), new NowGetter(), new DiskSpaceGetter());
   }
@@ -89,6 +92,8 @@ public class LRUCache<M> {
    */
   public CacheResult<M> getResult(ItemBuilder<M> itemBuilder)
       throws IOException, InterruptedException, ResponseTooLargeException {
+    clearOnReload();
+
     String cacheKey = itemBuilder.makeCacheKey();
 
     try {
@@ -221,6 +226,12 @@ public class LRUCache<M> {
     removeCacheEntriesByPredicate(e -> true);
   }
 
+  private void clearOnReload() {
+    if (reloadDetector.hasReloadOccurred()) {
+      clear();
+    }
+  }
+
   /** Remove all cache entries (and their cache files) that match the predicate. */
   private void removeCacheEntriesByPredicate(Predicate<CacheEntry<M>> predicate) {
     List<Map.Entry<String, CacheEntry<M>>> toRemove =
@@ -350,6 +361,11 @@ public class LRUCache<M> {
   /** Public for testing. */
   public LRUCacheSettings getSettings() {
     return settings;
+  }
+
+  /** Public for testing. */
+  public void simulateReloadTestOnly() {
+    reloadDetector.simulateReloadTestOnly();
   }
 
   private record CacheEntry<M>(File responseData, M metadata, long size, ZonedDateTime expiry) {}

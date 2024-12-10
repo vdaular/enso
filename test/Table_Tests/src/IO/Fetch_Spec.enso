@@ -172,6 +172,9 @@ add_specs suite_builder =
             lru_cache = LRUCache.new
             with_lru_cache lru_cache action
 
+        fake_reload =
+            EnsoSecretHelper.getOrCreateCache.getLRUCache.simulateReloadTestOnly
+
         url0 = base_url_with_slash+'test_download?max-age=16&length=10'
         url1 = base_url_with_slash+'test_download?max-age=16&length=20'
         url_post = base_url_with_slash + "post"
@@ -540,6 +543,27 @@ add_specs suite_builder =
                 LRUCache.new . getSettings . getTotalCacheLimit . should_equal (TotalCacheLimit.Percentage.new 0.2)
             Test_Environment.unsafe_with_environment_override "ENSO_LIB_HTTP_CACHE_MAX_TOTAL_CACHE_LIMIT" "101%" <|
                 LRUCache.new . getSettings . getTotalCacheLimit . should_equal (TotalCacheLimit.Percentage.new 0.2)
+
+        group_builder.specify "Cache should be cleared when a reload is detected" <|
+            HTTP.fetch base_url_with_slash+'test_download?length=10'
+            HTTP.fetch base_url_with_slash+'test_download?length=11'
+            HTTP.fetch base_url_with_slash+'test_download?length=12'
+            get_num_response_cache_entries . should_equal 3
+
+            fake_reload
+
+            get_num_response_cache_entries . should_equal 3  # Cleaning is not triggered until the next request
+            HTTP.fetch base_url_with_slash+'test_download?length=10'
+            get_num_response_cache_entries . should_equal 1
+            HTTP.fetch base_url_with_slash+'test_download?length=14'
+            HTTP.fetch base_url_with_slash+'test_download?length=15'
+            get_num_response_cache_entries . should_equal 3
+
+            fake_reload
+
+            get_num_response_cache_entries . should_equal 3  # Cleaning is not triggered until the next request
+            HTTP.fetch base_url_with_slash+'test_download?length=16'
+            get_num_response_cache_entries . should_equal 1
 
         group_builder.specify "Reissues the request if the cache file disappears" pending=pending_has_url <| Test.with_retries <|
             with_default_cache <|
