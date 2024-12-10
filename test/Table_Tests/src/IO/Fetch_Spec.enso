@@ -262,7 +262,7 @@ add_specs suite_builder =
                 url = base_url_with_slash+"test_download?length=200"
                 Data.download url target_file
                 target_file.read.length . should_equal 200
-                Data.fetch url . should_fail_with (Response_Too_Large.Error 100)
+                Data.fetch url . should_fail_with (Response_Too_Large.Error 200 100)
 
         group_builder.specify "Should not cache for methods other than GET" pending=pending_has_url <| Test.with_retries <|
             with_default_cache <|
@@ -390,12 +390,12 @@ add_specs suite_builder =
 
         group_builder.specify "Will not cache a file with a content length greater than the single file limit" pending=pending_has_url <| Test.with_retries <|
             with_config 100 (TotalCacheLimit.Bytes.new 1000) _-> _->
-                fetch_n 110 . should_fail_with (Response_Too_Large.Error 100)
+                fetch_n 110 . should_fail_with (Response_Too_Large.Error 110 100)
 
         group_builder.specify "Will not cache a file without a content length, but which is greater than the single file limit" pending=pending_has_url <| Test.with_retries <|
             with_config 100 (TotalCacheLimit.Bytes.new 1000) _-> _->
                 url = base_url_with_slash+'test_download?omit-content-length=1&length=110'
-                Data.fetch url . should_fail_with (Response_Too_Large.Error 100)
+                Data.fetch url . should_fail_with (Response_Too_Large.Error Nothing 100)
 
         group_builder.specify "Will make room for the largest possible file, if the server does not provide a content-length" pending=pending_has_url <| Test.with_retries <|
             with_config 50 (TotalCacheLimit.Bytes.new 100) _-> _->
@@ -456,6 +456,30 @@ add_specs suite_builder =
                     get_num_response_cache_entries . should_equal 1
                     HTTP.fetch headers=headers2 uri
                     get_num_response_cache_entries . should_equal 2
+
+        group_builder.specify "Does not attempt to make room for the maximum file size when that is larger than the total cache size" pending=pending_has_url <| Test.with_retries <|
+            with_config 1000 (TotalCacheLimit.Bytes.new 100) _-> _->
+                url = base_url_with_slash+'test_download?omit-content-length=1&length=10'
+                Data.fetch url . decode_as_text . should_succeed
+
+        group_builder.specify "Limits a single download to the max total cache size when that is smaller than the max allowed file size" pending=pending_has_url <| Test.with_retries <|
+            with_config 1000 (TotalCacheLimit.Bytes.new 100) _-> _->
+                url = base_url_with_slash+'test_download?omit-content-length=1&length=200'
+                Data.fetch url . should_fail_with (Response_Too_Large.Error Nothing 100)
+
+        group_builder.specify "Throws Response_Too_Large with a content-length header" pending=pending_has_url <| Test.with_retries <|
+            with_config 5 (TotalCacheLimit.Bytes.new 1000000) _-> _->
+                url = base_url_with_slash+'test_download?length=10'
+                err = Data.fetch url . catch
+                err . should_equal (Response_Too_Large.Error 10 5)
+                err.to_display_text . starts_with "Response too large: response size 10 is over the limit 5." . should_be_true
+
+        group_builder.specify "Throws Response_Too_Large without a content-length header" pending=pending_has_url <| Test.with_retries <|
+            with_config 5 (TotalCacheLimit.Bytes.new 1000000) _-> _->
+                url = base_url_with_slash+'test_download?omit-content-length=1&length=10'
+                err = Data.fetch url . catch
+                err . should_equal (Response_Too_Large.Error Nothing 5)
+                err.to_display_text . starts_with "Response too large: response size is over the limit 5." . should_be_true
 
         group_builder.specify "Cache limits should have defaults" <|
             lru_cache = LRUCache.new
