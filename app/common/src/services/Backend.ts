@@ -1687,6 +1687,7 @@ export default abstract class Backend {
   abstract getProjectDetails(
     projectId: ProjectId,
     directoryId: DirectoryId | null,
+    getPresignedUrl?: boolean,
   ): Promise<Project>
   /** Return Language Server logs for a project session. */
   abstract getProjectSessionLogs(
@@ -1723,7 +1724,11 @@ export default abstract class Backend {
   /** Change the name of a file. */
   abstract updateFile(fileId: FileId, body: UpdateFileRequestBody, title: string): Promise<void>
   /** Return file details. */
-  abstract getFileDetails(fileId: FileId, title: string): Promise<FileDetails>
+  abstract getFileDetails(
+    fileId: FileId,
+    title: string,
+    getPresignedUrl?: boolean,
+  ): Promise<FileDetails>
   /** Create a Datalink. */
   abstract createDatalink(body: CreateDatalinkRequestBody): Promise<DatalinkInfo>
   /** Return a Datalink. */

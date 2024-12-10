@@ -767,8 +767,15 @@ export default class RemoteBackend extends Backend {
    * Return details for a project.
    * @throws An error if a non-successful status code (not 200-299) was received.
    */
-  override async getProjectDetails(projectId: backend.ProjectId): Promise<backend.Project> {
-    const path = remoteBackendPaths.getProjectDetailsPath(projectId)
+  override async getProjectDetails(
+    projectId: backend.ProjectId,
+    _directoryId: null,
+    getPresignedUrl = false,
+  ): Promise<backend.Project> {
+    const paramsString = new URLSearchParams({
+      presigned: `${getPresignedUrl}`,
+    }).toString()
+    const path = `${remoteBackendPaths.getProjectDetailsPath(projectId)}?${paramsString}`
     const response = await this.get<backend.ProjectRaw>(path)
     if (!responseIsSuccessful(response)) {
       return await this.throw(response, 'getProjectDetailsBackendError')
@@ -959,8 +966,12 @@ export default class RemoteBackend extends Backend {
   override async getFileDetails(
     fileId: backend.FileId,
     title: string,
+    getPresignedUrl = false,
   ): Promise<backend.FileDetails> {
-    const path = remoteBackendPaths.getFileDetailsPath(fileId)
+    const searchParams = new URLSearchParams({
+      presigned: `${getPresignedUrl}`,
+    }).toString()
+    const path = `${remoteBackendPaths.getFileDetailsPath(fileId)}?${searchParams}`
     const response = await this.get<backend.FileDetails>(path)
     if (!responseIsSuccessful(response)) {
       return await this.throw(response, 'getFileDetailsBackendError', title)
