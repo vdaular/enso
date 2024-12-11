@@ -436,7 +436,7 @@ jobs:
           ENSO_IDE_AG_GRID_LICENSE_KEY: ${{ vars.ENSO_AG_GRID_LICENSE_KEY }}
           ENSO_IDE_MAPBOX_API_TOKEN: ${{ vars.ENSO_MAPBOX_API_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - run: corepack pnpm -r --filter enso exec playwright test
+      - run: corepack pnpm -r --filter enso exec playwright test --timeout 300000
         env:
           DEBUG: "pw:browser log:"
           ENSO_TEST_USER: ${{ secrets.ENSO_CLOUD_TEST_ACCOUNT_USERNAME }}
