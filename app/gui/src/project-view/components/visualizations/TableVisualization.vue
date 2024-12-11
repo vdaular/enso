@@ -808,6 +808,7 @@ config.setToolbar(
 .table-visualization-status-bar {
   height: 20px;
   font-size: 14px;
+  color: var(--color-ag-header-text);
   white-space: nowrap;
   padding: 0 5px;
   overflow: hidden;

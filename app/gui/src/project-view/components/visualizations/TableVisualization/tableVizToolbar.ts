@@ -184,8 +184,8 @@ function createFormatMenu({ textFormatterSelected }: FormatMenuOptions): Toolbar
       partial: {
         icon: 'paragraph',
         iconStyle: {
-          stroke: 'grey',
-          color: 'grey',
+          stroke: '#525252',
+          color: '#525252',
         },
         title: 'Text displayed in monospace font, only multiple spaces displayed with "\xB7"',
         label: 'Partial whitespace rendering',
