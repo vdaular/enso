@@ -456,13 +456,10 @@ watch(
   },
 )
 
-const componentBrowser = ref()
-const docPanel = ref()
+const componentBrowser = ref<ComponentInstance<typeof ComponentBrowser>>()
+const docPanel = ref<ComponentInstance<typeof RightDockPanel>>()
 
-const componentBrowserElements = computed(() => [
-  componentBrowser.value?.cbRoot,
-  docPanel.value?.root,
-])
+const componentBrowserElements = computed(() => [componentBrowser.value?.$el, docPanel.value?.$el])
 
 // === Node Creation ===
 

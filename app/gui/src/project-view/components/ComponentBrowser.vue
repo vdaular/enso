@@ -72,8 +72,6 @@ const emit = defineEmits<{
 const cbRoot = ref<HTMLElement>()
 const componentList = ref<ComponentInstance<typeof ComponentList>>()
 
-defineExpose({ cbRoot })
-
 const clickOutsideAssociatedElements = (e: PointerEvent) => {
   return props.associatedElements.length === 0 ?
       false
