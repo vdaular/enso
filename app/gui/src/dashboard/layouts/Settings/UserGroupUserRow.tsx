@@ -35,7 +35,6 @@ export default function UserGroupUserRow(props: UserGroupUserRowProps) {
   const { getText } = textProvider.useText()
   const isAdmin = currentUser.isOrganizationAdmin
   const contextMenuRef = contextMenuHooks.useContextMenuRef(
-    user.userId,
     getText('userGroupUserContextMenuLabel'),
     () => (
       <ContextMenuEntry

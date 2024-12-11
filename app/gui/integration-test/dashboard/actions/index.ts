@@ -355,9 +355,9 @@ export function locateSetUsernamePanel(page: test.Page) {
 }
 
 /** Find a set of context menus (if any) on the current page. */
-export function locateContextMenus(page: test.Page) {
+export function locateContextMenu(page: test.Page) {
   // This has no identifying features.
-  return page.getByTestId('context-menus')
+  return page.getByTestId('context-menu')
 }
 
 /** Find a labels panel (if any) on the current page. */

@@ -164,7 +164,7 @@ test.test('duplicate', ({ page }) =>
     .driveTable.withRows(async (rows) => {
       // Assets: [0: New Project 1, 1: New Project 1 (copy)]
       await test.expect(rows).toHaveCount(2)
-      await test.expect(actions.locateContextMenus(page)).not.toBeVisible()
+      await test.expect(actions.locateContextMenu(page)).not.toBeVisible()
       await test.expect(rows.nth(1)).toBeVisible()
       await test.expect(rows.nth(1)).toHaveText(/^New Project 1 [(]copy[)]/)
     }),

@@ -40,7 +40,6 @@ export default function UserRow(props: UserRowProps) {
   const doDeleteUser = isSelf ? null : doDeleteUserRaw
 
   const contextMenuRef = contextMenuHooks.useContextMenuRef(
-    user.userId,
     getText('userContextMenuLabel'),
     () =>
       doDeleteUser == null ? null : (

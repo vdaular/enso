@@ -4,7 +4,7 @@ import * as test from 'playwright/test'
 import {
   locateAssetPanel,
   locateAssetsTable,
-  locateContextMenus,
+  locateContextMenu,
   locateCreateButton,
   locateDriveView,
   locateNewSecretIcon,
@@ -137,10 +137,14 @@ export default class DrivePageActions extends PageActions {
       },
       /** Interact with the set of all rows in the Drive table. */
       withRows(
-        callback: (assetRows: test.Locator, nonAssetRows: test.Locator) => Promise<void> | void,
+        callback: (
+          assetRows: test.Locator,
+          nonAssetRows: test.Locator,
+          page: test.Page,
+        ) => Promise<void> | void,
       ) {
         return self.step('Interact with drive table rows', async (page) => {
-          await callback(locateAssetRows(page), locateNonAssetRows(page))
+          await callback(locateAssetRows(page), locateNonAssetRows(page), page)
         })
       },
       /** Drag a row onto another row. */
@@ -377,7 +381,7 @@ export default class DrivePageActions extends PageActions {
   /** Interact with the context menus (the context menus MUST be visible). */
   withContextMenus(callback: baseActions.LocatorCallback) {
     return this.step('Interact with context menus', async (page) => {
-      await callback(locateContextMenus(page))
+      await callback(locateContextMenu(page))
     })
   }
 

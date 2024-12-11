@@ -22,10 +22,10 @@ test.test('drag labels onto single row', async ({ page }) => {
         api.addLabel('bbbb', backend.COLORS[1])
         api.addLabel('cccc', backend.COLORS[2])
         api.addLabel('dddd', backend.COLORS[3])
-        api.addDirectory('foo')
-        api.addSecret('bar')
-        api.addFile('baz')
-        api.addSecret('quux')
+        api.addDirectory({ title: 'foo' })
+        api.addSecret({ title: 'bar' })
+        api.addFile({ title: 'baz' })
+        api.addSecret({ title: 'quux' })
       },
     })
     .do(async () => {
@@ -56,10 +56,10 @@ test.test('drag labels onto multiple rows', async ({ page }) => {
       api.addLabel('bbbb', backend.COLORS[1])
       api.addLabel('cccc', backend.COLORS[2])
       api.addLabel('dddd', backend.COLORS[3])
-      api.addDirectory('foo')
-      api.addSecret('bar')
-      api.addFile('baz')
-      api.addSecret('quux')
+      api.addDirectory({ title: 'foo' })
+      api.addSecret({ title: 'bar' })
+      api.addFile({ title: 'baz' })
+      api.addSecret({ title: 'quux' })
     },
   })
 

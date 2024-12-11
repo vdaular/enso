@@ -11,7 +11,6 @@ import * as textProvider from '#/providers/TextProvider'
 
 import { Button, DialogTrigger } from '#/components/AriaComponents'
 import ContextMenu from '#/components/ContextMenu'
-import ContextMenus from '#/components/ContextMenus'
 import type * as column from '#/components/dashboard/column'
 import Label from '#/components/dashboard/Label'
 import MenuEntry from '#/components/MenuEntry'
@@ -66,15 +65,13 @@ export default function LabelsColumn(props: column.AssetColumnProps) {
                 void backend.associateTag(item.id, newLabels, item.title)
               }
               setModal(
-                <ContextMenus key={`label-${label}`} event={event}>
-                  <ContextMenu aria-label={getText('labelContextMenuLabel')}>
-                    <MenuEntry
-                      action="delete"
-                      label={getText('deleteLabelShortcut')}
-                      doAction={doDelete}
-                    />
-                  </ContextMenu>
-                </ContextMenus>,
+                <ContextMenu aria-label={getText('labelContextMenuLabel')} event={event}>
+                  <MenuEntry
+                    action="delete"
+                    label={getText('deleteLabelShortcut')}
+                    doAction={doDelete}
+                  />
+                </ContextMenu>,
               )
             }}
             onPress={(event) => {
