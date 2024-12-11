@@ -42,7 +42,7 @@ defineExpose({
 
 const rootStyle = computed(() => {
   return {
-    '--color-node-primary': props.nodeColor,
+    '--node-group-color': props.nodeColor,
     '--port-edge-width': `${4 * props.navigator.scale}px`,
   }
 })
