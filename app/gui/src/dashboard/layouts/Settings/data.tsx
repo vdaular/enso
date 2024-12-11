@@ -391,7 +391,7 @@ export const SETTINGS_TAB_DATA: Readonly<Record<SettingsTabType, SettingsTabData
     sections: [
       {
         nameId: 'userGroupsSettingsSection',
-        columnClassName: 'h-3/5 lg:h-[unset] overflow-auto',
+        columnClassName: 'lg:h-[unset] overflow-auto h-auto',
         entries: [
           {
             type: 'custom',
@@ -402,7 +402,7 @@ export const SETTINGS_TAB_DATA: Readonly<Record<SettingsTabType, SettingsTabData
       {
         nameId: 'userGroupsUsersSettingsSection',
         column: 2,
-        columnClassName: 'h-2/5 lg:h-[unset] overflow-auto',
+        columnClassName: 'lg:h-[unset] overflow-auto h-auto',
         entries: [
           {
             type: 'custom',

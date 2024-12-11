@@ -2,6 +2,7 @@
 import * as React from 'react'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import invariant from 'tiny-invariant'
 import { useStore } from 'zustand'
 
 import BlankIcon from '#/assets/blank.svg'
@@ -33,6 +34,7 @@ import * as localBackend from '#/services/LocalBackend'
 import * as backendModule from '#/services/Backend'
 
 import { Text } from '#/components/AriaComponents'
+import { IndefiniteSpinner } from '#/components/Spinner'
 import type { AssetEvent } from '#/events/assetEvent'
 import { useCutAndPaste } from '#/events/assetListEvent'
 import {
@@ -56,8 +58,6 @@ import * as permissions from '#/utilities/permissions'
 import * as set from '#/utilities/set'
 import * as tailwindMerge from '#/utilities/tailwindMerge'
 import Visibility from '#/utilities/Visibility'
-import invariant from 'tiny-invariant'
-import { IndefiniteSpinner } from '../Spinner'
 
 // =================
 // === Constants ===

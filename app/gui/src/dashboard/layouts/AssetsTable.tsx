@@ -44,6 +44,7 @@ import Label from '#/components/dashboard/Label'
 import { ErrorDisplay } from '#/components/ErrorBoundary'
 import { IsolateLayout } from '#/components/IsolateLayout'
 import SelectionBrush from '#/components/SelectionBrush'
+import { IndefiniteSpinner } from '#/components/Spinner'
 import FocusArea from '#/components/styled/FocusArea'
 import SvgMask from '#/components/SvgMask'
 import { ASSETS_MIME_TYPE } from '#/data/mimeTypes'
@@ -140,7 +141,6 @@ import { EMPTY_SET, setPresence, withPresence } from '#/utilities/set'
 import type { SortInfo } from '#/utilities/sorting'
 import { twJoin, twMerge } from '#/utilities/tailwindMerge'
 import Visibility from '#/utilities/Visibility'
-import { IndefiniteSpinner } from '../components/Spinner'
 
 declare module '#/utilities/LocalStorage' {
   /** */
@@ -1806,8 +1806,8 @@ function AssetsTable(props: AssetsTableProps) {
         }
       }}
     >
-      <table className="rr-block isolate table-fixed border-collapse rounded-rows">
-        <thead className="sticky top-0 z-1 bg-dashboard">{headerRow}</thead>
+      <table className="isolate table-fixed border-collapse rounded-rows">
+        <thead className="sticky top-0 z-[11] bg-dashboard">{headerRow}</thead>
         <tbody ref={bodyRef}>
           {itemRows}
           <tr className="hidden h-row first:table-row">
