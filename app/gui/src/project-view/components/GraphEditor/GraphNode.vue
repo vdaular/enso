@@ -136,7 +136,8 @@ const availableMessage = computed<Message | undefined>(() => {
       const text = rawText?.split(' (at')[0]
       if (!text) return undefined
       const alwaysShow = !inputExternalIds().some((id) => getDataflowError(id) === rawText)
-      return { type: 'error', text, alwaysShow } satisfies Message
+      const type = rawText.includes('Missing_Argument') ? 'missing' : 'error'
+      return { type, text, alwaysShow } satisfies Message
     }
     case 'Value': {
       const warning = info.payload.warnings?.value

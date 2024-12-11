@@ -79,9 +79,7 @@ const textContents = computed(() =>
   props.input.value instanceof Ast.TextLiteral ? props.input.value.rawTextContent : '',
 )
 const placeholder = computed(() =>
-  WidgetInput.isPlaceholder(props.input) ?
-    inputTextLiteral.value?.rawTextContent ?? WidgetInput.valueRepr(props.input)
-  : '',
+  WidgetInput.isPlaceholder(props.input) ? inputTextLiteral.value?.rawTextContent ?? '' : '',
 )
 const editedContents = ref(textContents.value)
 watch(textContents, (value) => (editedContents.value = value))

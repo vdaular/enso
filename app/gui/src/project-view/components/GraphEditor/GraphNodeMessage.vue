@@ -15,15 +15,17 @@ function copyText() {
 
 <script lang="ts">
 /** The type of a message. */
-export type MessageType = 'error' | 'warning' | 'panic'
+export type MessageType = 'error' | 'warning' | 'missing' | 'panic'
 export const iconForMessageType: Record<MessageType, Icon> = {
   error: 'error',
   warning: 'warning',
+  missing: 'metadata',
   panic: 'panic',
 }
 export const colorForMessageType: Record<MessageType, string> = {
   error: 'var(--color-error)',
   warning: 'var(--color-warning)',
+  missing: 'var(--color-missing-value)',
   panic: 'var(--color-error)',
 }
 </script>
