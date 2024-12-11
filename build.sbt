@@ -2650,6 +2650,9 @@ lazy val `runtime-language-epb` =
         "org.graalvm.sdk"      % "collections" % graalMavenPackagesVersion,
         "org.graalvm.sdk"      % "word"        % graalMavenPackagesVersion,
         "org.graalvm.sdk"      % "nativeimage" % graalMavenPackagesVersion
+      ),
+      Compile / internalModuleDependencies := Seq(
+        (`ydoc-polyfill` / Compile / exportedModule).value
       )
     )
 

@@ -108,6 +108,8 @@ final class ForeignEvalNode extends RootNode {
     var context = EpbContext.get(this);
     var inner = context.getInnerContext();
     if (inner != null) {
+      context.initializePolyfill(this, inner);
+
       var code = foreignSource(langAndCode);
       var args = Arrays.stream(argNames).collect(Collectors.joining(","));
       var wrappedSrc = "var poly_enso_eval=function(" + args + "){" + code + "\n};poly_enso_eval";
