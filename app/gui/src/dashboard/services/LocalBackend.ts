@@ -9,7 +9,6 @@ import Backend, * as backend from '#/services/Backend'
 import type ProjectManager from '#/services/ProjectManager'
 import * as projectManager from '#/services/ProjectManager'
 import { APP_BASE_URL } from '#/utilities/appBaseUrl'
-import { toRfc3339 } from '#/utilities/dateTime'
 import { download } from '#/utilities/download'
 import { tryGetMessage } from '#/utilities/error'
 import { fileExtension, getFileName, getFolderPath } from '#/utilities/fileInfo'
@@ -516,23 +515,6 @@ export default class LocalBackend extends Backend {
         return { asset }
       }
     }
-  }
-
-  /** Return a list of engine versions. */
-  override async listVersions(params: backend.ListVersionsRequestParams) {
-    const engineVersions = await this.projectManager.listAvailableEngineVersions()
-    const engineVersionToVersion = (version: projectManager.EngineVersion): backend.Version => ({
-      ami: null,
-      created: toRfc3339(new Date()),
-      number: {
-        value: version.version,
-        lifecycle: backend.detectVersionLifecycle(version.version),
-      },
-      // The names come from a third-party API and cannot be changed.
-      // eslint-disable-next-line @typescript-eslint/naming-convention, camelcase
-      version_type: params.versionType,
-    })
-    return engineVersions.versions.map(engineVersionToVersion)
   }
 
   // === Endpoints that intentionally do not work on the Local Backend ===

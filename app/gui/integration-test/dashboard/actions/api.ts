@@ -71,7 +71,6 @@ const INITIAL_CALLS_OBJECT = {
   listTags: array<object>(),
   listUsers: array<object>(),
   listUserGroups: array<object>(),
-  listVersions: array<object>(),
   getProjectDetails: array<{ projectId: backend.ProjectId }>(),
   copyAsset: array<{ assetId: backend.AssetId; parentId: backend.DirectoryId }>(),
   listInvitations: array<object>(),
@@ -626,25 +625,6 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
     await get(remoteBackendPaths.LIST_USER_GROUPS_PATH + '*', async (route) => {
       called('listUserGroups', {})
       await route.fulfill({ json: userGroups })
-    })
-    await get(remoteBackendPaths.LIST_VERSIONS_PATH + '*', (_route, request) => {
-      called('listVersions', {})
-      return {
-        versions: [
-          {
-            ami: null,
-            created: dateTime.toRfc3339(new Date()),
-            number: {
-              lifecycle:
-                'Development' satisfies `${backend.VersionLifecycle.development}` as backend.VersionLifecycle.development,
-              value: '2023.2.1-dev',
-            },
-            // eslint-disable-next-line camelcase
-            version_type: (new URL(request.url()).searchParams.get('version_type') ??
-              '') as backend.VersionType,
-          } satisfies backend.Version,
-        ],
-      }
     })
 
     // === Endpoints with dummy implementations ===

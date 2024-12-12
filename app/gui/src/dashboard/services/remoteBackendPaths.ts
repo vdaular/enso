@@ -68,8 +68,6 @@ export const LIST_TAGS_PATH = 'tags'
 export const CREATE_USER_GROUP_PATH = 'usergroups'
 /** Relative HTTP path to the "list user groups" endpoint of the Cloud backend API. */
 export const LIST_USER_GROUPS_PATH = 'usergroups'
-/** Relative HTTP path to the "list versions" endpoint of the Cloud backend API. */
-export const LIST_VERSIONS_PATH = 'versions'
 /** Relative HTTP path to the "create checkout session" endpoint of the Cloud backend API. */
 export const CREATE_CHECKOUT_SESSION_PATH = 'payments/subscriptions'
 /** Relative HTTP path to the "get checkout session" endpoint of the Cloud backend API. */
