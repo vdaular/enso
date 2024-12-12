@@ -1,15 +1,11 @@
 /** @file Actions for the context menu. */
 import { TEXT } from '.'
-import type * as baseActions from './BaseActions'
 import type BaseActions from './BaseActions'
+import type { PageCallback } from './BaseActions'
 import EditorPageActions from './EditorPageActions'
 
-// ==========================
-// === ContextMenuActions ===
-// ==========================
-
 /** Actions for the context menu. */
-export interface ContextMenuActions<T extends BaseActions> {
+export interface ContextMenuActions<T extends BaseActions<Context>, Context> {
   readonly open: () => T
   readonly uploadToCloud: () => T
   readonly rename: () => T
@@ -22,7 +18,7 @@ export interface ContextMenuActions<T extends BaseActions> {
   readonly share: () => T
   readonly label: () => T
   readonly duplicate: () => T
-  readonly duplicateProject: () => EditorPageActions
+  readonly duplicateProject: () => EditorPageActions<Context>
   readonly copy: () => T
   readonly cut: () => T
   readonly paste: () => T
@@ -34,14 +30,10 @@ export interface ContextMenuActions<T extends BaseActions> {
   readonly newDataLink: () => T
 }
 
-// ==========================
-// === contextMenuActions ===
-// ==========================
-
 /** Generate actions for the context menu. */
-export function contextMenuActions<T extends BaseActions>(
-  step: (name: string, callback: baseActions.PageCallback) => T,
-): ContextMenuActions<T> {
+export function contextMenuActions<T extends BaseActions<Context>, Context>(
+  step: (name: string, callback: PageCallback<Context>) => T,
+): ContextMenuActions<T, Context> {
   return {
     open: () =>
       step('Open (context menu)', (page) =>
@@ -131,7 +123,7 @@ export function contextMenuActions<T extends BaseActions>(
           .getByRole('button', { name: TEXT.duplicateShortcut })
           .getByText(TEXT.duplicateShortcut)
           .click(),
-      ).into(EditorPageActions),
+      ).into(EditorPageActions<Context>),
     copy: () =>
       step('Copy (context menu)', (page) =>
         page

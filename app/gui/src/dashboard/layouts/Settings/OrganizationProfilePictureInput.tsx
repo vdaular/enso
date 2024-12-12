@@ -52,7 +52,10 @@ export default function OrganizationProfilePictureInput(
   return (
     <>
       <FocusRing within>
-        <aria.Label className="flex h-profile-picture-large w-profile-picture-large cursor-pointer items-center overflow-clip rounded-full transition-colors hover:bg-frame">
+        <aria.Label
+          data-testid="organization-profile-picture-input"
+          className="flex h-profile-picture-large w-profile-picture-large cursor-pointer items-center overflow-clip rounded-full transition-colors hover:bg-frame"
+        >
           <img
             src={organization?.picture ?? DefaultUserIcon}
             className="pointer-events-none h-full w-full"
