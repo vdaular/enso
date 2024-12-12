@@ -97,7 +97,7 @@ object NativeImage {
   ): Def.Initialize[Task[Unit]] = Def
     .task {
       val log       = state.value.log
-      val targetLoc = artifactFile(targetDir, name, false)
+      val targetLoc = artifactFile(targetDir, name, withExtension = false)
 
       def nativeImagePath(prefix: Path)(path: Path): Path = {
         val base = path.resolve(prefix)
@@ -253,7 +253,7 @@ object NativeImage {
         s"Started building $targetLoc native image. The output is captured."
       )
       val retCode    = process.!(processLogger)
-      val targetFile = artifactFile(targetDir, name, true)
+      val targetFile = artifactFile(targetDir, name)
       if (retCode != 0 || !targetFile.exists()) {
         log.error(s"Native Image build of $targetFile failed, with output: ")
         println(sb.toString())
@@ -318,7 +318,7 @@ object NativeImage {
   def artifactFile(
     targetDir: File,
     name: String,
-    withExtension: Boolean = false
+    withExtension: Boolean = true
   ): File = {
     val artifactName =
       if (withExtension && Platform.isWindows) name + ".exe"
