@@ -908,7 +908,11 @@ class IrToTruffle(
     arg: DefinitionArgument
   ): TypeCheckValueNode = {
     val comment = "`" + arg.name.name + "`"
-    arg.ascribedType.map(extractAscribedType(comment, _)).getOrElse(null)
+    arg.ascribedType
+      .map { t =>
+        TypeCheckValueNode.allTypes(false, extractAscribedType(comment, t))
+      }
+      .getOrElse(null)
   }
 
   /** Checks if the expression has a @Builtin_Method annotation

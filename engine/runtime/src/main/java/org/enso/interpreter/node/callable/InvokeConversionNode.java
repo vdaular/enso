@@ -183,7 +183,7 @@ public abstract class InvokeConversionNode extends BaseNode {
       Object[] arguments,
       @Cached EnsoMultiValue.CastToNode castTo) {
     var type = extractType(self);
-    var result = castTo.executeCast(type, that);
+    var result = castTo.findTypeOrNull(type, that, true, true);
     if (result == null) {
       throw new PanicException(
           EnsoContext.get(this).getBuiltins().error().makeNoSuchConversion(type, self, conversion),

@@ -1,3 +1,11 @@
+# Next Next Release
+
+#### Enso Language & Runtime
+
+- [Intersection types & type checks][11600]
+
+[11600]: https://github.com/enso-org/enso/pull/11600
+
 # Next Release
 
 #### Enso IDE

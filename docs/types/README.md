@@ -48,6 +48,7 @@ Information on the type system is broken up into the following sections:
 - [**Goals for the Type System:**](./goals.md) The goals for the Enso type
   system, particularly around usability and user experience.
 - [**The Type Hierarchy:**](./hierarchy.md) The type hierarchy in Enso.
+- [**Intersection Types:**](./intersection-types.md) intersection types in Enso.
 - [**Function Types:**](./function-types.md) Function types in Enso.
 - [**Access Modification:**](./access-modifiers.md) Access modifiers in Enso
   (e.g. `private` and `unsafe`),

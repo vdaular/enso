@@ -142,7 +142,7 @@ They are as follows:
 - **Union - `|`:** This operator creates a typeset that contains the members in
   the union of its operands.
 - **Intersection - `&`:** This operator creates a typeset that contains the
-  members in the intersection of its operands.
+  members in the [intersection of its operands](./intersection-types.md).
 
 > [!WARNING]
 > These operators _don't seem to be supported_. There is no plan to

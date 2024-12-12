@@ -11,7 +11,7 @@ import org.enso.interpreter.runtime.error.DataflowError;
 
 /**
  * Root of hierarchy of nodes checking types. This class (and its subclasses) are an implementation
- * detail. The API to perform the is in {@link TypeCheckNode}.
+ * detail. The API to perform the check or conversion is in {@link TypeCheckValueNode}.
  */
 abstract sealed class AbstractTypeCheckNode extends Node
     permits OneOfTypesCheckNode, AllOfTypesCheckNode, SingleTypeCheckNode, MetaTypeCheckNode {
@@ -28,6 +28,16 @@ abstract sealed class AbstractTypeCheckNode extends Node
       VirtualFrame frame, Object value, ExpressionNode valueNode);
 
   abstract String expectedTypeMessage();
+
+  final boolean isAllTypes() {
+    Node p = this;
+    for (; ; ) {
+      if (p instanceof TypeCheckValueNode vn) {
+        return vn.isAllTypes();
+      }
+      p = p.getParent();
+    }
+  }
 
   /**
    * The error message for this node's check. Ready for being used at "fast path".
