@@ -295,7 +295,7 @@ Error.should_equal self that frames_to_skip=0 =
 Number.should_equal : Float -> Float -> Integer -> Spec_Result
 Number.should_equal self that epsilon=0 frames_to_skip=0 =
     matches = case that of
-        _ : Number -> self.equals that epsilon
+        n : Number -> self.equals n epsilon
         _ -> self==that
     case matches of
         True -> Spec_Result.Success

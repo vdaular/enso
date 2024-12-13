@@ -331,7 +331,7 @@ abstract class EqualsSimpleNode extends Node {
       @Shared("multiCast") @Cached EnsoMultiValue.CastToNode castNode,
       @Shared("multiType") @Cached TypeOfNode typesNode,
       @Shared("multiEquals") @Cached EqualsSimpleNode delegate) {
-    var types = typesNode.findAllTypesOrNull(self);
+    var types = typesNode.findAllTypesOrNull(self, false);
     assert types != null;
     for (var t : types) {
       var value = castNode.findTypeOrNull(t, self, false, false);

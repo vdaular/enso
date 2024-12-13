@@ -152,20 +152,13 @@ final class BinaryOperatorNode extends ExpressionNode {
             InvokeFunctionNode invokeNode) {
       var selfType = findType(typeOfNode, self);
       if (that instanceof EnsoMultiValue multi) {
-        var all = typeOfNode.findAllTypesOrNull(multi);
+        var all = typeOfNode.findAllTypesOrNull(multi, false);
         assert all != null;
         for (var thatType : all) {
           var fn = findSymbol(symbol, thatType);
           if (fn != null) {
-            var thatCasted =
-                EnsoMultiValue.CastToNode.getUncached()
-                    .findTypeOrNull(thatType, multi, false, false);
-            if (thatCasted == null) {
-              continue;
-            }
             var result =
-                doDispatch(
-                    frame, self, thatCasted, selfType, thatType, fn, convertNode, invokeNode);
+                doDispatch(frame, self, multi, selfType, thatType, fn, convertNode, invokeNode);
             if (result != null) {
               return result;
             }

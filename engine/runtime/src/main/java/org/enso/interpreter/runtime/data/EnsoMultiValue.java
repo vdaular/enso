@@ -88,8 +88,12 @@ public final class EnsoMultiValue extends EnsoObject {
   }
 
   @ExportMessage
-  final Type[] allTypes() {
-    return types.clone();
+  final Type[] allTypes(boolean includeExtraTypes) {
+    if (includeExtraTypes || methodDispatchTypes == types.length) {
+      return types.clone();
+    } else {
+      return Arrays.copyOf(types, methodDispatchTypes);
+    }
   }
 
   @ExportMessage
@@ -452,19 +456,22 @@ public final class EnsoMultiValue extends EnsoObject {
 
     @Specialization
     Object castsToAType(Type type, EnsoMultiValue mv, boolean reorderOnly, boolean allTypes) {
+      var ctx = EnsoContext.get(this);
       var max = allTypes ? mv.types.length : mv.methodDispatchTypes;
       for (var i = 0; i < max; i++) {
-        if (mv.types[i] == type) {
-          if (reorderOnly) {
-            var copyTypes = mv.types.clone();
-            var copyValues = mv.values.clone();
-            copyTypes[i] = mv.types[0];
-            copyValues[i] = mv.values[0];
-            copyTypes[0] = mv.types[i];
-            copyValues[0] = mv.values[i];
-            return EnsoMultiValue.create(copyTypes, 1, copyValues);
-          } else {
-            return mv.values[i];
+        for (var t : mv.types[i].allTypes(ctx)) {
+          if (t == type) {
+            if (reorderOnly) {
+              var copyTypes = mv.types.clone();
+              var copyValues = mv.values.clone();
+              copyTypes[i] = mv.types[0];
+              copyValues[i] = mv.values[0];
+              copyTypes[0] = mv.types[i];
+              copyValues[0] = mv.values[i];
+              return EnsoMultiValue.create(copyTypes, 1, copyValues);
+            } else {
+              return mv.values[i];
+            }
           }
         }
       }

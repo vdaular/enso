@@ -123,7 +123,7 @@ non-sealed abstract class SingleTypeCheckNode extends AbstractTypeCheckNode {
         return result;
       }
     }
-    if (checkType.execute(expectedType, v)) {
+    if (checkType.execute(expectedType, v, isAllTypes())) {
       return v;
     }
     return null;
@@ -176,7 +176,7 @@ non-sealed abstract class SingleTypeCheckNode extends AbstractTypeCheckNode {
 
   Type[] findType(TypeOfNode typeOfNode, Object v, Type[] previous) {
     if (v instanceof EnsoMultiValue multi) {
-      var all = typeOfNode.findAllTypesOrNull(multi);
+      var all = typeOfNode.findAllTypesOrNull(multi, isAllTypes());
       assert all != null;
       var to = 0;
       // only consider methodDispatchTypes and not "all types" of the multi value

@@ -87,9 +87,13 @@ add_specs suite_builder =
             (x:A).a . should_equal "a"
 
             call_a obj:A = obj.a
+            call_b obj:B = obj.b
 
             # A&X type has attribute a
             call_a ax . should_equal "a"
+            # A&X can be converted to B
+            call_b ax . should_equal "b"
+            call_b (ax:X&A) . should_equal "b"
 
             # according to "static typing" discussion at
             # https://github.com/enso-org/enso/pull/11600#discussion_r1867584107
@@ -97,9 +101,34 @@ add_specs suite_builder =
             Test.expect_panic Type_Error <|
                 call_a x . should_equal "a"
 
+            Test.expect_panic Type_Error <|
+                call_b x . should_equal "b"
+
+            call_b (x:X&A) . should_equal "b"
+
             # multivalue ax restricted to X cannot be converted to B in to_b_to_c
             Test.expect_panic Type_Error <|
                 to_b_to_c x
+
+            msg1 = case ax of
+                b:B -> "Not a "+b.to_text
+                a:A -> "==="+a.a
+            msg1 . should_equal "===a"
+
+            msg2 = case (ax:X&A) of
+                b:B -> "Not a "+b.to_text
+                a:A -> "==="+a.a
+            msg2 . should_equal "===a"
+
+            msg3 = case x of
+                b:B -> "Not a "+b.to_text
+                a:A -> "==="+a.a
+            msg3 . should_equal "===a"
+
+            msg4 = case x of
+                b:B -> "Not a "+b.to_text
+                a:A -> "A but also "+(a:X).to_text
+            msg4 . should_equal "A but also X"
 
         group_builder.specify "Intersection type of unrelated types is not possible" <|
             Test.expect_panic Type_Error <|

@@ -80,18 +80,14 @@ method calls will also only accept the value if it satisfies the type it
 _has been cast to_. Any additional remaining _hidden_ types
 can only be brought back through an _explicit_ cast.
 To perform an explicit cast that can uncover the 'hidden' part of a type write
-`f = c:Float`.
-
-<!--
-When #11828 is fixed.
-
-- or inspect the types in a `case` expression, e.g.
-  ```
-  case c of
-      f : Float -> f.sqrt
-      _ -> "Not a float"
-  ```
--->
+`f = c:Float` or inspect the types in a `case` expression, e.g.
+```ruby
+case c of
+    f : Float -> f.sqrt
+    _ -> "Not a float"
+```
+Remember to use `f.sqrt` and not `c.sqrt`. `f` in the case branch _has been cast to_ `Float` while
+`c` in the case branch only _can be cast to_.
 
 > [!WARNING]
 > Keep in mind that while both argument type check in method definitions and a 

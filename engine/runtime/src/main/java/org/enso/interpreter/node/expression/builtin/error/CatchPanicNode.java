@@ -86,7 +86,7 @@ public abstract class CatchPanicNode extends Node {
       AbstractTruffleException originalException,
       InteropLibrary interopLibrary) {
 
-    if (profile.profile(isValueOfTypeNode.execute(panicType, payload))) {
+    if (profile.profile(isValueOfTypeNode.execute(panicType, payload, true))) {
       var builtins = EnsoContext.get(this).getBuiltins();
       var cons = builtins.caughtPanic().getUniqueConstructor();
       var caughtPanic =

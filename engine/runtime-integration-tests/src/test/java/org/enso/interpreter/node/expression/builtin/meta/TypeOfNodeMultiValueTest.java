@@ -49,8 +49,9 @@ public class TypeOfNodeMultiValueTest {
                 new TestRootNode(
                     (frame) -> {
                       var arg = frame.getArguments()[0];
+                      var allTypes = (boolean) frame.getArguments()[1];
                       var t = node.findTypeOrError(arg);
-                      var all = node.findAllTypesOrNull(arg);
+                      var all = node.findAllTypesOrNull(arg, allTypes);
                       return new Object[] {t, all};
                     });
             root.insertChildren(node);
@@ -116,16 +117,22 @@ public class TypeOfNodeMultiValueTest {
   }
 
   @Test
-  public void typeOfCheck() {
-    assertType(value, type, typeIndex);
+  public void typeOfCheckAllTypes() {
+    assertType(value, type, typeIndex, true);
   }
 
-  private static void assertType(Object value, String expectedTypeName, int typeIndex) {
+  @Test
+  public void typeOfCheckHasBeenCastToTypes() {
+    assertType(value, type, typeIndex, false);
+  }
+
+  private static void assertType(
+      Object value, String expectedTypeName, int typeIndex, boolean allTypes) {
     assertNotNull("Value " + value + " should have a type", expectedTypeName);
     ContextUtils.executeInContext(
         ctx(),
         () -> {
-          var pairResult = (Object[]) testTypesCall.call(value);
+          var pairResult = (Object[]) testTypesCall.call(value, allTypes);
           var t = pairResult[0];
           var all = (Object[]) pairResult[1];
 

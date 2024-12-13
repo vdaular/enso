@@ -34,7 +34,7 @@ non-sealed abstract class MetaTypeCheckNode extends AbstractTypeCheckNode {
     if (isAllFitValue(v)) {
       return v;
     }
-    if (isA.execute(expectedSupplier.get(), v)) {
+    if (isA.execute(expectedSupplier.get(), v, true)) {
       return v;
     } else {
       return null;
