@@ -177,7 +177,7 @@ export function useOpenProjectMutation() {
           executeAsync: inBackground,
           cognitoCredentials: {
             accessToken: session.accessToken,
-            refreshToken: session.accessToken,
+            refreshToken: session.refreshToken,
             clientId: session.clientId,
             expireAt: session.expireAt,
             refreshUrl: session.refreshUrl,

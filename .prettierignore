@@ -11,7 +11,7 @@ build/build/release-body.md
 distribution/launcher/THIRD-PARTY
 distribution/engine/THIRD-PARTY
 distribution/project-manager/THIRD-PARTY
-tools/legal-review
+tools
 distribution/lib/Standard/*/*/manifest.yaml
 distribution/lib/Standard/*/*/polyglot
 distribution/lib/Standard/*/*/THIRD-PARTY
