@@ -77,7 +77,8 @@ public class ExcelWriter {
       headers =
           headers != ExcelHeaders.HeaderBehavior.INFER
               ? headers
-              : shouldWriteHeaders(new ExcelSheet(workbook, sheetIndex), firstRow + 1, 1, -1);
+              : shouldWriteHeaders(
+                  ExcelSheet.forPOIUserModel(workbook, sheetIndex), firstRow + 1, 1, -1);
 
       String sheetName = workbook.getSheetName(sheetIndex - 1);
       workbook.removeSheetAt(sheetIndex - 1);
@@ -130,7 +131,8 @@ public class ExcelWriter {
       headers =
           headers != ExcelHeaders.HeaderBehavior.INFER
               ? headers
-              : shouldWriteHeaders(new ExcelSheet(workbook, sheetIndex), firstRow + 1, 1, -1);
+              : shouldWriteHeaders(
+                  ExcelSheet.forPOIUserModel(workbook, sheetIndex), firstRow + 1, 1, -1);
 
       workbook.removeSheetAt(sheetIndex);
       Sheet sheet = workbook.createSheet(sheetName);
@@ -198,7 +200,7 @@ public class ExcelWriter {
       throw new InvalidLocationException(
           range.getSheetName(), "Unknown sheet '" + range.getSheetName() + "'.");
     }
-    ExcelSheet sheet = new ExcelSheet(workbook, sheetIndex);
+    ExcelSheet sheet = ExcelSheet.forPOIUserModel(workbook, sheetIndex);
 
     if (skipRows != 0) {
       if (range.isWholeColumn()) {

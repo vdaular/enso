@@ -1112,7 +1112,7 @@ add_specs suite_builder =
 
                     Problems.expect_warning Duplicate_Output_Column_Names r3
                     Problems.expect_warning Column_Count_Mismatch r3
-                
+
         group_builder.specify "during `read_many`, should correctly handle empty sheets" <|
             with_temp_dir base_dir->
                 tsv_file = base_dir / "1.tsv"
