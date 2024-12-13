@@ -19,12 +19,10 @@ public class InferredIntegerBuilder extends Builder {
   private TypedBuilder bigIntegerBuilder = null;
   private int currentSize = 0;
   private final int initialSize;
-  private final ProblemAggregator problemAggregator;
 
   /** Creates a new instance of this builder, with the given known result length. */
   public InferredIntegerBuilder(int initialSize, ProblemAggregator problemAggregator) {
     this.initialSize = initialSize;
-    this.problemAggregator = problemAggregator;
 
     longBuilder =
         NumericBuilder.createLongBuilder(this.initialSize, IntegerType.INT_64, problemAggregator);
