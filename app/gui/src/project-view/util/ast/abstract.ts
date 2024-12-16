@@ -348,7 +348,7 @@ export function parseUpdatingIdMap(
     if (idMap) setExternalIds(root.module, spans, idMap)
     return { root, spans }
   })
-  const getSpan = spanMapToSpanGetter(spans)
+  const getSpan = spanMapToSpanGetter(spans.nodes)
   const idMapOut = spanMapToIdMap(spans)
   return { root, idMap: idMapOut, getSpan }
 }

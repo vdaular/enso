@@ -9,6 +9,7 @@ import {
   makeStaticMethod,
 } from '@/stores/suggestionDatabase/entry'
 import { assert } from '@/util/assert'
+import { Ast } from '@/util/ast'
 import { expect, test } from 'vitest'
 import { ref, type Ref } from 'vue'
 import type { Opt } from 'ydoc-shared/util/data/opt'
@@ -40,28 +41,29 @@ const staticMethod = {
 }
 
 test.each`
-  code                                       | callSuggestion  | subjectSpan | attachedSpan | subjectType                  | methodName
-  ${'val1.method val2'}                      | ${method}       | ${[0, 4]}   | ${[0, 4]}    | ${'local.Project.Type'}      | ${'.method'}
-  ${'local.Project.Type.method val1 val2'}   | ${method}       | ${[0, 18]}  | ${[26, 30]}  | ${'local.Project.Type.type'} | ${'.method'}
-  ${'Type.method val1'}                      | ${method}       | ${[0, 4]}   | ${[12, 16]}  | ${'local.Project.Type.type'} | ${'.method'}
-  ${'local.Project.Type.method'}             | ${method}       | ${[0, 18]}  | ${null}      | ${'local.Project.Type.type'} | ${'.method'}
-  ${'foo.method'}                            | ${method}       | ${[0, 3]}   | ${null}      | ${'local.Project.Type.type'} | ${'.method'}
-  ${'foo.method'}                            | ${method}       | ${[0, 3]}   | ${[0, 3]}    | ${'local.Project.Type'}      | ${'.method'}
-  ${'local.Project.Type.static_method val1'} | ${staticMethod} | ${[0, 18]}  | ${[0, 18]}   | ${'local.Project.Type.type'} | ${'.static_method'}
-  ${'Type.Con val1'}                         | ${con}          | ${[0, 4]}   | ${[0, 4]}    | ${'local.Project.Type.type'} | ${'.Con'}
-  ${'..Con val1'}                            | ${con}          | ${null}     | ${null}      | ${null}                      | ${'.Con'}
-  ${'local.Project.module_method val1'}      | ${moduleMethod} | ${[0, 13]}  | ${[0, 13]}   | ${'local.Project'}           | ${'.module_method'}
+  code                                       | callSuggestion  | subjectSpan            | attachedSpan            | subjectType                  | methodName
+  ${'val1.method val2'}                      | ${method}       | ${{ from: 0, to: 4 }}  | ${{ from: 0, to: 4 }}   | ${'local.Project.Type'}      | ${'.method'}
+  ${'local.Project.Type.method val1 val2'}   | ${method}       | ${{ from: 0, to: 18 }} | ${{ from: 26, to: 30 }} | ${'local.Project.Type.type'} | ${'.method'}
+  ${'Type.method val1'}                      | ${method}       | ${{ from: 0, to: 4 }}  | ${{ from: 12, to: 16 }} | ${'local.Project.Type.type'} | ${'.method'}
+  ${'local.Project.Type.method'}             | ${method}       | ${{ from: 0, to: 18 }} | ${null}                 | ${'local.Project.Type.type'} | ${'.method'}
+  ${'foo.method'}                            | ${method}       | ${{ from: 0, to: 3 }}  | ${null}                 | ${'local.Project.Type.type'} | ${'.method'}
+  ${'foo.method'}                            | ${method}       | ${{ from: 0, to: 3 }}  | ${{ from: 0, to: 3 }}   | ${'local.Project.Type'}      | ${'.method'}
+  ${'local.Project.Type.static_method val1'} | ${staticMethod} | ${{ from: 0, to: 18 }} | ${{ from: 0, to: 18 }}  | ${'local.Project.Type.type'} | ${'.static_method'}
+  ${'Type.Con val1'}                         | ${con}          | ${{ from: 0, to: 4 }}  | ${{ from: 0, to: 4 }}   | ${'local.Project.Type.type'} | ${'.Con'}
+  ${'..Con val1'}                            | ${con}          | ${null}                | ${null}                 | ${null}                      | ${'.Con'}
+  ${'local.Project.module_method val1'}      | ${moduleMethod} | ${{ from: 0, to: 13 }} | ${{ from: 0, to: 13 }}  | ${'local.Project'}           | ${'.module_method'}
 `(
   'Visualization config for $code',
   ({ code, callSuggestion, subjectSpan, attachedSpan, subjectType, methodName }) => {
     const spans = {
-      entireFunction: [0, code.length] as [number, number],
-      ...(subjectSpan != null ? { subject: subjectSpan as [number, number] } : {}),
-      ...(attachedSpan != null ? { attached: attachedSpan as [number, number] } : {}),
+      entireFunction: { from: 0, to: code.length },
+      ...(subjectSpan != null ? { subject: subjectSpan } : {}),
+      ...(attachedSpan != null ? { attached: attachedSpan } : {}),
     }
     const { ast, eid, id } = parseWithSpans(code, spans)
-    const node = (ast.lines[0]?.statement?.node as Ast.ExpressionStatement).expression
-    assert(node != null)
+    const statement = ast.lines[0]?.statement?.node
+    assert(statement instanceof Ast.ExpressionStatement)
+    const node = statement.expression
     expect(node.externalId).toBe(eid('entireFunction'))
 
     let visConfig: Ref<Opt<NodeVisualizationConfiguration>> | undefined

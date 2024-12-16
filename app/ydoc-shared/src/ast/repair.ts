@@ -1,12 +1,11 @@
 import { subtreeRoots } from '.'
 import { assertDefined, assertEqual } from '../util/assert'
-import { sourceRangeFromKey } from '../yjsModel'
-import type { NodeKey, NodeSpanMap } from './idMap'
-import type { MutableModule } from './mutableModule'
+import { sourceRangeFromKey } from '../util/data/text'
+import { type NodeKey, type NodeSpanMap } from './idMap'
+import { type MutableModule } from './mutableModule'
 import { parseModuleWithSpans } from './parse'
 import { printWithSpans } from './print'
-import type { Ast, AstId } from './tree'
-import { BodyBlock, Group } from './tree'
+import { BodyBlock, Group, type Ast, type AstId } from './tree'
 
 /**
  * Try to find all the spans in `expected` in `encountered`. If any are missing, use the provided `code` to determine
@@ -24,10 +23,10 @@ function checkSpans(expected: NodeSpanMap, encountered: NodeSpanMap, code: strin
   const lostInline = new Array<Ast>()
   const lostBlock = new Array<Ast>()
   for (const [key, ast] of lost) {
-    const [start, end] = sourceRangeFromKey(key)
+    const { from, to } = sourceRangeFromKey(key)
     // Do not report lost empty body blocks, we don't want them to be considered for repair.
-    if (start === end && ast instanceof BodyBlock) continue
-    ;(code.substring(start, end).match(/[\r\n]/) ? lostBlock : lostInline).push(ast)
+    if (from === to && ast instanceof BodyBlock) continue
+    ;(code.substring(from, to).match(/[\r\n]/) ? lostBlock : lostInline).push(ast)
   }
   return { lostInline, lostBlock }
 }

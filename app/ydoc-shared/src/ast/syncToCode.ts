@@ -2,21 +2,20 @@ import * as iter from 'enso-common/src/utilities/data/iter'
 import * as map from 'lib0/map'
 import { assert, assertDefined } from '../util/assert'
 import {
+  type SourceRange,
   type SourceRangeEdit,
+  type SourceRangeEditDesc,
+  type SourceRangeKey,
   type SpanTree,
   applyTextEdits,
   applyTextEditsToSpans,
   enclosingSpans,
-  textChangeToEdits,
-  trimEnd,
-} from '../util/data/text'
-import {
-  type SourceRange,
-  type SourceRangeKey,
   rangeLength,
   sourceRangeFromKey,
   sourceRangeKey,
-} from '../yjsModel'
+  textChangeToEdits,
+  trimEnd,
+} from '../util/data/text'
 import { xxHash128 } from './ffi'
 import { type NodeKey, type NodeSpanMap, newExternalId } from './idMap'
 import type { Module, MutableModule } from './mutableModule'
@@ -88,7 +87,7 @@ function calculateCorrespondence(
   astSpans: NodeSpanMap,
   parsedRoot: Ast,
   parsedSpans: NodeSpanMap,
-  textEdits: SourceRangeEdit[],
+  textEdits: SourceRangeEditDesc[],
   codeAfter: string,
 ): Map<AstId, Ast> {
   const newSpans = new Map<AstId, SourceRange>()
@@ -118,7 +117,7 @@ function calculateCorrespondence(
   for (const [astAfter, partsAfter] of astsMatchingPartsAfter) {
     for (const partAfter of partsAfter) {
       const astBefore = partAfterToAstBefore.get(sourceRangeKey(partAfter))!
-      if (astBefore.typeName() === astAfter.typeName()) {
+      if (astBefore.typeName === astAfter.typeName) {
         ;(rangeLength(newSpans.get(astAfter.id)!) === rangeLength(partAfter) ?
           toSync
         : candidates
@@ -143,7 +142,7 @@ function calculateCorrespondence(
     const unmatchedNewAsts = newAsts.filter(ast => !newIdsMatched.has(ast.id))
     const unmatchedOldAsts = oldHashes.get(hash)?.filter(ast => !oldIdsMatched.has(ast.id)) ?? []
     for (const [unmatchedNew, unmatchedOld] of iter.zip(unmatchedNewAsts, unmatchedOldAsts)) {
-      if (unmatchedNew.typeName() === unmatchedOld.typeName()) {
+      if (unmatchedNew.typeName === unmatchedOld.typeName) {
         toSync.set(unmatchedOld.id, unmatchedNew)
         // Update the matched-IDs indices.
         oldIdsMatched.add(unmatchedOld.id)
@@ -156,13 +155,13 @@ function calculateCorrespondence(
   // movement-matching.
   for (const [beforeId, after] of candidates) {
     if (oldIdsMatched.has(beforeId) || newIdsMatched.has(after.id)) continue
-    if (after.typeName() === ast.module.get(beforeId).typeName()) {
+    if (after.typeName === ast.module.get(beforeId).typeName) {
       toSync.set(beforeId, after)
     }
   }
 
   for (const [idBefore, astAfter] of toSync.entries())
-    assert(ast.module.get(idBefore).typeName() === astAfter.typeName())
+    assert(ast.module.get(idBefore).typeName === astAfter.typeName)
   return toSync
 }
 

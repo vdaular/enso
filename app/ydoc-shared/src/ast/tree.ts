@@ -125,10 +125,33 @@ const nodeMetadataKeys = allKeys<NodeMetadataFields>({
 export type NodeMetadata = FixedMapView<NodeMetadataFields & MetadataFields>
 export type MutableNodeMetadata = FixedMap<NodeMetadataFields & MetadataFields>
 
+export const astTypes = [
+  'App',
+  'Assignment',
+  'BodyBlock',
+  'ExpressionStatement',
+  'FunctionDef',
+  'Generic',
+  'Group',
+  'Ident',
+  'Import',
+  'Invalid',
+  'NegationApp',
+  'NumericLiteral',
+  'OprApp',
+  'PropertyAccess',
+  'TextLiteral',
+  'UnaryOprApp',
+  'AutoscopedIdentifier',
+  'Vector',
+  'Wildcard',
+] as const
+export type AstType = (typeof astTypes)[number]
+
 /** @internal */
 interface RawAstFields {
   id: AstId
-  type: string
+  type: AstType
   parent: AstId | undefined
   metadata: FixedMap<MetadataFields>
 }
@@ -227,7 +250,7 @@ export abstract class Ast {
   }
 
   /** TODO: Add docs */
-  typeName(): string {
+  get typeName(): AstType {
     return this.fields.get('type')
   }
 

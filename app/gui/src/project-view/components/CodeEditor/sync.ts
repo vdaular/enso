@@ -1,10 +1,10 @@
 import { type GraphStore } from '@/stores/graph'
 import { type ProjectStore } from '@/stores/project'
-import { useToast } from '@/util/toast.ts'
+import { changeSetToTextEdits } from '@/util/codemirror/text'
+import { useToast } from '@/util/toast'
 import {
   Annotation,
   ChangeSet,
-  type ChangeSpec,
   type EditorSelection,
   type Extension,
   type Text,
@@ -15,18 +15,6 @@ import { onUnmounted, watch } from 'vue'
 import { MutableModule } from 'ydoc-shared/ast'
 import { SourceRangeEdit, textChangeToEdits } from 'ydoc-shared/util/data/text'
 import { type Origin } from 'ydoc-shared/yjsModel'
-
-function changeSetToTextEdits(changes: ChangeSet) {
-  const textEdits = new Array<SourceRangeEdit>()
-  changes.iterChanges((from, to, _fromB, _toB, insert) =>
-    textEdits.push({ range: [from, to], insert: insert.toString() }),
-  )
-  return textEdits
-}
-
-function textEditToChangeSpec({ range: [from, to], insert }: SourceRangeEdit): ChangeSpec {
-  return { from, to, insert }
-}
 
 // Indicates a change updating the text to correspond to the given module state.
 const synchronizedModule = Annotation.define<MutableModule>()
@@ -78,7 +66,7 @@ export function useEnsoSourceSync(
     currentModule = undefined
     const viewText = editorView.state.doc.toString()
     const code = graphStore.moduleSource.text
-    const changes = textChangeToEdits(viewText, code).map(textEditToChangeSpec)
+    const changes = textChangeToEdits(viewText, code)
     console.info('Resetting the editor to the module code.', changes)
     editorView.dispatch({
       changes,
@@ -139,7 +127,7 @@ export function useEnsoSourceSync(
 
     // If none of the above exit-conditions were reached, the transaction is applicable to our current state.
     editorView.dispatch({
-      changes: textEdits.map(textEditToChangeSpec),
+      changes: textEdits,
       annotations: synchronizedModule.of(graphStore.startEdit()),
     })
   }
