@@ -279,7 +279,7 @@ class Compiler(
         context.log(
           Compiler.defaultLogLevel,
           "{0} imported module caches were invalided, forcing invalidation of {1}. [{2}]",
-          Array(
+          Array[Any](
             importedModulesLoadedFromSource.length,
             context.getModuleName(module).toString,
             importedModulesLoadedFromSource.take(10).mkString("", ",", "...")

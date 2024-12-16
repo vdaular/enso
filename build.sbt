@@ -26,7 +26,7 @@ import java.nio.file.Paths
 // === Global Configuration ===================================================
 // ============================================================================
 
-val scalacVersion = "2.13.11"
+val scalacVersion = "2.13.15"
 // source version of the Java language
 val javaVersion = "21"
 // version of the GraalVM JDK
@@ -603,18 +603,18 @@ val diffsonVersion          = "4.4.0"
 val directoryWatcherVersion = "0.18.0"
 val flatbuffersVersion      = "24.3.25"
 val guavaVersion            = "32.0.0-jre"
-val jlineVersion            = "3.23.0"
+val jlineVersion            = "3.26.3"
 val jgitVersion             = "6.7.0.202309050840-r"
-val kindProjectorVersion    = "0.13.2"
+val kindProjectorVersion    = "0.13.3"
 val mockitoScalaVersion     = "1.17.14"
 val newtypeVersion          = "0.4.4"
 val pprintVersion           = "0.8.1"
 val pureconfigVersion       = "0.17.4"
-val scalacheckVersion       = "1.17.0"
-val scalacticVersion        = "3.3.0-SNAP4"
+val scalacheckVersion       = "1.18.1"
+val scalacticVersion        = "3.2.19"
 val scalaLoggingVersion     = "3.9.4"
 val scalameterVersion       = "0.19"
-val scalatestVersion        = "3.3.0-SNAP4"
+val scalatestVersion        = "3.2.19"
 val slf4jVersion            = JPMSUtils.slf4jVersion
 val sqliteVersion           = "3.46.1.0"
 val tikaVersion             = "2.4.1"
@@ -1693,8 +1693,8 @@ lazy val `project-manager` = (project in file("lib/scala/project-manager"))
         ourFullCp,
         pkgsToExclude,
         streams.value.log,
-        scalaBinaryVersion.value,
-        moduleName.value
+        moduleName.value,
+        scalaBinaryVersion.value
       )
     },
     assembly / assemblyMergeStrategy := {
@@ -1750,6 +1750,7 @@ lazy val `project-manager` = (project in file("lib/scala/project-manager"))
         "project-manager",
         staticOnLinux = true,
         initializeAtRuntime = Seq(
+          "org.jline",
           "scala.util.Random",
           "zio.internal.ZScheduler$$anon$4",
           "zio.Runtime$",
@@ -3789,6 +3790,9 @@ lazy val launcher = project
       .buildNativeImage(
         "ensoup",
         staticOnLinux = true,
+        initializeAtRuntime = Seq(
+          "org.jline"
+        ),
         additionalOptions = Seq(
           "-Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.NoOpLog",
           "-H:IncludeResources=.*Main.enso$"
