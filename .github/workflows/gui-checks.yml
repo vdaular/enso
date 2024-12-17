@@ -31,17 +31,6 @@ jobs:
           node-version-file: .node-version
           cache: "pnpm"
 
-      - uses: actions/cache/restore@v4
-        name: Download cache
-        id: cache
-        with:
-          path: |
-            **/.eslintcache
-            node_modules/.cache/prettier
-          key: ${{ runner.os }}-gui-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-gui
-
       - if: startsWith(runner.name, 'GitHub Actions') || startsWith(runner.name, 'Hosted Agent')
         name: Installing wasm-pack
         uses: jetli/wasm-pack-action@v0.4.0
@@ -51,10 +40,15 @@ jobs:
       - name: 📦 Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: 📝 Prettier
-        id: prettier
-        continue-on-error: true
-        run: pnpm run ci:prettier
+      - uses: actions/cache/restore@v4
+        name: Download cache
+        id: cache
+        with:
+          path: |
+            **/.eslintcache
+          key: ${{ runner.os }}-gui-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-gui
 
       # Next Tasks are depend on Typecheck, because we build libraries at this stage
       - name: 🧠 Typecheck
@@ -88,7 +82,6 @@ jobs:
       - name: ❌ Fail if any check failed
         if: always() && (steps.prettier.outcome == 'failure' || steps.lint.outcome == 'failure' || steps.typecheck.outcome == 'failure' || steps.unit-tests.outcome == 'failure')
         run: |
-          echo "Prettier outcome: ${{ steps.prettier.outcome }}"
           echo "Lint outcome: ${{ steps.lint.outcome }}"
           echo "Typecheck outcome: ${{ steps.typecheck.outcome }}"
           echo "Unit tests outcome: ${{ steps.unit-tests.outcome }}"
@@ -102,7 +95,6 @@ jobs:
           key: ${{ steps.cache.outputs.cache-primary-key }}
           path: |
             **/.eslintcache
-            node_modules/.cache/prettier
 
   playwright:
     name: 🎭 Playwright Tests

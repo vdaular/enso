@@ -58,6 +58,52 @@ jobs:
             echo "$file was changed"
           done
 
+  prettier:
+    name: 🧹 Prettier
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        name: ⎔ Setup Node
+        with:
+          node-version-file: .node-version
+          cache: "pnpm"
+
+      - if: startsWith(runner.name, 'GitHub Actions') || startsWith(runner.name, 'Hosted Agent')
+        name: Installing wasm-pack
+        uses: jetli/wasm-pack-action@v0.4.0
+        with:
+          version: v0.12.1
+
+      - name: 📦 Install dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - uses: actions/cache/restore@v4
+        name: Download cache
+        id: cache
+        with:
+          path: |
+            node_modules/.cache/prettier
+          key: ${{ runner.os }}-gui-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-gui
+
+      - name: Run prettier
+        run: pnpm run ci:prettier
+
+      - name: 💾 Save cache
+        uses: actions/cache/save@v4
+        if: always() && steps.cache.outputs.cache-hit != 'true'
+        id: save-cache
+        with:
+          key: ${{ steps.cache.outputs.cache-primary-key }}
+          path: |
+            node_modules/.cache/prettier
+
   checks:
     name: 🧰 Checks
     uses: ./.github/workflows/gui-checks.yml
