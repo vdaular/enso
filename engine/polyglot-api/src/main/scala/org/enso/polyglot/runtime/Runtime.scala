@@ -1330,9 +1330,16 @@ object Runtime {
         *
         * @param expressionId the id of expression
         */
-
       @named("symbolRenameFailedExpressionNotFound")
       final case class ExpressionNotFound(expressionId: ExpressionId)
+          extends SymbolRenameFailed.Error
+
+      /** Signals that the definition with the provided name already exists in the scope.
+        *
+        * @param name the definition name
+        */
+      @named("symbolRenameFailedDefinitionAlreadyExists")
+      final case class DefinitionAlreadyExists(name: String)
           extends SymbolRenameFailed.Error
 
       /** Signals that it was unable to apply edits to the current module contents.

@@ -238,6 +238,8 @@ transport formats, please look [here](./protocol-architecture).
   - [`ExpressionNotFoundError`](#expressionnotfounderror)
   - [`FailedToApplyEdits`](#failedtoapplyedits)
   - [`RefactoringNotSupported`](#refactoringnotsupported)
+  - [`ProjectRenameFailed`](#projectrenamefailed)
+  - [`DefinitionAlreadyExists`](#definitionalreadyexists)
 
 <!-- /MarkdownTOC -->
 
@@ -3151,7 +3153,8 @@ type RefactoringRenameProjectResult = null;
 
 #### Errors
 
-None
+- [`ProjectRenameFailed`](#projectrenamefailed) to signal that the project
+  rename operation has failed.
 
 ### `refactoring/renameSymbol`
 
@@ -3231,6 +3234,8 @@ interface RefactoringRenameSymbolResult {
   operation was not able to apply generated edits.
 - [`RefactoringNotSupported`](#refactoringnotsupported) to signal that the
   refactoring of the given expression is not supported.
+- [`DefinitionAlreadyExists`](#definitionalreadyexists) to signal that the
+  definition with the provided name already exists in scope.
 
 ### `refactoring/projectRenamed`
 
@@ -5908,6 +5913,28 @@ Signals that the refactoring of the given expression is not supported.
 "error" : {
   "code" : 9003,
   "message" : "Refactoring not supported for expression [<expression-id>]"
+}
+```
+
+### `ProjectRenameFailed`
+
+Signals that the project rename failed.
+
+```typescript
+"error" : {
+  "code" : 9004,
+  "message" : "Project rename failed [<oldName>, <newName>]"
+}
+```
+
+### `DefinitionAlreadyExists`
+
+Signals that the definition with the provided name already exists in the scope.
+
+```typescript
+"error" : {
+  "code" : 9005,
+  "message" : "Definition [<name>] already exists"
 }
 ```
 
