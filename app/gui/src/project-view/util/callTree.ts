@@ -4,7 +4,11 @@ import type { WidgetConfiguration } from '@/providers/widgetRegistry/configurati
 import * as widgetCfg from '@/providers/widgetRegistry/configuration'
 import { DisplayMode } from '@/providers/widgetRegistry/configuration'
 import type { MethodCallInfo } from '@/stores/graph/graphDatabase'
-import type { SuggestionEntry, SuggestionEntryArgument } from '@/stores/suggestionDatabase/entry'
+import {
+  isRequiredArgument,
+  type SuggestionEntry,
+  type SuggestionEntryArgument,
+} from '@/stores/suggestionDatabase/entry'
 import { Ast } from '@/util/ast'
 import type { AstId } from '@/util/ast/abstract'
 import { findLastIndex, tryGetIndex } from '@/util/data/array'
@@ -118,7 +122,7 @@ export class ArgumentPlaceholder extends Argument {
 
   /** TODO: Add docs */
   override get hideByDefault(): boolean {
-    return this.argInfo.hasDefault && this.dynamicConfig?.display !== DisplayMode.Always
+    return !isRequiredArgument(this.argInfo) && this.dynamicConfig?.display !== DisplayMode.Always
   }
 }
 
