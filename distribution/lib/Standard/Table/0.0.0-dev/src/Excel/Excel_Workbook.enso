@@ -21,10 +21,10 @@ import project.Excel.Excel_Range.Excel_Range
 import project.Headers.Headers
 import project.Internal.Excel_Reader
 import project.Internal.Excel_Section.Excel_Section
-import project.Internal.Read_Many_As_Merged_Table_Strategy.Read_Many_As_Merged_Table_Strategy
-import project.Internal.Read_Many_As_Merged_Table_Strategy.Read_Many_As_Table_Result
 import project.Internal.Java_Problems
 import project.Internal.Problem_Builder.Problem_Builder
+import project.Internal.Read_Many_As_Merged_Table_Strategy.Read_Many_As_Merged_Table_Strategy
+import project.Internal.Read_Many_As_Merged_Table_Strategy.Read_Many_As_Table_Result
 import project.Match_Columns.Match_Columns
 import project.Return_As_Table.Return_As_Table
 import project.Rows_To_Read.Rows_To_Read
@@ -217,7 +217,7 @@ type Excel_Workbook
         _ = [alias]
         self.read query headers=headers
 
-    ## ALIAS get, range, sheet, worksheet, import, load, open
+    ## ALIAS get, import, load, open, range, sheet, worksheet
        GROUP Standard.Base.Input
        ICON data_input
        Read a range into a Table.

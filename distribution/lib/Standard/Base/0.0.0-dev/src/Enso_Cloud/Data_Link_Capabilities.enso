@@ -80,10 +80,12 @@ type Writable_Data_Link
    A type class representing a data link that is a link to a file.
    If the data link links to a directory, it allows crossing filesystems using `/` and `list` operations.
 type File_Like_Data_Link
+    ## PRIVATE
     Value underlying as_file
-   ## PRIVATE
-      Creates a `Writable_Data_Link` from a data link instance, if that data
-      link supports writing. If it does not, an error is thrown.
-   find data_link_instance (if_not_supported = (Error.throw (Illegal_Argument.Error "The "+(data_link_name data_link_instance)+" is not a link to a file object."))) -> File_Like_Data_Link ! Illegal_Argument =
-       handle_no_conversion _ = if_not_supported
-       Panic.catch No_Such_Conversion (File_Like_Data_Link.from data_link_instance) handle_no_conversion
+
+    ## PRIVATE
+       Creates a `Writable_Data_Link` from a data link instance, if that data
+       link supports writing. If it does not, an error is thrown.
+    find data_link_instance (if_not_supported = (Error.throw (Illegal_Argument.Error "The "+(data_link_name data_link_instance)+" is not a link to a file object."))) -> File_Like_Data_Link ! Illegal_Argument =
+        handle_no_conversion _ = if_not_supported
+        Panic.catch No_Such_Conversion (File_Like_Data_Link.from data_link_instance) handle_no_conversion

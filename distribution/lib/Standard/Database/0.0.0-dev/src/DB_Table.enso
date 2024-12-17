@@ -30,6 +30,7 @@ import Standard.Table.Internal.Column_Naming_Helper.Column_Naming_Helper
 import Standard.Table.Internal.Constant_Column.Constant_Column
 import Standard.Table.Internal.Display_Helpers
 import Standard.Table.Internal.Join_Kind_Cross.Join_Kind_Cross
+import Standard.Table.Internal.Match_Columns_Helpers
 import Standard.Table.Internal.Problem_Builder.Problem_Builder
 import Standard.Table.Internal.Replace_Helpers
 import Standard.Table.Internal.Table_Helpers
@@ -39,7 +40,6 @@ import Standard.Table.Internal.Table_Ref.Table_Ref
 import Standard.Table.Internal.Unique_Name_Strategy.Unique_Name_Strategy
 import Standard.Table.Internal.Value_Type_Helpers
 import Standard.Table.Internal.Widget_Helpers
-import Standard.Table.Internal.Match_Columns_Helpers
 import Standard.Table.Row.Row
 import Standard.Table.Rows_To_Read.Rows_To_Read
 import Standard.Table.Value_Type.By_Type
@@ -404,7 +404,7 @@ type DB_Table
             result = self.updated_columns (new_columns.map _.as_internal)
             Warning.attach (Deprecated.Warning "Standard.Database.DB_Table.DB_Table" "remove_columns_by_type" "Deprecated: use `remove_columns` with a `By_Type` instead.") result
 
-    ## ALIAS select_blank_fields, select_missing_columns, select_na, filter_blank_columns
+    ## ALIAS filter_blank_columns, select_blank_fields, select_missing_columns, select_na
        GROUP Standard.Base.Selections
        ICON select_column
 
@@ -622,7 +622,7 @@ type DB_Table
                     Warning.with_suspended new_names names->
                         self.updated_columns (self.internal_columns.map c-> c.rename (names.at c.name))
 
-    ## ALIAS rename, header
+    ## ALIAS header, rename
        GROUP Standard.Base.Metadata
        ICON table_edit
        Returns a new table with the columns renamed based on entries in the
@@ -1418,7 +1418,7 @@ type DB_Table
         _ = [columns, case_sensitivity, on_problems]
         Error.throw (Unsupported_Database_Operation.Error "duplicates")
 
-    ## ALIAS merge, xlookup, vlookup, hlookup, lookup
+    ## ALIAS hlookup, lookup, merge, vlookup, xlookup
        GROUP Standard.Base.Calculations
        ICON join
        Joins two tables according to the specified join conditions.
@@ -1611,7 +1611,7 @@ type DB_Table
             on_problems.attach_problems_before limit_problems <|
                 self.join_or_cross_join right join_kind=Join_Kind_Cross on=[] right_prefix on_problems
 
-    ## ALIAS join, xlookup, vlookup, hlookup, lookup
+    ## ALIAS hlookup, join, lookup, vlookup, xlookup
        GROUP Standard.Base.Calculations
        ICON join
        Merges this table with a lookup table.
@@ -1971,7 +1971,7 @@ type DB_Table
 
                         DB_Table.Value union_alias self.connection new_columns new_ctx
 
-    ## ALIAS group by, summarize, count, count distinct, sum, average, mean, median, percentile, mode, standard deviation, variance, minimum, maximum, first, last, shortest, longest
+    ## ALIAS average, count, count distinct, first, group by, last, longest, maximum, mean, median, minimum, mode, percentile, shortest, standard deviation, sum, summarize, variance
        GROUP Standard.Base.Calculations
        ICON transform4
 
@@ -2310,7 +2310,7 @@ type DB_Table
         _ = [columns, format, locale, error_on_missing_columns, on_problems]
         Error.throw (Unsupported_Database_Operation.Error "format")
 
-    ## ALIAS tokenize, parse
+    ## ALIAS parse, tokenize
        GROUP Standard.Base.Conversions
        ICON split
        Splits a column of text into a set of new columns.
@@ -2336,7 +2336,7 @@ type DB_Table
         _ = [column, delimiter, column_count.columns_to_split, on_problems]
         Error.throw (Unsupported_Database_Operation.Error "split_to_columns")
 
-    ## ALIAS tokenize, parse
+    ## ALIAS parse, tokenize
        GROUP Standard.Base.Conversions
        ICON split
        Splits a column of text into a set of new rows.
@@ -2352,7 +2352,7 @@ type DB_Table
         _ = [column, delimiter]
         Error.throw (Unsupported_Database_Operation.Error "split_to_rows")
 
-    ## ALIAS split, parse, regex
+    ## ALIAS parse, regex, split
        GROUP Standard.Base.Conversions
        ICON split
        Tokenizes a column of text into a set of new columns using a regular
@@ -2381,7 +2381,7 @@ type DB_Table
         _ = [column, pattern, case_sensitivity, column_count, on_problems]
         Error.throw (Unsupported_Database_Operation.Error "tokenize_to_columns")
 
-    ## ALIAS split, parse, regex
+    ## ALIAS parse, regex, split
        GROUP Standard.Base.Conversions
        ICON split
        Tokenizes a column of text into a set of new rows using a regular
@@ -2404,7 +2404,7 @@ type DB_Table
         _ = [column, pattern, case_sensitivity, at_least_one_row]
         Error.throw (Unsupported_Database_Operation.Error "tokenize_to_rows")
 
-    ## ALIAS split, tokenize, regex
+    ## ALIAS regex, split, tokenize
        GROUP Standard.Base.Conversions
        ICON split
        Converts a Text column into new columns using a regular expression
@@ -2569,7 +2569,7 @@ type DB_Table
         _ = [columns, shrink_types, error_on_missing_columns, on_problems]
         Error.throw (Unsupported_Database_Operation.Error "auto_cast")
 
-    ## ALIAS drop_missing_rows, dropna, remove_blank_rows, remove_empty_rows, remove_missing_rows, filter_empty_rows, drop_empty_rows
+    ## ALIAS drop_empty_rows, drop_missing_rows, dropna, filter_empty_rows, remove_blank_rows, remove_empty_rows, remove_missing_rows
        GROUP Standard.Base.Selections
        ICON preparation
        Remove rows which are all blank or containing blank values.
@@ -2605,7 +2605,7 @@ type DB_Table
         table = self.connection.read_statement sql
         table.at column_name . at 0
 
-    ## ALIAS load, import
+    ## ALIAS import, load
        GROUP Standard.Base.Input
        ICON data_input
        Returns a materialized dataframe containing rows of this table.
@@ -2782,7 +2782,7 @@ type DB_Table
     to_text : Text
     to_text self = "(Database Table "+self.name.to_text+")"
 
-    ## ALIAS export, save, output, to_file
+    ## ALIAS export, output, save, to_file
        GROUP Standard.Base.Output
        ICON data_output
        This function writes the table into a file.
@@ -3002,7 +3002,7 @@ type DB_Table
             transformer col = col.text_cleanse remove
             Table_Helpers.replace_columns_with_transformed_columns self from transformer
 
-    ## ALIAS cumulative, count, sum, total, minimum, maximum, sum, mean, product, variance, standard deviation
+    ## ALIAS count, cumulative, maximum, mean, minimum, product, standard deviation, sum, sum, total, variance
        GROUP Standard.Base.Values
        ICON data_input
        Adds a new column to the table with a running calculation.

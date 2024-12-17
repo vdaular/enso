@@ -305,7 +305,7 @@ Text.find_all self pattern:Text|Regex=".*" case_sensitivity:Case_Sensitivity=..S
     compiled_pattern = Regex.compile pattern case_insensitive=case_insensitive
     compiled_pattern.match_all self
 
-## ALIAS check matches, regex, like
+## ALIAS check matches, like, regex
    GROUP Text
    ICON preparation
 
@@ -360,7 +360,7 @@ Text.match self pattern:Text|Regex=".*" case_sensitivity:Case_Sensitivity=..Sens
 Text.to_regex : Boolean -> Regex ! Regex_Syntax_Error | Illegal_Argument
 Text.to_regex self case_insensitive=False = Regex.compile self case_insensitive
 
-## ALIAS tokenize, parse
+## ALIAS parse, tokenize
    GROUP Conversions
    ICON split
 
@@ -426,8 +426,8 @@ Text.split self delimiter="," case_sensitivity:Case_Sensitivity=..Sensitive use_
                         combined_delimiter = parenthesize (delimiter.map parenthesize . join '|')
                         self.split combined_delimiter case_sensitivity=case_sensitivity use_regex=True
 
-## ALIAS split, parse, regex
-   ADVANCED
+## ADVANCED
+   ALIAS parse, regex, split
    GROUP Conversions
    ICON split
    Takes an input string and and a pattern and returns all the matches as a

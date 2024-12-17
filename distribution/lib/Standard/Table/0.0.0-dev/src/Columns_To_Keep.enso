@@ -1,6 +1,6 @@
+import Standard.Base.Errors.Common.Missing_Argument
 from Standard.Base import Text, Vector
 from Standard.Base.Metadata import Display, make_single_choice, Widget
-import Standard.Base.Errors.Common.Missing_Argument
 
 ## Specifies which columns to keep in a union operation.
 type Columns_To_Keep
