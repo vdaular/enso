@@ -20,6 +20,7 @@ import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.enso.base.cache.ReloadDetector;
 import org.enso.table.excel.xssfreader.XSSFReaderWorkbook;
 
 public class ExcelConnectionPool {
@@ -35,6 +36,8 @@ public class ExcelConnectionPool {
             "Cannot open a read-only Excel connection while an Excel file is being "
                 + "written to. This is a bug in the Table library.");
       }
+
+      clearOnReload();
 
       if (!file.exists()) {
         throw new FileNotFoundException(file.toString());
@@ -208,6 +211,29 @@ public class ExcelConnectionPool {
 
   private final HashMap<String, ConnectionRecord> records = new HashMap<>();
   private boolean isCurrentlyWriting = false;
+
+  /** Used to clear the ConnectionRecord on reload. */
+  private final ReloadDetector reloadDetector = new ReloadDetector();
+
+  /** If a reload has just happened, clear the ConnectionRecord cache. */
+  private void clearOnReload() throws IOException {
+    if (reloadDetector.hasReloadOccurred()) {
+      for (var record : records.values()) {
+        record.close();
+      }
+      records.clear();
+    }
+  }
+
+  /** Public for testing. */
+  public int getConnectionRecordCount() {
+    return records.size();
+  }
+
+  /** Public for testing. */
+  public void simulateReloadTestOnly() {
+    reloadDetector.simulateReloadTestOnly();
+  }
 
   static class ConnectionRecord {
     private int refCount;

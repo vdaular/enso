@@ -24,6 +24,7 @@ from project.Common_Table_Operations.Util import within_table
 from project.IO.Read_Many_Spec import with_temp_dir
 
 polyglot java import org.enso.table_test_helpers.RandomHelpers
+polyglot java import org.enso.table.excel.ExcelConnectionPool
 
 spec_fmt suite_builder header file read_method sheet_count=5 =
     suite_builder.group header group_builder->
@@ -1150,6 +1151,26 @@ add_specs suite_builder =
                 r3.at "Path" . to_vector . map .name . should_equal [tsv_file.name, empty_xls_file.name]
                 r3.at "Value" . at 0 . should_be_a Table
                 r3.at "Value" . at 1 . should_be_a Excel_Workbook
+
+        group_builder.specify "should clear cache on simulated reload" <|
+            ExcelConnectionPool.INSTANCE.simulateReloadTestOnly
+            check_workbook <| xlsx_sheet.read
+            ExcelConnectionPool.INSTANCE.getConnectionRecordCount . should_equal 1
+            check_workbook <| xlsx_sheet.read
+            ExcelConnectionPool.INSTANCE.getConnectionRecordCount . should_equal 1
+            check_workbook <| xls_sheet.read
+            ExcelConnectionPool.INSTANCE.getConnectionRecordCount . should_equal 2
+            check_workbook <| xls_sheet.read
+            ExcelConnectionPool.INSTANCE.getConnectionRecordCount . should_equal 2
+            ExcelConnectionPool.INSTANCE.simulateReloadTestOnly
+            check_workbook <| xlsx_sheet.read
+            ExcelConnectionPool.INSTANCE.getConnectionRecordCount . should_equal 1
+            check_workbook <| xlsx_sheet.read
+            ExcelConnectionPool.INSTANCE.getConnectionRecordCount . should_equal 1
+            check_workbook <| xls_sheet.read
+            ExcelConnectionPool.INSTANCE.getConnectionRecordCount . should_equal 2
+            check_workbook <| xls_sheet.read
+            ExcelConnectionPool.INSTANCE.getConnectionRecordCount . should_equal 2
 
     suite_builder.group "Problems" group_builder->
         group_builder.specify "should report a user-friendly error message when format is missing a required argument" <|
