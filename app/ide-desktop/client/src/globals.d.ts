@@ -158,6 +158,7 @@ declare global {
     readonly fileBrowserApi?: FileBrowserApi
     readonly projectManagementApi?: ProjectManagementApi
     readonly versionInfo?: VersionInfo
+    readonly mapBoxApiToken: () => string
     toggleDevtools: () => void
   }
 

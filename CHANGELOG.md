@@ -2,9 +2,12 @@
 
 #### Enso IDE
 
+- [ENSO_IDE_MAPBOX_API_TOKEN environment variable should be provided to enable
+  GeoMap visualization][11889].
 - [Round ‘Add component’ button under the component menu replaced by a small
   button protruding from the output port.][11836].
 
+[11889]: https://github.com/enso-org/enso/pull/11889
 [11836]: https://github.com/enso-org/enso/pull/11836
 
 #### Enso Language & Runtime

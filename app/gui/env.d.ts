@@ -175,6 +175,7 @@ declare global {
     readonly projectManagementApi?: ProjectManagementApi
     readonly fileBrowserApi?: FileBrowserApi
     readonly versionInfo?: VersionInfo
+    readonly mapBoxApiToken?: () => string
     toggleDevtools: () => void
     /**
      * If set to `true`, animations will be disabled.
