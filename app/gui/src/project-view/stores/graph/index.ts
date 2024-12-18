@@ -53,7 +53,7 @@ import type {
 import { reachable } from 'ydoc-shared/util/data/graph'
 import type { LocalUserActionOrigin, Origin, VisualizationMetadata } from 'ydoc-shared/yjsModel'
 import { defaultLocalOrigin, visMetadataEquals } from 'ydoc-shared/yjsModel'
-import { UndoManager } from 'yjs'
+import * as Y from 'yjs'
 
 const FALLBACK_BINDING_PREFIX = 'node'
 
@@ -376,7 +376,7 @@ export const [provideGraphStore, useGraphStore] = createContextStore(
     const undoManagerStatus = reactive({
       canUndo: false,
       canRedo: false,
-      update(m: UndoManager) {
+      update(m: Y.UndoManager) {
         this.canUndo = m.canUndo()
         this.canRedo = m.canRedo()
       },
@@ -386,7 +386,7 @@ export const [provideGraphStore, useGraphStore] = createContextStore(
       (m) => {
         if (m) {
           const update = () => undoManagerStatus.update(m)
-          const events = stringUnionToArray<keyof Events<UndoManager>>()(
+          const events = stringUnionToArray<keyof Events<Y.UndoManager>>()(
             'stack-item-added',
             'stack-item-popped',
             'stack-cleared',
@@ -786,6 +786,11 @@ export const [provideGraphStore, useGraphStore] = createContextStore(
       { onError: console.error },
     )
 
+    function onBeforeEdit(f: (transaction: Y.Transaction) => void): { unregister: () => void } {
+      proj.module?.doc.ydoc.on('beforeTransaction', f)
+      return { unregister: () => proj.module?.doc.ydoc.off('beforeTransaction', f) }
+    }
+
     return proxyRefs({
       db: markRaw(db),
       mockExpressionUpdate,
@@ -826,6 +831,7 @@ export const [provideGraphStore, useGraphStore] = createContextStore(
       startEdit,
       commitEdit,
       edit,
+      onBeforeEdit,
       viewModule,
       addMissingImports,
       addMissingImportsDisregardConflicts,

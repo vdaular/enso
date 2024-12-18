@@ -67,19 +67,22 @@ export class WSSharedDoc {
     this.doc.on('update', (update, origin) => this.updateHandler(update, origin))
   }
 
-  /** Send a message to all connected clients. */
-  broadcast(message: Uint8Array) {
+  /** Send a message to all connected clients, except any client whose connection is passed as `exclude`. */
+  broadcast(message: Uint8Array, exclude?: YjsConnection | undefined) {
     for (const [conn] of this.conns) {
-      if (typeof conn !== 'string') conn.send(message)
+      if (typeof conn === 'string') continue
+      if (conn === exclude) continue
+      conn.send(message)
     }
   }
 
   /** Process an update event from the YDoc document. */
-  updateHandler(update: Uint8Array, _origin: any) {
+  updateHandler(update: Uint8Array, origin: unknown) {
     const encoder = encoding.createEncoder()
     encoding.writeVarUint(encoder, messageSync)
     writeUpdate(encoder, update)
-    this.broadcast(encoding.toUint8Array(encoder))
+    const exclude = origin instanceof YjsConnection ? origin : undefined
+    this.broadcast(encoding.toUint8Array(encoder), exclude)
   }
 }
 
