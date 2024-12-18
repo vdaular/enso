@@ -182,6 +182,7 @@ read_text path=(Missing_Argument.throw "path") (encoding : Encoding = Encoding.d
    Lists files contained in the provided directory.
 
    Arguments:
+   - directory: A path or `File` object to get the contents of.
    - name_filter: A glob pattern that can be used to filter the returned files.
      If it is not specified, all files are returned.
    - recursive: Specifies whether the returned list of files should include also

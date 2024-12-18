@@ -797,7 +797,7 @@ type File
         if Data_Link.is_data_link self then Data_Link_Helpers.interpret_data_link_target_as_file self . list name_filter=name_filter recursive=recursive else
             if self.is_directory.not then Error.throw (Illegal_Argument.Error "Cannot `list` a non-directory.") else
                 all_files = if recursive then list_descendants self else self.list_immediate_children
-                case name_filter of
+                filtered_files = case name_filter of
                     "" -> all_files
                     _ ->
                         used_filter = if recursive.not || name_filter.contains "**" then name_filter else
@@ -806,6 +806,7 @@ type File
                         all_files.filter file->
                             pathStr = self.relativize file . path
                             File_Utils.matches matcher pathStr
+                filtered_files . sort on=.path
 
     ## GROUP Metadata
        ICON metadata

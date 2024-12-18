@@ -910,8 +910,8 @@ add_specs suite_builder =
 
         group_builder.specify "should list files in a directory" <|
             root = enso_project.data / "tree"
-            immediate = root.list.map .to_text . sort
-            expected = [root / "sample.csv", root / "sample.txt", root / "subdirectory"].map .to_text . sort
+            immediate = root.list.map .to_text
+            expected = [root / "sample.csv", root / "sample.txt", root / "subdirectory"].map .to_text
             immediate.should_equal expected
 
             filtered1 = root.list name_filter="s[a-cw]mple.{t?t,md}"
@@ -920,35 +920,49 @@ add_specs suite_builder =
             filtered2 = Data.list root name_filter="*di*"
             filtered2.should_equal [root / "subdirectory"]
 
+        group_builder.specify "File.list should sort its result" <|
+            dir = enso_project.data / "list_sort"
+            dir.delete_if_exists recursive=True
+            dir.create_directory
+
+            nums = (0.up_to 10 . to_vector) + (30.down_to 20 . to_vector)
+            nums.each i->
+                f = dir / i.to_text
+                "abcd".write f
+                lst = dir.list
+                lst . should_equal (lst.sort on=.path)
+
+            dir.delete recursive=True . should_succeed
+
         group_builder.specify "should list files in a directory recursively" <|
             root = enso_project.data / "tree"
             resolve files = files.map str-> (root / str) . to_text
 
             all = root.list recursive=True . map .to_text
-            all.sort.should_equal (resolve ["", "sample.csv", "sample.txt", "subdirectory", "subdirectory/a.txt", "subdirectory/nested", "subdirectory/nested/b.txt"])
+            all.should_equal (resolve ["", "sample.csv", "sample.txt", "subdirectory", "subdirectory/a.txt", "subdirectory/nested", "subdirectory/nested/b.txt"])
 
             filtered1 = root.list name_filter="**.txt" recursive=True . map .to_text
-            filtered1.sort.should_equal (resolve ["sample.txt", "subdirectory/a.txt", "subdirectory/nested/b.txt"])
+            filtered1.should_equal (resolve ["sample.txt", "subdirectory/a.txt", "subdirectory/nested/b.txt"])
 
             filtered1b = root.list name_filter="*.txt" recursive=True . map .to_text
-            filtered1b.sort.should_equal (resolve ["sample.txt", "subdirectory/a.txt", "subdirectory/nested/b.txt"])
+            filtered1b.should_equal (resolve ["sample.txt", "subdirectory/a.txt", "subdirectory/nested/b.txt"])
 
             # It should also work if more complicated pattern is used
             filtered1c = root.list name_filter="{*.txt,foobarbaz}" recursive=True . map .to_text
-            filtered1c.sort.should_equal (resolve ["sample.txt", "subdirectory/a.txt", "subdirectory/nested/b.txt"])
+            filtered1c.should_equal (resolve ["sample.txt", "subdirectory/a.txt", "subdirectory/nested/b.txt"])
 
             # And correctly match file 'starts with' condition in recursive mode
             filtered1d = root.list name_filter="a*.txt" recursive=True . map .to_text
-            filtered1d.sort.should_equal (resolve ["subdirectory/a.txt"])
+            filtered1d.should_equal (resolve ["subdirectory/a.txt"])
 
             filtered2 = root.list name_filter="*/*/*" recursive=True . map .to_text
             filtered2.should_equal (resolve ["subdirectory/nested/b.txt"])
 
             filtered3 = root.list name_filter="a.txt" recursive=True . map .to_text
-            filtered3.sort.should_equal (resolve ["subdirectory/a.txt"])
+            filtered3.should_equal (resolve ["subdirectory/a.txt"])
 
             filtered4 = root.list name_filter="nested/*.txt" recursive=True . map .to_text
-            filtered4.sort.should_equal (resolve ["subdirectory/nested/b.txt"])
+            filtered4.should_equal (resolve ["subdirectory/nested/b.txt"])
 
         add_create_and_delete_directory_specs group_builder (enso_project.data / "transient")
 
