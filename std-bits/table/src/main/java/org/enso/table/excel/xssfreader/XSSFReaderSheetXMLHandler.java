@@ -131,6 +131,7 @@ public class XSSFReaderSheetXMLHandler extends DefaultHandler {
           break;
         case "is": // Inline String
           isIsOpen = true;
+          value.setLength(0);
           break;
       }
     }
