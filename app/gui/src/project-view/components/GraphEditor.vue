@@ -30,6 +30,7 @@ import { keyboardBusy, keyboardBusyExceptIn, unrefElement, useEvent } from '@/co
 import { groupColorVar } from '@/composables/nodeColors'
 import type { PlacementStrategy } from '@/composables/nodeCreation'
 import { provideGraphEditorLayers } from '@/providers/graphEditorLayers'
+import { provideGraphEditorState } from '@/providers/graphEditorState'
 import type { GraphNavigator } from '@/providers/graphNavigator'
 import { provideGraphNavigator } from '@/providers/graphNavigator'
 import { provideNodeColors } from '@/providers/graphNodeColors'
@@ -286,7 +287,7 @@ const graphBindingsHandler = graphBindings.handler({
     projectStore.lsRpcConnection.profilingStop()
   },
   openComponentBrowser() {
-    if (graphNavigator.sceneMousePos != null && !componentBrowserVisible.value) {
+    if (graphNavigator.sceneMousePos != null && !componentBrowserOpened.value) {
       createWithComponentBrowser(fromSelection() ?? { placement: { type: 'mouse' } })
     }
   },
@@ -390,23 +391,25 @@ const documentationEditorHandler = documentationEditorBindings.handler({
 
 // === Component Browser ===
 
-const componentBrowserVisible = ref(false)
+const { componentBrowserOpened } = provideGraphEditorState({
+  componentBrowserOpened: ref(false),
+})
 const componentBrowserNodePosition = ref<Vec2>(Vec2.Zero)
 const componentBrowserUsage = ref<Usage>({ type: 'newNode' })
 
-watch(componentBrowserVisible, (v) =>
+watch(componentBrowserOpened, (v) =>
   rightDock.setStorageMode(v ? StorageMode.ComponentBrowser : StorageMode.Default),
 )
 
 function openComponentBrowser(usage: Usage, position: Vec2) {
   componentBrowserUsage.value = usage
   componentBrowserNodePosition.value = position
-  componentBrowserVisible.value = true
+  componentBrowserOpened.value = true
 }
 
 function hideComponentBrowser() {
   graphStore.editedNodeInfo = undefined
-  componentBrowserVisible.value = false
+  componentBrowserOpened.value = false
   displayedDocs.value = undefined
 }
 
@@ -639,7 +642,7 @@ const groupColors = computed(() => {
           />
           <GraphEdges :navigator="graphNavigator" @createNodeFromEdge="handleEdgeDrop" />
           <ComponentBrowser
-            v-if="componentBrowserVisible"
+            v-if="componentBrowserOpened"
             ref="componentBrowser"
             :navigator="graphNavigator"
             :nodePosition="componentBrowserNodePosition"

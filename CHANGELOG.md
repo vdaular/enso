@@ -1,5 +1,12 @@
 # Next Next Release
 
+#### Enso IDE
+
+- [Round ‘Add component’ button under the component menu replaced by a small
+  button protruding from the output port.][11836].
+
+[11836]: https://github.com/enso-org/enso/pull/11836
+
 #### Enso Language & Runtime
 
 - [Intersection types & type checks][11600]
