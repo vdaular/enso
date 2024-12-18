@@ -32,6 +32,9 @@ type Feature
        Catch all for tests that haven't yet been categorized correctly or use multiple features.
     Integration_Tests
     ## PRIVATE
+       add a group number column to a table.
+    Add_Group_Number
+    ## PRIVATE
        add a row number column to a table.
     Add_Row_Number
     ## PRIVATE

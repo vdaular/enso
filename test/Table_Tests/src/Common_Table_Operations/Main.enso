@@ -4,6 +4,7 @@ import Standard.Database.Internal.Replace_Params.Replace_Params
 
 from Standard.Test import Test
 
+import project.Common_Table_Operations.Add_Group_Number_Spec
 import project.Common_Table_Operations.Add_Row_Number_Spec
 import project.Common_Table_Operations.Aggregate_Spec
 import project.Common_Table_Operations.Coalesce_Spec
@@ -141,6 +142,7 @@ add_specs suite_builder setup =
     Distinct_Spec.add_specs suite_builder setup
     Cross_Tab_Spec.add_specs suite_builder setup
     Transpose_Spec.add_specs suite_builder setup
+    Add_Group_Number_Spec.add_specs suite_builder setup
     Add_Row_Number_Spec.add_specs suite_builder setup
     Integration_Tests.add_specs suite_builder setup
     Temp_Column_Spec.add_specs suite_builder setup

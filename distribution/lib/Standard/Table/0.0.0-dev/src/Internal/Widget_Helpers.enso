@@ -169,6 +169,17 @@ make_join_condition_selector table display:Display=..Always cache=Nothing =
     Vector_Editor item_editor=item_editor item_default="(..Equals "+table.column_names.first.pretty+")" display=display
 
 ## PRIVATE
+make_grouping_method_selector table:Table display:Display=..Always -> Widget =
+    column_selector = make_column_name_selector table display=Display.Always
+    columns_selector = Vector_Editor item_editor=column_selector item_default=table.column_names.first.pretty display=display
+
+    unique = Option "Unique" "..Unique" [["on", columns_selector]]
+    equal_count = Option "Equal Count" "..Equal_Count" [["order_by", columns_selector]]
+    names=[unique, equal_count]
+
+    Single_Choice display=display values=names
+
+## PRIVATE
    Make a column name selector.
 make_order_by_selector : Table -> Display -> Boolean -> Widget
 make_order_by_selector table display:Display=..Always name_only:Boolean=False =
