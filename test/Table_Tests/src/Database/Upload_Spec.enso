@@ -498,7 +498,7 @@ add_specs suite_builder setup make_new_connection persistent_connector=True =
             copied_table = db_table.select_into_database_table tmp_connection (Name_Generator.random_name "copied-table") temporary=False
             copied_table.is_trivial_query . should_be_true
             name = copied_table.name
-            Panic.with_finalizer (data.connection.drop_table name) <|
+            Panic.with_finalizer (data.connection.drop_table name if_exists=True) <|
                 setup.expect_integer_type <| copied_table.at "X"
                 copied_table.at "Y" . value_type . is_text . should_be_true
                 copied_table.at "Z" . value_type . is_floating_point . should_be_true

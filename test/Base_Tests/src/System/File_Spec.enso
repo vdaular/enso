@@ -391,7 +391,7 @@ add_specs suite_builder =
             subdir.should_succeed
             cleanup =
                 Enso_User.flush_caches
-                subdir.delete
+                subdir.delete recursive=True
             Panic.with_finalizer cleanup <|
                 Test_Environment.unsafe_with_environment_override "ENSO_CLOUD_PROJECT_DIRECTORY_PATH" subdir.path <|
                     # Flush caches to ensure fresh dir is used

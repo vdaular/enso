@@ -4,8 +4,10 @@ import Standard.Base.Errors.Common.Response_Too_Large
 import Standard.Base.Errors.File_Error.File_Error
 import Standard.Base.Errors.Illegal_Argument.Illegal_Argument
 import Standard.Base.Network.HTTP.Cache_Policy.Cache_Policy
+import Standard.Base.Network.HTTP.HTTP_Error.HTTP_Error
 import Standard.Base.Network.HTTP.Request.Request
 import Standard.Base.Network.HTTP.Request_Body.Request_Body
+import Standard.Base.Network.HTTP.Request_Error
 import Standard.Base.Network.HTTP.Response.Response
 import Standard.Base.Runtime.Context
 import Standard.Base.Runtime.Ref.Ref
@@ -412,11 +414,11 @@ add_specs suite_builder =
 
         group_builder.specify "Should not cache if the request fails" pending=pending_has_url <| Test.with_retries <|
             with_default_cache <|
-                HTTP.fetch url0 . decode_as_text
+                HTTP.fetch url0 . decode_as_text . should_succeed
                 get_num_response_cache_entries . should_equal 1
-                HTTP.fetch base_url_with_slash+'crash' . decode_as_text
+                HTTP.fetch base_url_with_slash+'crash' . decode_as_text . should_fail_with Request_Error
                 get_num_response_cache_entries . should_equal 1
-                HTTP.fetch base_url_with_slash+'nonexistent_endpoint' . decode_as_text
+                HTTP.fetch base_url_with_slash+'nonexistent_endpoint' . decode_as_text . should_fail_with HTTP_Error
                 get_num_response_cache_entries . should_equal 1
 
         cloud_setup = Cloud_Tests_Setup.prepare
@@ -437,9 +439,9 @@ add_specs suite_builder =
                         . add_query_argument "arg1" secret2
                         . add_query_argument "arg2" "plain value"
 
-                    HTTP.fetch url1 . decode_as_text
+                    HTTP.fetch url1 . decode_as_text . should_succeed
                     get_num_response_cache_entries . should_equal 1
-                    HTTP.fetch uri2 . decode_as_text
+                    HTTP.fetch uri2 . decode_as_text . should_succeed
                     get_num_response_cache_entries . should_equal 2
 
         group_builder.specify "Should work with secrets in the headers" pending=pending_has_url <| Test.with_retries <|
@@ -455,9 +457,9 @@ add_specs suite_builder =
                     headers1 = [Header.new "A-Header" secret1]
                     headers2 = [Header.new "A-Header" secret2]
 
-                    HTTP.fetch headers=headers1 uri . decode_as_text
+                    HTTP.fetch headers=headers1 uri . decode_as_text . should_succeed
                     get_num_response_cache_entries . should_equal 1
-                    HTTP.fetch headers=headers2 uri . decode_as_text
+                    HTTP.fetch headers=headers2 uri . decode_as_text . should_succeed
                     get_num_response_cache_entries . should_equal 2
 
         group_builder.specify "Does not attempt to make room for the maximum file size when that is larger than the total cache size" pending=pending_has_url <| Test.with_retries <|
