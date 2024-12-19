@@ -357,7 +357,7 @@ type S3_File
     ## GROUP Output
        ICON folder_add
        Within S3 the concept of creating directories has slightly different
-       meaning than on other filesystems. Text
+       meaning than on other filesystems.
 
        The `create_directory` method is provided on `S3_File` only for
        compatibility - to allow easy switching between file-systems.

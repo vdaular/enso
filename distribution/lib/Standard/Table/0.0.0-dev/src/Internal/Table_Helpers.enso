@@ -588,7 +588,8 @@ replace_columns_with_transformed_columns table selectors transformer error_on_mi
     replace_columns_with_columns table columns new_columns
 
 
-## Takes a table and a list of counts and returns a new table with the rows
+## PRIVATE
+   Takes a table and a list of counts and returns a new table with the rows
    duplicated according to the counts.
    The vector should have the same number of elements as the number of rows in the table.
 duplicate_rows (table : Table) (counts : Vector Integer) -> Table =

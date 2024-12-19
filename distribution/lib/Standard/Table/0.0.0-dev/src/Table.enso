@@ -691,7 +691,7 @@ type Table
         result = Table.new new_columns
         Warning.attach (Deprecated.Warning "Standard.Table.Table.Table" "remove_columns_by_type" "Deprecated: use `remove_columns` with a `By_Type` instead.") result
 
-    ## ALIAS drop_missing_rows, dropna, remove_blank_rows, remove_empty_rows, remove_missing_rows, filter_empty_rows, drop_empty_rows
+    ## ALIAS drop_empty_rows, drop_missing_rows, dropna, filter_empty_rows, remove_blank_rows, remove_empty_rows, remove_missing_rows
        GROUP Standard.Base.Selections
        ICON select_column
 
@@ -731,7 +731,7 @@ type Table
         new_columns = self.columns_helper.select_blank_columns_helper when treat_nans_as_blank
         Table.new new_columns
 
-    ## ALIAS drop_missing_columns, drop_na, select_blank_columns, select_blank_fields, select_missing_columns, select_na, filter_blank_columns
+    ## ALIAS drop_missing_columns, drop_na, filter_blank_columns, select_blank_columns, select_blank_fields, select_missing_columns, select_na
        GROUP Standard.Base.Selections
        ICON select_column
 
@@ -1038,7 +1038,7 @@ type Table
             Warning.with_suspended new_names names->
                 Table.new (self.columns.map c-> c.rename (names.at c.name))
 
-    ## ALIAS rename, header
+    ## ALIAS header, rename
        GROUP Standard.Base.Metadata
        ICON table_edit
        Returns a new table with the columns renamed based on entries in the
@@ -1078,7 +1078,7 @@ type Table
         problem_builder.attach_problems_before on_problems <|
             self.drop (..First 1) . rename_columns new_names_cleaned on_problems=on_problems
 
-    ## ALIAS group by, summarize, count, count distinct, sum, average, mean, median, percentile, mode, standard deviation, variance, minimum, maximum, first, last, shortest, longest
+    ## ALIAS average, count, count distinct, first, group by, last, longest, maximum, mean, median, minimum, mode, percentile, shortest, standard deviation, sum, summarize, variance
        GROUP Standard.Base.Calculations
        ICON transform4
 
@@ -1856,7 +1856,7 @@ type Table
         Warning.attach (Deprecated.Warning "Standard.Table.Table.Table" "auto_value_types" "Deprecated: `auto_value_types` has been replaced by `auto_cast`.") <|
             self.auto_cast columns shrink_types error_on_missing_columns on_problems
 
-    ## ALIAS tokenize, parse
+    ## ALIAS parse, tokenize
        GROUP Standard.Base.Conversions
        ICON split
        Creates a new table by splitting the chosen column of text, by the
@@ -1887,7 +1887,7 @@ type Table
     split_to_columns self column delimiter="," (column_count : Columns_To_Add = ..All_Columns) on_problems:Problem_Behavior=..Report_Warning =
         Split_Tokenize.split_to_columns self column delimiter column_count=column_count on_problems
 
-    ## ALIAS tokenize, parse
+    ## ALIAS parse, tokenize
        GROUP Standard.Base.Conversions
        ICON split
        Creates a new table by splitting the chosen column of text, by the
@@ -1907,7 +1907,7 @@ type Table
     split_to_rows self column delimiter="," =
         Split_Tokenize.split_to_rows self column delimiter
 
-    ## ALIAS split, parse, regex
+    ## ALIAS parse, regex, split
        GROUP Standard.Base.Conversions
        ICON split
 
@@ -1940,7 +1940,7 @@ type Table
     tokenize_to_columns self column pattern="." case_sensitivity:Case_Sensitivity=..Sensitive (column_count : Columns_To_Add = ..All_Columns) on_problems:Problem_Behavior=..Report_Warning =
         Split_Tokenize.tokenize_to_columns self column pattern case_sensitivity column_count on_problems
 
-    ## ALIAS split, parse, regex
+    ## ALIAS parse, regex, split
        GROUP Standard.Base.Conversions
        ICON split
 
@@ -1969,7 +1969,7 @@ type Table
     tokenize_to_rows self column pattern="." case_sensitivity:Case_Sensitivity=..Sensitive at_least_one_row:Boolean=False =
         Split_Tokenize.tokenize_to_rows self column pattern case_sensitivity at_least_one_row
 
-    ## ALIAS split, tokenize, regex
+    ## ALIAS regex, split, tokenize
        GROUP Standard.Base.Conversions
        ICON split
        Converts a Text column into new columns using a regular expression
@@ -2325,7 +2325,7 @@ type Table
     add_row_number self (name:Text="Row") (from:Integer=0) (step:Integer=1) (group_by:(Vector | Text | Integer | Regex)=[]) (order_by:(Vector | Text)=[]) (on_problems:Problem_Behavior=..Report_Warning) =
         Incomparable_Values.handle_errors <| Add_Row_Number.add_row_number self name from step group_by order_by on_problems
 
-    ## PRIVATE add group column, group id, bucket, tile
+    ## ALIAS add group column, bucket, group id, tile
        GROUP Standard.Base.Values
        ICON column_add
        Adds a new column to the table enumerating groups of rows, assigning each
@@ -2637,7 +2637,7 @@ type Table
         if self.row_count == 0 then Error.throw (Index_Out_Of_Bounds.Error 0 0) else
             Row.Value self (self.row_count-1)
 
-    ## ALIAS merge, xlookup, vlookup, hlookup, lookup
+    ## ALIAS hlookup, lookup, merge, vlookup, xlookup
        GROUP Standard.Base.Calculations
        ICON join
        Joins two tables according to the specified join conditions.
@@ -2820,7 +2820,7 @@ type Table
                 self.java_table.crossJoin right.java_table right_prefix java_aggregator
             Table.Value new_java_table
 
-    ## ALIAS join, xlookup, vlookup, hlookup, lookup
+    ## ALIAS hlookup, join, lookup, vlookup, xlookup
        GROUP Standard.Base.Calculations
        ICON join
        Merges this table with a lookup table
@@ -3430,7 +3430,7 @@ type Table
         mask = OrderMask.reverse self.row_count
         Table.Value <| self.java_table.applyMask mask
 
-    ## ALIAS export, save, output, to_file
+    ## ALIAS export, output, save, to_file
        GROUP Standard.Base.Output
        ICON data_output
        This function writes a table from memory into a file.
@@ -3744,7 +3744,7 @@ type Table
         transformer col = col.text_cleanse remove
         Table_Helpers.replace_columns_with_transformed_columns self from transformer
 
-    ## ALIAS cumulative, count, sum, total, minimum, maximum, sum, mean, product, variance, standard deviation
+    ## ALIAS count, cumulative, maximum, mean, minimum, product, standard deviation, sum, sum, total, variance
        GROUP Standard.Base.Values
        ICON column_add
        Adds a new column to the table with a running calculation.

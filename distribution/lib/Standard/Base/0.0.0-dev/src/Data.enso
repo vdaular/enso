@@ -189,6 +189,8 @@ read_text path=(Missing_Argument.throw "path") (encoding : Encoding = Encoding.d
      files from the subdirectories. If set to `False` (the default), only the
      immediate children of the listed directory are considered.
 
+   ? Name Filter Rules
+
    The `name_filter` can contain the following special characters:
    - `"?"` - which matches a single filename character (so it will not match a
      `"/"`).

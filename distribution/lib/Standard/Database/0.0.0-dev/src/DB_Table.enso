@@ -8,8 +8,8 @@ import Standard.Base.Errors.Common.Additional_Warnings
 import Standard.Base.Errors.Common.Floating_Point_Equality
 import Standard.Base.Errors.Common.Incomparable_Values
 import Standard.Base.Errors.Common.Index_Out_Of_Bounds
-import Standard.Base.Errors.Common.Type_Error
 import Standard.Base.Errors.Common.Missing_Argument
+import Standard.Base.Errors.Common.Type_Error
 import Standard.Base.Errors.Deprecated.Deprecated
 import Standard.Base.Errors.File_Error.File_Error
 import Standard.Base.Errors.Illegal_Argument.Illegal_Argument
@@ -927,7 +927,7 @@ type DB_Table
                 updated_table = renamed_table.updated_columns (renamed_table.internal_columns + [new_column])
                 updated_table.as_subquery
 
-    ## PRIVATE add group column, group id, bucket, tile
+    ## ALIAS add group column, bucket, group id, tile
        GROUP Standard.Base.Values
        ICON column_add
        Adds a new column to the table enumerating groups of rows, assigning each
