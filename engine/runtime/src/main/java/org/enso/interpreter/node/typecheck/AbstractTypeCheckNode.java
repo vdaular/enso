@@ -1,7 +1,9 @@
 package org.enso.interpreter.node.typecheck;
 
+import com.oracle.truffle.api.CompilerAsserts;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.Node;
 import java.util.List;
 import org.enso.interpreter.node.ExpressionNode;
@@ -29,11 +31,16 @@ abstract sealed class AbstractTypeCheckNode extends Node
 
   abstract String expectedTypeMessage();
 
+  @ExplodeLoop
   final boolean isAllTypes() {
     Node p = this;
+    CompilerAsserts.compilationConstant(p);
     for (; ; ) {
       if (p instanceof TypeCheckValueNode vn) {
-        return vn.isAllTypes();
+        CompilerAsserts.compilationConstant(vn);
+        var allTypes = vn.isAllTypes();
+        CompilerAsserts.compilationConstant(allTypes);
+        return allTypes;
       }
       p = p.getParent();
     }
