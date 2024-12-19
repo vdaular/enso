@@ -668,33 +668,35 @@ pub enum JobSecrets {
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Job {
-    pub name:            String,
+    pub name:              String,
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
-    pub needs:           BTreeSet<String>,
+    pub needs:             BTreeSet<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub r#if:            Option<String>,
+    pub r#if:              Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub runs_on:         Vec<RunnerLabel>,
+    pub runs_on:           Vec<RunnerLabel>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub continue_on_error: Option<bool>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub steps:           Vec<Step>,
+    pub steps:             Vec<Step>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub concurrency:     Option<Concurrency>,
+    pub concurrency:       Option<Concurrency>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    pub outputs:         BTreeMap<String, String>,
+    pub outputs:           BTreeMap<String, String>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    pub env:             BTreeMap<String, String>,
+    pub env:               BTreeMap<String, String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub strategy:        Option<Strategy>,
+    pub strategy:          Option<Strategy>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub timeout_minutes: Option<u32>,
+    pub timeout_minutes:   Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub uses:            Option<String>,
+    pub uses:              Option<String>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    pub with:            BTreeMap<String, String>,
+    pub with:              BTreeMap<String, String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub secrets:         Option<JobSecrets>,
+    pub secrets:           Option<JobSecrets>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    pub permissions:     BTreeMap<Permission, Access>,
+    pub permissions:       BTreeMap<Permission, Access>,
 }
 
 impl Job {

@@ -1,12 +1,8 @@
 # This file is auto-generated. Do not edit it manually!
 # Edit the enso_build::ci_gen module instead and run `cargo run --package enso-build-ci-gen`.
 
-name: GUI Check
+name: WASM Checks
 on:
-  push:
-    branches:
-      - develop
-  pull_request: {}
   workflow_dispatch:
     inputs:
       clean_build_required:
@@ -14,19 +10,11 @@ on:
         required: false
         type: boolean
         default: false
+  workflow_call: {}
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-wasm-checks
+  cancel-in-progress: ${{ github.ref != 'refs/heads/develop' }}
 jobs:
-  enso-build-ci-gen-job-cancel-workflow-linux-amd64:
-    name: Cancel Previous Runs
-    if: github.ref != 'refs/heads/develop'
-    runs-on:
-      - ubuntu-latest
-    steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.12.1
-        with:
-          access_token: ${{ github.token }}
-    permissions:
-      actions: write
   enso-build-ci-gen-job-lint-linux-amd64:
     name: Lint (linux, amd64)
     runs-on:

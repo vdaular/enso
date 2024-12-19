@@ -7,16 +7,17 @@
     workflows/:
       changelog.yml:
       engine-benchmark.yml:
-      gui-tests.yml:
-      gui.yml:
-      engine-nightly.yml:
+      engine-checks-nightly.yml:
+      engine-checks-optional.yml:
+      engine-checks.yml:
       extra-nightly-tests.yml:
+      gui-packaging-optional.yml:
+      gui-packaging.yml:
       nightly.yml:
       promote.yml:
       release.yml:
-      scala-new.yml:
-      shader-tools.yml:
       std-libs-benchmark.yml:
+      wasm-checks.yml:
   app/:
     gui/: # GUI.
       dist/:

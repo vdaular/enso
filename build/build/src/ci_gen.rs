@@ -79,6 +79,11 @@ pub const RELEASE_TARGETS: [(OS, Arch); 4] = [
 pub const PR_CHECKED_TARGETS: [(OS, Arch); 3] =
     [(OS::Windows, Arch::X86_64), (OS::Linux, Arch::X86_64), (OS::MacOS, Arch::X86_64)];
 
+pub const PR_REQUIRED_TARGETS: [(OS, Arch); 2] =
+    [(OS::Windows, Arch::X86_64), (OS::Linux, Arch::X86_64)];
+
+pub const PR_OPTIONAL_TARGETS: [(OS, Arch); 1] = [(OS::MacOS, Arch::X86_64)];
+
 pub const DEFAULT_BRANCH_NAME: &str = "develop";
 
 pub const RELEASE_CONCURRENCY_GROUP: &str = "release";
@@ -474,6 +479,16 @@ impl PromoteReleaseJob {
     pub const PROMOTE_STEP_ID: &'static str = "promote";
 }
 
+fn concurrency(group: impl AsRef<str>) -> Concurrency {
+    let github_workflow = wrap_expression("github.workflow");
+    let github_ref = wrap_expression("github.ref");
+    let group_ref = group.as_ref();
+    Concurrency::Map {
+        group:              format!("{github_workflow}-{github_ref}-{group_ref}"),
+        cancel_in_progress: wrap_expression(not_default_branch()),
+    }
+}
+
 /// Generate a workflow that checks if the changelog has been updated (if needed).
 pub fn changelog() -> Result<Workflow> {
     use PullRequestActivityType::*;
@@ -552,15 +567,35 @@ fn add_release_steps(workflow: &mut Workflow) -> Result {
     Ok(())
 }
 
-/// Add jobs that perform backend checks ,including Scala and Standard Library tests.
+/// Add jobs that perform backend checks, including Scala and Standard Library tests.
+pub fn add_backend_checks_customized(
+    workflow: &mut Workflow,
+    target: Target,
+    graal_edition: graalvm::Edition,
+    continue_on_error: impl Fn(&Target) -> Option<bool>,
+) {
+    workflow.add_customized(target, job::CiCheckBackend { graal_edition }, |job| {
+        job.continue_on_error = continue_on_error(&target);
+    });
+    workflow.add_customized(target, job::JvmTests { graal_edition }, |job| {
+        job.continue_on_error = continue_on_error(&target);
+    });
+    workflow.add_customized(
+        target,
+        job::StandardLibraryTests { graal_edition, cloud_tests_enabled: false },
+        |job| {
+            job.continue_on_error = continue_on_error(&target);
+        },
+    );
+}
+
+/// Add jobs that perform backend checks, including Scala and Standard Library tests.
 pub fn add_backend_checks(
     workflow: &mut Workflow,
     target: Target,
     graal_edition: graalvm::Edition,
 ) {
-    workflow.add(target, job::CiCheckBackend { graal_edition });
-    workflow.add(target, job::JvmTests { graal_edition });
-    workflow.add(target, job::StandardLibraryTests { graal_edition, cloud_tests_enabled: false });
+    add_backend_checks_customized(workflow, target, graal_edition, |_| None);
 }
 
 pub fn workflow_call_job(name: impl Into<String>, path: impl Into<String>) -> Job {
@@ -648,15 +683,20 @@ pub fn typical_check_triggers() -> Event {
     }
 }
 
-pub fn gui() -> Result<Workflow> {
+pub fn gui_packaging() -> Result<Workflow> {
+    let on = Event {
+        workflow_dispatch: Some(manual_workflow_dispatch()),
+        workflow_call: Some(default()),
+        ..default()
+    };
     let mut workflow = Workflow {
         name: "GUI Packaging".into(),
-        on: typical_check_triggers(),
-        concurrency: Some(concurrency()),
+        concurrency: Some(concurrency("gui-packaging")),
+        on,
         ..default()
     };
 
-    for target in PR_CHECKED_TARGETS {
+    for target in PR_REQUIRED_TARGETS {
         let project_manager_job = workflow.add(target, job::BuildBackend);
         workflow.add_customized(target, job::PackageIde, |job| {
             job.needs.insert(project_manager_job.clone());
@@ -666,40 +706,93 @@ pub fn gui() -> Result<Workflow> {
     Ok(workflow)
 }
 
-pub fn gui_tests() -> Result<Workflow> {
-    let on = typical_check_triggers();
-    let mut workflow = Workflow { name: "GUI Check".into(), on, ..default() };
-    workflow.add(PRIMARY_TARGET, job::CancelWorkflow);
+pub fn gui_packaging_optional() -> Result<Workflow> {
+    let on = Event {
+        workflow_dispatch: Some(manual_workflow_dispatch()),
+        workflow_call: Some(default()),
+        ..default()
+    };
+    let mut workflow = Workflow {
+        name: "GUI Packaging (Optional)".into(),
+        concurrency: Some(concurrency("gui-packaging-optional")),
+        on,
+        ..default()
+    };
+
+    for target in PR_OPTIONAL_TARGETS {
+        let continue_on_error = Some(true);
+        let project_manager_job = workflow.add_customized(target, job::BuildBackend, |job| {
+            job.continue_on_error = continue_on_error;
+        });
+        workflow.add_customized(target, job::PackageIde, |job| {
+            job.needs.insert(project_manager_job.clone());
+            job.continue_on_error = continue_on_error;
+        });
+        workflow.add_customized(target, job::GuiBuild, |job| {
+            job.continue_on_error = continue_on_error;
+        });
+    }
+    Ok(workflow)
+}
+
+pub fn wasm_checks() -> Result<Workflow> {
+    let on = Event {
+        workflow_dispatch: Some(manual_workflow_dispatch()),
+        workflow_call: Some(default()),
+        ..default()
+    };
+    let mut workflow = Workflow {
+        name: "WASM Checks".into(),
+        concurrency: Some(concurrency("wasm-checks")),
+        on,
+        ..default()
+    };
     workflow.add(PRIMARY_TARGET, job::Lint);
     workflow.add(PRIMARY_TARGET, job::WasmTest);
     workflow.add(PRIMARY_TARGET, job::NativeTest);
     Ok(workflow)
 }
 
-fn concurrency() -> Concurrency {
-    let github_workflow = wrap_expression("github.workflow");
-    let github_ref = wrap_expression("github.ref");
-    Concurrency::Map {
-        group:              format!("{github_workflow}-{github_ref}"),
-        cancel_in_progress: wrap_expression(not_default_branch()),
-    }
-}
-
-pub fn backend() -> Result<Workflow> {
+pub fn engine_checks() -> Result<Workflow> {
+    let on = Event {
+        workflow_dispatch: Some(manual_workflow_dispatch()),
+        workflow_call: Some(default()),
+        ..default()
+    };
     let mut workflow = Workflow {
-        name: "Engine CI".into(),
-        on: typical_check_triggers(),
-        concurrency: Some(concurrency()),
+        name: "Engine Checks".into(),
+        concurrency: Some(concurrency("engine-checks")),
+        on,
         ..default()
     };
     workflow.add(PRIMARY_TARGET, job::VerifyLicensePackages);
-    for target in PR_CHECKED_TARGETS {
+    for target in PR_REQUIRED_TARGETS {
         add_backend_checks(&mut workflow, target, graalvm::Edition::Community);
     }
     Ok(workflow)
 }
 
-pub fn engine_nightly() -> Result<Workflow> {
+pub fn engine_checks_optional() -> Result<Workflow> {
+    let on = Event {
+        workflow_dispatch: Some(manual_workflow_dispatch()),
+        workflow_call: Some(default()),
+        ..default()
+    };
+    let mut workflow = Workflow {
+        name: "Engine Checks (Optional)".into(),
+        concurrency: Some(concurrency("engine-checks-optional")),
+        on,
+        ..default()
+    };
+    for target in PR_OPTIONAL_TARGETS {
+        add_backend_checks_customized(&mut workflow, target, graalvm::Edition::Community, |_| {
+            Some(true)
+        });
+    }
+    Ok(workflow)
+}
+
+pub fn engine_checks_nightly() -> Result<Workflow> {
     let on = Event {
         schedule: vec![Schedule::new("0 3 * * *")?],
         workflow_dispatch: Some(manual_workflow_dispatch()),
@@ -805,11 +898,13 @@ pub fn generate(
     let workflows = [
         (repo_root.changelog_yml.to_path_buf(), changelog()?),
         (repo_root.nightly_yml.to_path_buf(), nightly()?),
-        (repo_root.scala_new_yml.to_path_buf(), backend()?),
-        (repo_root.engine_nightly_yml.to_path_buf(), engine_nightly()?),
+        (repo_root.engine_checks_yml.to_path_buf(), engine_checks()?),
+        (repo_root.engine_checks_optional_yml.to_path_buf(), engine_checks_optional()?),
+        (repo_root.engine_checks_nightly_yml.to_path_buf(), engine_checks_nightly()?),
         (repo_root.extra_nightly_tests_yml.to_path_buf(), extra_nightly_tests()?),
-        (repo_root.gui_yml.to_path_buf(), gui()?),
-        (repo_root.gui_tests_yml.to_path_buf(), gui_tests()?),
+        (repo_root.gui_packaging_yml.to_path_buf(), gui_packaging()?),
+        (repo_root.gui_packaging_optional_yml.to_path_buf(), gui_packaging_optional()?),
+        (repo_root.wasm_checks_yml.to_path_buf(), wasm_checks()?),
         (repo_root.engine_benchmark_yml.to_path_buf(), engine_benchmark()?),
         (repo_root.std_libs_benchmark_yml.to_path_buf(), std_libs_benchmark()?),
         (repo_root.release_yml.to_path_buf(), release()?),
