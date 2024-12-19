@@ -1,7 +1,7 @@
 # This file is auto-generated. Do not edit it manually!
 # Edit the enso_build::ci_gen module instead and run `cargo run --package enso-build-ci-gen`.
 
-name: GUI Packaging (Optional)
+name: IDE Packaging (Optional)
 on:
   workflow_dispatch:
     inputs:
@@ -12,7 +12,7 @@ on:
         default: false
   workflow_call: {}
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}-gui-packaging-optional
+  group: ${{ github.workflow }}-${{ github.ref }}-ide-packaging-optional
   cancel-in-progress: ${{ github.ref != 'refs/heads/develop' }}
 jobs:
   enso-build-ci-gen-job-build-backend-macos-amd64:

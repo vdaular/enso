@@ -11,8 +11,8 @@
       engine-checks-optional.yml:
       engine-checks.yml:
       extra-nightly-tests.yml:
-      gui-packaging-optional.yml:
-      gui-packaging.yml:
+      ide-packaging-optional.yml:
+      ide-packaging.yml:
       nightly.yml:
       promote.yml:
       release.yml:

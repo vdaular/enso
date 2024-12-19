@@ -687,15 +687,15 @@ pub fn typical_check_triggers() -> Event {
     }
 }
 
-pub fn gui_packaging() -> Result<Workflow> {
+pub fn ide_packaging() -> Result<Workflow> {
     let on = Event {
         workflow_dispatch: Some(manual_workflow_dispatch()),
         workflow_call: Some(default()),
         ..default()
     };
     let mut workflow = Workflow {
-        name: "GUI Packaging".into(),
-        concurrency: Some(concurrency("gui-packaging")),
+        name: "IDE Packaging".into(),
+        concurrency: Some(concurrency("ide-packaging")),
         on,
         ..default()
     };
@@ -710,15 +710,15 @@ pub fn gui_packaging() -> Result<Workflow> {
     Ok(workflow)
 }
 
-pub fn gui_packaging_optional() -> Result<Workflow> {
+pub fn ide_packaging_optional() -> Result<Workflow> {
     let on = Event {
         workflow_dispatch: Some(manual_workflow_dispatch()),
         workflow_call: Some(default()),
         ..default()
     };
     let mut workflow = Workflow {
-        name: "GUI Packaging (Optional)".into(),
-        concurrency: Some(concurrency("gui-packaging-optional")),
+        name: "IDE Packaging (Optional)".into(),
+        concurrency: Some(concurrency("ide-packaging-optional")),
         on,
         ..default()
     };
@@ -906,8 +906,8 @@ pub fn generate(
         (repo_root.engine_checks_optional_yml.to_path_buf(), engine_checks_optional()?),
         (repo_root.engine_checks_nightly_yml.to_path_buf(), engine_checks_nightly()?),
         (repo_root.extra_nightly_tests_yml.to_path_buf(), extra_nightly_tests()?),
-        (repo_root.gui_packaging_yml.to_path_buf(), gui_packaging()?),
-        (repo_root.gui_packaging_optional_yml.to_path_buf(), gui_packaging_optional()?),
+        (repo_root.ide_packaging_yml.to_path_buf(), ide_packaging()?),
+        (repo_root.ide_packaging_optional_yml.to_path_buf(), ide_packaging_optional()?),
         (repo_root.wasm_checks_yml.to_path_buf(), wasm_checks()?),
         (repo_root.engine_benchmark_yml.to_path_buf(), engine_benchmark()?),
         (repo_root.std_libs_benchmark_yml.to_path_buf(), std_libs_benchmark()?),
