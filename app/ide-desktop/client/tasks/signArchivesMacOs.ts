@@ -106,6 +106,7 @@ async function ensoPackageSignables(resourcesDir: string): Promise<Signable[]> {
       [
         'org/jline/nativ/Mac/arm64/libjlinenative.jnilib',
         'org/jline/nativ/Mac/x86_64/libjlinenative.jnilib',
+        'org/jline/nativ/Mac/x86/libjlinenative.jnilib',
       ],
     ],
     [
