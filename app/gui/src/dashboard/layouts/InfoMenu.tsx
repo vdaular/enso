@@ -28,7 +28,7 @@ export default function InfoMenu(props: InfoMenuProps) {
   const { getText } = useText()
 
   return (
-    <Popover {...(!hidden ? { testId: 'info-menu' } : {})} size="xxsmall">
+    <Popover {...(!hidden ? { 'data-testid': 'info-menu' } : {})} size="xxsmall">
       <div className="mb-2 flex items-center gap-icons overflow-hidden px-menu-entry transition-all duration-user-menu">
         <SvgMask src={LogoIcon} className="pointer-events-none h-7 w-7 text-primary" />
         <Text>{PRODUCT_NAME}</Text>

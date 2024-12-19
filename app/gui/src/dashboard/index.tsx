@@ -3,12 +3,17 @@
  *
  * This module declares the main DOM structure for the authentication/dashboard app.
  */
-import * as React from 'react'
+import { startTransition, StrictMode, useEffect } from 'react'
 
 import * as sentry from '@sentry/react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import * as reactDOM from 'react-dom/client'
-import * as reactRouter from 'react-router-dom'
+import {
+  createRoutesFromChildren,
+  matchRoutes,
+  useLocation,
+  useNavigationType,
+} from 'react-router-dom'
 import invariant from 'tiny-invariant'
 
 import * as detect from 'enso-common/src/detect'
@@ -32,6 +37,9 @@ import { MotionGlobalConfig } from 'framer-motion'
 
 export type { GraphEditorRunner } from '#/layouts/Editor'
 
+const HTTP_STATUS_BAD_REQUEST = 400
+const API_HOST =
+  process.env.ENSO_CLOUD_API_URL != null ? new URL(process.env.ENSO_CLOUD_API_URL).host : null
 const ARE_ANIMATIONS_DISABLED =
   window.DISABLE_ANIMATIONS === true ||
   localStorage.getItem('disableAnimations') === 'true' ||
@@ -54,23 +62,15 @@ const ROOT_ELEMENT_ID = 'enso-dashboard'
 /** The fraction of non-erroring interactions that should be sampled by Sentry. */
 const SENTRY_SAMPLE_RATE = 0.005
 
-// ======================
-// === DashboardProps ===
-// ======================
-
 /** Props for the dashboard. */
 export interface DashboardProps extends app.AppProps {
   readonly logger: Logger
 }
 
-// ===========
-// === run ===
-// ===========
-
 /**
  * Entrypoint for the authentication/dashboard app.
  *
- * Running this function finds a `div` element with the ID `dashboard`, and renders the
+ * Running this function finds a `div` element with the ID `enso-dashboard`, and renders the
  * authentication/dashboard UI using React. It also handles routing and other interactions (e.g.,
  * for redirecting the user to/from the login page).
  */
@@ -81,18 +81,18 @@ export function run(props: DashboardProps) {
     process.env.ENSO_CLOUD_SENTRY_DSN != null &&
     process.env.ENSO_CLOUD_API_URL != null
   ) {
+    const version: unknown = import.meta.env.ENSO_IDE_VERSION
     sentry.init({
       dsn: process.env.ENSO_CLOUD_SENTRY_DSN,
       environment: process.env.ENSO_CLOUD_ENVIRONMENT,
+      release: version?.toString() ?? 'dev',
       integrations: [
-        new sentry.BrowserTracing({
-          routingInstrumentation: sentry.reactRouterV6Instrumentation(
-            React.useEffect,
-            reactRouter.useLocation,
-            reactRouter.useNavigationType,
-            reactRouter.createRoutesFromChildren,
-            reactRouter.matchRoutes,
-          ),
+        sentry.reactRouterV6BrowserTracingIntegration({
+          useEffect,
+          useLocation,
+          useNavigationType,
+          createRoutesFromChildren,
+          matchRoutes,
         }),
         sentry.extraErrorDataIntegration({ captureErrorCause: true }),
         sentry.replayIntegration(),
@@ -103,6 +103,22 @@ export function run(props: DashboardProps) {
       tracePropagationTargets: [process.env.ENSO_CLOUD_API_URL.split('//')[1] ?? ''],
       replaysSessionSampleRate: SENTRY_SAMPLE_RATE,
       replaysOnErrorSampleRate: 1.0,
+      beforeSend: (event) => {
+        if (
+          (event.breadcrumbs ?? []).some(
+            (breadcrumb) =>
+              breadcrumb.type === 'http' &&
+              breadcrumb.category === 'fetch' &&
+              breadcrumb.data &&
+              breadcrumb.data.status_code === HTTP_STATUS_BAD_REQUEST &&
+              typeof breadcrumb.data.url === 'string' &&
+              new URL(breadcrumb.data.url).host === API_HOST,
+          )
+        ) {
+          return null
+        }
+        return event
+      },
     })
   }
 
@@ -123,9 +139,9 @@ export function run(props: DashboardProps) {
 
   const httpClient = new HttpClient()
 
-  React.startTransition(() => {
+  startTransition(() => {
     reactDOM.createRoot(root).render(
-      <React.StrictMode>
+      <StrictMode>
         <QueryClientProvider client={queryClient}>
           <ErrorBoundary>
             <UIProviders locale="en-US" portalRoot={portalRoot}>
@@ -143,7 +159,7 @@ export function run(props: DashboardProps) {
             </UIProviders>
           </ErrorBoundary>
         </QueryClientProvider>
-      </React.StrictMode>,
+      </StrictMode>,
     )
   })
 }

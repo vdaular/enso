@@ -154,6 +154,18 @@ pub fn expose_gui_vars(step: Step) -> Step {
     expose_cloud_vars(step)
 }
 
+/// Expose variables for debugging purposes.
+pub fn expose_debugging_vars(os: OS, step: Step) -> Step {
+    use crate::ide::web::env::*;
+    match os {
+        OS::Windows => step
+            .with_secret_exposed(secret::SENTRY_AUTH_TOKEN)
+            .with_variable_exposed(ENSO_CLOUD_SENTRY_ORGANIZATION)
+            .with_variable_exposed(ENSO_CLOUD_SENTRY_PROJECT),
+        _ => step,
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct CancelWorkflow;
 
@@ -552,13 +564,28 @@ pub fn expose_os_specific_signing_secret(os: OS, step: Step) -> Step {
     }
 }
 
+/// Whether the artifact is being built for a release build (nightlies, releases)
+/// or a development build (PRs).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PackagingTarget {
+    /// The artifact is being built for a release build (nightlies, releases).
+    Development,
+    /// The artifact is being built for a development build (PRs).
+    Release,
+}
+
 /// Prepares the packaging steps for the given OS.
 ///
 /// This involves:
 /// * exposing secrets necessary for code signing and notarization;
 /// * exposing variables defining cloud environment for dashboard.
-pub fn prepare_packaging_steps(os: OS, step: Step) -> Vec<Step> {
+pub fn prepare_packaging_steps(os: OS, step: Step, packaging_target: PackagingTarget) -> Vec<Step> {
     let step = expose_gui_vars(step);
+    let step = if packaging_target == PackagingTarget::Release {
+        expose_debugging_vars(os, step)
+    } else {
+        step
+    };
     let step = expose_os_specific_signing_secret(os, step);
     vec![step]
 }
@@ -566,8 +593,11 @@ pub fn prepare_packaging_steps(os: OS, step: Step) -> Vec<Step> {
 /// Convenience for [`prepare_packaging_steps`].
 ///
 /// This function is useful when you want to use [`prepare_packaging_steps`] as a closure.
-pub fn with_packaging_steps(os: OS) -> impl FnOnce(Step) -> Vec<Step> {
-    move |step| prepare_packaging_steps(os, step)
+pub fn with_packaging_steps(
+    os: OS,
+    packaging_target: PackagingTarget,
+) -> impl FnOnce(Step) -> Vec<Step> {
+    move |step| prepare_packaging_steps(os, step, packaging_target)
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -579,7 +609,7 @@ impl JobArchetype for PackageIde {
             "ide build --backend-source current-ci-run --gui-upload-artifact false",
         )
         .customize(move |step| {
-            let mut steps = prepare_packaging_steps(target.0, step);
+            let mut steps = prepare_packaging_steps(target.0, step, PackagingTarget::Development);
             const TEST_COMMAND: &str = "corepack pnpm -r --filter enso exec playwright test";
             let test_step = match target.0 {
                 OS::Linux => shell(format!("xvfb-run {TEST_COMMAND}"))

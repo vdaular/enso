@@ -150,6 +150,10 @@ pub mod secret {
     // === Github Token ===
     /// A token created for the `enso-ci` user.
     pub const CI_PRIVATE_TOKEN: &str = "CI_PRIVATE_TOKEN";
+
+    // === Sentry ===
+    /// The authentication token for pushing source maps to Sentry.
+    pub const SENTRY_AUTH_TOKEN: &str = "SENTRY_AUTH_TOKEN";
 }
 
 pub mod variables {
@@ -446,7 +450,7 @@ impl JobArchetype for UploadIde {
             "ide upload --backend-source release --backend-release ${{env.ENSO_RELEASE_ID}} --sign-artifacts",
         )
         .cleaning(RELEASE_CLEANING_POLICY)
-        .customize(with_packaging_steps(target.0))
+        .customize(with_packaging_steps(target.0, job::PackagingTarget::Release))
         .build_job("Build IDE", target)
     }
 }
