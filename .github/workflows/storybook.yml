@@ -7,7 +7,7 @@ on: workflow_call
 # Cancel in-progress workflows if a new one is started
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-chromatic
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/develop' }}
 
 permissions:
   contents: read # Read-only access to repository contents
