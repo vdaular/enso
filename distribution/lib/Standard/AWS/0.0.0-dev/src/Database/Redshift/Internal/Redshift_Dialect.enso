@@ -198,8 +198,10 @@ type Redshift_Dialect
             Dialect_Flag.Supports_Infinity -> True
             Dialect_Flag.Case_Sensitive_Text_Comparison -> True
             Dialect_Flag.Supports_Sort_Digits_As_Numbers -> False
-            Dialect_Flag.Case_Insensitive_Ordering -> False
+            Dialect_Flag.Supports_Case_Insensitive_Ordering -> False
             Dialect_Flag.Order_By_Unicode_Normalization_By_Default -> True
+            Dialect_Flag.Order_By_Unicode_Normalization_When_Case_Insensitive -> True
+            Dialect_Flag.Case_Insensitive_Ordering_By_Default -> True
             Dialect_Flag.Allows_Mixed_Type_Comparisons -> False
             Dialect_Flag.Supports_Unicode_Normalization -> False
             Dialect_Flag.NaN_Non_Comparable -> True
