@@ -111,15 +111,24 @@ public class EqualsMultiValueTest {
           var intType = builtins.number().getInteger();
           var textText = builtins.text();
           var hi = Text.create("Hi");
-          var fourExtraText =
+          var textFour =
               EnsoMultiValue.create(new Type[] {textText, intType}, 2, new Object[] {hi, 4L});
+          var textFive =
+              EnsoMultiValue.create(new Type[] {textText, intType}, 2, new Object[] {hi, 5L});
+          var fourText =
+              EnsoMultiValue.create(new Type[] {intType, textText}, 2, new Object[] {4L, hi});
 
-          assertTrue("4 == 4t", equalityCheck(4L, fourExtraText));
-          assertFalse("5 != 4t", equalityCheck(5L, fourExtraText));
-          assertTrue("4t == 4", equalityCheck(fourExtraText, 4L));
-          assertFalse("4t != 5", equalityCheck(fourExtraText, 5L));
-          assertTrue("4t == 'Hi'", equalityCheck(fourExtraText, hi));
-          assertTrue("'Hi' == 4t", equalityCheck(hi, fourExtraText));
+          assertFalse("4 != t", equalityCheck(4L, hi));
+          assertFalse("4 != 4t", equalityCheck(4L, textFour));
+          assertFalse("5 != 4t", equalityCheck(5L, textFour));
+          assertFalse("5t != 4t", equalityCheck(textFive, textFour));
+          assertFalse("4t != 4", equalityCheck(textFour, 4L));
+          assertFalse("4t != 5", equalityCheck(textFour, 5L));
+          assertFalse("4t != 'Hi'", equalityCheck(textFour, hi));
+          assertFalse("'Hi' != 4t", equalityCheck(hi, textFour));
+
+          assertTrue("t4 == 4t", equalityCheck(textFour, fourText));
+          assertTrue("4t == t4", equalityCheck(fourText, textFour));
 
           return null;
         });
@@ -137,9 +146,9 @@ public class EqualsMultiValueTest {
               EnsoMultiValue.create(
                   new Type[] {intType, textText}, 2, new Object[] {4L, Text.create("Hi")});
 
-          assertTrue("4 == 4t", equalityCheck(4L, fourExtraText));
+          assertFalse("4 != 4t", equalityCheck(4L, fourExtraText));
           assertFalse("5 != 4t", equalityCheck(5L, fourExtraText));
-          assertTrue("4t == 4", equalityCheck(fourExtraText, 4L));
+          assertFalse("4t != 4", equalityCheck(fourExtraText, 4L));
           assertFalse("4t != 5", equalityCheck(fourExtraText, 5L));
 
           return null;

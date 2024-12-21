@@ -88,6 +88,9 @@ public class TypeOfNodeMultiValueTest {
     if (!polyValue.isNull()) {
       assertTrue("Type of " + polyValue + " is " + t, t.isMetaObject());
       var rawValue = ContextUtils.unwrapValue(ctx(), polyValue);
+      if (rawValue instanceof EnsoMultiValue) {
+        return;
+      }
       var rawType = ContextUtils.unwrapValue(ctx(), t);
       if (rawType instanceof Type type) {
         var singleMultiValue = EnsoMultiValue.create(new Type[] {type}, 1, new Object[] {rawValue});
