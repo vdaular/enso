@@ -220,6 +220,12 @@ type Snowflake_Dialect
         expression
 
     ## PRIVATE
+       Add an extra cast to adjust the output type of aggregate operations.
+       Some DBs do CAST(SUM(x) AS FLOAT) others do SUM(CAST(x AS FLOAT)).
+    cast_aggregate_columns self op_kind:Text columns:(Vector Internal_Column) =
+        self.cast_op_type op_kind columns (SQL_Expression.Operation op_kind (columns.map c->c.expression))
+
+    ## PRIVATE
     prepare_fetch_types_query : SQL_Expression -> Context -> SQL_Statement
     prepare_fetch_types_query self expression context =
         Base_Generator.default_fetch_types_query self expression context

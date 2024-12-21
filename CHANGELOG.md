@@ -136,6 +136,7 @@
 - [Enhance Managed_Resource to allow implementation of in-memory caches][11577]
 - [Added `add_group_number` to the in-memory database.[11818]
 - [The reload button clears the HTTP cache.][11673]
+- [SQL Server Support for Aggregate][11811]
 
 [11235]: https://github.com/enso-org/enso/pull/11235
 [11255]: https://github.com/enso-org/enso/pull/11255
@@ -146,6 +147,7 @@
 [11577]: https://github.com/enso-org/enso/pull/11577
 [11818]: https://github.com/enso-org/enso/pull/11818
 [11673]: https://github.com/enso-org/enso/pull/11673
+[11811]: https://github.com/enso-org/enso/pull/11811
 
 #### Enso Language & Runtime
 
