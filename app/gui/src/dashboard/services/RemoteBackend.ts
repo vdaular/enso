@@ -1268,14 +1268,15 @@ export default class RemoteBackend extends Backend {
     projectId: backend.ProjectId,
     relativePath: string,
   ): Promise<string> {
-    const response = await this.get<string>(
+    const response = await this.get<Blob>(
       remoteBackendPaths.getProjectAssetPath(projectId, relativePath),
     )
 
     if (!responseIsSuccessful(response)) {
-      return Promise.reject(new Error('Not implemented.'))
+      return await this.throw(response, 'resolveProjectAssetPathBackendError')
     } else {
-      return await response.text()
+      const blob = await response.blob()
+      return URL.createObjectURL(blob)
     }
   }
 

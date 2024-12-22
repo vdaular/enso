@@ -103,7 +103,7 @@ export async function version(args: config.Args) {
 }
 
 /**
- * Handle requests to the `enso-project` protocol.
+ * Handle requests to the `enso://` protocol.
  *
  * The protocol is used to fetch project assets from the backend.
  * If a given path is not inside a project, the request is rejected with a 403 error.

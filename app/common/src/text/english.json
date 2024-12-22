@@ -1,6 +1,10 @@
 {
   "submit": "Submit",
   "retry": "Retry",
+
+  "arbitraryFetchError": "An error occurred while fetching data",
+  "arbitraryFetchImageError": "An error occurred while fetching an image",
+
   "createFolderError": "Could not create new folder",
   "createProjectError": "Could not create new project",
   "createDatalinkError": "Could not create new Datalink",
@@ -174,6 +178,7 @@
   "getCustomerPortalUrlBackendError": "Could not get customer portal URL",
   "duplicateLabelError": "This label already exists.",
   "emptyStringError": "This value must not be empty.",
+  "resolveProjectAssetPathBackendError": "Could not get asset",
 
   "directoryAssetType": "folder",
   "directoryDoesNotExistError": "Unable to find directory. Does it exist?",
