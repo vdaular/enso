@@ -99,12 +99,14 @@ describe('SessionProvider', () => {
       </Suspense>,
     )
 
+    expect(refreshUserSession).not.toBeCalled()
+    expect(userSession).toBeCalledTimes(2)
+
     await waitFor(() => {
       expect(refreshUserSession).toBeCalledTimes(1)
       expect(screen.getByText(/Hello/)).toBeInTheDocument()
 
-      // 2 initial calls(fetching session and refreshing session), 1 mutation call, 1 re-fetch call
-      expect(userSession).toBeCalledTimes(4)
+      expect(userSession).toBeCalledTimes(3)
     })
   })
 

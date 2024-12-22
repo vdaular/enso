@@ -3,9 +3,7 @@
  *
  * Form error component.
  */
-
-import * as React from 'react'
-
+import Offline from '#/assets/offline_filled.svg'
 import * as textProvider from '#/providers/TextProvider'
 
 import * as reactAriaComponents from '#/components/AriaComponents'
@@ -22,7 +20,7 @@ export interface FormErrorProps extends Omit<reactAriaComponents.AlertProps, 'ch
 
 /** Form error component. */
 export function FormError(props: FormErrorProps) {
-  const { size = 'large', variant = 'error', rounded = 'large', ...alertProps } = props
+  const { size = 'large', variant = 'error', rounded = 'xxlarge', ...alertProps } = props
 
   const form = formContext.useFormContext(props.form)
   const { formState } = form
@@ -68,7 +66,13 @@ export function FormError(props: FormErrorProps) {
 
   const offlineErrorAlert =
     offlineMessage != null ?
-      <reactAriaComponents.Alert size={size} variant="outline" rounded={rounded} {...alertProps}>
+      <reactAriaComponents.Alert
+        size={size}
+        variant="outline"
+        rounded={rounded}
+        icon={Offline}
+        {...alertProps}
+      >
         <reactAriaComponents.Text variant="body" truncate="3" color="primary">
           {offlineMessage}
         </reactAriaComponents.Text>

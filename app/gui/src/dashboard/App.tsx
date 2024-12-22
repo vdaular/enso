@@ -98,6 +98,8 @@ import { STATIC_QUERY_OPTIONS } from '#/utilities/reactQuery'
 
 import { useInitAuthService } from '#/authentication/service'
 import { InvitedToOrganizationModal } from '#/modals/InvitedToOrganizationModal'
+import { useMutation } from '@tanstack/react-query'
+import { useOffline } from './hooks/offlineHooks'
 
 // ============================
 // === Global configuration ===
@@ -215,6 +217,9 @@ export default function App(props: AppProps) {
     },
   })
 
+  const { isOffline } = useOffline()
+  const { getText } = textProvider.useText()
+
   const queryClient = props.queryClient
 
   // Force all queries to be stale
@@ -235,6 +240,24 @@ export default function App(props: AppProps) {
     // eslint-disable-next-line @typescript-eslint/no-magic-numbers
     refetchInterval: 2 * 60 * 1000,
   })
+
+  const { mutate: executeBackgroundUpdate } = useMutation({
+    mutationKey: ['refetch-queries', { isOffline }],
+    scope: { id: 'refetch-queries' },
+    mutationFn: () => queryClient.refetchQueries({ type: 'all' }),
+    networkMode: 'online',
+    onError: () => {
+      toastify.toast.error(getText('refetchQueriesError'), {
+        position: 'bottom-right',
+      })
+    },
+  })
+
+  React.useEffect(() => {
+    if (!isOffline) {
+      executeBackgroundUpdate()
+    }
+  }, [executeBackgroundUpdate, isOffline])
 
   // Both `BackendProvider` and `InputBindingsProvider` depend on `LocalStorageProvider`.
   // Note that the `Router` must be the parent of the `AuthProvider`, because the `AuthProvider`

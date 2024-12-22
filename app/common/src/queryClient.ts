@@ -83,7 +83,7 @@ export function createQueryClient<TStorageValue = string>(
       storage: persisterStorage,
       // Prefer online first and don't rely on the local cache if user is online
       // fallback to the local cache only if the user is offline
-      maxAge: queryCore.onlineManager.isOnline() ? -1 : DEFAULT_QUERY_PERSIST_TIME_MS,
+      maxAge: DEFAULT_QUERY_PERSIST_TIME_MS,
       buster: DEFAULT_BUSTER,
       filters: { predicate: query => query.meta?.persist !== false },
       prefix: 'enso:query-persist:',
@@ -130,6 +130,9 @@ export function createQueryClient<TStorageValue = string>(
     defaultOptions: {
       queries: {
         ...(persister != null ? { persister } : {}),
+        // Default set to 'always' to don't pause ongoing queries
+        // and make them fail.
+        networkMode: 'always',
         refetchOnReconnect: 'always',
         staleTime: DEFAULT_QUERY_STALE_TIME_MS,
         retry: (failureCount, error: unknown) => {

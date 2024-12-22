@@ -1,4 +1,5 @@
 /** @file Catches errors in child components. */
+import Offline from '#/assets/offline_filled.svg'
 import * as React from 'react'
 
 import * as sentry from '@sentry/react'
@@ -7,8 +8,6 @@ import * as errorBoundary from 'react-error-boundary'
 
 import * as detect from 'enso-common/src/detect'
 
-import * as offlineHooks from '#/hooks/offlineHooks'
-
 import * as textProvider from '#/providers/TextProvider'
 
 import * as ariaComponents from '#/components/AriaComponents'
@@ -16,6 +15,8 @@ import * as result from '#/components/Result'
 
 import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import * as errorUtils from '#/utilities/error'
+import { OfflineError } from '#/utilities/HttpClient'
+import SvgMask from './SvgMask'
 
 // =====================
 // === ErrorBoundary ===
@@ -38,7 +39,9 @@ export interface ErrorBoundaryProps
       >
     > {
   /** Called before the fallback is shown. */
-  readonly onBeforeFallbackShown?: (args: OnBeforeFallbackShownArgs) => void
+  readonly onBeforeFallbackShown?: (
+    args: OnBeforeFallbackShownArgs,
+  ) => React.ReactNode | null | undefined
   readonly title?: string
   readonly subtitle?: string
 }
@@ -53,7 +56,7 @@ export function ErrorBoundary(props: ErrorBoundaryProps) {
     FallbackComponent = ErrorDisplay,
     onError = () => {},
     onReset = () => {},
-    onBeforeFallbackShown = () => {},
+    onBeforeFallbackShown = () => null,
     title,
     subtitle,
     ...rest
@@ -63,15 +66,19 @@ export function ErrorBoundary(props: ErrorBoundaryProps) {
     <reactQuery.QueryErrorResetBoundary>
       {({ reset }) => (
         <errorBoundary.ErrorBoundary
-          FallbackComponent={(fallbackProps) => (
-            <FallbackComponent
-              {...fallbackProps}
-              onBeforeFallbackShown={onBeforeFallbackShown}
-              resetQueries={reset}
-              title={title}
-              subtitle={subtitle}
-            />
-          )}
+          FallbackComponent={(fallbackProps) => {
+            const displayMessage = errorUtils.extractDisplayMessage(fallbackProps.error)
+
+            return (
+              <FallbackComponent
+                {...fallbackProps}
+                onBeforeFallbackShown={onBeforeFallbackShown}
+                resetQueries={reset}
+                title={title}
+                subtitle={subtitle ?? displayMessage ?? null}
+              />
+            )
+          }}
           onError={(error, info) => {
             sentry.captureException(error, { extra: { info } })
             onError(error, info)
@@ -90,39 +97,52 @@ export function ErrorBoundary(props: ErrorBoundaryProps) {
 /** Props for a {@link ErrorDisplay}. */
 export interface ErrorDisplayProps extends errorBoundary.FallbackProps {
   readonly status?: result.ResultProps['status']
-  readonly onBeforeFallbackShown?: (args: OnBeforeFallbackShownArgs) => void
+  readonly onBeforeFallbackShown?: (args: OnBeforeFallbackShownArgs) => React.ReactNode | undefined
   readonly resetQueries?: () => void
-  readonly title?: string | undefined
-  readonly subtitle?: string | undefined
+  readonly title?: string | null | undefined
+  readonly subtitle?: string | null | undefined
   readonly error: unknown
 }
 
 /** Default fallback component to show when there is an error. */
 export function ErrorDisplay(props: ErrorDisplayProps): React.JSX.Element {
   const { getText } = textProvider.useText()
-  const { isOffline } = offlineHooks.useOffline()
 
   const {
     error,
     resetErrorBoundary,
-    title = getText('somethingWentWrong'),
-    subtitle = isOffline ? getText('offlineErrorMessage') : getText('arbitraryErrorSubtitle'),
-    status = isOffline ? 'info' : 'error',
+    title,
+    subtitle,
+    status,
     onBeforeFallbackShown,
     resetQueries = () => {},
   } = props
 
+  const isOfflineError = error instanceof OfflineError
+
   const message = errorUtils.getMessageOrToString(error)
   const stack = errorUtils.tryGetStack(error)
 
-  onBeforeFallbackShown?.({ error, resetErrorBoundary, resetQueries })
+  const render = onBeforeFallbackShown?.({ error, resetErrorBoundary, resetQueries })
 
   const onReset = useEventCallback(() => {
     resetErrorBoundary()
   })
 
-  return (
-    <result.Result className="h-full" status={status} title={title} subtitle={subtitle}>
+  const finalTitle = title ?? getText('somethingWentWrong')
+  const finalSubtitle =
+    subtitle ??
+    (isOfflineError ? getText('offlineErrorMessage') : getText('arbitraryErrorSubtitle'))
+  const finalStatus =
+    status ?? (isOfflineError ? <SvgMask src={Offline} className="aspect-square w-6" /> : 'error')
+
+  const defaultRender = (
+    <result.Result
+      className="h-full"
+      status={finalStatus}
+      title={finalTitle}
+      subtitle={finalSubtitle}
+    >
       <ariaComponents.ButtonGroup align="center">
         <ariaComponents.Button
           variant="submit"
@@ -165,6 +185,8 @@ export function ErrorDisplay(props: ErrorDisplayProps): React.JSX.Element {
       )}
     </result.Result>
   )
+
+  return <>{render ?? defaultRender}</>
 }
 
 export { useErrorBoundary, withErrorBoundary } from 'react-error-boundary'

@@ -21,6 +21,9 @@
   "deleteAssetError": "Could not delete '$0'",
   "restoreAssetError": "Could not restore '$0'",
 
+  "refetchQueriesPending": "Getting latest updates...",
+  "refetchQueriesError": "Could not get latest updates. Some information may be outdated",
+
   "localBackendDatalinkError": "Cannot create Datalinks on the local drive",
   "localBackendSecretError": "Cannot create secrets on the local drive",
   "offlineUploadFilesError": "Cannot upload files when offline",
@@ -482,9 +485,9 @@
   "hidePassword": "Hide password",
   "showPassword": "Show password",
   "copiedToClipboard": "Copied to clipboard",
-  "noResultsFound": "No results found.",
-  "youAreOffline": "You are offline.",
-  "cannotCreateAssetsHere": "You do not have the permissions to create assets here.",
+  "noResultsFound": "No results found",
+  "youAreOffline": "You are offline",
+  "cannotCreateAssetsHere": "You do not have the permissions to create assets here",
   "enableVersionChecker": "Enable Version Checker",
   "enableVersionCheckerDescription": "Show a dialog if the current version of the desktop app does not match the latest version.",
   "disableAnimations": "Disable animations",

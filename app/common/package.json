@@ -15,6 +15,7 @@
     "./src/backendQuery": "./src/backendQuery.ts",
     "./src/queryClient": "./src/queryClient.ts",
     "./src/utilities/data/array": "./src/utilities/data/array.ts",
+    "./src/utilities/errors": "./src/utilities/errors.ts",
     "./src/utilities/data/dateTime": "./src/utilities/data/dateTime.ts",
     "./src/utilities/data/newtype": "./src/utilities/data/newtype.ts",
     "./src/utilities/data/object": "./src/utilities/data/object.ts",

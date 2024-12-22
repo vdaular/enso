@@ -342,8 +342,6 @@ export function listDirectoryQueryOptions(options: ListDirectoryQueryOptions) {
         }
       }
     },
-
-    meta: { persist: false },
   })
 }
 

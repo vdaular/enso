@@ -125,48 +125,47 @@ export function SetupTwoFaForm() {
         </div>
       </div>
     )
-  } else {
-    return (
-      <Form
-        schema={(z) =>
-          z.object({
-            enabled: z.boolean(),
-            display: z.string(),
-            /* eslint-disable-next-line @typescript-eslint/no-magic-numbers */
-            otp: z.string().min(6).max(6),
+  }
+  return (
+    <Form
+      schema={(z) =>
+        z.object({
+          enabled: z.boolean(),
+          display: z.string(),
+          /* eslint-disable-next-line @typescript-eslint/no-magic-numbers */
+          otp: z.string().min(6).max(6),
+        })
+      }
+      defaultValues={{ enabled: false, display: 'QR' }}
+      onSubmit={async ({ enabled, otp }) => {
+        if (enabled) {
+          return cognito.verifyTotpToken(otp).then((res) => {
+            if (res.ok) {
+              return updateMFAPreferenceMutation.mutateAsync('TOTP')
+            } else {
+              throw res.val
+            }
           })
         }
-        defaultValues={{ enabled: false, display: 'QR' }}
-        onSubmit={async ({ enabled, otp }) => {
-          if (enabled) {
-            return cognito.verifyTotpToken(otp).then((res) => {
-              if (res.ok) {
-                return updateMFAPreferenceMutation.mutateAsync('TOTP')
-              } else {
-                throw res.val
-              }
-            })
-          }
-        }}
-      >
-        <>
-          <Switch
-            name="enabled"
-            description={getText('enable2FADescription')}
-            label={getText('enable2FA')}
-          />
+      }}
+    >
+      <>
+        <Switch
+          name="enabled"
+          description={getText('enable2FADescription')}
+          label={getText('enable2FA')}
+        />
 
-          <ErrorBoundary>
-            <Suspense>
-              <Form.FieldValue name="enabled">
-                {(enabled) => enabled === true && <TwoFa />}
-              </Form.FieldValue>
-            </Suspense>
-          </ErrorBoundary>
-        </>
-      </Form>
-    )
-  }
+        <ErrorBoundary>
+          <Suspense>
+            <Form.FieldValue name="enabled">
+              {(enabled) => enabled === true && <TwoFa />}
+            </Form.FieldValue>
+          </Suspense>
+        </ErrorBoundary>
+      </>
+    </Form>
+  )
 }
 
 /** Two Factor Authentication Setup Form. */
