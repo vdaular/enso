@@ -41,7 +41,9 @@ function locateAssetRows(page: Page) {
 
 /** Find assets table placeholder rows. */
 function locateNonAssetRows(page: Page) {
-  return locateAssetsTable(page).locator('tbody tr:not([data-testid="asset-row"])')
+  return locateAssetsTable(page).locator(
+    'tbody tr:not([data-testid="asset-row"]):not([data-testid="dummy-row"])',
+  )
 }
 
 /** Find a "new secret" icon. */

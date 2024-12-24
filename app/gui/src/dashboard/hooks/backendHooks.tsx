@@ -203,6 +203,7 @@ const INVALIDATION_MAP: Partial<
   createSecret: ['listDirectory'],
   updateSecret: ['listDirectory'],
   updateProject: ['listDirectory'],
+  updateFile: ['listDirectory'],
   updateDirectory: ['listDirectory'],
   createDatalink: ['listDirectory', 'getDatalink'],
   uploadFileEnd: ['listDirectory'],
@@ -210,6 +211,7 @@ const INVALIDATION_MAP: Partial<
   deleteAsset: ['listDirectory', 'listAssetVersions'],
   undoDeleteAsset: ['listDirectory'],
   updateAsset: ['listDirectory', 'listAssetVersions'],
+  openProject: ['listDirectory'],
   closeProject: ['listDirectory', 'listAssetVersions'],
 }
 

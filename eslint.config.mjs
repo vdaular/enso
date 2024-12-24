@@ -569,6 +569,21 @@ export default [
       '@typescript-eslint/naming-convention': 'off',
     },
   },
+  // === EnsoDevtools Rules ===
+  // Allow JSX strings in EnsoDevtools.tsx.
+  {
+    files: ['app/gui/src/dashboard/**/EnsoDevtools.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...RESTRICTED_SYNTAXES.filter(
+          syntax =>
+            syntax.message !== 'Use a `getText()` from `useText` instead of a literal string',
+        ),
+      ],
+    },
+  },
+  // === React Compiler Rules ===
   {
     files: ['app/gui/src/dashboard/**/*.ts', 'app/gui/src/dashboard/**/*.tsx'],
     ignores: ['**/*.d.ts', '**/*.spec.ts', '**/*.stories.tsx', '**/*.test.tsx', '**/*.test.ts'],

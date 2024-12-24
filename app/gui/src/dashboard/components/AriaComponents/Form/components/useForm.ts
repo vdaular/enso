@@ -234,6 +234,7 @@ export function useForm<Schema extends types.TSchema, SubmitResult = void>(
       setFormError,
       handleSubmit: formInstance.handleSubmit,
       closeRef,
+      formProps: { onSubmit: submit, noValidate: true },
     }
 
     return form

@@ -43,9 +43,7 @@ export function useAsset(id: AssetId) {
   return useStore(
     ASSET_ITEMS_STORE,
     (store) => store.items.find((item) => item.id === id) ?? null,
-    {
-      unsafeEnableTransition: true,
-    },
+    { unsafeEnableTransition: true },
   )
 }
 

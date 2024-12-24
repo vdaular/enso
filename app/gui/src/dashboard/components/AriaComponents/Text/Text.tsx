@@ -9,13 +9,15 @@ import * as twv from '#/utilities/tailwindVariants'
 import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import { forwardRef } from '#/utilities/react'
 import { memo } from 'react'
+import type { TestIdProps } from '../types'
 import * as textProvider from './TextProvider'
 import * as visualTooltip from './useVisualTooltip'
 
 /** Props for the Text component */
 export interface TextProps
   extends Omit<aria.TextProps, 'color'>,
-    twv.VariantProps<typeof TEXT_STYLE> {
+    twv.VariantProps<typeof TEXT_STYLE>,
+    TestIdProps {
   readonly elementType?: keyof HTMLElementTagNameMap
   readonly lineClamp?: number
   readonly tooltip?: React.ReactElement | string | false | null
@@ -81,7 +83,7 @@ export const TEXT_STYLE = twv.tv({
     },
     truncate: {
       /* eslint-disable @typescript-eslint/naming-convention */
-      '1': 'truncate ellipsis',
+      '1': 'block truncate ellipsis',
       '2': 'line-clamp-2 ellipsis',
       '3': 'line-clamp-3 ellipsis',
       '4': 'line-clamp-4 ellipsis',
@@ -142,6 +144,7 @@ export const Text = memo(
       children,
       color,
       balance,
+      testId,
       elementType: ElementType = 'span',
       tooltip: tooltipElement = children,
       tooltipDisplay = 'whenOverflowing',
@@ -209,6 +212,7 @@ export const Text = memo(
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
             mergeRefs.mergeRefs(ref, textElementRef)(el)
           }}
+          data-testid={testId}
           className={textClasses}
           {...aria.mergeProps<React.HTMLAttributes<HTMLElement>>()(
             ariaProps,

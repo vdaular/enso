@@ -20,7 +20,6 @@ import { useStore } from '#/hooks/storeHooks'
 import * as eventModule from '#/utilities/event'
 import * as indent from '#/utilities/indent'
 import * as object from '#/utilities/object'
-import * as string from '#/utilities/string'
 import * as tailwindMerge from '#/utilities/tailwindMerge'
 import * as validation from '#/utilities/validation'
 
@@ -61,18 +60,14 @@ export default function DirectoryNameColumn(props: DirectoryNameColumnProps) {
   }
 
   const doRename = async (newTitle: string) => {
-    if (isEditable) {
-      setIsEditing(false)
-      if (!string.isWhitespaceOnly(newTitle) && newTitle !== item.title) {
-        await updateDirectoryMutation.mutateAsync([item.id, { title: newTitle }, item.title])
-      }
-    }
+    await updateDirectoryMutation.mutateAsync([item.id, { title: newTitle }, item.title])
+    setIsEditing(false)
   }
 
   return (
     <div
       className={tailwindMerge.twJoin(
-        'group flex h-table-row w-auto min-w-48 max-w-96 items-center gap-name-column-icon whitespace-nowrap rounded-l-full px-name-column-x py-name-column-y contain-strict rounded-rows-child [contain-intrinsic-size:37px] [content-visibility:auto]',
+        'group flex h-table-row w-auto min-w-48 max-w-full items-center gap-name-column-icon whitespace-nowrap rounded-l-full px-name-column-x py-name-column-y rounded-rows-child',
         indent.indentClass(depth),
       )}
       onKeyDown={(event) => {
@@ -113,13 +108,20 @@ export default function DirectoryNameColumn(props: DirectoryNameColumnProps) {
           'cursor-pointer bg-transparent font-naming',
           rowState.isEditingName ? 'cursor-text' : 'cursor-pointer',
         )}
-        checkSubmittable={(newTitle) =>
-          validation.DIRECTORY_NAME_REGEX.test(newTitle) &&
-          backendModule.isNewTitleValid(
-            item,
-            newTitle,
-            nodeMap.current.get(item.parentId)?.children?.map((child) => child.item),
-          )
+        schema={(z) =>
+          z
+            .refine((value) => !validation.isDirectoryNameContainInvalidCharacters(value), {
+              message: getText('nameShouldNotContainInvalidCharacters'),
+            })
+            .refine(
+              (value) =>
+                backendModule.isNewTitleUnique(
+                  item,
+                  value,
+                  nodeMap.current.get(item.parentId)?.children?.map((child) => child.item),
+                ),
+              { message: getText('nameShouldBeUnique') },
+            )
         }
         onSubmit={doRename}
         onCancel={() => {

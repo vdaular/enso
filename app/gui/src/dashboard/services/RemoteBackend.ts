@@ -498,6 +498,7 @@ export default class RemoteBackend extends Backend {
           }),
         )
         .map((asset) => this.dynamicAssetUser(asset))
+        .sort(backend.compareAssets)
       return ret
     }
   }

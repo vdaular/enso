@@ -970,9 +970,7 @@ export function createSpecialLoadingAsset(directoryId: DirectoryId): SpecialLoad
   return {
     type: AssetType.specialLoading,
     title: '',
-    id: LoadingAssetId(
-      createPlaceholderId(`${AssetType.specialLoading}-${uniqueString.uniqueString()}`),
-    ),
+    id: LoadingAssetId(createPlaceholderId(`${AssetType.specialLoading}-${directoryId}`)),
     modifiedAt: dateTime.toRfc3339(new Date()),
     parentId: directoryId,
     permissions: [],
@@ -998,7 +996,7 @@ export function createSpecialEmptyAsset(directoryId: DirectoryId): SpecialEmptyA
   return {
     type: AssetType.specialEmpty,
     title: '',
-    id: EmptyAssetId(`${AssetType.specialEmpty}-${uniqueString.uniqueString()}`),
+    id: EmptyAssetId(`${AssetType.specialEmpty}-${directoryId}`),
     modifiedAt: dateTime.toRfc3339(new Date()),
     parentId: directoryId,
     permissions: [],
@@ -1024,7 +1022,7 @@ export function createSpecialErrorAsset(directoryId: DirectoryId): SpecialErrorA
   return {
     type: AssetType.specialError,
     title: '',
-    id: ErrorAssetId(`${AssetType.specialError}-${uniqueString.uniqueString()}`),
+    id: ErrorAssetId(`${AssetType.specialError}-${directoryId}`),
     modifiedAt: dateTime.toRfc3339(new Date()),
     parentId: directoryId,
     permissions: [],
@@ -1515,17 +1513,27 @@ export function isNewTitleValid(
   newTitle: string,
   siblings?: readonly AnyAsset[] | null,
 ) {
+  return newTitle !== '' && newTitle !== item.title && isNewTitleUnique(item, newTitle, siblings)
+}
+
+/**
+ * Check whether a new title is unique among the siblings.
+ */
+export function isNewTitleUnique(
+  item: AnyAsset,
+  newTitle: string,
+  siblings?: readonly AnyAsset[] | null,
+) {
   siblings ??= []
-  return (
-    newTitle !== '' &&
-    newTitle !== item.title &&
-    siblings.every(sibling => {
-      const isSelf = sibling.id === item.id
-      const hasSameType = sibling.type === item.type
-      const hasSameTitle = sibling.title === newTitle
-      return !(!isSelf && hasSameType && hasSameTitle)
-    })
-  )
+
+  return siblings.every(sibling => {
+    if (sibling.id === item.id) {
+      return true
+    }
+
+    const hasSameTitle = sibling.title.toLowerCase() === newTitle.toLowerCase()
+    return !hasSameTitle
+  })
 }
 
 /** Network error class. */

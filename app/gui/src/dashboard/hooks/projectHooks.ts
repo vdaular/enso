@@ -47,8 +47,8 @@ export interface CreateOpenedProjectQueryOptions {
 
 /** Whether the user can open projects. */
 export function useCanOpenProjects() {
-  const localBackend = backendProvider.useLocalBackend()
-  return localBackend != null
+  const enableCloudExecution = useFeatureFlag('enableCloudExecution')
+  return enableCloudExecution
 }
 
 /** Return a function to update a project asset in the TanStack Query cache. */

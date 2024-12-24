@@ -1,9 +1,10 @@
 /** @file Various actions, locators, and constants used in end-to-end tests. */
+
+import { TEXTS, getText as baseGetText, type Replacements, type TextId } from 'enso-common/src/text'
+
 import path from 'node:path'
 
 import { expect, test, type Page } from '@playwright/test'
-
-import { TEXTS } from 'enso-common/src/text'
 
 import {
   INITIAL_CALLS_OBJECT,
@@ -24,6 +25,10 @@ export const VALID_PASSWORD = 'Password0!'
 /** An example valid email address. */
 export const VALID_EMAIL = 'email@example.com'
 export const TEXT = TEXTS.english
+
+export const getText = (key: TextId, ...replacements: Replacements[TextId]) => {
+  return baseGetText(TEXT, key, ...replacements)
+}
 
 /** Get the path to the auth file. */
 export function getAuthFilePath() {
@@ -67,8 +72,7 @@ async function login({ page }: MockParams, email = 'email@example.com', password
 async function waitForLoaded(page: Page) {
   await page.waitForLoadState()
 
-  await expect(page.getByTestId('spinner')).toHaveCount(0)
-  await expect(page.getByTestId('loading-app-message')).not.toBeVisible({ timeout: 30_000 })
+  await expect(page.getByTestId('loading-screen')).toHaveCount(0, { timeout: 30_000 })
 }
 
 /** Wait for the dashboard to load. */

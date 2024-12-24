@@ -80,14 +80,14 @@ test('sort', ({ page }) =>
       // By default, assets should be grouped by type.
       // Assets in each group are ordered by insertion order.
       await expect(rows).toHaveText([
-        /^a directory/,
         /^G directory/,
+        /^a directory/,
         /^C project/,
         /^b project/,
         /^d file/,
         /^e file/,
-        /^H secret/,
         /^f secret/,
+        /^H secret/,
       ])
     })
     // Sort by name ascending.
@@ -135,14 +135,14 @@ test('sort', ({ page }) =>
     })
     .driveTable.withRows(async (rows) => {
       await expect(rows).toHaveText([
-        /^a directory/,
         /^G directory/,
+        /^a directory/,
         /^C project/,
         /^b project/,
         /^d file/,
         /^e file/,
-        /^H secret/,
         /^f secret/,
+        /^H secret/,
       ])
     })
     // Sort by date ascending.
@@ -190,13 +190,13 @@ test('sort', ({ page }) =>
     })
     .driveTable.withRows(async (rows) => {
       await expect(rows).toHaveText([
-        /^a directory/,
         /^G directory/,
+        /^a directory/,
         /^C project/,
         /^b project/,
         /^d file/,
         /^e file/,
-        /^H secret/,
         /^f secret/,
+        /^H secret/,
       ])
     }))

@@ -184,6 +184,13 @@ declare global {
      * ATM only affects the framer-motion animations.
      */
     readonly DISABLE_ANIMATIONS?: boolean
+    readonly featureFlags: FeatureFlags
+    readonly setFeatureFlags: (flags: Partial<FeatureFlags>) => void
+    /**
+     * Feature flags that override the default or stored feature flags.
+     * This is used by integration tests to set feature flags.
+     */
+    readonly overrideFeatureFlags: Partial<FeatureFlags>
   }
 
   namespace NodeJS {

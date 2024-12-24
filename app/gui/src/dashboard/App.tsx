@@ -88,7 +88,6 @@ import LocalBackend from '#/services/LocalBackend'
 import ProjectManager, * as projectManager from '#/services/ProjectManager'
 import RemoteBackend from '#/services/RemoteBackend'
 
-import { FeatureFlagsProvider } from '#/providers/FeatureFlagsProvider'
 import * as appBaseUrl from '#/utilities/appBaseUrl'
 import * as eventModule from '#/utilities/event'
 import LocalStorage from '#/utilities/LocalStorage'
@@ -542,40 +541,38 @@ function AppRouter(props: AppRouterProps) {
   )
 
   return (
-    <FeatureFlagsProvider>
-      <RouterProvider navigate={navigate}>
-        <SessionProvider
-          saveAccessToken={authService.cognito.saveAccessToken.bind(authService.cognito)}
-          mainPageUrl={mainPageUrl}
-          userSession={userSession}
-          registerAuthEventListener={registerAuthEventListener}
-          refreshUserSession={refreshUserSession}
-        >
-          <BackendProvider remoteBackend={remoteBackend} localBackend={localBackend}>
-            <AuthProvider
-              shouldStartInOfflineMode={isAuthenticationDisabled}
-              authService={authService}
-              onAuthenticated={onAuthenticated}
-            >
-              <InputBindingsProvider inputBindings={inputBindings}>
-                {/* Ideally this would be in `Drive.tsx`, but it currently must be all the way out here
-                 * due to modals being in `TheModal`. */}
-                <DriveProvider>
-                  <LocalBackendPathSynchronizer />
-                  <VersionChecker />
-                  {routes}
-                  <suspense.Suspense>
-                    <errorBoundary.ErrorBoundary>
-                      <devtools.EnsoDevtools />
-                    </errorBoundary.ErrorBoundary>
-                  </suspense.Suspense>
-                </DriveProvider>
-              </InputBindingsProvider>
-            </AuthProvider>
-          </BackendProvider>
-        </SessionProvider>
-      </RouterProvider>
-    </FeatureFlagsProvider>
+    <RouterProvider navigate={navigate}>
+      <SessionProvider
+        saveAccessToken={authService.cognito.saveAccessToken.bind(authService.cognito)}
+        mainPageUrl={mainPageUrl}
+        userSession={userSession}
+        registerAuthEventListener={registerAuthEventListener}
+        refreshUserSession={refreshUserSession}
+      >
+        <BackendProvider remoteBackend={remoteBackend} localBackend={localBackend}>
+          <AuthProvider
+            shouldStartInOfflineMode={isAuthenticationDisabled}
+            authService={authService}
+            onAuthenticated={onAuthenticated}
+          >
+            <InputBindingsProvider inputBindings={inputBindings}>
+              {/* Ideally this would be in `Drive.tsx`, but it currently must be all the way out here
+               * due to modals being in `TheModal`. */}
+              <DriveProvider>
+                <LocalBackendPathSynchronizer />
+                <VersionChecker />
+                {routes}
+                <suspense.Suspense>
+                  <errorBoundary.ErrorBoundary>
+                    <devtools.EnsoDevtools />
+                  </errorBoundary.ErrorBoundary>
+                </suspense.Suspense>
+              </DriveProvider>
+            </InputBindingsProvider>
+          </AuthProvider>
+        </BackendProvider>
+      </SessionProvider>
+    </RouterProvider>
   )
 }
 

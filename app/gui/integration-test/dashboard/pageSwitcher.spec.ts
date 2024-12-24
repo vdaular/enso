@@ -15,10 +15,11 @@ function locateDriveView(page: Page) {
   return page.getByTestId('drive-view')
 }
 
-// FIXME[sb]: https://github.com/enso-org/cloud-v2/issues/1615
-// Unskip once cloud execution in the browser is re-enabled.
-test.skip('page switcher', ({ page }) =>
-  mockAllAndLogin({ page })
+test('page switcher', ({ page }) =>
+  mockAllAndLogin({
+    page,
+    setupAPI: (api) => api.setFeatureFlags({ enableCloudExecution: true }),
+  })
     // Create a new project so that the editor page can be switched to.
     .newEmptyProjectTest()
     .do(async (thePage) => {

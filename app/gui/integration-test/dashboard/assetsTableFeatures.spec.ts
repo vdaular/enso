@@ -1,7 +1,8 @@
 /** @file Test the drive view. */
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
-import { mockAllAndLogin, TEXT } from './actions'
+import { EmailAddress, ProjectState } from '#/services/Backend'
+import { getText, mockAllAndLogin, TEXT } from './actions'
 
 /** Find an extra columns button panel. */
 function locateExtraColumns(page: Page) {
@@ -53,7 +54,7 @@ test('extra columns should stick to right side of assets table', ({ page }) =>
         const assetsTableRight = await assetsTable.evaluate(
           (element) => element.getBoundingClientRect().right,
         )
-        expect(extraColumnsRight).toEqual(assetsTableRight - 12)
+        expect(extraColumnsRight).toEqual(assetsTableRight - 8)
       }).toPass({ timeout: PASS_TIMEOUT })
     }))
 
@@ -115,3 +116,52 @@ test('can drop onto root directory dropzone', ({ page }) =>
       const secondLeft = await getAssetRowLeftPx(rows.nth(1))
       expect(firstLeft, 'Siblings have same indentation').toEqual(secondLeft)
     }))
+
+test("can't run a project in browser by default", ({ page }) =>
+  mockAllAndLogin({
+    page,
+    setupAPI: async (api) => {
+      api.addProject({ title: 'a' })
+    },
+  }).driveTable.withRows(async (rows) => {
+    const row = rows.first()
+
+    const startProjectButton = row.getByTestId('open-project')
+    await expect(startProjectButton).toBeDisabled()
+  }))
+
+test("can't start an already running by another user", ({ page }) =>
+  mockAllAndLogin({
+    page,
+    setupAPI: async (api) => {
+      await api.setFeatureFlags({ enableCloudExecution: true })
+
+      const userGroup = api.addUserGroup('Test Group')
+
+      api.addUserGroupToUser(api.defaultUser.userId, userGroup.id)
+
+      const peer = api.addUser('Test User', {
+        email: EmailAddress('test@test.com'),
+        userGroups: [userGroup.id],
+      })
+
+      api.addProject({
+        title: 'a',
+        projectState: {
+          type: ProjectState.opened,
+          volumeId: '123',
+          openedBy: peer.email,
+        },
+      })
+    },
+  }).driveTable.withRows(async (rows) => {
+    const row = rows.first()
+    const startProjectButton = row.getByTestId('open-project')
+    const stopProjectButton = row.getByTestId('stop-project')
+
+    await expect(row).toBeVisible()
+    await expect(row.getByTestId('switch-to-project')).not.toBeVisible()
+    await expect(startProjectButton).not.toBeVisible()
+    await expect(stopProjectButton).toBeDisabled()
+    await expect(stopProjectButton).toHaveAccessibleName(getText('xIsUsingTheProject', 'Test User'))
+  }))

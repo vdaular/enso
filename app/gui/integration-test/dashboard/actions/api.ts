@@ -12,10 +12,15 @@ import * as uniqueString from 'enso-common/src/utilities/uniqueString'
 
 import * as actions from '.'
 
+import type { FeatureFlags } from '#/providers/FeatureFlagsProvider'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import invariant from 'tiny-invariant'
+
+// =================
+// === Constants ===
+// =================
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -111,6 +116,7 @@ const INITIAL_CALLS_OBJECT = {
   createDirectory: array<backend.CreateDirectoryRequestBody>(),
   getProjectContent: array<{ projectId: backend.ProjectId }>(),
   getProjectAsset: array<{ projectId: backend.ProjectId }>(),
+  updateProject: array<backend.UpdateProjectRequestBody>(),
 }
 
 const READONLY_INITIAL_CALLS_OBJECT: TrackedCallsInternal = INITIAL_CALLS_OBJECT
@@ -185,7 +191,7 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
 
   const assetMap = new Map<backend.AssetId, backend.AnyAsset>()
   const deletedAssets = new Set<backend.AssetId>()
-  const assets: backend.AnyAsset[] = []
+  let assets: backend.AnyAsset[] = []
   const labels: backend.Label[] = []
   const labelsByValue = new Map<backend.LabelName, backend.Label>()
   const labelMap = new Map<backend.TagId, backend.Label>()
@@ -232,8 +238,8 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
   }
 
   const addAsset = <T extends backend.AnyAsset>(asset: T) => {
-    assets.push(asset)
     assetMap.set(asset.id, asset)
+    assets = Array.from(assetMap.values())
 
     return asset
   }
@@ -248,6 +254,20 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
     const wasDeleted = deletedAssets.has(assetId)
     deletedAssets.delete(assetId)
     return wasDeleted
+  }
+
+  const editAsset = (assetId: backend.AssetId, rest: Partial<backend.AnyAsset>) => {
+    const asset = assetMap.get(assetId)
+
+    if (asset == null) {
+      throw new Error(`Asset ${assetId} not found`)
+    }
+
+    const updated = object.merge(asset, rest)
+
+    addAsset(updated)
+
+    return updated
   }
 
   const createDirectory = (rest: Partial<backend.DirectoryAsset> = {}): backend.DirectoryAsset => {
@@ -363,19 +383,19 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
     color,
   })
 
-  const addDirectory = (rest: Partial<backend.DirectoryAsset>) => {
+  const addDirectory = (rest: Partial<backend.DirectoryAsset> = {}) => {
     return addAsset(createDirectory(rest))
   }
 
-  const addProject = (rest: Partial<backend.ProjectAsset>) => {
+  const addProject = (rest: Partial<backend.ProjectAsset> = {}) => {
     return addAsset(createProject(rest))
   }
 
-  const addFile = (rest: Partial<backend.FileAsset>) => {
+  const addFile = (rest: Partial<backend.FileAsset> = {}) => {
     return addAsset(createFile(rest))
   }
 
-  const addSecret = (rest: Partial<backend.SecretAsset>) => {
+  const addSecret = (rest: Partial<backend.SecretAsset> = {}) => {
     return addAsset(createSecret(rest))
   }
 
@@ -873,15 +893,20 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
         }
       },
     )
-    await patch(remoteBackendPaths.updateAssetPath(GLOB_ASSET_ID), (_route, request) => {
+
+    await patch(remoteBackendPaths.updateAssetPath(GLOB_ASSET_ID), (route, request) => {
       const maybeId = request.url().match(/[/]assets[/]([^?]+)/)?.[1]
-      if (!maybeId) return
+
+      if (!maybeId) throw new Error('updateAssetPath: Missing asset ID in path')
       // This could be an id for an arbitrary asset, but pretend it's a
       // `DirectoryId` to make TypeScript happy.
       const assetId = backend.DirectoryId(maybeId)
       const body: backend.UpdateAssetRequestBody = request.postDataJSON()
+
       called('updateAsset', { ...body, assetId })
+
       const asset = assetMap.get(assetId)
+
       if (asset != null) {
         if (body.description != null) {
           object.unsafeMutable(asset).description = body.description
@@ -891,7 +916,10 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
           object.unsafeMutable(asset).parentId = body.parentDirectoryId
         }
       }
+
+      return route.fulfill({ json: asset })
     })
+
     await patch(remoteBackendPaths.associateTagPath(GLOB_ASSET_ID), async (_route, request) => {
       const maybeId = request.url().match(/[/]assets[/]([^/?]+)/)?.[1]
       if (!maybeId) return
@@ -917,6 +945,7 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
       }
       return json
     })
+
     await put(remoteBackendPaths.updateDirectoryPath(GLOB_DIRECTORY_ID), async (route, request) => {
       const maybeId = request.url().match(/[/]directories[/]([^?]+)/)?.[1]
       if (!maybeId) return
@@ -937,6 +966,7 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
         })
       }
     })
+
     await delete_(remoteBackendPaths.deleteAssetPath(GLOB_ASSET_ID), async (route, request) => {
       const maybeId = request.url().match(/[/]assets[/]([^?]+)/)?.[1]
       if (!maybeId) return
@@ -947,6 +977,7 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
       deleteAsset(assetId)
       await route.fulfill({ status: HTTP_STATUS_NO_CONTENT })
     })
+
     await patch(remoteBackendPaths.UNDO_DELETE_ASSET_PATH, async (route, request) => {
       /** The type for the JSON request payload for this endpoint. */
       interface Body {
@@ -957,13 +988,39 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
       undeleteAsset(body.assetId)
       await route.fulfill({ status: HTTP_STATUS_NO_CONTENT })
     })
+
+    await put(remoteBackendPaths.projectUpdatePath(GLOB_PROJECT_ID), async (route, request) => {
+      const maybeId = request.url().match(/[/]projects[/]([^?/]+)/)?.[1]
+
+      if (!maybeId) return route.fulfill({ status: HTTP_STATUS_NOT_FOUND })
+
+      const projectId = backend.ProjectId(maybeId)
+
+      const body: backend.UpdateProjectRequestBody = await request.postDataJSON()
+
+      called('updateProject', body)
+
+      const newTitle = body.projectName
+
+      if (newTitle == null) {
+        return route.fulfill({ status: HTTP_STATUS_BAD_REQUEST })
+      }
+
+      return route.fulfill({
+        json: editAsset(projectId, { title: newTitle }),
+      })
+    })
+
     await post(remoteBackendPaths.CREATE_USER_PATH + '*', async (_route, request) => {
       const body: backend.CreateUserRequestBody = await request.postDataJSON()
+
       const organizationId = body.organizationId ?? defaultUser.organizationId
       const rootDirectoryId = backend.DirectoryId(
         organizationId.replace(/^organization-/, 'directory-'),
       )
+
       called('createUser', body)
+
       currentUser = {
         email: body.userEmail,
         name: body.userName,
@@ -976,12 +1033,14 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
       }
       return currentUser
     })
+
     await post(remoteBackendPaths.CREATE_USER_GROUP_PATH + '*', async (_route, request) => {
       const body: backend.CreateUserGroupRequestBody = await request.postDataJSON()
       called('createUserGroup', body)
       const userGroup = addUserGroup(body.name)
       return userGroup
     })
+
     await put(
       remoteBackendPaths.changeUserGroupPath(GLOB_USER_ID) + '*',
       async (route, request) => {
@@ -1086,7 +1145,9 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
 
     await post(remoteBackendPaths.CREATE_DIRECTORY_PATH + '*', (_route, request) => {
       const body: backend.CreateDirectoryRequestBody = request.postDataJSON()
+
       called('createDirectory', body)
+
       const id = backend.DirectoryId(`directory-${uniqueString.uniqueString()}`)
       const parentId = body.parentId ?? defaultDirectoryId
 
@@ -1196,6 +1257,7 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
     currentOrganizationProfilePicture: () => currentOrganizationProfilePicture,
     addAsset,
     deleteAsset,
+    editAsset,
     undeleteAsset,
     createDirectory,
     createProject,
@@ -1213,6 +1275,19 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
     deleteUser,
     addUserGroup,
     deleteUserGroup,
+    setFeatureFlags: (flags: Partial<FeatureFlags>) => {
+      return page.addInitScript((flags: Partial<FeatureFlags>) => {
+        const currentOverrideFeatureFlags =
+          'overrideFeatureFlags' in window && typeof window.overrideFeatureFlags === 'object' ?
+            window.overrideFeatureFlags
+          : {}
+
+        Object.defineProperty(window, 'overrideFeatureFlags', {
+          value: { ...currentOverrideFeatureFlags, ...flags },
+          writable: false,
+        })
+      }, flags)
+    },
     // TODO:
     // addPermission,
     // deletePermission,
