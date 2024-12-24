@@ -102,11 +102,11 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
   return (
     <Collection items={tabPanels}>
       {(tabPanelProps) => (
-        <Suspense>
-          <ErrorBoundary>
-            <aria.TabPanel {...tabPanelProps} />
-          </ErrorBoundary>
-        </Suspense>
+        <aria.TabPanel {...tabPanelProps}>
+          <Suspense>
+            <ErrorBoundary>{tabPanelProps.children}</ErrorBoundary>
+          </Suspense>
+        </aria.TabPanel>
       )}
     </Collection>
   )

@@ -5,8 +5,8 @@ import * as reactQuery from '@tanstack/react-query'
 
 import type * as text from 'enso-common/src/text'
 
+import ErrorFilledIcon from '#/assets/warning.svg'
 import * as projectHooks from '#/hooks/projectHooks'
-
 import type { LaunchedProject } from '#/providers/ProjectsProvider'
 import * as textProvider from '#/providers/TextProvider'
 
@@ -19,7 +19,6 @@ import { AnimatedBackground } from '#/components/AnimatedBackground'
 import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import { useBackendForProjectType } from '#/providers/BackendProvider'
 import { useInputBindings } from '#/providers/InputBindingsProvider'
-import { ProjectState } from '#/services/Backend'
 import * as sanitizedEventTargets from '#/utilities/sanitizedEventTargets'
 import * as tailwindMerge from '#/utilities/tailwindMerge'
 import { motion } from 'framer-motion'
@@ -163,13 +162,17 @@ export function ProjectTab(props: ProjectTabProps) {
     onClose?.(project)
   })
 
-  const { data: isOpened, isSuccess } = reactQuery.useQuery({
+  const {
+    data: isOpened,
+    isSuccess,
+    isError,
+  } = reactQuery.useQuery({
     ...projectHooks.createGetProjectDetailsQuery({
       assetId: project.id,
       parentId: project.parentId,
       backend,
     }),
-    select: (data) => data.state.type === ProjectState.opened,
+    select: (data) => projectHooks.OPENED_PROJECT_STATES.has(data.state.type),
   })
 
   const isReady = isSuccess && isOpened
@@ -187,7 +190,17 @@ export function ProjectTab(props: ProjectTabProps) {
     }
   }, [isReady])
 
-  const icon = isReady ? iconRaw : SPINNER
+  const icon = (() => {
+    if (isReady) {
+      return iconRaw
+    }
+
+    if (isError) {
+      return <SvgMask src={ErrorFilledIcon} className="text-danger" />
+    }
+
+    return SPINNER
+  })()
 
   return <Tab {...rest} icon={icon} onClose={stableOnClose} />
 }

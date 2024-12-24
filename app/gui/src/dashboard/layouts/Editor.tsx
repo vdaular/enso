@@ -20,6 +20,7 @@ import * as backendModule from '#/services/Backend'
 
 import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import * as twMerge from '#/utilities/tailwindMerge'
+import { useTimeoutCallback } from '../hooks/timeoutHooks'
 
 // ====================
 // === StringConfig ===
@@ -91,9 +92,20 @@ function Editor(props: EditorProps) {
     backend,
   })
 
-  const projectQuery = reactQuery.useQuery(projectStatusQuery)
+  const queryClient = reactQuery.useQueryClient()
 
-  const isProjectClosed = projectQuery.data?.state.type === backendModule.ProjectState.closed
+  const projectQuery = reactQuery.useSuspenseQuery({
+    ...projectStatusQuery,
+    select: (data) => {
+      const isOpeningProject = projectHooks.OPENING_PROJECT_STATES.has(data.state.type)
+      const isProjectClosed = projectHooks.CLOSED_PROJECT_STATES.has(data.state.type)
+
+      return { ...data, isOpeningProject, isProjectClosed }
+    },
+  })
+
+  const isProjectClosed = projectQuery.data.isProjectClosed
+  const isOpeningProject = projectQuery.data.isOpeningProject
 
   React.useEffect(() => {
     if (isProjectClosed) {
@@ -101,12 +113,28 @@ function Editor(props: EditorProps) {
     }
   }, [isProjectClosed, startProject, project])
 
+  useTimeoutCallback({
+    callback: () => {
+      const queryState = queryClient.getQueryCache().find({ queryKey: projectStatusQuery.queryKey })
+
+      queryState?.setState({
+        error: new Error('Timeout opening the project'),
+        status: 'error',
+      })
+    },
+    ms: projectHooks.getTimeoutBasedOnTheBackendType(backend.type),
+    deps: [],
+    isDisabled: !isOpeningProject || projectQuery.isError,
+  })
+
   if (isOpeningFailed) {
     return (
       <errorBoundary.ErrorDisplay
         error={openingError}
         resetErrorBoundary={() => {
-          startProject(project)
+          if (isProjectClosed) {
+            startProject(project)
+          }
         }}
       />
     )
@@ -128,20 +156,17 @@ function Editor(props: EditorProps) {
               />
             )
 
-          case projectQuery.isLoading ||
-            projectQuery.data?.state.type !== backendModule.ProjectState.opened:
+          case isOpeningProject:
             return <suspense.Loader minHeight="full" />
 
           default:
             return (
               <errorBoundary.ErrorBoundary>
-                <suspense.Suspense>
-                  <EditorInternal
-                    {...props}
-                    openedProject={projectQuery.data}
-                    backendType={project.type}
-                  />
-                </suspense.Suspense>
+                <EditorInternal
+                  {...props}
+                  openedProject={projectQuery.data}
+                  backendType={project.type}
+                />
               </errorBoundary.ErrorBoundary>
             )
         }
@@ -178,9 +203,7 @@ function EditorInternal(props: EditorInternalProps) {
   )
 
   React.useEffect(() => {
-    if (hidden) {
-      return
-    } else {
+    if (!hidden) {
       return gtagHooks.gtagOpenCloseCallback(gtagEvent, 'open_workflow', 'close_workflow')
     }
   }, [hidden, gtagEvent])
