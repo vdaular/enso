@@ -16,6 +16,7 @@ import * as result from '#/components/Result'
 import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import * as errorUtils from '#/utilities/error'
 import { OfflineError } from '#/utilities/HttpClient'
+import type { FallbackProps } from 'react-error-boundary'
 import SvgMask from './SvgMask'
 
 // =====================
@@ -30,20 +31,28 @@ export interface OnBeforeFallbackShownArgs {
 }
 
 /** Props for an {@link ErrorBoundary}. */
-export interface ErrorBoundaryProps
-  extends Readonly<React.PropsWithChildren>,
-    Readonly<
-      Pick<
-        errorBoundary.ErrorBoundaryProps,
-        'FallbackComponent' | 'onError' | 'onReset' | 'resetKeys'
-      >
-    > {
-  /** Called before the fallback is shown. */
-  readonly onBeforeFallbackShown?: (
-    args: OnBeforeFallbackShownArgs,
-  ) => React.ReactNode | null | undefined
-  readonly title?: string
-  readonly subtitle?: string
+export interface ErrorBoundaryProps extends Readonly<React.PropsWithChildren> {
+  /** Keys to reset the error boundary. Use it to declaratively reset the error boundary. */
+  readonly resetKeys?: errorBoundary.ErrorBoundaryProps['resetKeys'] | undefined
+  /** Fallback component to show when there is an error. */
+  // This is a Component, and supposed to be capitalized according to the react conventions.
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  readonly FallbackComponent?: React.ComponentType<FallbackProps> | undefined
+  /** Called when there is an error. */
+  readonly onError?: errorBoundary.ErrorBoundaryProps['onError'] | undefined
+  /** Called when the error boundary is reset. */
+  readonly onReset?: errorBoundary.ErrorBoundaryProps['onReset'] | undefined
+  /**
+   * Called before the fallback is shown, can return a React node to render instead of the fallback.
+   * Alternatively, you can use the error boundary api to reset the error boundary based on the error.
+   */
+  readonly onBeforeFallbackShown?:
+    | ((args: OnBeforeFallbackShownArgs) => React.ReactNode | null | undefined)
+    | undefined
+  /** Title to show when there is an error. */
+  readonly title?: string | undefined
+  /** Subtitle to show when there is an error. */
+  readonly subtitle?: string | undefined
 }
 
 /**
@@ -59,6 +68,7 @@ export function ErrorBoundary(props: ErrorBoundaryProps) {
     onBeforeFallbackShown = () => null,
     title,
     subtitle,
+    resetKeys,
     ...rest
   } = props
 
@@ -66,6 +76,7 @@ export function ErrorBoundary(props: ErrorBoundaryProps) {
     <reactQuery.QueryErrorResetBoundary>
       {({ reset }) => (
         <errorBoundary.ErrorBoundary
+          {...(resetKeys != null ? { resetKeys } : {})}
           FallbackComponent={(fallbackProps) => {
             const displayMessage = errorUtils.extractDisplayMessage(fallbackProps.error)
 
@@ -142,6 +153,7 @@ export function ErrorDisplay(props: ErrorDisplayProps): React.JSX.Element {
       status={finalStatus}
       title={finalTitle}
       subtitle={finalSubtitle}
+      testId="error-display"
     >
       <ariaComponents.ButtonGroup align="center">
         <ariaComponents.Button

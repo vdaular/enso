@@ -140,7 +140,6 @@ export function backendQueryOptions<Method extends BackendMethods>(
   options?: Omit<UseQueryOptions<Awaited<ReturnType<Backend[Method]>>>, 'queryFn' | 'queryKey'> &
     Partial<Pick<UseQueryOptions<Awaited<ReturnType<Backend[Method]>>>, 'queryKey'>>,
 ) {
-  // @ts-expect-error This call is generic over the presence or absence of `inputData`.
   return queryOptions<Awaited<ReturnType<Backend[Method]>>>({
     ...options,
     ...backendQueryOptionsBase(backend, method, args, options?.queryKey),

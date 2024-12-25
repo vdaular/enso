@@ -10,8 +10,9 @@ import * as React from 'react'
 import * as loader from './Loader'
 
 /** Props for {@link Suspense} component. */
-export interface SuspenseProps extends React.SuspenseProps {
-  readonly loaderProps?: loader.LoaderProps
+export interface SuspenseProps extends React.PropsWithChildren {
+  readonly fallback?: React.ReactNode | undefined
+  readonly loaderProps?: loader.LoaderProps | undefined
 }
 
 /**

@@ -77,14 +77,14 @@ importers:
   app/common:
     dependencies:
       '@tanstack/query-core':
-        specifier: 5.54.1
-        version: 5.54.1
+        specifier: 5.59.20
+        version: 5.59.20
       '@tanstack/query-persist-client-core':
-        specifier: ^5.54.0
-        version: 5.54.1
+        specifier: 5.59.20
+        version: 5.59.20
       '@tanstack/vue-query':
-        specifier: '>= 5.54.0 < 5.56.0'
-        version: 5.54.2(vue@3.5.2(typescript@5.5.3))
+        specifier: 5.59.20
+        version: 5.59.20(vue@3.5.2(typescript@5.5.3))
       lib0:
         specifier: ^0.2.85
         version: 0.2.94
@@ -194,11 +194,11 @@ importers:
         specifier: ^3.5.0
         version: 3.5.0
       '@tanstack/react-query':
-        specifier: 5.55.0
-        version: 5.55.0(react@18.3.1)
+        specifier: 5.59.20
+        version: 5.59.20(react@18.3.1)
       '@tanstack/vue-query':
-        specifier: '>= 5.54.0 < 5.56.0'
-        version: 5.54.2(vue@3.5.2(typescript@5.5.3))
+        specifier: 5.59.20
+        version: 5.59.20(vue@3.5.2(typescript@5.5.3))
       '@vueuse/core':
         specifier: ^10.4.1
         version: 10.11.0(vue@3.5.2(typescript@5.5.3))
@@ -426,8 +426,8 @@ importers:
         specifier: ^8.4.2
         version: 8.4.2(storybook@8.4.2(prettier@3.3.2))(vite@5.4.10(@types/node@22.9.0)(lightningcss@1.25.1))(vue@3.5.2(typescript@5.5.3))(webpack-sources@3.2.3)
       '@tanstack/react-query-devtools':
-        specifier: 5.45.1
-        version: 5.45.1(@tanstack/react-query@5.55.0(react@18.3.1))(react@18.3.1)
+        specifier: 5.59.20
+        version: 5.59.20(@tanstack/react-query@5.59.20(react@18.3.1))(react@18.3.1)
       '@testing-library/jest-dom':
         specifier: 6.6.3
         version: 6.6.3
@@ -2970,28 +2970,28 @@ packages:
     resolution: {integrity: sha512-PnVV3d2poenUM31ZbZi/yXkBu3J7kd5k2u51CGwwNojag451AjTH9N6n41yjXz2fpLeewleyLBmNS6+HcGDlXw==}
     engines: {node: '>=12'}
 
-  '@tanstack/query-core@5.54.1':
-    resolution: {integrity: sha512-hKS+WRpT5zBFip21pB6Jx1C0hranWQrbv5EJ7qPoiV5MYI3C8rTCqWC9DdBseiPT1JgQWh8Y55YthuYZNiw3Xw==}
+  '@tanstack/query-core@5.59.20':
+    resolution: {integrity: sha512-e8vw0lf7KwfGe1if4uPFhvZRWULqHjFcz3K8AebtieXvnMOz5FSzlZe3mTLlPuUBcydCnBRqYs2YJ5ys68wwLg==}
 
-  '@tanstack/query-devtools@5.37.1':
-    resolution: {integrity: sha512-XcG4IIHIv0YQKrexTqo2zogQWR1Sz672tX2KsfE9kzB+9zhx44vRKH5si4WDILE1PIWQpStFs/NnrDQrBAUQpg==}
+  '@tanstack/query-devtools@5.59.20':
+    resolution: {integrity: sha512-vxhuQ+8VV4YWQSFxQLsuM+dnEKRY7VeRzpNabFXdhEwsBYLrjXlF1pM38A8WyKNLqZy8JjyRO8oP4Wd/oKHwuQ==}
 
-  '@tanstack/query-persist-client-core@5.54.1':
-    resolution: {integrity: sha512-qmBkrC5HA3XHwwrx/pWjegncQFcmuoAaffwbrXm07OrsOxxeTGLt8aFl8RYbWAs75a8+9uneqVFQfgv5QRqxBA==}
+  '@tanstack/query-persist-client-core@5.59.20':
+    resolution: {integrity: sha512-RUaDys2zyhCw8MGcp0tirbpp8IjU7zrtdMaEYQ6WetrNvn/IOg9Y2Zpk55P7gjBq8fEyFlmuRM3cHVNn/Usg8w==}
 
-  '@tanstack/react-query-devtools@5.45.1':
-    resolution: {integrity: sha512-4mrbk1g5jqlqh0pifZNsKzy7FtgeqgwzMICL4d6IJGayrrcrKq9K4N/OzRNbgRWrTn6YTY63qcAcKo+NJU2QMw==}
+  '@tanstack/react-query-devtools@5.59.20':
+    resolution: {integrity: sha512-AL/eQS1NFZhwwzq2Bq9Gd8wTTH+XhPNOJlDFpzPMu9NC5CQVgA0J8lWrte/sXpdWNo5KA4hgHnEdImZsF4h6Lw==}
     peerDependencies:
-      '@tanstack/react-query': ^5.45.1
+      '@tanstack/react-query': ^5.59.20
       react: ^18 || ^19
 
-  '@tanstack/react-query@5.55.0':
-    resolution: {integrity: sha512-2uYuxEbRQD8TORUiTUacEOwt1e8aoSqUOJFGY5TUrh6rQ3U85zrMS2wvbNhBhXGh6Vj69QDCP2yv8tIY7joo6Q==}
+  '@tanstack/react-query@5.59.20':
+    resolution: {integrity: sha512-Zly0egsK0tFdfSbh5/mapSa+Zfc3Et0Zkar7Wo5sQkFzWyB3p3uZWOHR2wrlAEEV2L953eLuDBtbgFvMYiLvUw==}
     peerDependencies:
       react: ^18 || ^19
 
-  '@tanstack/vue-query@5.54.2':
-    resolution: {integrity: sha512-GYIYee9WkUbPDD28t1kdNNtLCioiIva0MhKCvODGWoEML5MNONCX4/i4y2GGFi8i9nSbcA8MpvD+nt/tdZ+yJw==}
+  '@tanstack/vue-query@5.59.20':
+    resolution: {integrity: sha512-kIs1GfXh7jVLycbnQDghfdrcvrZz5fxnMF7eAAp8O3ZfhHQWfP57DBXbOvww4Y+TI0EvVoh+hihX+LNFBGFKLg==}
     peerDependencies:
       '@vue/composition-api': ^1.1.2
       vue: ^2.6.0 || ^3.3.0
@@ -11089,29 +11089,29 @@ snapshots:
     dependencies:
       remove-accents: 0.5.0
 
-  '@tanstack/query-core@5.54.1': {}
+  '@tanstack/query-core@5.59.20': {}
 
-  '@tanstack/query-devtools@5.37.1': {}
+  '@tanstack/query-devtools@5.59.20': {}
 
-  '@tanstack/query-persist-client-core@5.54.1':
+  '@tanstack/query-persist-client-core@5.59.20':
     dependencies:
-      '@tanstack/query-core': 5.54.1
+      '@tanstack/query-core': 5.59.20
 
-  '@tanstack/react-query-devtools@5.45.1(@tanstack/react-query@5.55.0(react@18.3.1))(react@18.3.1)':
+  '@tanstack/react-query-devtools@5.59.20(@tanstack/react-query@5.59.20(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@tanstack/query-devtools': 5.37.1
-      '@tanstack/react-query': 5.55.0(react@18.3.1)
+      '@tanstack/query-devtools': 5.59.20
+      '@tanstack/react-query': 5.59.20(react@18.3.1)
       react: 18.3.1
 
-  '@tanstack/react-query@5.55.0(react@18.3.1)':
+  '@tanstack/react-query@5.59.20(react@18.3.1)':
     dependencies:
-      '@tanstack/query-core': 5.54.1
+      '@tanstack/query-core': 5.59.20
       react: 18.3.1
 
-  '@tanstack/vue-query@5.54.2(vue@3.5.2(typescript@5.5.3))':
+  '@tanstack/vue-query@5.59.20(vue@3.5.2(typescript@5.5.3))':
     dependencies:
       '@tanstack/match-sorter-utils': 8.15.1
-      '@tanstack/query-core': 5.54.1
+      '@tanstack/query-core': 5.59.20
       '@vue/devtools-api': 6.6.3
       vue: 3.5.2(typescript@5.5.3)
       vue-demi: 0.14.10(vue@3.5.2(typescript@5.5.3))

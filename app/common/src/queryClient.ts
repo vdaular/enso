@@ -135,6 +135,13 @@ export function createQueryClient<TStorageValue = string>(
         networkMode: 'always',
         refetchOnReconnect: 'always',
         staleTime: DEFAULT_QUERY_STALE_TIME_MS,
+        // This allows to prefetch queries in the render phase. Enables returning
+        // a promise from the `useQuery` hook, which is useful for the `Await` component,
+        // which needs to prefetch the query in the render phase to be able to display
+        // the error boundary/suspense fallback.
+        // @see [experimental_prefetchInRender](https://tanstack.com/query/latest/docs/framework/react/guides/suspense#using-usequerypromise-and-reactuse-experimental)
+        // eslint-disable-next-line camelcase
+        experimental_prefetchInRender: true,
         retry: (failureCount, error: unknown) => {
           const statusesToIgnore = [403, 404]
           const errorStatus =
