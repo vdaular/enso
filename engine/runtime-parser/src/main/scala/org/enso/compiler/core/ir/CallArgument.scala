@@ -83,7 +83,8 @@ object CallArgument {
         || diagnostics != this.diagnostics
         || id != this.id
       ) {
-        val res = Specified(name, value, isSynthetic, location.orNull, passData)
+        val res =
+          new Specified(name, value, isSynthetic, location.orNull, passData)
         res.diagnostics = diagnostics
         res.id          = id
         res

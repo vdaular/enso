@@ -2468,7 +2468,9 @@ class IrToTruffle(
       subjectToInstrumentation: Boolean
     ): callable.argument.CallArgument =
       arg match {
-        case CallArgument.Specified(name, value, _, _, _) =>
+        case specifiedArg: CallArgument.Specified =>
+          val name      = specifiedArg.name
+          val value     = specifiedArg.value
           val scopeInfo = childScopeInfo("call argument", arg)
 
           def valueHasSomeTypeCheck() =
