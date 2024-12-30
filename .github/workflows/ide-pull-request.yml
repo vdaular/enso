@@ -31,14 +31,14 @@ jobs:
   ide-packaging:
     name: 📦 Package
     uses: ./.github/workflows/ide-packaging.yml
-    needs: [gui-changed-files, engine-changed-files]
+    needs: [gui-changed-files, ide-changed-files, engine-changed-files]
     if: needs.gui-changed-files.outputs.any_changed == 'true' || needs.ide-changed-files.outputs.any_changed == 'true' || needs.engine-changed-files.outputs.any_changed == 'true' || github.ref == 'refs/heads/develop'
     secrets: inherit
 
   ide-packaging-optional:
     name: 📦 Package (Optional)
     uses: ./.github/workflows/ide-packaging-optional.yml
-    needs: [gui-changed-files, engine-changed-files]
+    needs: [gui-changed-files, ide-changed-files, engine-changed-files]
     if: needs.gui-changed-files.outputs.any_changed == 'true' || needs.ide-changed-files.outputs.any_changed == 'true' || needs.engine-changed-files.outputs.any_changed == 'true' || github.ref == 'refs/heads/develop'
     secrets: inherit
 
