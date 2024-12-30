@@ -28,7 +28,7 @@ import { DIALOG_BACKGROUND } from './variants'
 const MotionDialog = motion(aria.Dialog)
 
 const OVERLAY_STYLES = tv({
-  base: 'fixed inset-0 isolate flex items-center justify-center bg-primary/20 z-tooltip',
+  base: 'fixed inset-0 isolate flex items-center justify-center bg-primary/20',
   variants: {
     isEntering: { true: 'animate-in fade-in duration-200 ease-out' },
     isExiting: { true: 'animate-out fade-out duration-200 ease-in' },

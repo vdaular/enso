@@ -212,6 +212,7 @@ export default class DrivePageActions<Context> extends PageActions<Context> {
       dragRowToRow(from: number, to: number) {
         return self.step(`Drag drive table row #${from} to row #${to}`, async (page) => {
           const rows = locateAssetRows(page)
+          rows.nth(from).click()
           await rows.nth(from).dragTo(rows.nth(to), {
             sourcePosition: ASSET_ROW_SAFE_POSITION,
             targetPosition: ASSET_ROW_SAFE_POSITION,

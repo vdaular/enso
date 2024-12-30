@@ -101,7 +101,7 @@ export function Tab(props: TabProps) {
           className="h-full w-full rounded-t-3xl pl-4 pr-4"
           underlayElement={UNDERLAY_ELEMENT}
         >
-          <div className="relative z-1 flex h-full w-full items-center justify-center gap-3">
+          <div className="relative flex h-full w-full items-center justify-center gap-3">
             <motion.div
               variants={{ active: { opacity: 1 }, inactive: { opacity: 0 } }}
               initial="inactive"

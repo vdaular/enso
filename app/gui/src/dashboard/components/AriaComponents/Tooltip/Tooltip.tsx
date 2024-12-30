@@ -12,7 +12,7 @@ import * as text from '../Text'
 // =================
 
 export const TOOLTIP_STYLES = twv.tv({
-  base: 'group flex justify-center items-center text-center text-balance [overflow-wrap:anywhere] z-tooltip',
+  base: 'group flex justify-center items-center text-center text-balance [overflow-wrap:anywhere]',
   variants: {
     variant: {
       custom: '',

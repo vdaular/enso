@@ -1,5 +1,8 @@
 /** @file Table displaying a list of projects. */
 import {
+  Children,
+  cloneElement,
+  isValidElement,
   memo,
   startTransition,
   useEffect,
@@ -12,6 +15,7 @@ import {
   type KeyboardEvent,
   type MutableRefObject,
   type MouseEvent as ReactMouseEvent,
+  type ReactNode,
   type Ref,
   type RefObject,
   type SetStateAction,
@@ -24,7 +28,7 @@ import * as z from 'zod'
 import { uniqueString } from 'enso-common/src/utilities/uniqueString'
 
 import DropFilesImage from '#/assets/drop_files.svg'
-import { FileTrigger, mergeProps } from '#/components/aria'
+import { FileTrigger, mergeProps, usePress } from '#/components/aria'
 import { Button, Text } from '#/components/AriaComponents'
 import type { AssetRowInnerProps } from '#/components/dashboard/AssetRow'
 import { AssetRow } from '#/components/dashboard/AssetRow'
@@ -43,7 +47,7 @@ import { COLUMN_HEADING } from '#/components/dashboard/columnHeading'
 import Label from '#/components/dashboard/Label'
 import { ErrorDisplay } from '#/components/ErrorBoundary'
 import { IsolateLayout } from '#/components/IsolateLayout'
-import SelectionBrush from '#/components/SelectionBrush'
+import { SelectionBrush, type OnDragParams } from '#/components/SelectionBrush'
 import { IndefiniteSpinner } from '#/components/Spinner'
 import FocusArea from '#/components/styled/FocusArea'
 import SvgMask from '#/components/SvgMask'
@@ -102,6 +106,7 @@ import { useNavigator2D } from '#/providers/Navigator2DProvider'
 import { useLaunchedProjects } from '#/providers/ProjectsProvider'
 import { useText } from '#/providers/TextProvider'
 import type Backend from '#/services/Backend'
+import type { AssetId } from '#/services/Backend'
 import {
   assetIsProject,
   AssetType,
@@ -112,7 +117,6 @@ import {
   ProjectId,
   ProjectState,
   type AnyAsset,
-  type AssetId,
   type DirectoryAsset,
   type DirectoryId,
   type LabelName,
@@ -128,7 +132,6 @@ import type { AssetRowsDragPayload } from '#/utilities/drag'
 import { ASSET_ROWS, LABELS, setDragImageToBlank } from '#/utilities/drag'
 import { fileExtension } from '#/utilities/fileInfo'
 import { noop } from '#/utilities/functions'
-import type { DetailedRectangle } from '#/utilities/geometry'
 import { DEFAULT_HANDLER } from '#/utilities/inputBindings'
 import LocalStorage from '#/utilities/LocalStorage'
 import {
@@ -142,6 +145,8 @@ import { EMPTY_SET, setPresence, withPresence } from '#/utilities/set'
 import type { SortInfo } from '#/utilities/sorting'
 import { twJoin, twMerge } from '#/utilities/tailwindMerge'
 import Visibility from '#/utilities/Visibility'
+import invariant from 'tiny-invariant'
+import { useStore } from '../utilities/zustand'
 
 declare module '#/utilities/LocalStorage' {
   /** */
@@ -163,7 +168,7 @@ const MINIMUM_DROPZONE_INTERSECTION_RATIO = 0.5
  * The height of each row in the table body. MUST be identical to the value as set by the
  * Tailwind styling.
  */
-const ROW_HEIGHT_PX = 38
+const ROW_HEIGHT_PX = 36
 /** The size of the loading spinner. */
 const LOADING_SPINNER_SIZE_PX = 36
 
@@ -453,9 +458,13 @@ function AssetsTable(props: AssetsTableProps) {
           } else if (selectedKeys.size === 1) {
             const [soleKey] = selectedKeys
             const item = soleKey == null ? null : nodeMapRef.current.get(soleKey)
+
             if (item != null && item.isType(AssetType.directory)) {
               setTargetDirectory(item)
+            } else {
+              setTargetDirectory(null)
             }
+
             if (
               item != null &&
               item.item.id !== assetPanelStore.getState().assetPanelProps.item?.id
@@ -466,6 +475,7 @@ function AssetsTable(props: AssetsTableProps) {
           } else {
             let commonDirectoryKey: AssetId | null = null
             let otherCandidateDirectoryKey: AssetId | null = null
+
             for (const key of selectedKeys) {
               const node = nodeMapRef.current.get(key)
               if (node != null) {
@@ -494,8 +504,11 @@ function AssetsTable(props: AssetsTableProps) {
             }
             const node =
               commonDirectoryKey == null ? null : nodeMapRef.current.get(commonDirectoryKey)
+
             if (node != null && node.isType(AssetType.directory)) {
               setTargetDirectory(node)
+            } else {
+              setTargetDirectory(null)
             }
           }
         }
@@ -1369,38 +1382,6 @@ function AssetsTable(props: AssetsTableProps) {
     }
   }, [hidden])
 
-  useEffect(
-    () =>
-      inputBindings.attach(
-        document.body,
-        'click',
-        {
-          selectAdditional: () => {},
-          selectAdditionalRange: () => {},
-          [DEFAULT_HANDLER]: (event) => {
-            /**
-             * When the document is clicked, deselect the keys, but only if the clicked element
-             * is not inside a `Dialog`. To detect whether an element is a `Dialog`,
-             * we check whether it is inside the `portal-root` where all the `Dialog`s are mounted.
-             * If this check is omitted, when the user clicks inside a Datalink dialog,
-             * the keys are deselected, causing the Datalink to be added to the root directory,
-             * rather than the one that was selected when the dialog was opened.
-             */
-            const portalRoot =
-              event.target instanceof HTMLElement || event.target instanceof SVGElement ?
-                event.target.closest('.enso-portal-root')
-              : null
-            if (!portalRoot && driveStore.getState().selectedKeys.size !== 0) {
-              setSelectedKeys(EMPTY_SET)
-              setMostRecentlySelectedIndex(null)
-            }
-          },
-        },
-        false,
-      ),
-    [setSelectedKeys, inputBindings, setMostRecentlySelectedIndex, driveStore],
-  )
-
   const calculateNewKeys = useEventCallback(
     (event: MouseEvent | ReactMouseEvent, keys: AssetId[], getRange: () => AssetId[]) => {
       event.stopPropagation()
@@ -1438,15 +1419,27 @@ function AssetsTable(props: AssetsTableProps) {
 
   const { startAutoScroll, endAutoScroll, onMouseEvent } = useAutoScroll(rootRef)
 
-  const dragSelectionChangeLoopHandle = useRef(0)
   const dragSelectionRangeRef = useRef<DragSelectionInfo | null>(null)
-  const onSelectionDrag = useEventCallback((rectangle: DetailedRectangle, event: MouseEvent) => {
+
+  const preventSelection = useEventCallback((event: PointerEvent) => {
+    const { target } = event
+
+    if (target instanceof HTMLElement) {
+      const row = target.closest('tr')
+      return Boolean(row?.dataset.selected === 'true')
+    }
+
+    return false
+  })
+
+  const onSelectionDrag = useEventCallback(({ event, rectangle }: OnDragParams) => {
     startAutoScroll()
+
     onMouseEvent(event)
+
     if (mostRecentlySelectedIndexRef.current != null) {
       setKeyboardSelectedIndex(null)
     }
-    cancelAnimationFrame(dragSelectionChangeLoopHandle.current)
     const scrollContainer = rootRef.current
     if (scrollContainer != null) {
       const rect = scrollContainer.getBoundingClientRect()
@@ -1457,11 +1450,13 @@ function AssetsTable(props: AssetsTableProps) {
         Math.min(rect.height, rectangle.bottom - rect.top - ROW_HEIGHT_PX),
       )
       const range = dragSelectionRangeRef.current
+
       if (!overlapsHorizontally) {
         dragSelectionRangeRef.current = null
       } else if (range == null) {
         const topIndex = (selectionTop + scrollContainer.scrollTop) / ROW_HEIGHT_PX
         const bottomIndex = (selectionBottom + scrollContainer.scrollTop) / ROW_HEIGHT_PX
+
         dragSelectionRangeRef.current = {
           initialIndex: rectangle.signedHeight < 0 ? bottomIndex : topIndex,
           start: Math.floor(topIndex),
@@ -1487,6 +1482,7 @@ function AssetsTable(props: AssetsTableProps) {
   })
 
   const onSelectionDragEnd = useEventCallback((event: MouseEvent) => {
+    event.stopImmediatePropagation()
     endAutoScroll()
     onMouseEvent(event)
     const range = dragSelectionRangeRef.current
@@ -1539,8 +1535,11 @@ function AssetsTable(props: AssetsTableProps) {
   const onRowDragStart = useEventCallback(
     (event: DragEvent<HTMLTableRowElement>, item: AnyAsset) => {
       startAutoScroll()
+
       onMouseEvent(event)
+
       let newSelectedKeys = driveStore.getState().selectedKeys
+
       if (!newSelectedKeys.has(item.id)) {
         setMostRecentlySelectedIndex(
           visibleItems.findIndex((visibleItem) => visibleItem.item.id === item.id),
@@ -1549,11 +1548,14 @@ function AssetsTable(props: AssetsTableProps) {
         newSelectedKeys = new Set([item.id])
         setSelectedKeys(newSelectedKeys)
       }
+
       const nodes = assetTree.preorderTraversal().filter((node) => newSelectedKeys.has(node.key))
+
       const payload: AssetRowsDragPayload = nodes.map((node) => ({
         key: node.key,
         asset: node.item,
       }))
+
       event.dataTransfer.setData(ASSETS_MIME_TYPE, JSON.stringify(nodes.map((node) => node.key)))
       setDragImageToBlank(event)
       ASSET_ROWS.bind(event, payload)
@@ -1776,7 +1778,7 @@ function AssetsTable(props: AssetsTableProps) {
 
   const table = (
     <div
-      className="flex grow flex-col"
+      className="flex flex-none flex-col"
       onContextMenu={(event) => {
         if (isAssetContextMenuVisible) {
           event.preventDefault()
@@ -1843,58 +1845,60 @@ function AssetsTable(props: AssetsTableProps) {
           </tr>
         </tbody>
       </table>
-      <div
-        data-testid="root-directory-dropzone"
-        className={twMerge(
-          'sticky left-0 my-20 grid max-w-container grow place-items-center',
-          (category.type === 'recent' || category.type === 'trash') && 'hidden',
-        )}
-        onDragEnter={onDropzoneDragOver}
-        onDragOver={onDropzoneDragOver}
-        onDragLeave={() => {
-          lastSelectedIdsRef.current = null
-        }}
-        onDragEnd={() => {
-          setIsDraggingFiles(false)
-        }}
-        onDrop={(event) => {
-          const payload = ASSET_ROWS.lookup(event)
-          const filtered = payload?.filter((item) => item.asset.parentId !== rootDirectoryId)
-          if (filtered != null && filtered.length > 0) {
-            event.preventDefault()
-            event.stopPropagation()
-            unsetModal()
+      <AssetsTableAssetsUnselector asChild>
+        <div
+          data-testid="root-directory-dropzone"
+          className={twMerge(
+            'sticky left-0 grid max-w-container grow place-items-center py-20',
+            (category.type === 'recent' || category.type === 'trash') && 'hidden',
+          )}
+          onDragEnter={onDropzoneDragOver}
+          onDragOver={onDropzoneDragOver}
+          onDragLeave={() => {
+            lastSelectedIdsRef.current = null
+          }}
+          onDragEnd={() => {
+            setIsDraggingFiles(false)
+          }}
+          onDrop={(event) => {
+            const payload = ASSET_ROWS.lookup(event)
+            const filtered = payload?.filter((item) => item.asset.parentId !== rootDirectoryId)
+            if (filtered != null && filtered.length > 0) {
+              event.preventDefault()
+              event.stopPropagation()
+              unsetModal()
 
-            dispatchAssetEvent({
-              type: AssetEventType.move,
-              newParentKey: rootDirectoryId,
-              newParentId: rootDirectoryId,
-              ids: new Set(filtered.map((dragItem) => dragItem.asset.id)),
-            })
-          }
-          handleFileDrop(event)
-        }}
-        onClick={() => {
-          setSelectedKeys(EMPTY_SET)
-        }}
-      >
-        <FileTrigger
-          onSelect={(event) => {
-            void uploadFiles(Array.from(event ?? []), rootDirectoryId, rootDirectoryId)
+              dispatchAssetEvent({
+                type: AssetEventType.move,
+                newParentKey: rootDirectoryId,
+                newParentId: rootDirectoryId,
+                ids: new Set(filtered.map((dragItem) => dragItem.asset.id)),
+              })
+            }
+            handleFileDrop(event)
+          }}
+          onClick={() => {
+            setSelectedKeys(EMPTY_SET)
           }}
         >
-          <Button
-            size="custom"
-            variant="custom"
-            ref={mainDropzoneRef}
-            icon={DropFilesImage}
-            className="rounded-2xl"
-            contentClassName="h-[186px] flex flex-col items-center gap-3 text-primary/30 transition-colors duration-200 hover:text-primary/50"
+          <FileTrigger
+            onSelect={(event) => {
+              void uploadFiles(Array.from(event ?? []), rootDirectoryId, rootDirectoryId)
+            }}
           >
-            {dropzoneText}
-          </Button>
-        </FileTrigger>
-      </div>
+            <Button
+              size="custom"
+              variant="custom"
+              ref={mainDropzoneRef}
+              icon={DropFilesImage}
+              className="rounded-2xl"
+              contentClassName="h-[186px] flex flex-col items-center gap-3 text-primary/30 transition-colors duration-200 hover:text-primary/50"
+            >
+              {dropzoneText}
+            </Button>
+          </FileTrigger>
+        </div>
+      </AssetsTableAssetsUnselector>
     </div>
   )
 
@@ -1967,19 +1971,23 @@ function AssetsTable(props: AssetsTableProps) {
                 {!hidden && (
                   <SelectionBrush
                     targetRef={rootRef}
-                    margin={16}
                     onDrag={onSelectionDrag}
                     onDragEnd={onSelectionDragEnd}
                     onDragCancel={onSelectionDragCancel}
+                    preventDrag={preventSelection}
                   />
                 )}
                 <div className="flex h-max min-h-full w-max min-w-full flex-col">
-                  <div className="flex h-full w-min min-w-full grow flex-col px-1">{table}</div>
+                  <div className="flex h-full w-min min-w-full grow flex-col px-1">
+                    {table}
+                    <AssetsTableAssetsUnselector />
+                  </div>
                 </div>
               </div>
             </IsolateLayout>
           )}
         </FocusArea>
+
         {isDraggingFiles && !isMainDropzoneVisible && (
           <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2">
             <div
@@ -2039,5 +2047,54 @@ const HiddenColumn = memo(function HiddenColumn(props: HiddenColumnProps) {
     />
   )
 })
+
+/**
+ * Props for the {@link AssetsTableAssetsUnselector} component.
+ */
+export interface AssetsTableAssetsUnselectorProps {
+  readonly className?: string
+  readonly children?: ReactNode
+  readonly asChild?: boolean
+}
+
+/**
+ * A component that unselects all assets when clicked.
+ */
+export function AssetsTableAssetsUnselector(props: AssetsTableAssetsUnselectorProps) {
+  const { className, asChild = false, children } = props
+
+  const driveStore = useDriveStore()
+  const hasSelectedKeys = useStore(driveStore, (state) => state.selectedKeys.size > 0, {
+    unsafeEnableTransition: true,
+  })
+  const setSelectedKeys = useSetSelectedKeys()
+
+  const { pressProps } = usePress({
+    isDisabled: !hasSelectedKeys,
+    onPress: () => {
+      setSelectedKeys(EMPTY_SET)
+    },
+  })
+
+  if (asChild) {
+    const childenArray = Children.toArray(children)
+    const onlyChild = childenArray.length === 1 ? childenArray[0] : null
+
+    invariant(onlyChild != null, 'Children must be a single element when `asChild` is true')
+    invariant(isValidElement(onlyChild), 'Children must be a JSX element when `asChild` is true')
+
+    return cloneElement(onlyChild, pressProps)
+  }
+
+  return (
+    <div
+      {...pressProps}
+      className={twMerge('h-full w-full flex-1', className)}
+      data-testid="assets-table-assets-unselector"
+    >
+      {children}
+    </div>
+  )
+}
 
 export default memo(AssetsTable)

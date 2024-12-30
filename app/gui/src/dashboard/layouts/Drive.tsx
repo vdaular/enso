@@ -15,7 +15,7 @@ import AssetListEventType from '#/events/AssetListEventType'
 
 import { AssetPanel } from '#/layouts/AssetPanel'
 import type * as assetsTable from '#/layouts/AssetsTable'
-import AssetsTable from '#/layouts/AssetsTable'
+import AssetsTable, { AssetsTableAssetsUnselector } from '#/layouts/AssetsTable'
 import CategorySwitcher from '#/layouts/CategorySwitcher'
 import * as categoryModule from '#/layouts/CategorySwitcher/Category'
 import * as eventListProvider from '#/layouts/Drive/EventListProvider'
@@ -274,6 +274,8 @@ function DriveAssetsView(props: DriveProps) {
                 setQuery={setQuery}
               />
             )}
+
+            <AssetsTableAssetsUnselector />
           </div>
 
           {status === 'offline' ?

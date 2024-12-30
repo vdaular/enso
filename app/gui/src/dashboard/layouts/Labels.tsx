@@ -41,7 +41,7 @@ export default function Labels(props: LabelsProps) {
   return (
     <FocusArea direction="vertical">
       {(innerProps) => (
-        <div className="flex flex-1 flex-col overflow-auto">
+        <div className="flex flex-none flex-col overflow-auto">
           <div
             data-testid="labels"
             className="flex flex-col items-start gap-4 overflow-auto"

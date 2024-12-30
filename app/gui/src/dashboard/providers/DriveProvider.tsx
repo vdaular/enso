@@ -125,15 +125,11 @@ export default function DriveProvider(props: ProjectsProviderProps) {
       },
       selectedKeys: EMPTY_SET,
       setSelectedKeys: (selectedKeys) => {
-        if (get().selectedKeys !== selectedKeys) {
-          set({ selectedKeys })
-        }
+        set({ selectedKeys })
       },
       visuallySelectedKeys: null,
       setVisuallySelectedKeys: (visuallySelectedKeys) => {
-        if (get().visuallySelectedKeys !== visuallySelectedKeys) {
-          set({ visuallySelectedKeys })
-        }
+        set({ visuallySelectedKeys })
       },
     })),
   )

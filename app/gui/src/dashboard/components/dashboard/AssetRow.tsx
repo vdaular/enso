@@ -297,7 +297,7 @@ export function RealAssetInternalRow(props: RealAssetRowInternalProps) {
     driveStore,
     ({ selectedKeys }) => selectedKeys.size === 0 || !selected || isSoleSelected,
   )
-  const draggableProps = dragAndDropHooks.useDraggable()
+  const draggableProps = dragAndDropHooks.useDraggable({ isDisabled: !selected })
   const { setModal, unsetModal } = modalProvider.useSetModal()
   const { getText } = textProvider.useText()
   const dispatchAssetListEvent = eventListProvider.useDispatchAssetListEvent()
@@ -371,6 +371,7 @@ export function RealAssetInternalRow(props: RealAssetRowInternalProps) {
 
   const setSelected = useEventCallback((newSelected: boolean) => {
     const { selectedKeys } = driveStore.getState()
+
     setSelectedKeys(set.withPresence(selectedKeys, id, newSelected))
   })
 
@@ -682,6 +683,8 @@ export function RealAssetInternalRow(props: RealAssetRowInternalProps) {
           <tr
             data-testid="asset-row"
             tabIndex={0}
+            data-selected={selected}
+            data-id={asset.id}
             ref={(element) => {
               rootRef.current = element
 
