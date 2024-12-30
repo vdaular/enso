@@ -17,11 +17,13 @@
 - A constructor or type definition with a single inline argument definition was
   previously allowed to use spaces in the argument definition without
   parentheses. [This is now a syntax error.][11856]
+- [Redo stack is no longer lost when interacting with text literals][11908].
 - Symetric, transitive and reflexive [equality for intersection types][11897]
 
 [11777]: https://github.com/enso-org/enso/pull/11777
 [11600]: https://github.com/enso-org/enso/pull/11600
 [11856]: https://github.com/enso-org/enso/pull/11856
+[11908]: https://github.com/enso-org/enso/pull/11908
 [11897]: https://github.com/enso-org/enso/pull/11897
 
 # Next Release
