@@ -30,8 +30,7 @@ export interface DrivePastePayload {
 
 /** The state of this zustand store. */
 interface DriveStore {
-  readonly category: Category
-  readonly setCategory: (category: Category) => void
+  readonly resetAssetTableState: () => void
   readonly targetDirectory: AssetTreeNode<DirectoryAsset> | null
   readonly setTargetDirectory: (targetDirectory: AssetTreeNode<DirectoryAsset> | null) => void
   readonly newestFolderId: DirectoryId | null
@@ -60,7 +59,14 @@ export type ProjectsContextType = zustand.StoreApi<DriveStore>
 const DriveContext = React.createContext<ProjectsContextType | null>(null)
 
 /** Props for a {@link DriveProvider}. */
-export type ProjectsProviderProps = Readonly<React.PropsWithChildren>
+export interface ProjectsProviderProps {
+  readonly children:
+    | React.ReactNode
+    | ((context: {
+        readonly store: ProjectsContextType
+        readonly resetAssetTableState: () => void
+      }) => React.ReactNode)
+}
 
 // ========================
 // === ProjectsProvider ===
@@ -75,17 +81,13 @@ export default function DriveProvider(props: ProjectsProviderProps) {
 
   const [store] = React.useState(() =>
     zustand.createStore<DriveStore>((set, get) => ({
-      category: { type: 'cloud' },
-      setCategory: (category) => {
-        if (get().category !== category) {
-          set({
-            category,
-            targetDirectory: null,
-            selectedKeys: EMPTY_SET,
-            visuallySelectedKeys: null,
-            expandedDirectoryIds: EMPTY_ARRAY,
-          })
-        }
+      resetAssetTableState: () => {
+        set({
+          targetDirectory: null,
+          selectedKeys: EMPTY_SET,
+          visuallySelectedKeys: null,
+          expandedDirectoryIds: EMPTY_ARRAY,
+        })
       },
       targetDirectory: null,
       setTargetDirectory: (targetDirectory) => {
@@ -134,7 +136,13 @@ export default function DriveProvider(props: ProjectsProviderProps) {
     })),
   )
 
-  return <DriveContext.Provider value={store}>{children}</DriveContext.Provider>
+  const resetAssetTableState = zustand.useStore(store, (state) => state.resetAssetTableState)
+
+  return (
+    <DriveContext.Provider value={store}>
+      {typeof children === 'function' ? children({ store, resetAssetTableState }) : children}
+    </DriveContext.Provider>
+  )
 }
 
 /** The drive store. */
@@ -144,18 +152,6 @@ export function useDriveStore() {
   invariant(store, 'Drive store can only be used inside an `DriveProvider`.')
 
   return store
-}
-
-/** The category of the Asset Table. */
-export function useCategory() {
-  const store = useDriveStore()
-  return zustand.useStore(store, (state) => state.category, { unsafeEnableTransition: true })
-}
-
-/** A function to set the category of the Asset Table. */
-export function useSetCategory() {
-  const store = useDriveStore()
-  return zustand.useStore(store, (state) => state.setCategory, { unsafeEnableTransition: true })
 }
 
 /** The target directory of the Asset Table selection. */
@@ -227,15 +223,8 @@ export function useExpandedDirectoryIds() {
 /** A function to set the expanded directoyIds in the Asset Table. */
 export function useSetExpandedDirectoryIds() {
   const store = useDriveStore()
-  const privateSetExpandedDirectoryIds = zustand.useStore(
-    store,
-    (state) => state.setExpandedDirectoryIds,
-    { unsafeEnableTransition: true },
-  )
-  return useEventCallback((expandedDirectoryIds: readonly DirectoryId[]) => {
-    React.startTransition(() => {
-      privateSetExpandedDirectoryIds(expandedDirectoryIds)
-    })
+  return zustand.useStore(store, (state) => state.setExpandedDirectoryIds, {
+    unsafeEnableTransition: true,
   })
 }
 

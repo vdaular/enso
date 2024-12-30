@@ -37,6 +37,7 @@ import * as errorModule from '#/utilities/error'
 
 import * as cognitoModule from '#/authentication/cognito'
 import type * as authServiceModule from '#/authentication/service'
+import { isOrganizationId } from '#/services/RemoteBackend'
 import { unsafeWriteValue } from '#/utilities/write'
 
 // ===================
@@ -330,11 +331,15 @@ export default function AuthProvider(props: AuthProviderProps) {
       const organizationId = await cognito.organizationId()
       const email = session?.email ?? ''
 
+      invariant(
+        organizationId == null || isOrganizationId(organizationId),
+        'Invalid organization ID',
+      )
+
       await createUserMutation.mutateAsync({
         userName: username,
         userEmail: backendModule.EmailAddress(email),
-        organizationId:
-          organizationId != null ? backendModule.OrganizationId(organizationId) : null,
+        organizationId: organizationId != null ? organizationId : null,
       })
     }
     // Wait until the backend returns a value from `users/me`,
@@ -692,4 +697,11 @@ export function useFullUserSession(): FullUserSession {
   invariant(session?.type === UserSessionType.full, 'Expected a full user session.')
 
   return session
+}
+
+/** A React context hook returning the user session for a user that is fully logged in. */
+export function useUser() {
+  const { user } = useFullUserSession()
+
+  return user
 }

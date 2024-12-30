@@ -29,6 +29,7 @@ import { ErrorBoundary, useErrorBoundary } from '#/components/ErrorBoundary'
 import SvgMask from '#/components/SvgMask'
 import { listDirectoryQueryOptions } from '#/hooks/backendHooks'
 import { useEventCallback } from '#/hooks/eventCallbackHooks'
+import type { Category } from '#/layouts/CategorySwitcher/Category'
 import { useTargetDirectory } from '#/providers/DriveProvider'
 import { DirectoryDoesNotExistError, Plan } from '#/services/Backend'
 import AssetQuery from '#/utilities/AssetQuery'
@@ -41,6 +42,7 @@ import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { useDeferredValue, useEffect } from 'react'
 import { toast } from 'react-toastify'
 import { Suspense } from '../components/Suspense'
+import { useCategoriesAPI } from './Drive/Categories/categoriesHooks'
 import { useDirectoryIds } from './Drive/directoryIdsHooks'
 
 // =============
@@ -49,9 +51,6 @@ import { useDirectoryIds } from './Drive/directoryIdsHooks'
 
 /** Props for a {@link Drive}. */
 export interface DriveProps {
-  readonly category: categoryModule.Category
-  readonly setCategory: (category: categoryModule.Category) => void
-  readonly resetCategory: () => void
   readonly hidden: boolean
   readonly initialProjectName: string | null
   readonly assetsManagementApiRef: React.Ref<assetsTable.AssetManagementApi>
@@ -61,13 +60,14 @@ const CATEGORIES_TO_DISPLAY_START_MODAL = ['cloud', 'local', 'local-directory']
 
 /** Contains directory path and directory contents (projects, folders, secrets and files). */
 function Drive(props: DriveProps) {
-  const { category, resetCategory, setCategory } = props
-
   const { isOffline } = offlineHooks.useOffline()
   const toastAndLog = toastAndLogHooks.useToastAndLog()
   const { user } = authProvider.useFullUserSession()
   const localBackend = backendProvider.useLocalBackend()
   const { getText } = textProvider.useText()
+  const categoriesAPI = useCategoriesAPI()
+  const { category, resetCategory, setCategory } = categoriesAPI
+
   const isCloud = categoryModule.isCloudCategory(category)
 
   const supportLocalBackend = localBackend != null
@@ -140,7 +140,7 @@ function Drive(props: DriveProps) {
           }}
         >
           <Suspense>
-            <DriveAssetsView {...props} />
+            <DriveAssetsView {...props} category={category} setCategory={setCategory} />
           </Suspense>
         </ErrorBoundary>
       )
@@ -149,9 +149,17 @@ function Drive(props: DriveProps) {
 }
 
 /**
+ * Props for a {@link DriveAssetsView}.
+ */
+interface DriveAssetsViewProps extends DriveProps {
+  readonly category: Category
+  readonly setCategory: (categoryId: Category['id']) => void
+}
+
+/**
  * The assets view of the Drive.
  */
-function DriveAssetsView(props: DriveProps) {
+function DriveAssetsView(props: DriveAssetsViewProps) {
   const {
     category,
     setCategory,
@@ -263,8 +271,8 @@ function DriveAssetsView(props: DriveProps) {
         />
 
         <div className="flex flex-1 gap-drive overflow-hidden">
-          <div className="flex w-36 flex-none flex-col gap-drive-sidebar overflow-y-auto overflow-x-hidden py-drive-sidebar-y">
-            <CategorySwitcher category={category} setCategory={setCategory} />
+          <div className="flex w-40 flex-none flex-col gap-drive-sidebar overflow-y-auto overflow-x-hidden py-drive-sidebar-y">
+            <CategorySwitcher category={category} setCategoryId={setCategory} />
 
             {isCloud && (
               <Labels
@@ -302,7 +310,7 @@ function DriveAssetsView(props: DriveProps) {
  */
 interface OfflineMessageProps {
   readonly supportLocalBackend: boolean
-  readonly setCategory: (category: categoryModule.Category) => void
+  readonly setCategory: (category: categoryModule.Category['id']) => void
 }
 
 /**
@@ -327,7 +335,7 @@ function OfflineMessage(props: OfflineMessageProps) {
           variant="primary"
           className="mx-auto"
           onPress={() => {
-            setCategory({ type: 'local' })
+            setCategory('local')
           }}
         >
           {getText('switchToLocal')}

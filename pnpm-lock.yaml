@@ -548,6 +548,9 @@ importers:
       prettier-plugin-tailwindcss:
         specifier: ^0.5.11
         version: 0.5.14(@ianvs/prettier-plugin-sort-imports@4.3.0(prettier@3.3.2))(prettier-plugin-organize-imports@4.0.0(prettier@3.3.2)(typescript@5.5.3)(vue-tsc@2.0.24(typescript@5.5.3)))(prettier@3.3.2)
+      resize-observer-polyfill:
+        specifier: 1.5.1
+        version: 1.5.1
       shuffle-seed:
         specifier: ^1.1.6
         version: 1.1.6
@@ -7029,6 +7032,9 @@ packages:
   resize-img@1.1.2:
     resolution: {integrity: sha512-/4nKUmuNPuM6gYTWad136ica81baOVjpesgv8FGaIvP0KWcbCWahOWBKaM4tFoM+aVcSA+qQDg28pcnIzFRpJw==}
     engines: {node: '>=4'}
+
+  resize-observer-polyfill@1.5.1:
+    resolution: {integrity: sha512-LwZrotdHOo12nQuZlHEmtuXdqGoOD0OhaxopaNFxWzInpEgaLWoVuAMbTzixuosCx2nEG58ngzW3vxdWoxIgdg==}
 
   resolve-alpn@1.2.1:
     resolution: {integrity: sha512-0a1F4l73/ZFZOakJnQ3FvkJ2+gSTQWz/r2KE5OdDY0TxPm5h4GkqkWWfM47T7HsbnOtcJVEF4epCVy6u7Q3K+g==}
@@ -15778,6 +15784,8 @@ snapshots:
       jimp: 0.2.28
       jpeg-js: 0.1.2
       parse-png: 1.1.2
+
+  resize-observer-polyfill@1.5.1: {}
 
   resolve-alpn@1.2.1: {}
 

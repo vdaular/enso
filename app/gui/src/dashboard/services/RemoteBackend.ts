@@ -14,6 +14,7 @@ import type * as textProvider from '#/providers/TextProvider'
 import Backend, * as backend from '#/services/Backend'
 import * as remoteBackendPaths from '#/services/remoteBackendPaths'
 
+import { DirectoryId, UserGroupId } from '#/services/Backend'
 import * as download from '#/utilities/download'
 import type HttpClient from '#/utilities/HttpClient'
 import * as object from '#/utilities/object'
@@ -48,15 +49,102 @@ function responseIsSuccessful(response: Response) {
   return response.status >= STATUS_SUCCESS_FIRST && response.status <= STATUS_SUCCESS_LAST
 }
 
-// ====================================
-// === isSpecialReadonlyDirectoryId ===
-// ====================================
-
 /** Whether the given directory is a special directory that cannot be written to. */
 export function isSpecialReadonlyDirectoryId(id: backend.AssetId) {
   return (
     id === remoteBackendPaths.USERS_DIRECTORY_ID || id === remoteBackendPaths.TEAMS_DIRECTORY_ID
   )
+}
+
+/**
+ * Extract the ID from the given user group ID.
+ * Removes the `usergroup-` prefix.
+ * @param id - The user group ID.
+ * @returns The ID.
+ */
+export function extractIdFromUserGroupId(id: backend.UserGroupId) {
+  return id.replace(/^usergroup-/, '')
+}
+
+/**
+ * Extract the ID from the given organization ID.
+ * Removes the `organization-` prefix.
+ */
+export function extractIdFromOrganizationId(id: backend.OrganizationId) {
+  return id.replace(/^organization-/, '')
+}
+
+/**
+ * Extract the ID from the given directory ID.
+ * Removes the `directory-` prefix.
+ */
+export function extractIdFromDirectoryId(id: backend.DirectoryId) {
+  return id.replace(/^directory-/, '')
+}
+
+/**
+ * Extract the ID from the given user ID.
+ * Removes the `user-` prefix.
+ */
+export function extractIdFromUserId(id: backend.UserId) {
+  return id.replace(/^user-/, '')
+}
+
+/**
+ * Convert a user group ID to a directory ID.
+ */
+export function userGroupIdToDirectoryId(id: backend.UserGroupId): backend.DirectoryId {
+  return DirectoryId(`directory-${extractIdFromUserGroupId(id)}` as const)
+}
+
+/**
+ * Convert a user ID to a directory ID.
+ */
+export function userIdToDirectoryId(id: backend.UserId): backend.DirectoryId {
+  return DirectoryId(`directory-${extractIdFromUserId(id)}` as const)
+}
+
+/**
+ * Convert organization ID to a directory ID
+ */
+export function organizationIdToDirectoryId(id: backend.OrganizationId): backend.DirectoryId {
+  return DirectoryId(`directory-${extractIdFromOrganizationId(id)}` as const)
+}
+
+/**
+ * Convert a directory ID to a user group ID.
+ * @param id - The directory ID.
+ * @returns The user group ID.
+ */
+export function directoryIdToUserGroupId(id: backend.DirectoryId): backend.UserGroupId {
+  return UserGroupId(`usergroup-${extractIdFromDirectoryId(id)}` as const)
+}
+
+/**
+ * Whether the given string is a valid organization ID.
+ * @param id - The string to check.
+ * @returns Whether the string is a valid organization ID.
+ */
+export function isOrganizationId(id: string): id is backend.OrganizationId {
+  return id.startsWith('organization-')
+}
+
+/**
+ * Whether the given string is a valid user ID.
+ * @param id - The string to check.
+ * @returns Whether the string is a valid user ID.
+ */
+export function isUserId(id: string): id is backend.UserId {
+  return id.startsWith('user-')
+}
+
+/**
+ * Whether the given string is a valid user group ID.
+ * @param id - The string to check.
+ * @returns Whether the string is a valid user group ID.
+ */
+export function idIsUserGroupId(id: string): id is backend.UserGroupId {
+  return id.startsWith('usergroup-')
 }
 
 // =============
@@ -191,7 +279,9 @@ export default class RemoteBackend extends Backend {
       case backend.Plan.team:
       case backend.Plan.enterprise: {
         return organization == null ? null : (
-            backend.DirectoryId(`directory-${organization.id.replace(/^organization-/, '')}`)
+            backend.DirectoryId(
+              `directory-${organization.id.replace(/^organization-/, '')}` as const,
+            )
           )
       }
     }

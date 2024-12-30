@@ -36,9 +36,10 @@ export default function ConfirmDeleteModal(props: ConfirmDeleteModalProps) {
         <Text className="relative">{getText('confirmPrompt', actionText)}</Text>
 
         <ButtonGroup>
-          <Form.Submit variant="delete" className="relative">
+          <Form.Submit variant="delete" className="relative" autoFocus>
             {actionButtonLabel}
           </Form.Submit>
+
           <DialogDismiss />
         </ButtonGroup>
       </Form>

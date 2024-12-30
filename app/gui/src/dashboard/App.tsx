@@ -50,7 +50,6 @@ import * as inputBindingsModule from '#/configurations/inputBindings'
 
 import AuthProvider, * as authProvider from '#/providers/AuthProvider'
 import BackendProvider, { useLocalBackend } from '#/providers/BackendProvider'
-import DriveProvider from '#/providers/DriveProvider'
 import { useHttpClientStrict } from '#/providers/HttpClientProvider'
 import InputBindingsProvider from '#/providers/InputBindingsProvider'
 import LocalStorageProvider, * as localStorageProvider from '#/providers/LocalStorageProvider'
@@ -556,18 +555,14 @@ function AppRouter(props: AppRouterProps) {
             onAuthenticated={onAuthenticated}
           >
             <InputBindingsProvider inputBindings={inputBindings}>
-              {/* Ideally this would be in `Drive.tsx`, but it currently must be all the way out here
-               * due to modals being in `TheModal`. */}
-              <DriveProvider>
-                <LocalBackendPathSynchronizer />
-                <VersionChecker />
-                {routes}
-                <suspense.Suspense>
-                  <errorBoundary.ErrorBoundary>
-                    <devtools.EnsoDevtools />
-                  </errorBoundary.ErrorBoundary>
-                </suspense.Suspense>
-              </DriveProvider>
+              <LocalBackendPathSynchronizer />
+              <VersionChecker />
+              {routes}
+              <suspense.Suspense>
+                <errorBoundary.ErrorBoundary>
+                  <devtools.EnsoDevtools />
+                </errorBoundary.ErrorBoundary>
+              </suspense.Suspense>
             </InputBindingsProvider>
           </AuthProvider>
         </BackendProvider>

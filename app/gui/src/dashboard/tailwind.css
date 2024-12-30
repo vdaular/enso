@@ -568,7 +568,3 @@ html.disable-animations * {
 .Toastify__toast {
   @apply rounded-2xl;
 }
-
-.Toastify--animate {
-  /* animation-duration: 200ms; */
-}

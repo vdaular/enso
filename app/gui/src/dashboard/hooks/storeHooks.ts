@@ -7,6 +7,7 @@ import type { DispatchWithoutAction, Reducer, RefObject } from 'react'
 import { useEffect, useReducer, useRef } from 'react'
 import { type StoreApi } from 'zustand'
 import { useStoreWithEqualityFn } from 'zustand/traditional'
+
 import { objectEquality, refEquality, shallowEquality } from '../utilities/equalities'
 
 /**

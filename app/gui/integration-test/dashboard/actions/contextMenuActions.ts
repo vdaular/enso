@@ -61,18 +61,20 @@ export function contextMenuActions<T extends BaseActions<Context>, Context>(
           .click(),
       ),
     moveNonFolderToTrash: () =>
-      step('Move to trash (context menu)', (page) =>
-        page
+      step('Move to trash (context menu)', async (page) => {
+        await page
           .getByRole('button', { name: TEXT.moveToTrashShortcut })
           .getByText(TEXT.moveToTrashShortcut)
-          .click(),
-      ),
+          .click()
+      }),
     moveFolderToTrash: () =>
       step('Move folder to trash (context menu)', async (page) => {
         await page
           .getByRole('button', { name: TEXT.moveToTrashShortcut })
           .getByText(TEXT.moveToTrashShortcut)
           .click()
+
+        // Confirm the deletion in the dialog
         await page.getByRole('button', { name: TEXT.delete }).getByText(TEXT.delete).click()
       }),
     moveAllToTrash: () =>

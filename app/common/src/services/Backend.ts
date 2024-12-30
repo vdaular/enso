@@ -14,20 +14,36 @@ export const S3_CHUNK_SIZE_BYTES = 10_000_000
 // ================
 
 /** Unique identifier for an organization. */
-export type OrganizationId = newtype.Newtype<string, 'OrganizationId'>
+export type OrganizationId = newtype.Newtype<`organization-${string}`, 'OrganizationId'>
 export const OrganizationId = newtype.newtypeConstructor<OrganizationId>()
+/** Whether a given {@link string} is an {@link OrganizationId}. */
+export function isOrganizationId(id: string): id is OrganizationId {
+  return id.startsWith('organization-')
+}
 
 /** Unique identifier for a user in an organization. */
 export type UserId = newtype.Newtype<string, 'UserId'>
 export const UserId = newtype.newtypeConstructor<UserId>()
+/** Whether a given {@link string} is an {@link UserId}. */
+export function isUserId(id: string): id is UserId {
+  return id.startsWith('user-')
+}
 
 /** Unique identifier for a user group. */
-export type UserGroupId = newtype.Newtype<string, 'UserGroupId'>
+export type UserGroupId = newtype.Newtype<`usergroup-${string}`, 'UserGroupId'>
 export const UserGroupId = newtype.newtypeConstructor<UserGroupId>()
+/** Whether a given {@link string} is an {@link UserGroupId}. */
+export function isUserGroupId(id: string): id is UserGroupId {
+  return id.startsWith('usergroup-')
+}
 
 /** Unique identifier for a directory. */
-export type DirectoryId = newtype.Newtype<string, 'DirectoryId'>
+export type DirectoryId = newtype.Newtype<`directory-${string}`, 'DirectoryId'>
 export const DirectoryId = newtype.newtypeConstructor<DirectoryId>()
+/** Whether a given {@link string} is an {@link DirectoryId}. */
+export function isDirectoryId(id: string): id is DirectoryId {
+  return id.startsWith('directory-')
+}
 
 /**
  * Unique identifier for an asset representing the items inside a directory for which the
@@ -118,16 +134,6 @@ export type UserPermissionIdentifier = UserGroupId | UserId
 export type Path = newtype.Newtype<string, 'Path'>
 export const Path = newtype.newtypeConstructor<Path>()
 
-/** Whether a given {@link string} is an {@link UserId}. */
-export function isUserId(id: string): id is UserId {
-  return id.startsWith('user-')
-}
-
-/** Whether a given {@link string} is an {@link UserGroupId}. */
-export function isUserGroupId(id: string): id is UserGroupId {
-  return id.startsWith('usergroup-')
-}
-
 const PLACEHOLDER_USER_GROUP_PREFIX = 'usergroup-placeholder-'
 
 /**
@@ -143,7 +149,7 @@ export function isPlaceholderUserGroupId(id: string) {
  * being created on the backend.
  */
 export function newPlaceholderUserGroupId() {
-  return UserGroupId(`${PLACEHOLDER_USER_GROUP_PREFIX}${uniqueString.uniqueString()}`)
+  return UserGroupId(`${PLACEHOLDER_USER_GROUP_PREFIX}${uniqueString.uniqueString()}` as const)
 }
 
 // =============
@@ -830,7 +836,7 @@ export function createRootDirectoryAsset(directoryId: DirectoryId): DirectoryAss
     title: '(root)',
     id: directoryId,
     modifiedAt: dateTime.toRfc3339(new Date()),
-    parentId: DirectoryId(''),
+    parentId: DirectoryId('directory-'),
     permissions: [],
     projectState: null,
     extension: null,
@@ -905,7 +911,7 @@ export function createPlaceholderDirectoryAsset(
 ): DirectoryAsset {
   return {
     type: AssetType.directory,
-    id: DirectoryId(createPlaceholderId()),
+    id: DirectoryId(`directory-${createPlaceholderId()}` as const),
     title,
     parentId,
     permissions: assetPermissions,
@@ -1075,7 +1081,7 @@ export function createPlaceholderAssetId<Type extends AssetType>(
   let result: AssetId
   switch (assetType) {
     case AssetType.directory: {
-      result = DirectoryId(id)
+      result = DirectoryId(`directory-${id}` as const)
       break
     }
     case AssetType.project: {

@@ -7,7 +7,6 @@ import { Suspense } from '#/components/Suspense'
 import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import { useOpenProjectMutation, useRenameProjectMutation } from '#/hooks/projectHooks'
 import type { AssetManagementApi } from '#/layouts/AssetsTable'
-import type { Category } from '#/layouts/CategorySwitcher/Category'
 import Drive from '#/layouts/Drive'
 import type { GraphEditorRunner } from '#/layouts/Editor'
 import Editor from '#/layouts/Editor'
@@ -22,22 +21,11 @@ export interface DashboardTabPanelsProps {
   readonly initialProjectName: string | null
   readonly ydocUrl: string | null
   readonly assetManagementApiRef: React.RefObject<AssetManagementApi> | null
-  readonly category: Category
-  readonly setCategory: (category: Category) => void
-  readonly resetCategory: () => void
 }
 
 /** The tab panels for the dashboard page. */
 export function DashboardTabPanels(props: DashboardTabPanelsProps) {
-  const {
-    appRunner,
-    initialProjectName,
-    ydocUrl,
-    assetManagementApiRef,
-    category,
-    setCategory,
-    resetCategory,
-  } = props
+  const { appRunner, initialProjectName, ydocUrl, assetManagementApiRef } = props
 
   const page = usePage()
 
@@ -62,9 +50,6 @@ export function DashboardTabPanels(props: DashboardTabPanelsProps) {
       children: (
         <Drive
           assetsManagementApiRef={assetManagementApiRef}
-          category={category}
-          setCategory={setCategory}
-          resetCategory={resetCategory}
           hidden={page !== TabType.drive}
           initialProjectName={initialProjectName}
         />

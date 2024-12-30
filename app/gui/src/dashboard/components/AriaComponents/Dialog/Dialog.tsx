@@ -20,10 +20,10 @@ import { tv } from '#/utilities/tailwindVariants'
 import { Close } from './Close'
 import * as dialogProvider from './DialogProvider'
 import * as dialogStackProvider from './DialogStackProvider'
+import { DialogTrigger } from './DialogTrigger'
 import type * as types from './types'
 import * as utlities from './utilities'
 import { DIALOG_BACKGROUND } from './variants'
-
 // eslint-disable-next-line no-restricted-syntax
 const MotionDialog = motion(aria.Dialog)
 
@@ -551,3 +551,4 @@ const DialogHeader = React.memo(function DialogHeader(props: DialogHeaderProps) 
 })
 
 Dialog.Close = Close
+Dialog.Trigger = DialogTrigger

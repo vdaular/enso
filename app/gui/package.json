@@ -17,7 +17,9 @@
   },
   "//": [
     "--max-old-space-size=4096 is required when sourcemaps are enabled,",
-    "otherwise Rollup runs out of memory when Vite is rendering chunks."
+    "otherwise Rollup runs out of memory when Vite is rendering chunks.",
+    "ResizeObserver is required for the dashboard tests to work.",
+    "ResizeObserver is not supported in vitest, so we need to stub it."
   ],
   "scripts": {
     "typecheck": "vue-tsc --noEmit -p tsconfig.app.json",
@@ -217,7 +219,8 @@
     "vue-react-wrapper": "^0.3.1",
     "vue-tsc": "^2.0.24",
     "yaml": "^2.4.5",
-    "ydoc-server": "workspace:*"
+    "ydoc-server": "workspace:*",
+    "resize-observer-polyfill": "1.5.1"
   },
   "overrides": {
     "@aws-amplify/auth": "../_IGNORED_",

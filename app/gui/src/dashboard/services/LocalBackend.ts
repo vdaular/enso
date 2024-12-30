@@ -31,7 +31,7 @@ function ipWithSocketToAddress(ipWithSocket: projectManager.IpWithSocket) {
 
 /** Create a {@link backend.DirectoryId} from a path. */
 export function newDirectoryId(path: projectManager.Path) {
-  return backend.DirectoryId(`${backend.AssetType.directory}-${path}`)
+  return backend.DirectoryId(`${backend.AssetType.directory}-${path}` as const)
 }
 
 /** Create a {@link backend.ProjectId} from a UUID. */
@@ -239,7 +239,7 @@ export default class LocalBackend extends Backend {
     const result = await this.projectManager.listProjects({})
     return result.projects.map((project) => ({
       name: project.name,
-      organizationId: backend.OrganizationId(''),
+      organizationId: backend.OrganizationId('organization-'),
       projectId: newProjectId(project.id),
       packageName: project.name,
       state: {
@@ -269,7 +269,7 @@ export default class LocalBackend extends Backend {
     })
     return {
       name: project.projectName,
-      organizationId: backend.OrganizationId(''),
+      organizationId: backend.OrganizationId('organization-'),
       projectId: newProjectId(project.projectId),
       packageName: project.projectName,
       state: { type: backend.ProjectState.closed, volumeId: '' },
@@ -338,7 +338,7 @@ export default class LocalBackend extends Backend {
           jsonAddress: null,
           binaryAddress: null,
           ydocAddress: null,
-          organizationId: backend.OrganizationId(''),
+          organizationId: backend.OrganizationId('organization-'),
           packageName: project.name,
           projectId,
           state: { type: backend.ProjectState.closed, volumeId: '' },
@@ -359,7 +359,7 @@ export default class LocalBackend extends Backend {
         jsonAddress: ipWithSocketToAddress(cachedProject.languageServerJsonAddress),
         binaryAddress: ipWithSocketToAddress(cachedProject.languageServerBinaryAddress),
         ydocAddress: null,
-        organizationId: backend.OrganizationId(''),
+        organizationId: backend.OrganizationId('organization-'),
         packageName: cachedProject.projectNormalizedName,
         projectId,
         state: {
@@ -441,7 +441,7 @@ export default class LocalBackend extends Backend {
           engineVersion: version,
           ideVersion: version,
           name: project.name,
-          organizationId: backend.OrganizationId(''),
+          organizationId: backend.OrganizationId('organization-'),
           projectId,
         }
       }
@@ -456,7 +456,7 @@ export default class LocalBackend extends Backend {
       projectId: newProjectId(project.projectId),
       name: project.projectName,
       packageName: project.projectNormalizedName,
-      organizationId: backend.OrganizationId(''),
+      organizationId: backend.OrganizationId('organization-'),
       state: { type: backend.ProjectState.closed, volumeId: '' },
     }
   }
