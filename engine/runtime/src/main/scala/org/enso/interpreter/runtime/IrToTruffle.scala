@@ -1,6 +1,5 @@
 package org.enso.interpreter.runtime
 
-import java.util.logging.Level
 import com.oracle.truffle.api.source.{Source, SourceSection}
 import com.oracle.truffle.api.interop.InteropLibrary
 import org.enso.compiler.pass.analyse.FramePointer
@@ -107,6 +106,9 @@ import org.enso.interpreter.runtime.scope.{ImportExportScope, ModuleScope}
 import org.enso.interpreter.{Constants, EnsoLanguage}
 
 import java.math.BigInteger
+import java.util.function.Supplier
+import java.util.logging.Level
+
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -265,101 +267,111 @@ class IrToTruffle(
     atomCons: AtomConstructor,
     atomDefn: Definition.Data
   ): Unit = {
-    val scopeInfo = rootScopeInfo("atom definition", atomDefn)
+    val initializationBuilderSupplier
+      : Supplier[AtomConstructor.InitializationBuilder] =
+      () => {
+        val scopeInfo = rootScopeInfo("atom definition", atomDefn)
 
-    def dataflowInfo() = atomDefn.unsafeGetMetadata(
-      DataflowAnalysis,
-      "No dataflow information associated with an atom."
-    )
-    def frameInfo() = atomDefn.unsafeGetMetadata(
-      FramePointerAnalysis,
-      "Method definition missing frame information."
-    )
-    val localScope = new LocalScope(
-      None,
-      () => scopeInfo().graph,
-      () => scopeInfo().graph.rootScope,
-      dataflowInfo,
-      frameInfo
-    )
-
-    val argFactory =
-      new DefinitionArgumentProcessor(
-        scope       = localScope,
-        initialName = "Type " + tpDef.name.name
-      )
-    val argDefs =
-      new Array[ArgumentDefinition](atomDefn.arguments.size)
-    val argumentExpressions =
-      new ArrayBuffer[(RuntimeExpression, RuntimeExpression)]
-
-    for (idx <- atomDefn.arguments.indices) {
-      val unprocessedArg = atomDefn.arguments(idx)
-      val checkNode      = checkAsTypes(unprocessedArg)
-      val arg            = argFactory.run(unprocessedArg, idx, checkNode)
-      val fp = unprocessedArg
-        .unsafeGetMetadata(
+        def dataflowInfo() = atomDefn.unsafeGetMetadata(
+          DataflowAnalysis,
+          "No dataflow information associated with an atom."
+        )
+        def frameInfo() = atomDefn.unsafeGetMetadata(
           FramePointerAnalysis,
-          "No frame pointer on an argument definition."
+          "Method definition missing frame information."
         )
-        .asInstanceOf[FramePointer]
-      val slotIdx = fp.frameSlotIdx()
-      argDefs(idx) = arg
-      val readArgNoCheck =
-        ReadArgumentNode.build(
-          idx,
-          arg.getDefaultValue.orElse(null)
+        val localScope = new LocalScope(
+          None,
+          () => scopeInfo().graph,
+          () => scopeInfo().graph.rootScope,
+          dataflowInfo,
+          frameInfo
         )
-      val readArg       = TypeCheckValueNode.wrap(readArgNoCheck, checkNode)
-      val assignmentArg = AssignmentNode.build(readArg, slotIdx)
-      val argRead =
-        ReadLocalVariableNode.build(new FramePointer(0, slotIdx))
-      argumentExpressions.append((assignmentArg, argRead))
-    }
 
-    val (assignments, reads) = argumentExpressions.unzip
-    // build annotations
-    val annotations = atomDefn.annotations.map { annotation =>
-      val scopeElements = Seq(
-        tpDef.name.name,
-        atomDefn.name.name,
-        annotation.name
-      )
-      val scopeName =
-        scopeElements.mkString(Constants.SCOPE_SEPARATOR)
-      val expressionProcessor = new ExpressionProcessor(
-        scopeName,
-        () => scopeInfo().graph,
-        () => scopeInfo().graph.rootScope,
-        dataflowInfo,
-        atomDefn.name.name,
-        frameInfo
-      )
-      val expressionNode =
-        expressionProcessor.run(annotation.expression, true)
-      val closureName = s"<default::$scopeName>"
-      val closureRootNode = ClosureRootNode.build(
-        language,
-        expressionProcessor.scope,
-        scopeBuilder.asModuleScope(),
-        expressionNode,
-        makeSection(scopeBuilder.getModule, annotation.location),
-        closureName,
-        true,
-        false
-      )
-      new RuntimeAnnotation(annotation.name, closureRootNode)
-    }
+        val argFactory =
+          new DefinitionArgumentProcessor(
+            scope       = localScope,
+            initialName = "Type " + tpDef.name.name
+          )
+        val argDefs =
+          new Array[ArgumentDefinition](atomDefn.arguments.size)
+        val argumentExpressions =
+          new ArrayBuffer[(RuntimeExpression, RuntimeExpression)]
+
+        for (idx <- atomDefn.arguments.indices) {
+          val unprocessedArg = atomDefn.arguments(idx)
+          val checkNode      = checkAsTypes(unprocessedArg)
+          val arg            = argFactory.run(unprocessedArg, idx, checkNode)
+          val fp = unprocessedArg
+            .unsafeGetMetadata(
+              FramePointerAnalysis,
+              "No frame pointer on an argument definition."
+            )
+            .asInstanceOf[FramePointer]
+          val slotIdx = fp.frameSlotIdx()
+          argDefs(idx) = arg
+          val readArgNoCheck =
+            ReadArgumentNode.build(
+              idx,
+              arg.getDefaultValue.orElse(null)
+            )
+          val readArg       = TypeCheckValueNode.wrap(readArgNoCheck, checkNode)
+          val assignmentArg = AssignmentNode.build(readArg, slotIdx)
+          val argRead =
+            ReadLocalVariableNode.build(new FramePointer(0, slotIdx))
+          argumentExpressions.append((assignmentArg, argRead))
+        }
+
+        val (assignments, reads) = argumentExpressions.unzip
+        // build annotations
+        val annotations = atomDefn.annotations.map { annotation =>
+          val scopeElements = Seq(
+            tpDef.name.name,
+            atomDefn.name.name,
+            annotation.name
+          )
+          val scopeName =
+            scopeElements.mkString(Constants.SCOPE_SEPARATOR)
+          val expressionProcessor = new ExpressionProcessor(
+            scopeName,
+            () => scopeInfo().graph,
+            () => scopeInfo().graph.rootScope,
+            dataflowInfo,
+            atomDefn.name.name,
+            frameInfo
+          )
+          val expressionNode =
+            expressionProcessor.run(annotation.expression, true)
+          val closureName = s"<default::$scopeName>"
+          val closureRootNode = ClosureRootNode.build(
+            language,
+            expressionProcessor.scope,
+            scopeBuilder.asModuleScope(),
+            expressionNode,
+            makeSection(scopeBuilder.getModule, annotation.location),
+            closureName,
+            true,
+            false
+          )
+          new RuntimeAnnotation(annotation.name, closureRootNode)
+        }
+
+        AtomConstructor.newInitializationBuilder(
+          makeSection(scopeBuilder.getModule, atomDefn.location),
+          localScope,
+          assignments.toArray,
+          reads.toArray,
+          annotations.toArray,
+          argDefs
+        )
+      }
     if (!atomCons.isInitialized) {
+      val fieldNames = atomDefn.arguments.map(_.name.name).toArray
       atomCons.initializeFields(
         language,
-        makeSection(scopeBuilder.getModule, atomDefn.location),
-        localScope,
         scopeBuilder,
-        assignments.toArray,
-        reads.toArray,
-        annotations.toArray,
-        argDefs: _*
+        initializationBuilderSupplier,
+        fieldNames
       )
     }
   }
