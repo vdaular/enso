@@ -1290,7 +1290,8 @@ export interface CreateSecretRequestBody {
 
 /** HTTP request body for the "update secret" endpoint. */
 export interface UpdateSecretRequestBody {
-  readonly value: string
+  readonly title: string | null
+  readonly value: string | null
 }
 
 /** HTTP request body for the "create datalink" endpoint. */

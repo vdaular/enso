@@ -948,9 +948,13 @@ function AssetsTable(props: AssetsTableProps) {
                   <UpsertSecretModal
                     id={item.item.id}
                     name={item.item.title}
-                    doCreate={async (_name, value) => {
+                    doCreate={async (title, value) => {
                       try {
-                        await updateSecretMutation.mutateAsync([id, { value }, item.item.title])
+                        await updateSecretMutation.mutateAsync([
+                          id,
+                          { title, value },
+                          item.item.title,
+                        ])
                       } catch (error) {
                         toastAndLog(null, error)
                       }

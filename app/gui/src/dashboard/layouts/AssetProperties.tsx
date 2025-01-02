@@ -356,8 +356,8 @@ function AssetPropertiesInternal(props: AssetPropertiesInternalProps) {
             canCancel={false}
             id={item.id}
             name={item.title}
-            doCreate={async (name, value) => {
-              await updateSecretMutation.mutateAsync([item.id, { value }, name])
+            doCreate={async (title, value) => {
+              await updateSecretMutation.mutateAsync([item.id, { title, value }, title])
             }}
           />
         </div>
