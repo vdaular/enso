@@ -28,7 +28,7 @@
 [11856]: https://github.com/enso-org/enso/pull/11856
 [11897]: https://github.com/enso-org/enso/pull/11897
 
-# Enso 2024.4
+# Enso 2024.5
 
 #### Enso IDE
 
