@@ -121,6 +121,8 @@ class UpsertVisualizationJob(
                 )
                 None
               case None =>
+                // Caching disabled due to #11882
+                // ctx.state.executionHooks.add(InvalidateCaches(expressionId))
                 Some(Executable(config.executionContextId, stack))
             }
         }
@@ -160,7 +162,7 @@ class UpsertVisualizationJob(
 object UpsertVisualizationJob {
 
   /** Invalidate caches for a particular expression id. */
-  sealed private case class InvalidateCaches(
+  sealed case class InvalidateCaches(
     expressionId: Api.ExpressionId
   )(implicit ctx: RuntimeContext)
       extends Runnable {
@@ -511,7 +513,6 @@ object UpsertVisualizationJob {
         arguments
       )
     setCacheWeights(visualization)
-    ctx.state.executionHooks.add(InvalidateCaches(expressionId))
     ctx.contextManager.upsertVisualization(
       visualizationConfig.executionContextId,
       visualization

@@ -484,6 +484,8 @@ class EnsureCompiledJob(
       )
     invalidatedVisualizations.foreach { visualization =>
       UpsertVisualizationJob.upsertVisualization(visualization)
+    // Cache invalidation disabled because of #11882
+    // ctx.state.executionHooks.add(InvalidateCaches(visualization.expressionId))
     }
     if (invalidatedVisualizations.nonEmpty) {
       ctx.executionService.getLogger.log(
