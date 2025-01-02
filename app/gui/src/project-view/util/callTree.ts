@@ -120,9 +120,13 @@ export class ArgumentPlaceholder extends Argument {
     return this.argInfo.defaultValue
   }
 
-  /** TODO: Add docs */
+  /** Whether the argument should be hidden when the component isn't currently focused for editing. */
   override get hideByDefault(): boolean {
-    return !isRequiredArgument(this.argInfo) && this.dynamicConfig?.display !== DisplayMode.Always
+    return (
+      this.argInfo.hasDefault &&
+      !isRequiredArgument(this.argInfo) &&
+      this.dynamicConfig?.display !== DisplayMode.Always
+    )
   }
 }
 
