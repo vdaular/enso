@@ -44,7 +44,7 @@ function accepted() {
     const value = edit.getVersion(props.input.value)
     if (value.rawTextContent === editedContents.value) return
     value.setRawTextContent(editedContents.value)
-    props.onUpdate({ edit })
+    props.onUpdate({ edit, directInteraction: true })
   } else {
     let value: Ast.Owned<Ast.MutableTextLiteral>
     if (inputTextLiteral.value) {
@@ -58,6 +58,7 @@ function accepted() {
         value,
         origin: props.input.portId,
       },
+      directInteraction: true,
     })
   }
 }
