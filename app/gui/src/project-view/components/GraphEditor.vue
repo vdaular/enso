@@ -580,6 +580,7 @@ async function handleFileDrop(event: DragEvent) {
   if (!event.dataTransfer?.items) return
   ;[...event.dataTransfer.items].forEach(async (item, index) => {
     if (item.kind === 'file') {
+      if (!graphStore.methodAst.ok) return
       const file = item.getAsFile()
       if (!file) return
       const clientPos = new Vec2(event.clientX, event.clientY)
@@ -591,7 +592,7 @@ async function handleFileDrop(event: DragEvent) {
         pos,
         projectStore.isOnLocalBackend,
         event.shiftKey,
-        projectStore.executionContext.getStackTop(),
+        graphStore.methodAst.value.externalId,
       )
       const uploadResult = await uploader.upload()
       if (uploadResult.ok) {
