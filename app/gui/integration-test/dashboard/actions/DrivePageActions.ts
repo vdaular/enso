@@ -375,6 +375,14 @@ export default class DrivePageActions<Context> extends PageActions<Context> {
     })
   }
 
+  /** Clear trash. */
+  clearTrash() {
+    return this.step('Clear trash', async (page) => {
+      await page.getByText(TEXT.clearTrash).click()
+      await page.getByRole('button', { name: TEXT.delete }).getByText(TEXT.delete).click()
+    })
+  }
+
   /** Create a new empty project. */
   newEmptyProject() {
     return this.step(

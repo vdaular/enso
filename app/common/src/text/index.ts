@@ -3,10 +3,6 @@
 import { unsafeKeys } from '../utilities/data/object'
 import ENGLISH from './english.json' with { type: 'json' }
 
-// =============
-// === Types ===
-// =============
-
 /** Possible languages in which to display text. */
 export enum Language {
   english = 'english',
@@ -46,6 +42,7 @@ interface PlaceholderOverrides {
   readonly confirmPrompt: [action: string]
   readonly trashTheAssetTypeTitle: [assetType: string, assetName: string]
   readonly deleteTheAssetTypeTitle: [assetType: string, assetName: string]
+  readonly deleteTheAssetTypeTitleForever: [assetType: string, assetName: string]
   readonly couldNotInviteUser: [userEmail: string]
   readonly filesWithoutConflicts: [fileCount: number]
   readonly projectsWithoutConflicts: [projectCount: number]

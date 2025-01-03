@@ -223,7 +223,9 @@ export default function DriveBar(props: DriveBarProps) {
 
             <ConfirmDeleteModal
               actionText={getText('allTrashedItemsForever')}
-              doDelete={doEmptyTrash}
+              doDelete={() => {
+                doEmptyTrash()
+              }}
             />
           </DialogTrigger>
           {pasteDataStatus}

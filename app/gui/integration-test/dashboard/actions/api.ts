@@ -103,7 +103,7 @@ const INITIAL_CALLS_OBJECT = {
   updateDirectory: array<
     { directoryId: backend.DirectoryId } & backend.UpdateDirectoryRequestBody
   >(),
-  deleteAsset: array<{ assetId: backend.AssetId }>(),
+  deleteAsset: array<{ assetId: backend.AssetId; force: boolean }>(),
   undoDeleteAsset: array<{ assetId: backend.AssetId }>(),
   createUser: array<backend.CreateUserRequestBody>(),
   createUserGroup: array<backend.CreateUserGroupRequestBody>(),
@@ -281,6 +281,17 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
     deletedAssets.add(assetId)
 
     return !alreadyDeleted
+  }
+
+  const forceDeleteAsset = (assetId: backend.AssetId) => {
+    const hasAsset = assetMap.has(assetId)
+    deletedAssets.delete(assetId)
+    assetMap.delete(assetId)
+    assets.splice(
+      assets.findIndex((asset) => asset.id === assetId),
+      1,
+    )
+    return hasAsset
   }
 
   const undeleteAsset = (assetId: backend.AssetId) => {
@@ -487,7 +498,7 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
         description: rest.description ?? '',
         labels: [],
         parentId: defaultDirectoryId,
-        permissions: [],
+        permissions: [createUserPermission(defaultUser, permissions.PermissionAction.own)],
         parentsPath: '',
         virtualParentsPath: '',
       },
@@ -517,6 +528,48 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
     return secret
   }
 
+  const createDatalink = (rest: Partial<backend.DatalinkAsset>): backend.DatalinkAsset => {
+    const datalink = object.merge(
+      {
+        type: backend.AssetType.datalink,
+        id: backend.DatalinkId('datalink-' + uniqueString.uniqueString()),
+        projectState: null,
+        extension: null,
+        title: rest.title ?? '',
+        modifiedAt: dateTime.toRfc3339(new Date()),
+        description: rest.description ?? '',
+        labels: [],
+        parentId: defaultDirectoryId,
+        permissions: [createUserPermission(defaultUser, permissions.PermissionAction.own)],
+        parentsPath: '',
+        virtualParentsPath: '',
+      },
+      rest,
+    )
+
+    Object.defineProperty(datalink, 'toJSON', {
+      value: function toJSON() {
+        const { parentsPath: _, virtualParentsPath: __, ...rest } = this
+
+        return {
+          ...rest,
+          parentsPath: this.parentsPath,
+          virtualParentsPath: this.virtualParentsPath,
+        }
+      },
+    })
+
+    Object.defineProperty(datalink, 'parentsPath', {
+      get: () => getParentPath(datalink.parentId),
+    })
+
+    Object.defineProperty(datalink, 'virtualParentsPath', {
+      get: () => getVirtualParentPath(datalink.parentId, datalink.title),
+    })
+
+    return datalink
+  }
+
   const createLabel = (value: string, color: backend.LChColor): backend.Label => ({
     id: backend.TagId('tag-' + uniqueString.uniqueString()),
     value: backend.LabelName(value),
@@ -537,6 +590,10 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
 
   const addSecret = (rest: Partial<backend.SecretAsset> = {}) => {
     return addAsset(createSecret(rest))
+  }
+
+  const addDatalink = (rest: Partial<backend.DatalinkAsset> = {}) => {
+    return addAsset(createDatalink(rest))
   }
 
   const addLabel = (value: string, color: backend.LChColor) => {
@@ -1109,6 +1166,7 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
     })
 
     await delete_(remoteBackendPaths.deleteAssetPath(GLOB_ASSET_ID), async (route, request) => {
+      const force = new URL(request.url()).searchParams.get('force') === 'true'
       const maybeId = request.url().match(/[/]assets[/]([^?]+)/)?.[1]
 
       if (!maybeId) return
@@ -1117,9 +1175,13 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
       // `DirectoryId` to make TypeScript happy.
       const assetId = decodeURIComponent(maybeId) as backend.DirectoryId
 
-      called('deleteAsset', { assetId })
+      called('deleteAsset', { assetId, force })
 
-      deleteAsset(assetId)
+      if (force) {
+        forceDeleteAsset(assetId)
+      } else {
+        deleteAsset(assetId)
+      }
 
       await route.fulfill({ status: HTTP_STATUS_NO_CONTENT })
     })
@@ -1365,6 +1427,9 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
     defaultUser,
     defaultUserId,
     rootDirectoryId: defaultDirectoryId,
+    get assetCount() {
+      return assetMap.size
+    },
     goOffline: () => {
       isOnline = false
     },
@@ -1395,10 +1460,12 @@ async function mockApiInternal({ page, setupAPI }: MockParams) {
     createProject,
     createFile,
     createSecret,
+    createDatalink,
     addDirectory,
     addProject,
     addFile,
     addSecret,
+    addDatalink,
     createLabel,
     addLabel,
     setLabels,
