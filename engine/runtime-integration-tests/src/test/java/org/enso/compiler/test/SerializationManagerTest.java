@@ -34,7 +34,7 @@ public class SerializationManagerTest {
 
   @Before
   public void setup() {
-    packageManager = new PackageManager<>(new TruffleFileSystem());
+    packageManager = new PackageManager<>(TruffleFileSystem.INSTANCE);
     interpreterContext = new InterpreterContext(x -> x);
     ensoContext =
         interpreterContext

@@ -110,6 +110,7 @@ bench-report*.xml
 /enso.lib
 
 *.dll
+*.dylib
 *.exe
 *.pdb
 *.so
