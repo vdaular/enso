@@ -39,10 +39,11 @@ public class TypeCheckValueTest {
         () -> {
           var builtins = ContextUtils.leakContext(ctx).getBuiltins();
           var m1 =
-              EnsoMultiValue.create(
-                  new Type[] {builtins.text(), builtins.number().getInteger()},
-                  2,
-                  new Object[] {"Hi", 42});
+              EnsoMultiValue.NewNode.getUncached()
+                  .newValue(
+                      new Type[] {builtins.text(), builtins.number().getInteger()},
+                      2,
+                      new Object[] {"Hi", 42});
           assertEquals("Text & Integer", m1.toDisplayString(true));
 
           var res = convert.call(m1);

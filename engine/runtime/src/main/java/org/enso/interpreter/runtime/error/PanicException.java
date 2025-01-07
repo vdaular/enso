@@ -55,10 +55,7 @@ public final class PanicException extends AbstractTruffleException {
    */
   public PanicException(Object payload, Throwable cause, Node location) {
     super(null, cause, UNLIMITED_STACK_TRACE, location);
-    if (!InteropLibrary.isValidValue(payload)) {
-      CompilerDirectives.transferToInterpreter();
-      throw new IllegalArgumentException("Only interop values are supported: " + payload);
-    }
+    assert InteropLibrary.isValidValue(payload) : "Only interop values are supported: " + payload;
     this.payload = payload;
   }
 
