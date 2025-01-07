@@ -13,12 +13,12 @@ import scala.util.{Failure, Try}
   * @param extraEnv environment variables that should be overridden
   * @param workingDirectory the working directory in which the command should be executed (if None, the working directory is not overridden and is inherited instead)
   */
-case class Command(
+case class RawCommand(
   command: Seq[String],
   extraEnv: Seq[(String, String)],
   workingDirectory: Option[Path]
 ) {
-  private val logger = Logger[Command]
+  private val logger = Logger[RawCommand]
 
   /** Runs the command and returns its exit code.
     *

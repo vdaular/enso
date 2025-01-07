@@ -2283,12 +2283,13 @@ lazy val `language-server` = (project in file("engine/language-server"))
     javaModuleName := "org.enso.language.server",
     Compile / moduleDependencies ++=
       Seq(
-        "org.graalvm.polyglot"   % "polyglot"         % graalMavenPackagesVersion,
-        "org.slf4j"              % "slf4j-api"        % slf4jVersion,
-        "commons-cli"            % "commons-cli"      % commonsCliVersion,
-        "commons-io"             % "commons-io"       % commonsIoVersion,
-        "com.google.flatbuffers" % "flatbuffers-java" % flatbuffersVersion,
-        "org.eclipse.jgit"       % "org.eclipse.jgit" % jgitVersion
+        "org.graalvm.polyglot"   % "polyglot"                % graalMavenPackagesVersion,
+        "org.slf4j"              % "slf4j-api"               % slf4jVersion,
+        "commons-cli"            % "commons-cli"             % commonsCliVersion,
+        "commons-io"             % "commons-io"              % commonsIoVersion,
+        "com.google.flatbuffers" % "flatbuffers-java"        % flatbuffersVersion,
+        "org.eclipse.jgit"       % "org.eclipse.jgit"        % jgitVersion,
+        "org.netbeans.api"       % "org-openide-util-lookup" % netbeansApiVersion
       ),
     Compile / internalModuleDependencies := Seq(
       (`akka-wrapper` / Compile / exportedModule).value,
@@ -3614,6 +3615,9 @@ lazy val `engine-runner` = project
       val epbLang =
         (`runtime-language-epb` / Compile / fullClasspath).value
           .map(_.data.getAbsolutePath)
+      val langServer =
+        (`language-server` / Compile / fullClasspath).value
+          .map(_.data.getAbsolutePath)
       val core = (
         runnerDeps ++
           runtimeDeps ++
@@ -3621,6 +3625,7 @@ lazy val `engine-runner` = project
           replDebugInstr ++
           runtimeServerInstr ++
           idExecInstr ++
+          langServer ++
           epbLang
       ).distinct
       val stdLibsJars =
@@ -3722,6 +3727,7 @@ lazy val `engine-runner` = project
               "org.jline",
               "io.methvin.watchservice",
               "zio.internal",
+              "zio",
               "org.enso.runner",
               "sun.awt",
               "sun.java2d",
@@ -3733,7 +3739,8 @@ lazy val `engine-runner` = project
               "akka.http",
               "org.enso.base",
               "org.enso.image",
-              "org.enso.table"
+              "org.enso.table",
+              "org.eclipse.jgit"
             )
           )
       }
