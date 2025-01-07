@@ -59,7 +59,7 @@ export type QueryClient = vueQuery.QueryClient
 const DEFAULT_QUERY_STALE_TIME_MS = Infinity
 const DEFAULT_QUERY_PERSIST_TIME_MS = 30 * 24 * 60 * 60 * 1000 // 30 days
 
-const DEFAULT_BUSTER = 'v1.1'
+const DEFAULT_BUSTER = 'v1.2'
 
 export interface QueryClientOptions<TStorageValue = string> {
   readonly persisterStorage?: AsyncStorage<TStorageValue> & {
