@@ -155,15 +155,11 @@ pub fn expose_gui_vars(step: Step) -> Step {
 }
 
 /// Expose variables for debugging purposes.
-pub fn expose_debugging_vars(os: OS, step: Step) -> Step {
+pub fn expose_debugging_vars(step: Step) -> Step {
     use crate::ide::web::env::*;
-    match os {
-        OS::Windows => step
-            .with_secret_exposed(secret::SENTRY_AUTH_TOKEN)
-            .with_variable_exposed(ENSO_CLOUD_SENTRY_ORGANIZATION)
-            .with_variable_exposed(ENSO_CLOUD_SENTRY_PROJECT),
-        _ => step,
-    }
+    step.with_secret_exposed(secret::SENTRY_AUTH_TOKEN)
+        .with_variable_exposed(ENSO_CLOUD_SENTRY_ORGANIZATION)
+        .with_variable_exposed(ENSO_CLOUD_SENTRY_PROJECT)
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -582,7 +578,7 @@ pub enum PackagingTarget {
 pub fn prepare_packaging_steps(os: OS, step: Step, packaging_target: PackagingTarget) -> Vec<Step> {
     let step = expose_gui_vars(step);
     let step = if packaging_target == PackagingTarget::Release {
-        expose_debugging_vars(os, step)
+        expose_debugging_vars(step)
     } else {
         step
     };
