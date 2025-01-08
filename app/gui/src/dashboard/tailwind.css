@@ -405,8 +405,8 @@
 }
 
 /* These styles MUST still be copied
- * as `.enso-dashboard body` and `.enso-dashboard html` make no sense. */
-:where(.enso-dashboard, .enso-chat, .enso-portal-root) {
+ * as `.enso-app body` and `.enso-app html` make no sense. */
+:where(.enso-app, .enso-chat, .enso-portal-root) {
   line-height: 1.5;
   -webkit-text-size-adjust: 100%;
   -moz-tab-size: 4;

@@ -20,6 +20,6 @@
   }
 }
 
-:where(.enso-dashboard) {
-  @apply absolute inset-0 isolate flex flex-col overflow-hidden;
+:where(.enso-app) {
+  @apply absolute inset-0 isolate overflow-hidden;
 }

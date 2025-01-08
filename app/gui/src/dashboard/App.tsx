@@ -70,7 +70,6 @@ import Dashboard from '#/pages/dashboard/Dashboard'
 import * as subscribe from '#/pages/subscribe/Subscribe'
 import * as subscribeSuccess from '#/pages/subscribe/SubscribeSuccess'
 
-import type * as editor from '#/layouts/Editor'
 import * as openAppWatcher from '#/layouts/OpenAppWatcher'
 import VersionChecker from '#/layouts/VersionChecker'
 
@@ -143,7 +142,6 @@ function getMainPageUrl() {
 
 /** Global configuration for the `App` component. */
 export interface AppProps {
-  readonly vibrancy: boolean
   /** Whether the application may have the local backend running. */
   readonly supportsLocalBackend: boolean
   /** If true, the app can only be used in offline mode. */
@@ -153,15 +151,11 @@ export interface AppProps {
    * the installed app on macOS and Windows.
    */
   readonly supportsDeepLinks: boolean
-  /** Whether the dashboard should be rendered. */
-  readonly shouldShowDashboard: boolean
   /** The name of the project to open on startup, if any. */
   readonly initialProjectName: string | null
   readonly onAuthenticated: (accessToken: string | null) => void
   readonly projectManagerUrl: string | null
   readonly ydocUrl: string | null
-  readonly appRunner: editor.GraphEditorRunner | null
-  readonly queryClient: reactQuery.QueryClient
 }
 
 /**
@@ -217,8 +211,7 @@ export default function App(props: AppProps) {
 
   const { isOffline } = useOffline()
   const { getText } = textProvider.useText()
-
-  const queryClient = props.queryClient
+  const queryClient = reactQuery.useQueryClient()
 
   // Force all queries to be stale
   // We don't use the `staleTime` option because it's not performant
@@ -304,8 +297,7 @@ export interface AppRouterProps extends AppProps {
  * component as the component that defines the provider.
  */
 function AppRouter(props: AppRouterProps) {
-  const { isAuthenticationDisabled, shouldShowDashboard } = props
-  const { onAuthenticated, projectManagerInstance } = props
+  const { isAuthenticationDisabled, onAuthenticated, projectManagerInstance } = props
   const httpClient = useHttpClientStrict()
   const logger = useLogger()
   const navigate = router.useNavigate()
@@ -483,10 +475,7 @@ function AppRouter(props: AppRouterProps) {
             <router.Route element={<SetupOrganizationAfterSubscribe />}>
               <router.Route element={<InvitedToOrganizationModal />}>
                 <router.Route element={<openAppWatcher.OpenAppWatcher />}>
-                  <router.Route
-                    path={appUtils.DASHBOARD_PATH}
-                    element={shouldShowDashboard && <Dashboard {...props} />}
-                  />
+                  <router.Route path={appUtils.DASHBOARD_PATH} element={<Dashboard {...props} />} />
 
                   <router.Route
                     path={appUtils.SUBSCRIBE_PATH}
