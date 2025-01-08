@@ -14,6 +14,13 @@
 [11902]: https://github.com/enso-org/enso/pull/11902
 [11908]: https://github.com/enso-org/enso/pull/11908
 
+#### Enso Standard Library
+
+- [Allow using `/` to access files inside a directory reached through a data
+  link.][11926]
+
+[11926]: https://github.com/enso-org/enso/pull/11926
+
 #### Enso Language & Runtime
 
 - [Promote broken values instead of ignoring them][11777].
