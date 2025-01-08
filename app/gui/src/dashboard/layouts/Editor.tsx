@@ -30,10 +30,6 @@ const ProjectViewTab = applyPureVueInReact(ProjectViewTabVue) as (
   props: ProjectViewTabProps,
 ) => JSX.Element
 
-// ==============
-// === Editor ===
-// ==============
-
 /** Props for an {@link Editor}. */
 export interface EditorProps {
   readonly isOpeningFailed: boolean
@@ -54,7 +50,6 @@ function Editor(props: EditorProps) {
 
   const projectStatusQuery = projectHooks.createGetProjectDetailsQuery({
     assetId: project.id,
-    parentId: project.parentId,
     backend,
   })
 

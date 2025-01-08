@@ -1,6 +1,4 @@
 /** @file A hook returning the root directory id and expanded directory ids. */
-import { useMemo } from 'react'
-
 import { useSuspenseQuery } from '@tanstack/react-query'
 import invariant from 'tiny-invariant'
 
@@ -40,7 +38,7 @@ export function useDirectoryIds(options: UseDirectoryIdsOptions) {
 
   const [localRootDirectory] = useLocalStorageState('localRootDirectory')
 
-  const rootDirectoryId = useMemo(() => {
+  const rootDirectoryId = (() => {
     const localRootPath = localRootDirectory != null ? Path(localRootDirectory) : null
     const id =
       'homeDirectoryId' in category ?
@@ -48,13 +46,12 @@ export function useDirectoryIds(options: UseDirectoryIdsOptions) {
       : backend.rootDirectoryId(user, organization, localRootPath)
     invariant(id, 'Missing root directory')
     return id
-  }, [category, backend, user, organization, localRootDirectory])
+  })()
 
-  const rootDirectory = useMemo(() => createRootDirectoryAsset(rootDirectoryId), [rootDirectoryId])
+  const rootDirectory = createRootDirectoryAsset(rootDirectoryId)
 
-  const expandedDirectoryIds = useMemo(
-    () => [rootDirectoryId].concat(privateExpandedDirectoryIds),
-    [privateExpandedDirectoryIds, rootDirectoryId],
+  const expandedDirectoryIds = [rootDirectoryId].concat(
+    privateExpandedDirectoryIds.filter((id) => id !== rootDirectoryId),
   )
 
   return { setExpandedDirectoryIds, rootDirectoryId, rootDirectory, expandedDirectoryIds } as const

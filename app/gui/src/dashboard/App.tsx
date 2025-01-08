@@ -560,10 +560,6 @@ function AppRouter(props: AppRouterProps) {
   )
 }
 
-// ====================================
-// === LocalBackendPathSynchronizer ===
-// ====================================
-
 /** Keep `localBackend.rootPath` in sync with the saved root path state. */
 function LocalBackendPathSynchronizer() {
   const [localRootDirectory] = localStorageProvider.useLocalStorageState('localRootDirectory')
@@ -575,5 +571,6 @@ function LocalBackendPathSynchronizer() {
       localBackend.resetRootPath()
     }
   }
+
   return null
 }

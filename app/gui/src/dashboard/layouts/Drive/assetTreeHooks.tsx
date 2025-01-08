@@ -1,10 +1,11 @@
 /** @file A hook to return the asset tree. */
 import { useMemo } from 'react'
 
-import { useIsFetching, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useIsFetching, useQueries, useQueryClient } from '@tanstack/react-query'
 
 import type { DirectoryId } from 'enso-common/src/services/Backend'
 import {
+  BackendType,
   assetIsDirectory,
   createRootDirectoryAsset,
   createSpecialEmptyAsset,
@@ -17,10 +18,9 @@ import {
 import { listDirectoryQueryOptions } from '#/hooks/backendHooks'
 import { useEventCallback } from '#/hooks/eventCallbackHooks'
 import type { Category } from '#/layouts/CategorySwitcher/Category'
+import { useRefetchDirectories } from '#/layouts/Drive/fetchDirectoriesHooks'
 import { useFullUserSession } from '#/providers/AuthProvider'
 import { useBackend } from '#/providers/BackendProvider'
-import { useFeatureFlag } from '#/providers/FeatureFlagsProvider'
-import { ROOT_PARENT_DIRECTORY_ID } from '#/services/remoteBackendPaths'
 import AssetTreeNode, { type AnyAssetTreeNode } from '#/utilities/AssetTreeNode'
 
 /** Return type of the query function for the `listDirectory` query. */
@@ -42,10 +42,8 @@ export function useAssetTree(options: UseAssetTreeOptions) {
 
   const backend = useBackend(category)
 
-  const enableAssetsTableBackgroundRefresh = useFeatureFlag('enableAssetsTableBackgroundRefresh')
-  const assetsTableBackgroundRefreshInterval = useFeatureFlag(
-    'assetsTableBackgroundRefreshInterval',
-  )
+  useRefetchDirectories(BackendType.local)
+  useRefetchDirectories(BackendType.remote)
 
   const directories = useQueries({
     // We query only expanded directories, as we don't want to load the data for directories that are not visible.
@@ -86,44 +84,7 @@ export function useAssetTree(options: UseAssetTreeOptions) {
 
   const queryClient = useQueryClient()
 
-  // We use a different query to refetch the directory data in the background.
-  // This reduces the amount of rerenders by batching them together, so they happen less often.
-  const { refetch } = useQuery(
-    useMemo(
-      () => ({
-        queryKey: [backend.type, 'refetchListDirectory'],
-        queryFn: () =>
-          queryClient
-            .refetchQueries({
-              queryKey: [backend.type, 'listDirectory'],
-              type: 'active',
-            })
-            .then(() => null),
-        refetchInterval:
-          enableAssetsTableBackgroundRefresh ? assetsTableBackgroundRefreshInterval : false,
-        refetchOnMount: 'always',
-        refetchIntervalInBackground: false,
-        refetchOnWindowFocus: true,
-        enabled: !hidden,
-        meta: { persist: false },
-      }),
-      [
-        backend.type,
-        enableAssetsTableBackgroundRefresh,
-        assetsTableBackgroundRefreshInterval,
-        hidden,
-        queryClient,
-      ],
-    ),
-  )
-
-  const refetchAllDirectories = useEventCallback(() => {
-    return refetch()
-  })
-
-  /**
-   * Refetch the directory data for a given directory.
-   */
+  /** Refetch the directory data for a given directory. */
   const refetchDirectory = useEventCallback((directoryId: DirectoryId) => {
     return queryClient.refetchQueries({
       queryKey: listDirectoryQueryOptions({
@@ -149,36 +110,14 @@ export function useAssetTree(options: UseAssetTreeOptions) {
     // If the root directory is not loaded, then we cannot render the tree.
     // Return null, and wait for the root directory to load.
     if (rootDirectoryContent == null) {
-      return AssetTreeNode.fromAsset(
-        createRootDirectoryAsset(rootDirectory.id),
-        ROOT_PARENT_DIRECTORY_ID,
-        ROOT_PARENT_DIRECTORY_ID,
-        -1,
-        rootPath,
-        null,
-      )
+      return AssetTreeNode.fromAsset(createRootDirectoryAsset(rootDirectory.id), -1, rootPath)
     } else if (isError) {
-      return AssetTreeNode.fromAsset(
-        createRootDirectoryAsset(rootDirectory.id),
-        ROOT_PARENT_DIRECTORY_ID,
-        ROOT_PARENT_DIRECTORY_ID,
-        -1,
-        rootPath,
-        null,
-      ).with({
-        children: [
-          AssetTreeNode.fromAsset(
-            createSpecialErrorAsset(rootDirectory.id),
-            rootDirectory.id,
-            rootDirectory.id,
-            0,
-            '',
-          ),
-        ],
-      })
+      return AssetTreeNode.fromAsset(createRootDirectoryAsset(rootDirectory.id), -1, rootPath).with(
+        {
+          children: [AssetTreeNode.fromAsset(createSpecialErrorAsset(rootDirectory.id), 0, '')],
+        },
+      )
     }
-
-    const rootId = rootDirectory.id
 
     const children = rootDirectoryContent.map((content) => {
       /**
@@ -193,52 +132,20 @@ export function useAssetTree(options: UseAssetTreeOptions) {
           const childrenAssetsQuery = directories.directories.get(item.id)
 
           const nestedChildren = childrenAssetsQuery?.data?.map((child) =>
-            AssetTreeNode.fromAsset(
-              child,
-              item.id,
-              item.id,
-              depth,
-              `${node.path}/${child.title}`,
-              null,
-              child.id,
-            ),
+            AssetTreeNode.fromAsset(child, depth, `${node.path}/${child.title}`),
           )
 
           if (childrenAssetsQuery == null || childrenAssetsQuery.isLoading) {
             node = node.with({
-              children: [
-                AssetTreeNode.fromAsset(
-                  createSpecialLoadingAsset(item.id),
-                  item.id,
-                  item.id,
-                  depth,
-                  '',
-                ),
-              ],
+              children: [AssetTreeNode.fromAsset(createSpecialLoadingAsset(item.id), depth, '')],
             })
           } else if (childrenAssetsQuery.isError) {
             node = node.with({
-              children: [
-                AssetTreeNode.fromAsset(
-                  createSpecialErrorAsset(item.id),
-                  item.id,
-                  item.id,
-                  depth,
-                  '',
-                ),
-              ],
+              children: [AssetTreeNode.fromAsset(createSpecialErrorAsset(item.id), depth, '')],
             })
           } else if (nestedChildren?.length === 0) {
             node = node.with({
-              children: [
-                AssetTreeNode.fromAsset(
-                  createSpecialEmptyAsset(item.id),
-                  item.id,
-                  item.id,
-                  depth,
-                  '',
-                ),
-              ],
+              children: [AssetTreeNode.fromAsset(createSpecialEmptyAsset(item.id), depth, '')],
             })
           } else if (nestedChildren != null) {
             node = node.with({
@@ -250,30 +157,13 @@ export function useAssetTree(options: UseAssetTreeOptions) {
         return node
       }
 
-      const node = AssetTreeNode.fromAsset(
-        content,
-        rootId,
-        rootId,
-        0,
-        `${rootPath}/${content.title}`,
-        null,
-        content.id,
-      )
+      const node = AssetTreeNode.fromAsset(content, 0, `${rootPath}/${content.title}`)
 
       const ret = withChildren(node, 1)
       return ret
     })
 
-    return new AssetTreeNode(
-      rootDirectory,
-      ROOT_PARENT_DIRECTORY_ID,
-      ROOT_PARENT_DIRECTORY_ID,
-      children,
-      -1,
-      rootPath,
-      null,
-      rootId,
-    )
+    return new AssetTreeNode(rootDirectory, children, -1, rootPath)
   }, [
     backend,
     category,
@@ -290,6 +180,5 @@ export function useAssetTree(options: UseAssetTreeOptions) {
     assetTree,
     isFetching,
     refetchDirectory,
-    refetchAllDirectories,
   } as const
 }

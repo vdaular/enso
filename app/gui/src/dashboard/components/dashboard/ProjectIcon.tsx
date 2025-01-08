@@ -93,7 +93,6 @@ export default function ProjectIcon(props: ProjectIconProps) {
   const { data: projectState, isError } = reactQuery.useQuery({
     ...projectHooks.createGetProjectDetailsQuery({
       assetId: item.id,
-      parentId: item.parentId,
       backend,
     }),
     select: (data) => data.state,

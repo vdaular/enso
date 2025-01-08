@@ -219,3 +219,12 @@ export function useObjectId() {
  * can be used to splice together objects without the risk of collisions.
  */
 export type DisjointKeysUnion<A, B> = keyof A & keyof B extends never ? A & B : never
+
+/**
+ * Merge types of values of an object union. Useful to return an object that UNSAFELY
+ * (at runtime) conforms to the shape of a discriminated union.
+ * Especially useful for things like Tanstack Query results.
+ */
+export type MergeValuesOfObjectUnion<T> = {
+  [K in `${keyof T & string}`]: T[K & keyof T]
+}

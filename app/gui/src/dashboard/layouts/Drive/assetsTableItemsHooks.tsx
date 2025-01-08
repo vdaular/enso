@@ -182,12 +182,12 @@ export function useAssetsTableItems(options: UseAssetsTableOptions) {
 
       for (const child of node.children ?? []) {
         if (visible && child.item.type === AssetType.specialEmpty) {
-          map.set(child.key, Visibility.visible)
+          map.set(child.item.id, Visibility.visible)
         } else {
           processNode(child)
         }
 
-        if (map.get(child.key) !== Visibility.hidden) {
+        if (map.get(child.item.id) !== Visibility.hidden) {
           displayState = Visibility.faded
         }
       }
@@ -196,7 +196,7 @@ export function useAssetsTableItems(options: UseAssetsTableOptions) {
         displayState = Visibility.visible
       }
 
-      map.set(node.key, displayState)
+      map.set(node.item.id, displayState)
 
       return displayState
     }
@@ -209,7 +209,7 @@ export function useAssetsTableItems(options: UseAssetsTableOptions) {
   const displayItems = useMemo(() => {
     if (sortInfo == null) {
       const flatTree = assetTree.preorderTraversal((children) =>
-        children.filter((child) => expandedDirectoryIds.includes(child.directoryId)),
+        children.filter((child) => expandedDirectoryIds.includes(child.item.parentId)),
       )
 
       return flatTree
@@ -231,7 +231,9 @@ export function useAssetsTableItems(options: UseAssetsTableOptions) {
         }
       }
       const flatTree = assetTree.preorderTraversal((tree) =>
-        [...tree].filter((child) => expandedDirectoryIds.includes(child.directoryId)).sort(compare),
+        [...tree]
+          .filter((child) => expandedDirectoryIds.includes(child.item.parentId))
+          .sort(compare),
       )
 
       return flatTree
@@ -241,7 +243,7 @@ export function useAssetsTableItems(options: UseAssetsTableOptions) {
   setAssetItems(displayItems.map((item) => item.item))
 
   const visibleItems = useMemo(
-    () => displayItems.filter((item) => visibilities.get(item.key) !== Visibility.hidden),
+    () => displayItems.filter((item) => visibilities.get(item.item.id) !== Visibility.hidden),
     [displayItems, visibilities],
   )
 
