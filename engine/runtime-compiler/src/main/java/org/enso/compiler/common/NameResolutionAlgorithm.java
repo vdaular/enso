@@ -1,7 +1,8 @@
-package org.enso.compiler.context;
+package org.enso.compiler.common;
 
 import org.enso.compiler.MetadataInteropHelpers;
 import org.enso.compiler.core.ConstantsNames;
+import org.enso.compiler.core.IR;
 import org.enso.compiler.core.ir.Name.Literal;
 import org.enso.compiler.data.BindingsMap;
 import org.enso.compiler.pass.resolve.GlobalNames$;
@@ -50,7 +51,7 @@ public abstract class NameResolutionAlgorithm<ResultType, LocalNameLinkType, Met
             name, GlobalNames$.MODULE$, BindingsMap.Resolution.class);
     if (global != null) {
       BindingsMap.ResolvedName resolution = global.target();
-      return resolveGlobalName(resolution);
+      return resolveGlobalName(resolution, name);
     }
 
     if (name.name().equals(ConstantsNames.FROM_MEMBER)) {
@@ -70,7 +71,8 @@ public abstract class NameResolutionAlgorithm<ResultType, LocalNameLinkType, Met
 
   protected abstract ResultType resolveLocalName(LocalNameLinkType localLink);
 
-  protected abstract ResultType resolveGlobalName(BindingsMap.ResolvedName resolvedName);
+  protected abstract ResultType resolveGlobalName(
+      BindingsMap.ResolvedName resolvedName, IR relatedIr);
 
   protected abstract ResultType resolveFromConversion();
 

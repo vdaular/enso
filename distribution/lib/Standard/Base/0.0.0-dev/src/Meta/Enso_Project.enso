@@ -96,6 +96,9 @@ type Project_Description
     root_path : Text
     root_path self = self.root.path
 
+    ## PRIVATE
+    enso_project_builtin module = @Builtin_Method "Project_Description.enso_project_builtin"
+
 ## ICON enso_icon
    Returns the Enso project description for the project that the engine was
    executed with, i.e., the project that contains the `main` method, or
