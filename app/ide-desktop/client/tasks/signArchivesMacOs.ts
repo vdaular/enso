@@ -102,7 +102,7 @@ async function ensoPackageSignables(resourcesDir: string): Promise<Signable[]> {
     ],
     ['component/jna-*.jar', ['com/sun/jna/*/libjnidispatch.jnilib']],
     [
-      'component/jline-*.jar',
+      'component/jline-native-*.jar',
       [
         'org/jline/nativ/Mac/arm64/libjlinenative.jnilib',
         'org/jline/nativ/Mac/x86_64/libjlinenative.jnilib',
