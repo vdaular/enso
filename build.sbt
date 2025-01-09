@@ -351,6 +351,10 @@ lazy val enso = (project in file("."))
     `runtime-and-langs`,
     `runtime-benchmarks`,
     `runtime-compiler`,
+    `runtime-parser`,
+    `runtime-parser-dsl`,
+    `runtime-parser-processor`,
+    `runtime-parser-processor-tests`,
     `runtime-language-arrow`,
     `runtime-language-epb`,
     `runtime-instrument-common`,
@@ -914,10 +918,9 @@ lazy val `syntax-rust-definition` = project
   .enablePlugins(JPMSPlugin)
   .configs(Test)
   .settings(
-    version := mavenUploadVersion,
-    Compile / exportJars := true,
     javadocSettings,
-    publish / skip := false,
+    publishLocalSetting,
+    Compile / exportJars := true,
     autoScalaLibrary := false,
     crossPaths := false,
     libraryDependencies ++= Seq(
@@ -2024,13 +2027,12 @@ lazy val `ydoc-server` = project
 lazy val `persistance` = (project in file("lib/java/persistance"))
   .enablePlugins(JPMSPlugin)
   .settings(
-    version := mavenUploadVersion,
     Test / fork := true,
     commands += WithDebugCommand.withDebug,
     frgaalJavaCompilerSetting,
     annotationProcSetting,
     javadocSettings,
-    publish / skip := false,
+    publishLocalSetting,
     autoScalaLibrary := false,
     crossPaths := false,
     Compile / javacOptions := ((Compile / javacOptions).value),
@@ -2050,9 +2052,8 @@ lazy val `persistance` = (project in file("lib/java/persistance"))
 
 lazy val `persistance-dsl` = (project in file("lib/java/persistance-dsl"))
   .settings(
-    version := mavenUploadVersion,
     frgaalJavaCompilerSetting,
-    publish / skip := false,
+    publishLocalSetting,
     autoScalaLibrary := false,
     crossPaths := false,
     javadocSettings,
@@ -2570,6 +2571,25 @@ lazy val scalaModuleDependencySetting: SettingsDefinition = Seq(
 lazy val mixedJavaScalaProjectSetting: SettingsDefinition = Seq(
   // See JPMSPlugin docs (Mixed projects)
   excludeFilter := excludeFilter.value || "module-info.java"
+)
+
+/** Ensure that javac compiler generates parameter names for methods, so that these
+  * Java methods can be called with named parameters from Scala.
+  */
+lazy val javaMethodParametersSetting: SettingsDefinition = Seq(
+  javacOptions += "-parameters"
+)
+
+/** Projects that are published to the local Maven repository via `publishM2` task
+  * should incorporate these settings. We need to publish some projects to the local
+  * Maven repo, because they are dependencies of some external projects like `enso4igv`.
+  * By default, all projects are set `publish / skip := true`.
+  */
+lazy val publishLocalSetting: SettingsDefinition = Seq(
+  version := mavenUploadVersion,
+  publish / skip := false,
+  packageDoc / publishArtifact := false,
+  packageSrc / publishArtifact := false
 )
 
 def customFrgaalJavaCompilerSettings(targetJdk: String) = {
@@ -3197,9 +3217,9 @@ lazy val `runtime-parser` =
     .settings(
       scalaModuleDependencySetting,
       mixedJavaScalaProjectSetting,
-      version := mavenUploadVersion,
+      javaMethodParametersSetting,
+      publishLocalSetting,
       javadocSettings,
-      publish / skip := false,
       crossPaths := false,
       frgaalJavaCompilerSetting,
       annotationProcSetting,
@@ -3214,14 +3234,78 @@ lazy val `runtime-parser` =
       Compile / moduleDependencies ++= Seq(
         "org.netbeans.api" % "org-openide-util-lookup" % netbeansApiVersion
       ),
+      // Java compiler is not able to correctly find all the annotation processors, because
+      // one of them is on module-path. To overcome this, we explicitly list all of them here.
+      Compile / javacOptions ++= {
+        val processorClasses = Seq(
+          "org.enso.runtime.parser.processor.IRProcessor",
+          "org.enso.persist.impl.PersistableProcessor",
+          "org.netbeans.modules.openide.util.ServiceProviderProcessor",
+          "org.netbeans.modules.openide.util.NamedServiceProcessor"
+        ).mkString(",")
+        Seq(
+          "-processor",
+          processorClasses
+        )
+      },
       Compile / internalModuleDependencies := Seq(
         (`syntax-rust-definition` / Compile / exportedModule).value,
-        (`persistance` / Compile / exportedModule).value
+        (`persistance` / Compile / exportedModule).value,
+        (`runtime-parser-dsl` / Compile / exportedModule).value,
+        (`runtime-parser-processor` / Compile / exportedModule).value
       )
     )
     .dependsOn(`syntax-rust-definition`)
     .dependsOn(`persistance`)
     .dependsOn(`persistance-dsl` % "provided")
+    .dependsOn(`runtime-parser-dsl`)
+    .dependsOn(`runtime-parser-processor`)
+
+lazy val `runtime-parser-dsl` =
+  (project in file("engine/runtime-parser-dsl"))
+    .enablePlugins(JPMSPlugin)
+    .settings(
+      frgaalJavaCompilerSetting,
+      javaMethodParametersSetting,
+      publishLocalSetting
+    )
+
+lazy val `runtime-parser-processor-tests` =
+  (project in file("engine/runtime-parser-processor-tests"))
+    .settings(
+      inConfig(Compile)(truffleRunOptionsSettings),
+      frgaalJavaCompilerSetting,
+      javaMethodParametersSetting,
+      commands += WithDebugCommand.withDebug,
+      annotationProcSetting,
+      Compile / javacOptions ++= Seq(
+        "-processor",
+        "org.enso.runtime.parser.processor.IRProcessor"
+      ),
+      Test / fork := true,
+      libraryDependencies ++= Seq(
+        "junit"                      % "junit"           % junitVersion     % Test,
+        "com.github.sbt"             % "junit-interface" % junitIfVersion   % Test,
+        "org.hamcrest"               % "hamcrest-all"    % hamcrestVersion  % Test,
+        "com.google.testing.compile" % "compile-testing" % "0.21.0"         % Test,
+        "org.scalatest"             %% "scalatest"       % scalatestVersion % Test
+      )
+    )
+    .dependsOn(`runtime-parser-processor`)
+    .dependsOn(`runtime-parser`)
+
+lazy val `runtime-parser-processor` =
+  (project in file("engine/runtime-parser-processor"))
+    .enablePlugins(JPMSPlugin)
+    .settings(
+      frgaalJavaCompilerSetting,
+      javaMethodParametersSetting,
+      publishLocalSetting,
+      Compile / internalModuleDependencies := Seq(
+        (`runtime-parser-dsl` / Compile / exportedModule).value
+      )
+    )
+    .dependsOn(`runtime-parser-dsl`)
 
 lazy val `runtime-compiler` =
   (project in file("engine/runtime-compiler"))
