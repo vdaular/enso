@@ -784,6 +784,10 @@ function AssetsTable(props: AssetsTableProps) {
                 )
                 break
               }
+              case AssetType.file:
+              case AssetType.specialLoading:
+              case AssetType.specialEmpty:
+              case AssetType.specialError:
               default: {
                 break
               }
