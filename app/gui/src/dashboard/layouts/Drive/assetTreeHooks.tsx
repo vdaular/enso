@@ -125,7 +125,7 @@ export function useAssetTree(options: UseAssetTreeOptions) {
        * in the loaded data. If it is loaded, we append that data to the asset node
        * and do the same for the children.
        */
-      const withChildren = (node: AnyAssetTreeNode, depth: number) => {
+      const withChildren = (node: AnyAssetTreeNode, depth: number): AnyAssetTreeNode => {
         const { item } = node
 
         if (assetIsDirectory(item)) {
@@ -136,19 +136,19 @@ export function useAssetTree(options: UseAssetTreeOptions) {
           )
 
           if (childrenAssetsQuery == null || childrenAssetsQuery.isLoading) {
-            node = node.with({
+            return node.with({
               children: [AssetTreeNode.fromAsset(createSpecialLoadingAsset(item.id), depth, '')],
             })
           } else if (childrenAssetsQuery.isError) {
-            node = node.with({
+            return node.with({
               children: [AssetTreeNode.fromAsset(createSpecialErrorAsset(item.id), depth, '')],
             })
           } else if (nestedChildren?.length === 0) {
-            node = node.with({
+            return node.with({
               children: [AssetTreeNode.fromAsset(createSpecialEmptyAsset(item.id), depth, '')],
             })
           } else if (nestedChildren != null) {
-            node = node.with({
+            return node.with({
               children: nestedChildren.map((child) => withChildren(child, depth + 1)),
             })
           }
