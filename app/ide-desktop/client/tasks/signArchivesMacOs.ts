@@ -134,12 +134,12 @@ async function ensoPackageSignables(resourcesDir: string): Promise<Signable[]> {
       ['META-INF/native/libconscrypt_openjdk_jni-osx-*.dylib'],
     ],
     ['lib/Standard/Tableau/*/polyglot/java/jna-*.jar', ['com/sun/jna/*/libjnidispatch.jnilib']],
-    [
-      'lib/Standard/Image/*/polyglot/java/opencv-*.jar',
-      ['nu/pattern/opencv/osx/*/libopencv_java*.dylib'],
-    ],
   ]
-  return ArchiveToSign.lookupMany(engineDir, archivePatterns)
+  const binariesPattern = 'lib/Standard/Image/*/polyglot/lib/*.dylib'
+
+  const binaries = await BinaryToSign.lookupMany(engineDir, [binariesPattern])
+  const archives = await ArchiveToSign.lookupMany(engineDir, archivePatterns)
+  return [...archives, ...binaries]
 }
 
 // ================
