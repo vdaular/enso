@@ -4,14 +4,14 @@ import { AssetType, getAssetPermissionName } from 'enso-common/src/services/Back
 import { PermissionAction } from 'enso-common/src/utilities/permissions'
 
 import type { SortableColumn } from '#/components/dashboard/column/columnUtils'
-import { Column } from '#/components/dashboard/column/columnUtils'
+import { assetCompareFunction } from '#/layouts/Drive/compareAssets'
+import { useText } from '#/providers/TextProvider'
 import type { DirectoryId } from '#/services/ProjectManager'
 import type AssetQuery from '#/utilities/AssetQuery'
 import type { AnyAssetTreeNode } from '#/utilities/AssetTreeNode'
 import Visibility from '#/utilities/Visibility'
 import { fileExtension } from '#/utilities/fileInfo'
 import type { SortInfo } from '#/utilities/sorting'
-import { SortDirection } from '#/utilities/sorting'
 import { regexEscape } from '#/utilities/string'
 import { createStore, useStore } from '#/utilities/zustand.ts'
 import invariant from 'tiny-invariant'
@@ -61,6 +61,7 @@ export function useAssetStrict(id: AssetId) {
 export function useAssetsTableItems(options: UseAssetsTableOptions) {
   const { assetTree, sortInfo, query, expandedDirectoryIds } = options
 
+  const { locale } = useText()
   const setAssetItems = useStore(ASSET_ITEMS_STORE, (store) => store.setItems)
 
   const filter = (() => {
@@ -212,22 +213,8 @@ export function useAssetsTableItems(options: UseAssetsTableOptions) {
 
       return flatTree
     } else {
-      const multiplier = sortInfo.direction === SortDirection.ascending ? 1 : -1
-      let compare: (a: AnyAssetTreeNode, b: AnyAssetTreeNode) => number
-      switch (sortInfo.field) {
-        case Column.name: {
-          compare = (a, b) => multiplier * a.item.title.localeCompare(b.item.title, 'en')
-          break
-        }
-        case Column.modified: {
-          compare = (a, b) => {
-            const aOrder = Number(new Date(a.item.modifiedAt))
-            const bOrder = Number(new Date(b.item.modifiedAt))
-            return multiplier * (aOrder - bOrder)
-          }
-          break
-        }
-      }
+      const compareAssets = assetCompareFunction(sortInfo, locale)
+      const compare = (a: AnyAssetTreeNode, b: AnyAssetTreeNode) => compareAssets(a.item, b.item)
       const flatTree = assetTree.preorderTraversal((tree) =>
         [...tree]
           .filter((child) => expandedDirectoryIds.includes(child.item.parentId))
