@@ -74,15 +74,6 @@ async function ensoPackageSignables(resourcesDir: string): Promise<Signable[]> {
   const engineDir = `${resourcesDir}/enso/dist/*`
   const archivePatterns: ArchivePattern[] = [
     [
-      '/component/runner/runner.jar',
-      [
-        'org/sqlite/native/Mac/x86_64/libsqlitejdbc.jnilib',
-        'org/sqlite/native/Mac/aarch64/libsqlitejdbc.jnilib',
-        'com/sun/jna/darwin-aarch64/libjnidispatch.jnilib',
-        'com/sun/jna/darwin-x86-64/libjnidispatch.jnilib',
-      ],
-    ],
-    [
       'component/python-resources-*.jar',
       [
         'META-INF/resources/darwin/*/lib/graalpy*/*.dylib',
@@ -223,9 +214,10 @@ class ArchiveToSign implements Signable {
       }
 
       if (isJar) {
-        if (archiveName.includes('runner')) {
-          run('jar', ['-cfm', TEMPORARY_ARCHIVE_PATH, 'META-INF/MANIFEST.MF', '.'], workingDir)
-        } else {
+        const meta = 'META-INF/MANIFEST.MF'
+        try {
+          run('jar', ['-cfm', TEMPORARY_ARCHIVE_PATH, meta, '.'], workingDir)
+        } catch (err) {
           run('jar', ['-cf', TEMPORARY_ARCHIVE_PATH, '.'], workingDir)
         }
       } else {
