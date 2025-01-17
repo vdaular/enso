@@ -146,6 +146,12 @@ import type { SortInfo } from '#/utilities/sorting'
 import { twJoin, twMerge } from '#/utilities/tailwindMerge'
 import Visibility from '#/utilities/Visibility'
 import invariant from 'tiny-invariant'
+import {
+  SUGGESTIONS_FOR_HAS,
+  SUGGESTIONS_FOR_NEGATIVE_TYPE,
+  SUGGESTIONS_FOR_NO,
+  SUGGESTIONS_FOR_TYPE,
+} from './Drive/suggestionsConstants'
 
 declare module '#/utilities/LocalStorage' {
   /** */
@@ -170,93 +176,6 @@ const MINIMUM_DROPZONE_INTERSECTION_RATIO = 0.5
 const ROW_HEIGHT_PX = 36
 /** The size of the loading spinner. */
 const LOADING_SPINNER_SIZE_PX = 36
-
-const SUGGESTIONS_FOR_NO: assetSearchBar.Suggestion[] = [
-  {
-    key: 'no:label',
-    render: () => 'no:label',
-    addToQuery: (query) => query.addToLastTerm({ nos: ['label'] }),
-    deleteFromQuery: (query) => query.deleteFromLastTerm({ nos: ['label'] }),
-  },
-  {
-    key: 'no:description',
-    render: () => 'no:description',
-    addToQuery: (query) => query.addToLastTerm({ nos: ['description'] }),
-    deleteFromQuery: (query) => query.deleteFromLastTerm({ nos: ['description'] }),
-  },
-]
-const SUGGESTIONS_FOR_HAS: assetSearchBar.Suggestion[] = [
-  {
-    key: 'has:label',
-    render: () => 'has:label',
-    addToQuery: (query) => query.addToLastTerm({ negativeNos: ['label'] }),
-    deleteFromQuery: (query) => query.deleteFromLastTerm({ negativeNos: ['label'] }),
-  },
-  {
-    key: 'has:description',
-    render: () => 'has:description',
-    addToQuery: (query) => query.addToLastTerm({ negativeNos: ['description'] }),
-    deleteFromQuery: (query) => query.deleteFromLastTerm({ negativeNos: ['description'] }),
-  },
-]
-const SUGGESTIONS_FOR_TYPE: assetSearchBar.Suggestion[] = [
-  {
-    key: 'type:project',
-    render: () => 'type:project',
-    addToQuery: (query) => query.addToLastTerm({ types: ['project'] }),
-    deleteFromQuery: (query) => query.deleteFromLastTerm({ types: ['project'] }),
-  },
-  {
-    key: 'type:folder',
-    render: () => 'type:folder',
-    addToQuery: (query) => query.addToLastTerm({ types: ['folder'] }),
-    deleteFromQuery: (query) => query.deleteFromLastTerm({ types: ['folder'] }),
-  },
-  {
-    key: 'type:file',
-    render: () => 'type:file',
-    addToQuery: (query) => query.addToLastTerm({ types: ['file'] }),
-    deleteFromQuery: (query) => query.deleteFromLastTerm({ types: ['file'] }),
-  },
-  {
-    key: 'type:secret',
-    render: () => 'type:secret',
-    addToQuery: (query) => query.addToLastTerm({ types: ['secret'] }),
-    deleteFromQuery: (query) => query.deleteFromLastTerm({ types: ['secret'] }),
-  },
-  {
-    key: 'type:datalink',
-    render: () => 'type:datalink',
-    addToQuery: (query) => query.addToLastTerm({ types: ['datalink'] }),
-    deleteFromQuery: (query) => query.deleteFromLastTerm({ types: ['datalink'] }),
-  },
-]
-const SUGGESTIONS_FOR_NEGATIVE_TYPE: assetSearchBar.Suggestion[] = [
-  {
-    key: 'type:project',
-    render: () => 'type:project',
-    addToQuery: (query) => query.addToLastTerm({ negativeTypes: ['project'] }),
-    deleteFromQuery: (query) => query.deleteFromLastTerm({ negativeTypes: ['project'] }),
-  },
-  {
-    key: 'type:folder',
-    render: () => 'type:folder',
-    addToQuery: (query) => query.addToLastTerm({ negativeTypes: ['folder'] }),
-    deleteFromQuery: (query) => query.deleteFromLastTerm({ negativeTypes: ['folder'] }),
-  },
-  {
-    key: 'type:file',
-    render: () => 'type:file',
-    addToQuery: (query) => query.addToLastTerm({ negativeTypes: ['file'] }),
-    deleteFromQuery: (query) => query.deleteFromLastTerm({ negativeTypes: ['file'] }),
-  },
-  {
-    key: 'type:datalink',
-    render: () => 'type:datalink',
-    addToQuery: (query) => query.addToLastTerm({ negativeTypes: ['datalink'] }),
-    deleteFromQuery: (query) => query.deleteFromLastTerm({ negativeTypes: ['datalink'] }),
-  },
-]
 
 /** Information related to a drag selection. */
 interface DragSelectionInfo {
@@ -803,7 +722,7 @@ function AssetsTable(props: AssetsTableProps) {
     }
   }, [navigator2D, setMostRecentlySelectedIndex])
 
-  const onKeyDown = (event: KeyboardEvent) => {
+  const onKeyDown = useEventCallback((event: KeyboardEvent) => {
     const { selectedAssets } = driveStore.getState()
     const prevIndex = mostRecentlySelectedIndexRef.current
     const item = prevIndex == null ? null : visibleItems[prevIndex]
@@ -865,6 +784,10 @@ function AssetsTable(props: AssetsTableProps) {
                 )
                 break
               }
+              case AssetType.file:
+              case AssetType.specialLoading:
+              case AssetType.specialEmpty:
+              case AssetType.specialError:
               default: {
                 break
               }
@@ -983,7 +906,7 @@ function AssetsTable(props: AssetsTableProps) {
         break
       }
     }
-  }
+  })
 
   useEffect(() => {
     const onClick = () => {
@@ -1087,22 +1010,38 @@ function AssetsTable(props: AssetsTableProps) {
     setEnabledColumns((currentColumns) => withPresence(currentColumns, column, false))
   })
 
-  const state: AssetsTableState = {
-    backend,
-    rootDirectoryId,
-    scrollContainerRef: rootRef,
-    category,
-    sortInfo,
-    setSortInfo,
-    query,
-    setQuery,
-    nodeMap: nodeMapRef,
-    hideColumn,
-    doCopy,
-    doCut,
-    doPaste,
-    getAssetNodeById,
-  }
+  const state: AssetsTableState = useMemo(
+    () => ({
+      backend,
+      rootDirectoryId,
+      scrollContainerRef: rootRef,
+      category,
+      sortInfo,
+      setSortInfo,
+      query,
+      setQuery,
+      nodeMap: nodeMapRef,
+      hideColumn,
+      doCopy,
+      doCut,
+      doPaste,
+      getAssetNodeById,
+    }),
+    [
+      backend,
+      category,
+      doCopy,
+      doCut,
+      doPaste,
+      getAssetNodeById,
+      hideColumn,
+      nodeMapRef,
+      query,
+      rootDirectoryId,
+      setQuery,
+      sortInfo,
+    ],
+  )
 
   useEffect(() => {
     // In some browsers, at least in Chrome 126,
@@ -1412,7 +1351,8 @@ function AssetsTable(props: AssetsTableProps) {
 
   const headerRow = (
     <tr ref={headerRowRef} className="rounded-none text-sm font-semibold">
-      {columns.map((column) => {
+      {[...columns].map((column) => {
+        // The spread on the line above is required for React Compiler to compile this component.
         // This is a React component, even though it does not contain JSX.
         const Heading = COLUMN_HEADING[column]
 
@@ -1782,7 +1722,11 @@ export function AssetsTableAssetsUnselector(props: AssetsTableAssetsUnselectorPr
     invariant(onlyChild != null, 'Children must be a single element when `asChild` is true')
     invariant(isValidElement(onlyChild), 'Children must be a JSX element when `asChild` is true')
 
-    return cloneElement(onlyChild, pressProps)
+    return cloneElement(
+      onlyChild,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any, no-restricted-syntax
+      mergeProps<any>()(pressProps as any, onlyChild.props as any),
+    )
   }
 
   return (

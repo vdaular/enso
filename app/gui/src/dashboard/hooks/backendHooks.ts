@@ -290,8 +290,8 @@ function createUserGroupsWithUsers(
   users: readonly backendModule.User[],
 ): readonly UserGroupInfoWithUsers[] {
   return userGroups.map((userGroup) => {
-    const usersInGroup: readonly User[] = users.filter((user) =>
-      user.userGroups?.includes(userGroup.id),
+    const usersInGroup: readonly User[] = users.filter(
+      (user) => user.userGroups?.includes(userGroup.id) ?? false,
     )
     return { ...userGroup, users: usersInGroup }
   })
@@ -476,6 +476,7 @@ export function useAsset(options: UseAssetOptions) {
     parentsPath: '',
     virtualParentsPath: '',
   }
+  // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
   switch (true) {
     case assetId === USERS_DIRECTORY_ID: {
       return {
@@ -637,7 +638,6 @@ export function useNewFolder(backend: Backend, category: Category) {
   const setSelectedAssets = useSetSelectedAssets()
   const { user } = useFullUserSession()
   const { data: users } = useBackendQuery(backend, 'listUsers', [])
-  const { data: userGroups } = useBackendQuery(backend, 'listUserGroups', [])
   const createDirectoryMutation = useMutation(backendMutationOptions(backend, 'createDirectory'))
 
   return useEventCallback(async (parentId: DirectoryId, parentPath: string | null | undefined) => {
@@ -657,7 +657,7 @@ export function useNewFolder(backend: Backend, category: Category) {
         category,
         user,
         users ?? [],
-        userGroups ?? [],
+        user.groups ?? [],
       ),
     )
 
@@ -680,7 +680,6 @@ export function useNewProject(backend: Backend, category: Category) {
 
   const { user } = useFullUserSession()
   const { data: users } = useBackendQuery(backend, 'listUsers', [])
-  const { data: userGroups } = useBackendQuery(backend, 'listUserGroups', [])
   const createProjectMutation = useMutation(backendMutationOptions(backend, 'createProject'))
 
   return useEventCallback(
@@ -720,7 +719,7 @@ export function useNewProject(backend: Backend, category: Category) {
           category,
           user,
           users ?? [],
-          userGroups ?? [],
+          user.groups ?? [],
         ),
         user,
         path,
@@ -758,7 +757,6 @@ export function useNewSecret(backend: Backend, category: Category) {
   const toggleDirectoryExpansion = useToggleDirectoryExpansion()
   const { user } = useFullUserSession()
   const { data: users } = useBackendQuery(backend, 'listUsers', [])
-  const { data: userGroups } = useBackendQuery(backend, 'listUserGroups', [])
   const createSecretMutation = useMutation(backendMutationOptions(backend, 'createSecret'))
 
   return useEventCallback(
@@ -777,7 +775,7 @@ export function useNewSecret(backend: Backend, category: Category) {
           category,
           user,
           users ?? [],
-          userGroups ?? [],
+          user.groups ?? [],
         ),
       )
 
@@ -797,7 +795,6 @@ export function useNewDatalink(backend: Backend, category: Category) {
   const toggleDirectoryExpansion = useToggleDirectoryExpansion()
   const { user } = useFullUserSession()
   const { data: users } = useBackendQuery(backend, 'listUsers', [])
-  const { data: userGroups } = useBackendQuery(backend, 'listUserGroups', [])
   const createDatalinkMutation = useMutation(backendMutationOptions(backend, 'createDatalink'))
 
   return useEventCallback(
@@ -816,7 +813,7 @@ export function useNewDatalink(backend: Backend, category: Category) {
           category,
           user,
           users ?? [],
-          userGroups ?? [],
+          user.groups ?? [],
         ),
       )
 
